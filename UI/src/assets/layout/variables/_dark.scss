@@ -1,0 +1,15 @@
+:root[class*='app-dark'] {
+    --surface-ground: var(--p-surface-950);
+    --code-background: var(--p-surface-800);
+    --code-color: var(--p-surface-100);
+    
+    // Electronics Theme - Dark Mode Overrides
+    --tech-bg-primary: #1A1A1A;
+    --tech-bg-secondary: #2D2D2D;
+    --tech-bg-tertiary: #1E3A5F;
+    --tech-text-primary: #FFFFFF;
+    --tech-text-secondary: #B0B0B0;
+    --tech-border: #3A3A3A;
+    --tech-card-bg: #2D2D2D;
+    --tech-card-hover: #3A3A3A;
+}

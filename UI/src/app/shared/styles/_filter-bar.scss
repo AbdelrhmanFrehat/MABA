@@ -1,0 +1,68 @@
+// Responsive filter bar using CSS Grid
+// Import this in your component SCSS: @import '../../shared/styles/filter-bar';
+
+.filter-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    align-items: end;
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 0; // Prevents overflow
+
+        label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: end;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+}
+
+// At larger screens, optimize layout for typical 5-6 filter scenarios
+@media (min-width: 1200px) {
+    .filter-bar {
+        grid-template-columns: repeat(5, 1fr) auto;
+    }
+}
+
+// Variant for fewer filters (3-4)
+.filter-bar--compact {
+    @media (min-width: 992px) {
+        grid-template-columns: repeat(4, 1fr) auto;
+    }
+}
+
+:host ::ng-deep {
+    // Ensure PrimeNG components respect container width within filter-bar
+    .filter-item {
+        .p-datepicker,
+        .p-select,
+        .p-multiselect,
+        .p-autocomplete {
+            width: 100% !important;
+        }
+
+        .p-inputtext {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+
+    .filter-actions {
+        .p-button {
+            white-space: nowrap;
+        }
+    }
+}
+

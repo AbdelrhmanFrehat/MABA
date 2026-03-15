@@ -1,0 +1,12 @@
+/* You can add global styles to this file, and also import other style files */
+@use './tailwind.css';
+@use './layout/layout.scss';
+@use 'primeicons/primeicons.css';
+@use './demo/demo.scss';
+@use './styles/animations.scss';
+@use './styles/theme-tokens.scss';
+@use './styles/electronics-theme.scss';
+@use './styles/public-theme';
+@use './styles/prime-ng-theme.scss';
+@use './styles/admin-theme.scss';
+@use './styles/featured-products-mobile-overrides.scss';

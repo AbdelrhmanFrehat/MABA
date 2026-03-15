@@ -1,0 +1,388 @@
+// ==============================================
+// RTL (Right-to-Left) Layout Support
+// ==============================================
+// This file provides complete RTL support for the layout.
+// RTL is determined by the document's dir="rtl" attribute,
+// which is set dynamically by the LanguageService when
+// switching to Arabic or other RTL languages.
+// ==============================================
+
+[dir="rtl"] {
+    // ==============================================
+    // SIDEBAR POSITIONING
+    // The sidebar moves from left to right in RTL
+    // ==============================================
+    .layout-sidebar {
+        left: auto;
+        right: 2rem;
+        transition:
+            transform var(--layout-section-transition-duration),
+            right var(--layout-section-transition-duration);
+    }
+
+    // ==============================================
+    // MAIN CONTAINER
+    // Margin shifts from left to right in RTL
+    // ==============================================
+    .layout-main-container {
+        transition: margin-right var(--layout-section-transition-duration);
+    }
+
+    // ==============================================
+    // DESKTOP LAYOUT (min-width: 992px)
+    // ==============================================
+    @media (min-width: 992px) {
+        .layout-wrapper {
+            // --- OVERLAY MODE ---
+            &.layout-overlay {
+                .layout-main-container {
+                    margin-left: 0;
+                    margin-right: 0;
+                    padding-left: 2rem;
+                    padding-right: 2rem;
+                }
+
+                .layout-sidebar {
+                    // Hidden off-screen to the right
+                    transform: translateX(100%);
+                    right: 0;
+                    left: auto;
+                    top: 0;
+                    height: 100vh;
+                    border-top-right-radius: 0;
+                    border-bottom-right-radius: 0;
+                    border-top-left-radius: var(--content-border-radius);
+                    border-bottom-left-radius: var(--content-border-radius);
+                    border-left: 1px solid var(--surface-border);
+                    border-right: none;
+                    transition:
+                        transform 0.4s cubic-bezier(0.05, 0.74, 0.2, 0.99),
+                        right 0.4s cubic-bezier(0.05, 0.74, 0.2, 0.99);
+                }
+
+                &.layout-overlay-active {
+                    .layout-sidebar {
+                        transform: translateX(0);
+                    }
+                }
+            }
+
+            // --- STATIC MODE ---
+            &.layout-static {
+                .layout-main-container {
+                    margin-left: 0;
+                    margin-right: 22rem;
+                }
+
+                // When sidebar is collapsed/inactive
+                &.layout-static-inactive {
+                    .layout-sidebar {
+                        transform: translateX(100%);
+                        right: 0;
+                    }
+
+                    .layout-main-container {
+                        margin-right: 0;
+                        padding-right: 2rem;
+                    }
+                }
+            }
+        }
+    }
+
+    // ==============================================
+    // MOBILE LAYOUT (max-width: 991px)
+    // ==============================================
+    @media (max-width: 991px) {
+        .layout-wrapper {
+            .layout-main-container {
+                margin-left: 0;
+                margin-right: 0;
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+
+            .layout-sidebar {
+                // Hidden off-screen to the right
+                transform: translateX(100%);
+                right: 0;
+                left: auto;
+                top: 0;
+                height: 100vh;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+                border-top-left-radius: var(--content-border-radius);
+                border-bottom-left-radius: var(--content-border-radius);
+                transition:
+                    transform 0.4s cubic-bezier(0.05, 0.74, 0.2, 0.99),
+                    right 0.4s cubic-bezier(0.05, 0.74, 0.2, 0.99);
+            }
+
+            .layout-mask {
+                left: 0;
+                right: 0;
+            }
+
+            // When mobile menu is active
+            &.layout-mobile-active {
+                .layout-sidebar {
+                    transform: translateX(0);
+                }
+            }
+        }
+    }
+
+    // ==============================================
+    // TOPBAR
+    // ==============================================
+    .layout-topbar {
+        // Topbar stays full width, just mirror internal elements
+        left: 0;
+        right: 0;
+        
+        .layout-topbar-logo-container {
+            .layout-menu-button {
+                margin-left: 0.5rem;
+                margin-right: 0;
+            }
+        }
+
+        .layout-topbar-actions {
+            margin-left: 0;
+            margin-right: auto;
+        }
+
+        @media (max-width: 991px) {
+            .layout-topbar-menu {
+                right: auto;
+                left: 2rem;
+            }
+
+            .layout-topbar-action {
+                i {
+                    margin-right: 0;
+                    margin-left: 0.5rem;
+                }
+            }
+        }
+    }
+
+    // ==============================================
+    // MENU ITEMS
+    // The base _menu.scss uses CSS logical properties 
+    // (margin-inline-start, margin-inline-end) which 
+    // automatically adapt to RTL. Only text alignment 
+    // and arrow rotation need RTL-specific overrides.
+    // ==============================================
+    .layout-menu {
+        // Right-align text for RTL
+        text-align: right;
+
+        // Section headers
+        .layout-root-menuitem {
+            > .layout-menuitem-root-text {
+                text-align: right;
+            }
+        }
+
+        // Submenu toggler arrow rotation for RTL
+        // In LTR: points down (default), rotates to point up when expanded
+        // In RTL: points left (rotated 90deg), rotates to point down when expanded
+        ul a {
+            .layout-submenu-toggler {
+                transform: rotate(90deg);
+            }
+        }
+
+        // When menu item is active/expanded in RTL
+        a.active-menuitem,
+        li.active-menuitem > a {
+            .layout-submenu-toggler {
+                transform: rotate(-90deg);
+            }
+        }
+    }
+
+    // ==============================================
+    // UTILITY CLASSES - MARGIN
+    // ==============================================
+    .ml-auto {
+        margin-left: 0 !important;
+        margin-right: auto !important;
+    }
+
+    .mr-auto {
+        margin-right: 0 !important;
+        margin-left: auto !important;
+    }
+
+    .ml-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+    .mr-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+    .ml-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+    .mr-2 { margin-right: 0 !important; margin-left: 0.5rem !important; }
+    .ml-3 { margin-left: 0 !important; margin-right: 1rem !important; }
+    .mr-3 { margin-right: 0 !important; margin-left: 1rem !important; }
+    .ml-4 { margin-left: 0 !important; margin-right: 1.5rem !important; }
+    .mr-4 { margin-right: 0 !important; margin-left: 1.5rem !important; }
+
+    // ==============================================
+    // UTILITY CLASSES - PADDING
+    // ==============================================
+    .pl-1 { padding-left: 0 !important; padding-right: 0.25rem !important; }
+    .pr-1 { padding-right: 0 !important; padding-left: 0.25rem !important; }
+    .pl-2 { padding-left: 0 !important; padding-right: 0.5rem !important; }
+    .pr-2 { padding-right: 0 !important; padding-left: 0.5rem !important; }
+    .pl-3 { padding-left: 0 !important; padding-right: 1rem !important; }
+    .pr-3 { padding-right: 0 !important; padding-left: 1rem !important; }
+    .pl-4 { padding-left: 0 !important; padding-right: 1.5rem !important; }
+    .pr-4 { padding-right: 0 !important; padding-left: 1.5rem !important; }
+
+    // ==============================================
+    // UTILITY CLASSES - TEXT ALIGNMENT
+    // ==============================================
+    .text-left {
+        text-align: right !important;
+    }
+
+    .text-right {
+        text-align: left !important;
+    }
+
+    // ==============================================
+    // PRIMENG COMPONENTS
+    // ==============================================
+    
+    // Tables
+    .p-datatable {
+        .p-datatable-thead > tr > th,
+        .p-datatable-tbody > tr > td,
+        .p-datatable-tfoot > tr > td {
+            text-align: right;
+        }
+    }
+
+    // Toolbar - use row-reverse for proper button ordering
+    .p-toolbar {
+        .p-toolbar-start {
+            order: 2;
+        }
+        .p-toolbar-center {
+            order: 1;
+        }
+        .p-toolbar-end {
+            order: 0;
+        }
+    }
+
+    // Dialog
+    .p-dialog {
+        .p-dialog-header {
+            flex-direction: row-reverse;
+        }
+
+        .p-dialog-footer {
+            flex-direction: row-reverse;
+            justify-content: flex-start;
+        }
+    }
+
+    // Forms
+    .p-inputgroup {
+        flex-direction: row-reverse;
+
+        .p-inputgroup-addon:first-child,
+        .p-button:first-child {
+            border-radius: 0 var(--p-border-radius) var(--p-border-radius) 0;
+        }
+
+        .p-inputgroup-addon:last-child,
+        .p-button:last-child {
+            border-radius: var(--p-border-radius) 0 0 var(--p-border-radius);
+        }
+    }
+
+    // Select/Dropdown
+    .p-select,
+    .p-dropdown {
+        text-align: right;
+
+        .p-select-label,
+        .p-dropdown-label {
+            text-align: right;
+        }
+    }
+
+    // Panel
+    .p-panel {
+        .p-panel-header {
+            flex-direction: row-reverse;
+        }
+    }
+
+    // Tabs
+    .p-tabs {
+        .p-tablist {
+            flex-direction: row-reverse;
+        }
+    }
+
+    // Toast positioning
+    .p-toast {
+        &.p-toast-top-right {
+            right: auto;
+            left: 20px;
+        }
+
+        &.p-toast-top-left {
+            left: auto;
+            right: 20px;
+        }
+
+        &.p-toast-bottom-right {
+            right: auto;
+            left: 20px;
+        }
+
+        &.p-toast-bottom-left {
+            left: auto;
+            right: 20px;
+        }
+    }
+
+    // Card
+    .card {
+        text-align: right;
+    }
+
+    // ==============================================
+    // ICON FLIPPING
+    // Directional icons need to be mirrored in RTL
+    // ==============================================
+    .pi-arrow-left::before { content: "\e91a"; }
+    .pi-arrow-right::before { content: "\e919"; }
+    .pi-chevron-left::before { content: "\e902"; }
+    .pi-chevron-right::before { content: "\e901"; }
+    .pi-angle-left::before { content: "\e932"; }
+    .pi-angle-right::before { content: "\e931"; }
+    .pi-angle-double-left::before { content: "\e934"; }
+    .pi-angle-double-right::before { content: "\e933"; }
+
+    // ==============================================
+    // BUTTONS IN FOOTER/ACTIONS
+    // Keep button order logical in RTL
+    // ==============================================
+    .flex.justify-end.gap-2 {
+        flex-direction: row-reverse;
+    }
+}
+
+// ==============================================
+// FONT FAMILIES
+// ==============================================
+body.rtl {
+    font-family: 'Cairo', 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}
+
+body.ltr {
+    font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}

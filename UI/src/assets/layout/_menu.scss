@@ -1,0 +1,188 @@
+@use 'mixins' as *;
+
+// ==============================================
+// SIDEBAR CONTAINER
+// ==============================================
+.layout-sidebar {
+    position: fixed;
+    width: 20rem;
+    height: calc(100vh - 8rem);
+    z-index: 999;
+    overflow-y: auto;
+    user-select: none;
+    top: 6rem;
+    // Using left for LTR, RTL override in _rtl.scss
+    left: 2rem;
+    transition:
+        transform var(--layout-section-transition-duration),
+        left var(--layout-section-transition-duration),
+        right var(--layout-section-transition-duration);
+    background-color: var(--surface-overlay);
+    border-radius: var(--content-border-radius);
+    padding: 0.5rem 1.5rem;
+}
+
+// ==============================================
+// MENU STRUCTURE
+// ==============================================
+.layout-menu {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+
+    // Root menu items (section headers)
+    .layout-root-menuitem {
+        > .layout-menuitem-root-text {
+            font-size: 0.857rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0.75rem 0;
+        }
+
+        > a {
+            display: none;
+        }
+    }
+
+    a {
+        user-select: none;
+
+        &.active-menuitem {
+            > .layout-submenu-toggler {
+                transform: rotate(-180deg);
+            }
+        }
+    }
+
+    li.active-menuitem {
+        > a {
+            .layout-submenu-toggler {
+                transform: rotate(-180deg);
+            }
+        }
+    }
+
+    // ==============================================
+    // MENU ITEMS
+    // Using CSS logical properties for RTL support:
+    // - margin-inline-end: space after icon (right in LTR, left in RTL)
+    // - margin-inline-start: space before toggler & submenu indent
+    // ==============================================
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+
+        a {
+            display: flex;
+            align-items: center;
+            position: relative;
+            outline: 0 none;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border-radius: var(--content-border-radius);
+            transition:
+                background-color var(--element-transition-duration),
+                box-shadow var(--element-transition-duration);
+
+            // Icon - uses logical property for RTL-aware spacing
+            .layout-menuitem-icon {
+                margin-inline-end: 0.5rem; // Right in LTR, Left in RTL
+                flex-shrink: 0;
+            }
+
+            // Label text
+            .layout-menuitem-text {
+                flex: 1;
+            }
+
+            // Submenu toggle arrow - pushed to the end
+            .layout-submenu-toggler {
+                font-size: 75%;
+                margin-inline-start: auto; // Left in LTR, Right in RTL
+                flex-shrink: 0;
+                transition: transform var(--element-transition-duration);
+            }
+
+            &.active-route {
+                font-weight: 700;
+                color: var(--primary-color);
+            }
+
+            &:hover {
+                background-color: var(--surface-hover);
+            }
+
+            &:focus {
+                @include focused-inset();
+            }
+        }
+
+        // Nested submenu indentation using logical properties
+        ul {
+            overflow: hidden;
+            border-radius: var(--content-border-radius);
+
+            li {
+                a {
+                    margin-inline-start: 1rem;
+                }
+
+                li {
+                    a {
+                        margin-inline-start: 2rem;
+                    }
+
+                    li {
+                        a {
+                            margin-inline-start: 2.5rem;
+                        }
+
+                        li {
+                            a {
+                                margin-inline-start: 3rem;
+                            }
+
+                            li {
+                                a {
+                                    margin-inline-start: 3.5rem;
+                                }
+
+                                li {
+                                    a {
+                                        margin-inline-start: 4rem;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==============================================
+// SUBMENU ANIMATIONS
+// ==============================================
+.layout-submenu-enter-from,
+.layout-submenu-leave-to {
+    max-height: 0;
+}
+
+.layout-submenu-enter-to,
+.layout-submenu-leave-from {
+    max-height: 1000px;
+}
+
+.layout-submenu-leave-active {
+    overflow: hidden;
+    transition: max-height 0.45s cubic-bezier(0, 1, 0, 1);
+}
+
+.layout-submenu-enter-active {
+    overflow: hidden;
+    transition: max-height 1s ease-in-out;
+}

@@ -1,0 +1,228 @@
+// =============================================================================
+// ADMIN THEME LAYER — MABA Admin Suite (purple/blue industrial minimal)
+// Applied inside .layout-wrapper (admin layout). No green; use primary/secondary/danger.
+// PrimeNG v20 compatible. RTL/i18n safe.
+// =============================================================================
+
+.layout-wrapper {
+    // -------------------------------------------------------------------------
+    // 1) Theme token overrides — replace any stray green in admin with primary
+    // -------------------------------------------------------------------------
+    .text-green-500,
+    .text-green-600 {
+        color: var(--p-primary-500, #667eea) !important;
+    }
+
+    // -------------------------------------------------------------------------
+    // 2) Dialog/Modal standard — one consistent look
+    // -------------------------------------------------------------------------
+    .p-dialog,
+    .p-dynamic-dialog,
+    body .p-dialog,
+    body .p-dynamic-dialog {
+        max-width: min(var(--admin-dialog-max-width, 720px), 96vw) !important;
+        width: 100% !important;
+        border-radius: var(--admin-radius) !important;
+        box-shadow: var(--admin-shadow) !important;
+        overflow: hidden;
+
+        .p-dialog-header,
+        .p-dialog-header-content {
+            min-height: 3.5rem;
+            padding: 1rem 1.5rem !important;
+            align-items: center;
+        }
+
+        .p-dialog-title {
+            font-size: 1.125rem !important;
+            font-weight: 600 !important;
+        }
+
+        .p-dialog-content {
+            padding: var(--admin-dialog-body-padding) !important;
+            overflow-y: auto;
+            max-height: min(70vh, 600px);
+        }
+
+        .p-dialog-footer {
+            padding: var(--admin-dialog-footer-padding) !important;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        // Prevent double scroll: content scrolls, dialog doesn't
+        &.p-dialog-draggable .p-dialog-content {
+            overflow-y: auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .p-dialog,
+        .p-dynamic-dialog {
+            max-width: 100% !important;
+            margin: 0.5rem !important;
+            .p-dialog-content {
+                padding: 1rem !important;
+                max-height: 60vh;
+            }
+            .p-dialog-footer {
+                flex-direction: row;
+                justify-content: flex-end;
+                gap: 0.5rem;
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 3) Tables standard — spacing, actions, pagination
+    // -------------------------------------------------------------------------
+    .p-datatable {
+        .p-datatable-thead > tr > th {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.8125rem !important;
+            font-weight: 600 !important;
+            text-transform: none;
+            color: var(--p-text-color) !important;
+            background: var(--p-surface-50) !important;
+            border-color: var(--p-content-border-color) !important;
+        }
+
+        .p-datatable-tbody > tr > td {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.875rem !important;
+            vertical-align: middle !important;
+            min-height: var(--admin-table-row-height);
+        }
+
+        .p-datatable-tbody > tr:hover {
+            background: var(--p-content-hover-background) !important;
+        }
+
+        // Actions column: unified icon buttons
+        .p-button.p-button-text,
+        .p-button.p-button-icon-only {
+            width: var(--admin-action-btn-size) !important;
+            height: var(--admin-action-btn-size) !important;
+            min-width: var(--admin-action-btn-size) !important;
+            min-height: var(--admin-action-btn-size) !important;
+            padding: 0 !important;
+            border-radius: var(--radius-small, 8px) !important;
+            color: var(--p-text-muted-color) !important;
+
+            &:hover {
+                background: rgba(102, 126, 234, 0.1) !important;
+                color: var(--p-primary-500) !important;
+            }
+
+            &.p-button-danger:hover {
+                background: rgba(244, 67, 54, 0.1) !important;
+                color: var(--p-red-500) !important;
+            }
+        }
+    }
+
+    .p-paginator {
+        padding: 0.75rem 1rem !important;
+        border-color: var(--p-content-border-color) !important;
+        background: var(--p-surface-0) !important;
+
+        .p-paginator-element {
+            min-width: 2.25rem !important;
+            height: 2.25rem !important;
+            border-radius: var(--radius-small, 8px) !important;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4) Forms — inputs, labels, spacing (global so all admin forms benefit)
+    // -------------------------------------------------------------------------
+    .p-inputtext,
+    .p-dropdown,
+    .p-inputtextarea,
+    .p-inputnumber-input {
+        border-radius: var(--radius-small, 8px) !important;
+        min-height: 2.5rem;
+    }
+
+    .p-float-label label,
+    .p-field label,
+    .form-field label,
+    .field label {
+        color: var(--admin-form-label-color) !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+    }
+
+    // Form grid: 2 columns desktop, 1 column mobile (opt-in via .admin-form-grid)
+    .admin-form-grid {
+        display: grid;
+        gap: var(--admin-form-gap);
+        grid-template-columns: 1fr;
+
+        @media (min-width: 768px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .admin-form-grid-full {
+            grid-column: 1 / -1;
+        }
+    }
+
+    // Card consistency
+    .p-card {
+        border-radius: var(--admin-radius) !important;
+        box-shadow: var(--admin-shadow) !important;
+        border: 1px solid var(--p-content-border-color);
+
+        .p-card-body {
+            padding: 1.5rem !important;
+        }
+
+        .p-card-title {
+            font-size: 1.125rem !important;
+            font-weight: 600 !important;
+        }
+    }
+
+    // Page header consistency
+    .page-header h1,
+    .dashboard-header h1 {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: var(--p-text-color) !important;
+        margin: 0 !important;
+    }
+
+    .page-header p,
+    .dashboard-header p,
+    .subtitle {
+        color: var(--p-text-muted-color) !important;
+        font-size: 0.875rem !important;
+        margin: 0.25rem 0 0 !important;
+    }
+
+    // Tag/badge: Active = primary (no green)
+    .p-tag.p-tag-success,
+    .p-tag[severity="success"],
+    [data-p-severity="success"].p-tag {
+        background: var(--p-primary-500) !important;
+        color: white !important;
+        border-radius: var(--radius-chip, 12px);
+    }
+
+    // Status icons (active/inactive) — theme colors only
+    .status-active {
+        color: var(--p-primary-500, #667eea) !important;
+    }
+    .status-inactive {
+        color: var(--p-surface-400, #94a3b8) !important;
+    }
+
+    // RTL: dialog footer buttons mirrored
+    [dir="rtl"] .p-dialog-footer {
+        flex-direction: row-reverse;
+    }
+}

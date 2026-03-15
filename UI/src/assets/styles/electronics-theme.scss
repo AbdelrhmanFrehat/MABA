@@ -1,0 +1,234 @@
+// Electronics Store Theme Styles
+
+// Global Tech Styles
+.tech-gradient-primary {
+    background: var(--tech-gradient-primary);
+}
+
+.tech-gradient-hero {
+    background: var(--tech-gradient-hero);
+}
+
+.tech-gradient-card {
+    background: var(--tech-gradient-card);
+}
+
+// Glassmorphism Effect
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-effect-dark {
+    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+// Tech Button Styles
+.tech-button {
+    background: var(--tech-gradient-primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--tech-shadow-lg);
+        
+        &::before {
+            left: 100%;
+        }
+    }
+    
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+.tech-button-outline {
+    background: transparent;
+    color: var(--tech-primary-blue);
+    border: 2px solid var(--tech-primary-blue);
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    
+    &:hover {
+        background: var(--tech-primary-blue);
+        color: white;
+        box-shadow: var(--tech-shadow-md);
+    }
+}
+
+// Tech Card Styles
+.tech-card {
+    background: var(--tech-card-bg);
+    border: 1px solid var(--tech-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--tech-gradient-primary);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    &:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--tech-shadow-lg);
+        border-color: var(--tech-primary-blue);
+        
+        &::before {
+            transform: scaleX(1);
+        }
+    }
+}
+
+// Badge Styles
+.tech-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-new {
+    background: var(--tech-success-green);
+    color: white;
+}
+
+.badge-sale {
+    background: var(--tech-accent-orange);
+    color: white;
+}
+
+.badge-hot {
+    background: var(--tech-gradient-primary);
+    color: white;
+}
+
+.badge-featured {
+    background: var(--tech-primary-blue);
+    color: white;
+}
+
+// Circuit Pattern Background
+.circuit-pattern {
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            linear-gradient(90deg, rgba(0, 102, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(rgba(0, 102, 255, 0.1) 1px, transparent 1px);
+        background-size: 50px 50px;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+}
+
+// Section Dividers
+.section-divider {
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--tech-primary-blue),
+        transparent
+    );
+    margin: 4rem 0;
+}
+
+// Tech Text Styles
+.tech-text-gradient {
+    background: var(--tech-gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.tech-text-glow {
+    text-shadow: 0 0 10px rgba(0, 102, 255, 0.5);
+}
+
+// Loading States
+.tech-loading {
+    position: relative;
+    overflow: hidden;
+    
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 102, 255, 0.2),
+            transparent
+        );
+        animation: shimmer 1.5s infinite;
+    }
+}
+
+// Catalog/filter dropdowns: use app theme purple instead of green for option highlight/focus
+// (Overlays are appended to body so these are global.)
+.p-select-overlay .p-select-option.p-highlight,
+.p-select-overlay .p-select-option.p-focus,
+.p-select-overlay .p-select-option.p-select-option-selected,
+.p-select-overlay .p-select-option:focus-visible,
+.p-multiselect-overlay .p-multiselect-option.p-highlight,
+.p-multiselect-overlay .p-multiselect-option.p-focus,
+.p-multiselect-overlay .p-multiselect-option:focus-visible {
+    background: rgba(102, 126, 234, 0.16) !important;
+    color: #667eea !important;
+}
+.p-select-overlay .p-select-option.p-highlight:hover,
+.p-select-overlay .p-select-option.p-focus:hover,
+.p-select-overlay .p-select-option.p-select-option-selected:hover,
+.p-multiselect-overlay .p-multiselect-option.p-highlight:hover,
+.p-multiselect-overlay .p-multiselect-option.p-focus:hover {
+    background: rgba(102, 126, 234, 0.24) !important;
+    color: #667eea !important;
+}

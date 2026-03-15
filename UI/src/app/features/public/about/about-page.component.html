@@ -1,0 +1,152 @@
+<div class="about-page" [dir]="languageService.direction">
+    <!-- 1) Hero -->
+    <section class="hero-section">
+        <div class="hero-bg-gradient"></div>
+        <div class="hero-pattern"></div>
+        <div class="container hero-container">
+            <span class="hero-badge">
+                <i class="pi pi-info-circle"></i>
+                {{ 'about.hero.badge' | translate }}
+            </span>
+            <h1 class="hero-title">{{ 'about.hero.title' | translate }}</h1>
+            <p class="hero-subtitle">{{ 'about.hero.subtitle' | translate }}</p>
+            <div class="hero-cta">
+                <p-button
+                    [label]="'about.hero.ctaStart' | translate"
+                    icon="pi pi-send"
+                    iconPos="right"
+                    routerLink="/projects/request"
+                    styleClass="hero-btn-primary">
+                </p-button>
+                <p-button
+                    [label]="'about.hero.ctaExplore' | translate"
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    routerLink="/projects"
+                    [outlined]="true"
+                    styleClass="hero-btn-secondary">
+                </p-button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2–5) Single content shell -->
+    <div class="container container-shell">
+        <div class="about-shell">
+            <!-- 2) Our Direction -->
+            <section class="shell-section">
+                <div class="about-direction-grid">
+                    <div class="direction-text">
+                        <h2 class="section-title">{{ 'about.direction.title' | translate }}</h2>
+                        <p class="section-intro">{{ 'about.direction.intro' | translate }}</p>
+                        <ul class="bullet-list">
+                            <li>{{ 'about.direction.bullets.medicalMachines' | translate }}</li>
+                            <li>{{ 'about.direction.bullets.smartDiagnostic' | translate }}</li>
+                            <li>{{ 'about.direction.bullets.embeddedHealthcare' | translate }}</li>
+                            <li>{{ 'about.direction.bullets.precisionIntegration' | translate }}</li>
+                            <li>{{ 'about.direction.bullets.realHumanProblems' | translate }}</li>
+                        </ul>
+                    </div>
+                    <div class="direction-logo">
+                        <img src="/assets/img/maba-logo.png" alt="MABA Solutions Logo" />
+                    </div>
+                </div>
+            </section>
+
+            <div class="shell-divider"></div>
+
+            <!-- 3) Medical Machines Path -->
+            <section class="shell-section">
+                <h2 class="section-title">{{ 'about.medical.title' | translate }}</h2>
+                <div class="two-col responsive">
+                    <div class="col">
+                        <ul class="bullet-list">
+                            <li>{{ 'about.medical.left.monitoringSystems' | translate }}</li>
+                            <li>{{ 'about.medical.left.assistiveDevices' | translate }}</li>
+                            <li>{{ 'about.medical.left.embeddedControl' | translate }}</li>
+                            <li>{{ 'about.medical.left.softwarePlatforms' | translate }}</li>
+                            <li>{{ 'about.medical.left.iotMonitoring' | translate }}</li>
+                        </ul>
+                    </div>
+                    <div class="col discipline-callout">
+                        <h3 class="col-title">{{ 'about.medical.right.title' | translate }}</h3>
+                        <ul class="bullet-list">
+                            <li>{{ 'about.medical.right.discipline' | translate }}</li>
+                            <li>{{ 'about.medical.right.documentation' | translate }}</li>
+                            <li>{{ 'about.medical.right.testingValidation' | translate }}</li>
+                            <li>{{ 'about.medical.right.ethics' | translate }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="closing-line">{{ 'about.medical.precisionAccountability' | translate }}</p>
+                <p class="closing-line">{{ 'about.medical.qualityMandatory' | translate }}</p>
+            </section>
+
+            <div class="shell-divider"></div>
+
+            <!-- 4) Technology Solutions Division -->
+            <section class="shell-section">
+                <h2 class="section-title">{{ 'about.division.title' | translate }}</h2>
+                <p class="section-intro">{{ 'about.division.intro' | translate }}</p>
+                <div class="division-rows">
+                    <div class="soft-row"><i class="pi pi-microchip"></i><span>{{ 'about.division.cards.embedded' | translate }}</span></div>
+                    <div class="soft-row"><i class="pi pi-android"></i><span>{{ 'about.division.cards.robotics' | translate }}</span></div>
+                    <div class="soft-row"><i class="pi pi-chart-line"></i><span>{{ 'about.division.cards.monitoring' | translate }}</span></div>
+                    <div class="soft-row"><i class="pi pi-cog"></i><span>{{ 'about.division.cards.industrialControl' | translate }}</span></div>
+                    <div class="soft-row"><i class="pi pi-box"></i><span>{{ 'about.division.cards.prototypes' | translate }}</span></div>
+                    <div class="soft-row"><i class="pi pi-desktop"></i><span>{{ 'about.division.cards.softwarePlatforms' | translate }}</span></div>
+                </div>
+                <div class="integrate-strip">
+                    <h3 class="integrate-title">{{ 'about.division.integrate.title' | translate }}</h3>
+                    <p class="integrate-items">{{ 'about.division.integrate.items' | translate }}</p>
+                    <p class="workflow-line">{{ 'about.division.workflow' | translate }}</p>
+                </div>
+            </section>
+
+            <div class="shell-divider"></div>
+
+            <!-- 5) Product Philosophy -->
+            <section class="shell-section philosophy-section">
+                <h2 class="section-title">{{ 'about.philosophy.title' | translate }}</h2>
+                <p class="section-intro">{{ 'about.philosophy.intro' | translate }}</p>
+                <div class="philosophy-two-col">
+                    <div class="phil-col">
+                        <ul class="bullet-list">
+                            <li>{{ 'about.philosophy.includes.softwareSystems' | translate }}</li>
+                            <li>{{ 'about.philosophy.includes.hardwareDevices' | translate }}</li>
+                            <li>{{ 'about.philosophy.includes.engineeringProjects' | translate }}</li>
+                            <li>{{ 'about.philosophy.includes.researchPrototypes' | translate }}</li>
+                            <li>{{ 'about.philosophy.includes.commercialProducts' | translate }}</li>
+                        </ul>
+                    </div>
+                    <div class="phil-col">
+                        <ol class="principles-list">
+                            <li><span class="principle-num">1</span>{{ 'about.philosophy.principles.1' | translate }}</li>
+                            <li><span class="principle-num">2</span>{{ 'about.philosophy.principles.2' | translate }}</li>
+                            <li><span class="principle-num">3</span>{{ 'about.philosophy.principles.3' | translate }}</li>
+                            <li><span class="principle-num">4</span>{{ 'about.philosophy.principles.4' | translate }}</li>
+                            <li><span class="principle-num">5</span>{{ 'about.philosophy.principles.5' | translate }}</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- 6) CTA Footer -->
+    <section class="cta-section">
+        <div class="cta-bg"></div>
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">{{ 'about.cta.title' | translate }}</h2>
+                <p-button
+                    [label]="'about.cta.button' | translate"
+                    icon="pi pi-send"
+                    iconPos="right"
+                    routerLink="/projects/request"
+                    styleClass="cta-btn">
+                </p-button>
+            </div>
+        </div>
+    </section>
+</div>

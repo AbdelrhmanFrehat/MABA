@@ -1,0 +1,899 @@
+// PrimeNG Theme Customization - Main theme (purple/blue gradient)
+
+:root {
+    // Primary Color - Purple/Blue (main theme, used in admin and public)
+    --p-primary-50: #EEF2FF;
+    --p-primary-100: #E0E7FF;
+    --p-primary-200: #C7D2FE;
+    --p-primary-300: #A5B4FC;
+    --p-primary-400: #818CF8;
+    --p-primary-500: #667eea;
+    --p-primary-600: #5a67d8;
+    --p-primary-700: #4c51bf;
+    --p-primary-800: #434190;
+    --p-primary-900: #3730a3;
+    --p-primary-950: #312e81;
+    
+    // Primary Color Scheme
+    --p-primary-color: var(--p-primary-500);
+    --p-primary-contrast-color: #FFFFFF;
+    --p-primary-hover-color: var(--p-primary-600);
+    --p-primary-active-color: var(--p-primary-700);
+    
+    // Surface Colors - Tech Gray
+    --p-surface-0: #FFFFFF;
+    --p-surface-50: #F8F9FA;
+    --p-surface-100: #F1F3F5;
+    --p-surface-200: #E9ECEF;
+    --p-surface-300: #DEE2E6;
+    --p-surface-400: #CED4DA;
+    --p-surface-500: #ADB5BD;
+    --p-surface-600: #6C757D;
+    --p-surface-700: #495057;
+    --p-surface-800: #343A40;
+    --p-surface-900: #212529;
+    --p-surface-950: #1A1A1A;
+    
+    // Content Colors
+    --p-content-background: var(--p-surface-0);
+    --p-content-border-color: var(--p-surface-200);
+    --p-content-hover-background: var(--p-surface-50);
+    
+    // Text Colors
+    --p-text-color: var(--p-surface-900);
+    --p-text-muted-color: var(--p-surface-600);
+    --p-text-hover-color: var(--p-surface-950);
+    
+    // Border Radius
+    --p-content-border-radius: 12px;
+    --p-focus-ring-border-radius: 8px;
+    
+    // Shadows
+    --p-focus-ring-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    
+    // Success Color (Industrial Blue - matching theme). Do NOT use green for primary CTAs; use --p-primary-* or --gradient-primary.
+    --p-green-500: #0066FF;
+    --p-green-600: #0052CC;
+    --p-green-700: #0047AB;
+    
+    // Warning Color (Orange)
+    --p-orange-500: #FF6B35;
+    --p-orange-600: #FF5722;
+    --p-orange-700: #E64A19;
+    
+    // Error Color (Red)
+    --p-red-500: #F44336;
+    --p-red-600: #E53935;
+    --p-red-700: #D32F2F;
+    
+    // Info Color (Cyan)
+    --p-cyan-500: #00BCD4;
+    --p-cyan-600: #00ACC1;
+    --p-cyan-700: #0097A7;
+}
+
+// Dark Mode Overrides
+:root.app-dark,
+.app-dark {
+    // Primary Color - Tech Blue (lighter for dark mode)
+    --p-primary-500: #3397FF;
+    --p-primary-600: #66B1FF;
+    --p-primary-700: #0066FF;
+    
+    // Surface Colors - Dark Tech Gray
+    --p-surface-0: #1A1A1A;
+    --p-surface-50: #2D2D2D;
+    --p-surface-100: #3A3A3A;
+    --p-surface-200: #4A4A4A;
+    --p-surface-300: #5A5A5A;
+    --p-surface-400: #6A6A6A;
+    --p-surface-500: #7A7A7A;
+    --p-surface-600: #8A8A8A;
+    --p-surface-700: #9A9A9A;
+    --p-surface-800: #AAAAAA;
+    --p-surface-900: #E0E0E0;
+    --p-surface-950: #FFFFFF;
+    
+    // Content Colors
+    --p-content-background: var(--p-surface-0);
+    --p-content-border-color: var(--p-surface-200);
+    --p-content-hover-background: var(--p-surface-50);
+    
+    // Text Colors
+    --p-text-color: var(--p-surface-900);
+    --p-text-muted-color: var(--p-surface-600);
+    --p-text-hover-color: var(--p-surface-950);
+}
+
+// Button Overrides
+.p-button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    
+    &.p-button-primary {
+        background: var(--gradient-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+        border: none;
+        color: white;
+        
+        &:hover {
+            background: var(--gradient-dark, linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%));
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+        }
+        
+        &:active {
+            transform: translateY(0);
+        }
+    }
+    
+    &.p-button-outlined {
+        border: 2px solid var(--p-primary-color) !important;
+        color: var(--p-primary-color) !important;
+        background: transparent !important;
+        
+        &:hover {
+            background: var(--p-primary-color) !important;
+            color: white !important;
+            box-shadow: var(--tech-shadow-sm);
+        }
+    }
+    
+    &.p-button-success {
+        background: var(--p-primary-color) !important;
+        border-color: var(--p-primary-color) !important;
+        
+        &.p-button-outlined {
+            background: transparent !important;
+            color: var(--p-primary-color) !important;
+            border-color: var(--p-primary-color) !important;
+            
+            &:hover {
+                background: var(--p-primary-color) !important;
+                color: white !important;
+            }
+        }
+    }
+    
+    &.p-button-secondary {
+        background: var(--p-primary-color) !important;
+        border-color: var(--p-primary-color) !important;
+        
+        &.p-button-outlined {
+            background: transparent !important;
+            color: var(--p-primary-color) !important;
+            border-color: var(--p-primary-color) !important;
+            
+            &:hover {
+                background: var(--p-primary-color) !important;
+                color: white !important;
+            }
+        }
+    }
+}
+
+// Force all outlined buttons to use theme colors (global)
+.p-button-outlined,
+button.p-button-outlined,
+p-button[outlined] button,
+.p-button[outlined="true"] {
+    border-color: var(--p-primary-color) !important;
+    color: var(--p-primary-color) !important;
+    background: transparent !important;
+    
+    &:hover,
+    &:focus {
+        background: var(--p-primary-color) !important;
+        color: white !important;
+        border-color: var(--p-primary-color) !important;
+    }
+    
+    .p-button-icon {
+        color: inherit !important;
+    }
+}
+
+// Input Overrides - Force blue focus instead of green
+.p-inputtext,
+.p-dropdown,
+.p-calendar,
+.p-password,
+.p-textarea,
+.p-select,
+.p-multiselect,
+.p-autocomplete,
+.p-inputnumber {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    
+    &:focus,
+    &.p-focus,
+    &:focus-within,
+    &.p-inputwrapper-focus {
+        border-color: var(--p-primary-color) !important;
+        box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        outline: none !important;
+    }
+}
+
+// Input wrapper focus states (PrimeNG v20)
+.p-inputwrapper-focus,
+.p-inputwrapper:focus-within,
+.p-fluid .p-inputwrapper-focus {
+    border-color: var(--p-primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+}
+
+// IconField and InputGroup focus
+.p-iconfield,
+.p-inputgroup {
+    &:focus-within {
+        .p-inputtext,
+        .p-password-input {
+            border-color: var(--p-primary-color) !important;
+            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        }
+    }
+}
+
+// Password field specific
+.p-password {
+    .p-password-input:focus,
+    .p-password-input.p-focus {
+        border-color: var(--p-primary-color) !important;
+        box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+    }
+}
+
+// IFilled variant (filled inputs)
+.p-ifilled {
+    .p-inputtext:focus,
+    .p-password-input:focus {
+        border-color: var(--p-primary-color) !important;
+        box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+    }
+}
+
+// Float label focus
+.p-floatlabel {
+    &:focus-within {
+        label {
+            color: var(--p-primary-color) !important;
+        }
+        
+        .p-inputtext,
+        .p-password-input {
+            border-color: var(--p-primary-color) !important;
+            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        }
+    }
+}
+
+// Global input focus ring override
+input:focus,
+textarea:focus,
+select:focus {
+    outline-color: var(--p-primary-color) !important;
+}
+
+// Card Overrides
+.p-card {
+    border-radius: 12px;
+    border: 1px solid var(--p-content-border-color);
+    box-shadow: var(--tech-shadow-sm);
+    transition: all 0.3s ease;
+    
+    &:hover {
+        box-shadow: var(--tech-shadow-md);
+    }
+}
+
+// DataTable Overrides
+.p-datatable {
+    .p-datatable-header {
+        background: var(--p-surface-50);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .p-datatable-thead > tr > th {
+        background: var(--p-surface-100);
+        color: var(--p-text-color);
+        font-weight: 600;
+        border-color: var(--p-content-border-color);
+    }
+    
+    .p-datatable-tbody > tr {
+        transition: all 0.2s ease;
+        
+        &:hover {
+            background: var(--p-content-hover-background);
+        }
+    }
+}
+
+// Dialog Overrides - main theme (purple/blue gradient), close button visible
+// High specificity so PrimeNG runtime theme does not override (dialogs may be in overlay)
+body .p-dialog .p-dialog-header,
+body .p-dialog .p-dialog-header-content,
+body .p-dynamic-dialog .p-dialog-header,
+body .p-dynamic-dialog .p-dialog-header-content,
+.p-dialog .p-dialog-header,
+.p-dialog .p-dialog-header-content,
+.p-dynamic-dialog .p-dialog-header,
+.p-dynamic-dialog .p-dialog-header-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-color: transparent !important;
+    color: white !important;
+}
+
+.p-dialog,
+.p-dynamic-dialog {
+    border-radius: var(--radius-card, 20px);
+    box-shadow: var(--shadow-soft, 0 4px 20px rgba(0, 0, 0, 0.08));
+    overflow: hidden;
+    border: 1px solid var(--surface-border, #e9ecef);
+
+    .p-dialog-header,
+    .p-dialog-header-content,
+    [class*="dialog-header"] {
+        background: var(--gradient-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%)) !important;
+        background-color: transparent !important;
+        color: white !important;
+        border-radius: 0;
+        padding: 1.25rem 1.5rem;
+        border-bottom: none;
+    }
+
+    .p-dialog-content {
+        padding: 1.5rem;
+        background: var(--p-content-background);
+    }
+
+    .p-dialog-footer {
+        padding: 1rem 1.5rem;
+        background: var(--p-surface-50);
+        border-top: 1px solid var(--p-content-border-color);
+        border-radius: 0 0 var(--radius-card, 20px) var(--radius-card, 20px);
+    }
+
+    .p-inputtext,
+    .p-inputtextarea,
+    .p-dialog-content input,
+    .p-dialog-content select,
+    .p-dialog-content textarea {
+        border-radius: var(--radius-small, 8px);
+        border-color: var(--p-content-border-color);
+    }
+
+    // Close (X) button - PrimeNG 20 uses various class names
+    .p-dialog-close-button,
+    .p-dialog-header-close,
+    .p-dialog-header-close-icon,
+    button[aria-label="Close"],
+    .p-dialog-header-actions button,
+    .p-dialog-header-action {
+        color: white !important;
+        opacity: 1 !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        min-width: 2.25rem !important;
+        min-height: 2.25rem !important;
+        width: 2.25rem !important;
+        height: 2.25rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: none !important;
+        
+        &:hover,
+        &:focus {
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        .p-icon,
+        svg,
+        i {
+            color: white !important;
+            fill: white !important;
+        }
+    }
+    
+    // Override PrimeNG button inside dialog header
+    .p-dialog-header .p-button,
+    .p-dialog-header button.p-button {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: none !important;
+        color: white !important;
+        
+        &:hover {
+            background: rgba(255, 255, 255, 0.25) !important;
+        }
+    }
+}
+
+// Toast Overrides
+.p-toast {
+    .p-toast-message {
+        border-radius: 12px;
+        box-shadow: var(--tech-shadow-md);
+    }
+    
+    .p-toast-message-success {
+        background: var(--p-green-500);
+        color: white;
+    }
+    
+    .p-toast-message-error {
+        background: var(--p-red-500);
+        color: white;
+    }
+    
+    .p-toast-message-warn {
+        background: var(--p-orange-500);
+        color: white;
+    }
+    
+    .p-toast-message-info {
+        background: var(--p-primary-color);
+        color: white;
+    }
+}
+
+// Ultimate Toast override for PrimeNG v20 - most specific selectors
+body .p-toast .p-toast-message.p-toast-message-success,
+body .p-toast-message-success,
+html body .p-toast .p-toast-message-success,
+.p-component.p-toast .p-toast-message.p-toast-message-success {
+    background: #0066FF !important;
+    background-color: #0066FF !important;
+    border: 1px solid #0066FF !important;
+    border-left: 6px solid #0052CC !important;
+    color: #ffffff !important;
+}
+
+body .p-toast .p-toast-message.p-toast-message-success *,
+body .p-toast-message-success * {
+    color: #ffffff !important;
+}
+
+body .p-toast .p-toast-message.p-toast-message-success .p-toast-message-icon,
+body .p-toast .p-toast-message.p-toast-message-success .p-toast-close-button,
+body .p-toast .p-toast-message.p-toast-message-success svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+
+// Carousel Overrides
+.p-carousel {
+    .p-carousel-indicators {
+        .p-carousel-indicator {
+            button {
+                background: var(--p-surface-300);
+                border-radius: 50%;
+                width: 12px;
+                height: 12px;
+                transition: all 0.3s ease;
+                
+                &:hover {
+                    background: var(--p-primary-color);
+                }
+            }
+            
+            &.p-highlight button {
+                background: var(--p-primary-color);
+                width: 32px;
+                border-radius: 6px;
+            }
+        }
+    }
+    
+    // Navigation buttons - override green default
+    .p-carousel-prev-button,
+    .p-carousel-next-button,
+    .p-carousel-prev,
+    .p-carousel-next,
+    button.p-carousel-prev,
+    button.p-carousel-next {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        border: 2px solid #e0e0e0 !important;
+        border-radius: 50% !important;
+        color: var(--p-primary-color) !important;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        transition: all 0.3s ease !important;
+        
+        &:hover:not(:disabled) {
+            background: var(--p-primary-color) !important;
+            background-color: var(--p-primary-color) !important;
+            border-color: var(--p-primary-color) !important;
+            color: white !important;
+            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.3) !important;
+        }
+        
+        &:disabled {
+            opacity: 0.4 !important;
+            background: #f8f9fa !important;
+            background-color: #f8f9fa !important;
+        }
+        
+        .p-icon,
+        svg,
+        i {
+            color: inherit !important;
+            fill: currentColor !important;
+            width: 16px !important;
+            height: 16px !important;
+        }
+    }
+}
+
+// Badge Overrides
+.p-badge {
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    
+    &.p-badge-success {
+        background: var(--p-green-500);
+    }
+    
+    &.p-badge-warning {
+        background: var(--p-orange-500);
+    }
+    
+    &.p-badge-danger {
+        background: var(--p-red-500);
+    }
+    
+    &.p-badge-info {
+        background: var(--p-primary-color);
+    }
+}
+
+// Tag Overrides (success uses theme blue instead of green)
+.p-tag {
+    &.p-tag-success {
+        background: var(--p-primary-color) !important;
+        color: white !important;
+    }
+}
+
+// PrimeNG v20 Tag structure - force success to use blue
+.p-tag-success,
+.p-tag[data-pc-severity="success"],
+[data-p-severity="success"].p-tag {
+    background: var(--p-primary-color) !important;
+    background-color: var(--p-primary-color) !important;
+    color: white !important;
+}
+
+// Message/Inline Message Overrides
+.p-message {
+    &.p-message-success {
+        background: rgba(0, 102, 255, 0.1) !important;
+        border-color: var(--p-primary-color) !important;
+        color: var(--p-primary-700) !important;
+        
+        .p-message-icon {
+            color: var(--p-primary-color) !important;
+        }
+    }
+}
+
+// Checkbox Overrides - use theme blue instead of green
+.p-checkbox {
+    .p-checkbox-box {
+        border-color: var(--p-surface-400) !important;
+        
+        &.p-highlight,
+        &:has(input:checked) {
+            background: var(--p-primary-color) !important;
+            border-color: var(--p-primary-color) !important;
+        }
+        
+        &:hover {
+            border-color: var(--p-primary-color) !important;
+        }
+    }
+    
+    &.p-checkbox-checked .p-checkbox-box,
+    .p-checkbox-box.p-highlight {
+        background: var(--p-primary-color) !important;
+        border-color: var(--p-primary-color) !important;
+    }
+}
+
+// PrimeNG v20 checkbox structure
+.p-checkbox-checked .p-checkbox-box,
+.p-checkbox .p-checkbox-input:checked + .p-checkbox-box,
+.p-checkbox-box[data-p-checked="true"] {
+    background: var(--p-primary-color) !important;
+    border-color: var(--p-primary-color) !important;
+}
+
+// Toggle/Switch Overrides
+.p-toggleswitch {
+    &.p-toggleswitch-checked .p-toggleswitch-slider,
+    .p-toggleswitch-slider.p-highlight {
+        background: var(--p-primary-color) !important;
+    }
+}
+
+// InputSwitch (legacy)
+.p-inputswitch {
+    &.p-inputswitch-checked .p-inputswitch-slider {
+        background: var(--p-primary-color) !important;
+    }
+}
+
+// Radio Button Overrides
+.p-radiobutton {
+    .p-radiobutton-box {
+        &.p-highlight {
+            border-color: var(--p-primary-color) !important;
+            background: var(--p-primary-color) !important;
+        }
+    }
+}
+
+// SelectButton Overrides
+.p-selectbutton {
+    .p-button.p-highlight {
+        background: var(--p-primary-color) !important;
+        border-color: var(--p-primary-color) !important;
+    }
+}
+
+// Slider Overrides
+.p-slider {
+    .p-slider-range {
+        background: var(--p-primary-color) !important;
+    }
+    
+    .p-slider-handle {
+        border-color: var(--p-primary-color) !important;
+        
+        &:hover {
+            background: var(--p-primary-color) !important;
+        }
+    }
+}
+
+// Progress Bar
+.p-progressbar {
+    .p-progressbar-value {
+        background: var(--p-primary-color) !important;
+    }
+}
+
+// ============================================================
+// GLOBAL GREEN OVERRIDE - Force all green elements to use blue
+// ============================================================
+
+// Override any lingering green colors from PrimeNG themes
+.p-button-success:not(.p-button-outlined) {
+    background: var(--p-primary-color, #667eea) !important;
+    border-color: var(--p-primary-color, #667eea) !important;
+}
+
+// PrimeNG v20 severity="success" attribute selector
+.p-button[severity="success"]:not([outlined]):not(.p-button-outlined),
+button[severity="success"]:not([outlined]),
+p-button[severity="success"]:not([outlined]) .p-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+    
+    &:hover {
+        background: linear-gradient(135deg, #5a72d9 0%, #6a4190 100%) !important;
+        background-color: #5a72d9 !important;
+        border-color: #5a72d9 !important;
+    }
+}
+
+// PrimeNG button backgrounds - override any green
+button,
+.p-button,
+.p-component {
+    &[class*="success"]:not([class*="outlined"]) {
+        background-color: var(--p-primary-color, #667eea) !important;
+        border-color: var(--p-primary-color, #667eea) !important;
+    }
+}
+
+// Ultimate global override for carousel navigation - highest specificity
+html body .p-carousel .p-carousel-prev-button,
+html body .p-carousel .p-carousel-next-button,
+html body .p-carousel .p-carousel-prev,
+html body .p-carousel .p-carousel-next,
+html body .p-carousel button.p-carousel-prev,
+html body .p-carousel button.p-carousel-next,
+html body .p-carousel .p-button.p-carousel-prev,
+html body .p-carousel .p-button.p-carousel-next,
+html body .p-carousel [class*="carousel-prev"],
+html body .p-carousel [class*="carousel-next"],
+.p-carousel-prev-button,
+.p-carousel-next-button {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 50% !important;
+    color: #667eea !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    
+    &:hover:not(:disabled) {
+        background: #667eea !important;
+        background-color: #667eea !important;
+        border-color: #667eea !important;
+        color: white !important;
+    }
+    
+    &:disabled {
+        opacity: 0.4 !important;
+        background: #f8f9fa !important;
+        background-color: #f8f9fa !important;
+    }
+    
+    * {
+        color: inherit !important;
+        fill: currentColor !important;
+    }
+}
+
+// Force SVG icons inside carousel buttons to use purple - ultimate override
+html body .p-carousel .p-carousel-prev-button svg,
+html body .p-carousel .p-carousel-next-button svg,
+html body .p-carousel .p-carousel-prev svg,
+html body .p-carousel .p-carousel-next svg,
+html body .p-carousel button svg,
+.p-carousel-prev-button svg,
+.p-carousel-next-button svg,
+.p-carousel svg.p-icon,
+.p-carousel .p-icon {
+    color: #667eea !important;
+    fill: #667eea !important;
+    stroke: #667eea !important;
+}
+
+html body .p-carousel .p-carousel-prev-button svg path,
+html body .p-carousel .p-carousel-next-button svg path,
+html body .p-carousel .p-carousel-prev svg path,
+html body .p-carousel .p-carousel-next svg path,
+.p-carousel-prev-button svg path,
+.p-carousel-next-button svg path,
+.p-carousel svg.p-icon path,
+.p-carousel .p-icon path {
+    fill: #667eea !important;
+    stroke: #667eea !important;
+}
+
+// Hover state for SVG icons
+html body .p-carousel .p-carousel-prev-button:hover svg,
+html body .p-carousel .p-carousel-next-button:hover svg,
+html body .p-carousel .p-carousel-prev:hover svg,
+html body .p-carousel .p-carousel-next:hover svg,
+.p-carousel-prev-button:hover svg,
+.p-carousel-next-button:hover svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+html body .p-carousel .p-carousel-prev-button:hover svg path,
+html body .p-carousel .p-carousel-next-button:hover svg path,
+html body .p-carousel .p-carousel-prev:hover svg path,
+html body .p-carousel .p-carousel-next:hover svg path,
+.p-carousel-prev-button:hover svg path,
+.p-carousel-next-button:hover svg path {
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+// Featured Products carousel on MOBILE only – theme-consistent arrows, no green
+@media (max-width: 768px) {
+    html body .products-section .p-carousel.featured-mobile-carousel .p-carousel-prev-button,
+    html body .products-section .p-carousel.featured-mobile-carousel .p-carousel-next-button,
+    html body .products-section .p-carousel.featured-mobile-carousel .p-carousel-prev,
+    html body .products-section .p-carousel.featured-mobile-carousel .p-carousel-next,
+    html body .products-section .products-carousel-mobile .p-carousel .p-carousel-prev-button,
+    html body .products-section .products-carousel-mobile .p-carousel .p-carousel-next-button,
+    .products-section .p-carousel.featured-mobile-carousel .p-carousel-prev-button,
+    .products-section .p-carousel.featured-mobile-carousel .p-carousel-next-button,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-prev-button,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-next-button {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border: 1px solid rgba(102, 126, 234, 0.25) !important;
+        border-radius: 50% !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+        color: #667eea !important;
+
+        &:hover:not(:disabled) {
+            background: rgba(102, 126, 234, 0.1) !important;
+            background-color: rgba(102, 126, 234, 0.1) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            color: #667eea !important;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12) !important;
+        }
+    }
+    .products-section .p-carousel.featured-mobile-carousel .p-carousel-prev-button svg,
+    .products-section .p-carousel.featured-mobile-carousel .p-carousel-next-button svg,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-prev-button svg,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-next-button svg {
+        fill: #667eea !important;
+        stroke: #667eea !important;
+        color: #667eea !important;
+    }
+    .products-section .p-carousel.featured-mobile-carousel .p-carousel-prev-button:hover svg,
+    .products-section .p-carousel.featured-mobile-carousel .p-carousel-next-button:hover svg,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-prev-button:hover svg,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-next-button:hover svg {
+        fill: #667eea !important;
+        stroke: #667eea !important;
+        color: #667eea !important;
+    }
+}
+
+// ============================================================
+// GLOBAL OUTLINED BUTTON OVERRIDE - Fix green outlined buttons
+// ============================================================
+html body .p-button-outlined,
+html body .p-button.p-button-outlined,
+html body button.p-button-outlined,
+html body p-button[outlined] .p-button,
+html body p-button[outlined="true"] .p-button,
+html body .p-button[outlined],
+html body .p-button[outlined="true"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 2px solid #667eea !important;
+    border-color: #667eea !important;
+    color: #667eea !important;
+    
+    &:hover,
+    &:focus {
+        background: rgba(102, 126, 234, 0.1) !important;
+        background-color: rgba(102, 126, 234, 0.1) !important;
+        border-color: #667eea !important;
+        color: #667eea !important;
+    }
+    
+    .p-button-icon,
+    .p-icon,
+    svg,
+    i {
+        color: #667eea !important;
+        fill: #667eea !important;
+    }
+}
+
+// Do not use green for primary CTAs; use primary/gradient. Success = alerts only.
+// Override any success/green styled buttons globally to theme gradient
+html body .p-button-success,
+html body .p-button.p-button-success,
+html body button.p-button-success,
+html body p-button[severity="success"] .p-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+    color: white !important;
+    
+    &:hover {
+        background: linear-gradient(135deg, #5a72d9 0%, #6a4190 100%) !important;
+    }
+}

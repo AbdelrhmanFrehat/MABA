@@ -1,0 +1,198 @@
+// Electronics Store Animations
+
+// Fade In Animation
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+// Slide Up Animation
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Slide Down Animation
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Scale In Animation
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+// Pulse Animation
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+// Glow Animation
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(0, 102, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 102, 255, 0.6), 0 0 30px rgba(0, 102, 255, 0.4);
+    }
+}
+
+// Float Animation
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+// Rotate Animation
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// Circuit Lines Animation
+@keyframes circuitMove {
+    0% {
+        stroke-dashoffset: 0;
+    }
+    100% {
+        stroke-dashoffset: 100;
+    }
+}
+
+// Shimmer Loading Animation
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+// Utility Classes
+.animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+}
+
+.animate-slide-down {
+    animation: slideDown 0.6s ease-out;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.4s ease-out;
+}
+
+.animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+// Staggered Animation Delays
+.animate-delay-1 {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-2 {
+    animation-delay: 0.2s;
+}
+
+.animate-delay-3 {
+    animation-delay: 0.3s;
+}
+
+.animate-delay-4 {
+    animation-delay: 0.4s;
+}
+
+.animate-delay-5 {
+    animation-delay: 0.5s;
+}
+
+// Hover Effects
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    
+    &:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--tech-shadow-lg);
+    }
+}
+
+.hover-glow {
+    transition: box-shadow 0.3s ease;
+    
+    &:hover {
+        box-shadow: var(--tech-glow);
+    }
+}
+
+.hover-scale {
+    transition: transform 0.3s ease;
+    
+    &:hover {
+        transform: scale(1.05);
+    }
+}
+
+// Loading Skeleton
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--tech-bg-secondary) 0%,
+        var(--tech-bg-tertiary) 50%,
+        var(--tech-bg-secondary) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 4px;
+}

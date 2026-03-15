@@ -1,0 +1,187 @@
+// =============================================================================
+// Featured Products – MOBILE overrides (loads last to beat PrimeNG/theme)
+// Target: arrows (no green), card size, dots, swipe hint, CTA.
+// =============================================================================
+
+@media (max-width: 768px) {
+    // Section container – one clean card, radius 20px, subtle
+    .products-section .featured-section-wrapper {
+        padding: 1.5rem 1rem !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(102, 126, 234, 0.08) !important;
+        box-shadow: 0 2px 16px rgba(102, 126, 234, 0.06) !important;
+    }
+
+    // Arrows: any nav button inside Featured Products mobile carousel – force theme style (no green)
+    .products-section .products-carousel-mobile .p-carousel-prev-button,
+    .products-section .products-carousel-mobile .p-carousel-next-button,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-prev-button,
+    .products-section .products-carousel-mobile .p-carousel .p-carousel-next-button,
+    .products-section .products-carousel-mobile p-button.p-carousel-prev-button .p-button,
+    .products-section .products-carousel-mobile p-button.p-carousel-next-button .p-button,
+    .products-section .featured-mobile-carousel .p-carousel-prev-button,
+    .products-section .featured-mobile-carousel .p-carousel-next-button,
+    .products-section p-carousel.featured-mobile-carousel .p-carousel-prev-button,
+    .products-section p-carousel.featured-mobile-carousel .p-carousel-next-button,
+    .products-section .products-carousel-mobile .p-carousel-prev-button .p-button,
+    .products-section .products-carousel-mobile .p-carousel-next-button .p-button,
+    .products-section .featured-mobile-carousel .p-carousel-prev-button .p-button,
+    .products-section .featured-mobile-carousel .p-carousel-next-button .p-button {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border: 1px solid rgba(102, 126, 234, 0.25) !important;
+        border-radius: 50% !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+        color: #667eea !important;
+
+        &:hover:not(:disabled) {
+            background: rgba(102, 126, 234, 0.1) !important;
+            background-color: rgba(102, 126, 234, 0.1) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            color: #667eea !important;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12) !important;
+        }
+
+        svg, .p-icon, path, i {
+            color: #667eea !important;
+            fill: #667eea !important;
+            stroke: #667eea !important;
+        }
+        &:hover:not(:disabled) svg,
+        &:hover:not(:disabled) .p-icon,
+        &:hover:not(:disabled) path,
+        &:hover:not(:disabled) i {
+            color: #667eea !important;
+            fill: #667eea !important;
+            stroke: #667eea !important;
+        }
+    }
+
+    // Product card – no top padding so image connects to card; content padding unchanged
+    .products-section .products-carousel-mobile .mobile-card {
+        padding-top: 0 !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-link {
+        display: block;
+    }
+
+    // Image container – fills card, light gradient, depth, centered image
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper {
+        width: 100% !important;
+        height: 190px !important;
+        min-height: 190px !important;
+        margin: 0 !important;
+        padding: 16px 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: linear-gradient(180deg, #f8f9fc 0%, #eef1f7 100%) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper img {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+        object-position: center !important;
+    }
+    // Featured badge – top-right of image container
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper .product-badge {
+        position: absolute !important;
+        top: 10px !important;
+        right: 10px !important;
+        left: auto !important;
+    }
+    [dir="rtl"] .products-section .products-carousel-mobile .mobile-card .product-image-wrapper .product-badge {
+        right: auto !important;
+        left: 10px !important;
+    }
+    // Placeholder state (missing/broken image) – lighter background, subtle icon, centered
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper.product-image-placeholder {
+        background: linear-gradient(180deg, #f5f6fa 0%, #e8eaf0 100%) !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper .product-image-placeholder-icon {
+        display: none !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper.product-image-placeholder .product-image-placeholder-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: absolute !important;
+        inset: 0 !important;
+        font-size: 2.5rem !important;
+        color: rgba(102, 126, 234, 0.2) !important;
+        pointer-events: none !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-image-wrapper.product-image-placeholder img {
+        opacity: 0.4 !important;
+    }
+
+    .products-section .products-carousel-mobile .mobile-card .product-content {
+        padding: 0.75rem 1rem !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-content h3 {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.35rem !important;
+        min-height: 2.4em !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-rating {
+        margin-bottom: 0.4rem !important;
+    }
+    .products-section .products-carousel-mobile .mobile-card .product-price {
+        margin-bottom: 0.5rem !important;
+        font-size: 1.1rem !important;
+    }
+
+    // View Details – small button (not huge pill)
+    .products-section .products-carousel-mobile .product-button-mobile.p-button,
+    .products-section .products-carousel-mobile .product-button-mobile,
+    .products-section .products-carousel-mobile p-button.product-button-mobile .p-button,
+    .products-section .products-carousel-mobile .mobile-card .product-button-mobile.p-button,
+    .products-section .products-carousel-mobile .mobile-card p-button.product-button-mobile .p-button {
+        padding: 0.45rem 0.85rem !important;
+        font-size: 0.85rem !important;
+        border-radius: 10px !important;
+    }
+
+    // Dots – smaller
+    .products-section .products-carousel-mobile .p-carousel-indicator-button,
+    .products-section .products-carousel-mobile .p-carousel-indicator button {
+        width: 8px !important;
+        height: 8px !important;
+    }
+    .products-section .products-carousel-mobile .p-carousel-indicator.p-carousel-indicator-active .p-carousel-indicator-button,
+    .products-section .products-carousel-mobile .p-carousel-indicator.p-highlight button {
+        width: 14px !important;
+        border-radius: 4px !important;
+    }
+
+    // Swipe hint – very subtle
+    .products-section .carousel-swipe-hint {
+        font-size: 0.75rem !important;
+        color: #9ca3af !important;
+        opacity: 0.6 !important;
+        margin-top: 0.5rem !important;
+    }
+
+    // Browse Products CTA – closer, slightly smaller
+    .products-section .browse-products-cta {
+        margin-top: 1.25rem !important;
+        padding-top: 0.5rem !important;
+    }
+    .products-section .browse-products-btn.p-button,
+    .products-section p-button.browse-products-btn .p-button {
+        padding: 0.75rem 1.75rem !important;
+        font-size: 0.95rem !important;
+        border-radius: 12px !important;
+    }
+}

@@ -1,0 +1,42 @@
+// =============================================================================
+// THEME TOKENS — Single source for primary gradient, surfaces, radius, shadow
+// Do NOT use green for primary CTAs; use --gradient-primary or --color-primary.
+// Green/success is only for success states (alerts, toasts, status labels).
+// =============================================================================
+
+:root {
+    // Primary (purple/blue gradient — use for main CTAs, headers, highlights)
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-dark: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    --color-primary: #667eea;
+    --color-primary-dark: #5a67d8;
+
+    // Surfaces & border (align with PrimeNG where possible)
+    --surface-card: var(--p-content-background, #fff);
+    --surface-border: var(--p-content-border-color, #e9ecef);
+
+    // Main card / section consistency (target 18–24px for cards)
+    --radius-card: 20px;
+    --radius-button: 12px;
+    --radius-chip: 12px;
+    --radius-small: 8px;
+
+    // Soft shadow for cards
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+    // Section spacing
+    --spacing-section: 2rem;
+    --spacing-section-lg: 4rem;
+
+    // Admin panel (dialogs, forms, tables) — MABA theme consistent
+    --admin-dialog-max-width: 720px;
+    --admin-dialog-body-padding: 24px;
+    --admin-dialog-footer-padding: 1rem 1.5rem;
+    --admin-form-gap: 1rem;
+    --admin-form-label-color: var(--p-text-color, #374151);
+    --admin-table-row-height: 3rem;
+    --admin-action-btn-size: 2.25rem;
+    --admin-radius: var(--radius-card, 12px);
+    --admin-shadow: var(--shadow-soft, 0 4px 20px rgba(0, 0, 0, 0.06));
+}

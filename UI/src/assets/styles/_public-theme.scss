@@ -1,0 +1,33 @@
+// =============================================================================
+// Public app theme tokens (purple/blue gradient, industrial minimal)
+// Use these vars in public feature components for consistency.
+// DO NOT use green for primary CTAs; reserve green for success alerts only.
+// =============================================================================
+
+:root {
+  // Primary gradient (purple/blue) - use for primary buttons, hero, accents
+  --public-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --public-gradient-dark: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  --public-color-primary: #667eea;
+  --public-color-primary-dark: #5a67d8;
+
+  // Surfaces & border
+  --public-surface-card: #ffffff;
+  --public-border-color: rgba(0, 0, 0, 0.08);
+  --public-border-light: rgba(0, 0, 0, 0.06);
+
+  // Radius (main cards 18–24px; small elements 8–12px)
+  --public-radius-card: 20px;
+  --public-radius-pill: 50px;
+  --public-radius-input: 10px;
+
+  // Soft shadows (industrial minimal)
+  --public-shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --public-shadow-card-hover: 0 8px 28px rgba(0, 0, 0, 0.08);
+
+  // Spacing rhythm (section padding, gaps)
+  --public-section-padding: 2rem;
+  --public-section-padding-lg: 4rem;
+  --public-gap-section: 1.5rem;
+  --public-gap-tight: 0.75rem;
+}
