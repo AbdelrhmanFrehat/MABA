@@ -86,20 +86,20 @@ jobs:
           script: |
             # Install serve globally if not installed
             if ! command -v serve &> /dev/null; then
-              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S npm install -g serve
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' npm install -g serve
             fi
             
             # Open ports in firewall
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S ufw allow 9087/tcp comment 'MABA Frontend' 2>/dev/null || true
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S ufw allow 9090/tcp comment 'MABA Backend' 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' ufw allow 9087/tcp comment 'MABA Frontend' 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' ufw allow 9090/tcp comment 'MABA Backend' 2>/dev/null || true
             
             # Stop old service if exists
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl stop maba-frontend.service 2>/dev/null || true
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl unmask maba-frontend.service 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl stop maba-frontend.service 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl unmask maba-frontend.service 2>/dev/null || true
             
             # Create systemd service file
             SERVE_PATH=$(which serve || echo /usr/bin/serve)
-            cat > /tmp/maba-frontend.service << 'EOFSERVICE'
+            cat > /tmp/maba-frontend.service << EOFSERVICE
             [Unit]
             Description=MABA Frontend Service
             After=network.target
@@ -120,15 +120,12 @@ jobs:
             WantedBy=multi-user.target
             EOFSERVICE
             
-            # Replace SERVE_PATH in the file
-            sed -i "s|\${SERVE_PATH}|${SERVE_PATH}|g" /tmp/maba-frontend.service
-            
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S cp /tmp/maba-frontend.service /etc/systemd/system/maba-frontend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' cp /tmp/maba-frontend.service /etc/systemd/system/maba-frontend.service
             rm -f /tmp/maba-frontend.service
             
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl daemon-reload
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl enable maba-frontend.service
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl restart maba-frontend.service || echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl start maba-frontend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl daemon-reload
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl enable maba-frontend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl restart maba-frontend.service || echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl start maba-frontend.service
 
   deploy-backend:
     name: Deploy Backend
@@ -213,29 +210,27 @@ jobs:
             chown -R abd:abd /home/abd/WebSites/MABA/publish
             
             # Stop old service if exists
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl stop maba-backend.service 2>/dev/null || true
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl unmask maba-backend.service 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl stop maba-backend.service 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl unmask maba-backend.service 2>/dev/null || true
             
             # Create systemd service file
             DOTNET_PATH=$(which dotnet || echo /usr/bin/dotnet)
-            cat > /tmp/maba-backend.service << 'EOFSERVICE'
+            cat > /tmp/maba-backend.service << EOFSERVICE
             [Unit]
             Description=MABA Backend API Service
             After=network.target
 
             [Service]
-            Type=notify
+            Type=simple
             User=abd
             Group=abd
             WorkingDirectory=/home/abd/WebSites/MABA/publish
             Environment=ASPNETCORE_ENVIRONMENT=Production
             Environment=ASPNETCORE_URLS=http://0.0.0.0:9090
             Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
-            ExecStart=${DOTNET_PATH} Maba.Api.dll
+            ExecStart=${DOTNET_PATH} Maba.Api.dll --urls=http://0.0.0.0:9090
             Restart=always
             RestartSec=10
-            KillSignal=SIGINT
-            SyslogIdentifier=maba-backend
             StandardOutput=journal
             StandardError=journal
 
@@ -243,15 +238,12 @@ jobs:
             WantedBy=multi-user.target
             EOFSERVICE
             
-            # Replace DOTNET_PATH in the file
-            sed -i "s|\${DOTNET_PATH}|${DOTNET_PATH}|g" /tmp/maba-backend.service
-            
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S cp /tmp/maba-backend.service /etc/systemd/system/maba-backend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' cp /tmp/maba-backend.service /etc/systemd/system/maba-backend.service
             rm -f /tmp/maba-backend.service
             
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl daemon-reload
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl enable maba-backend.service
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl restart maba-backend.service || echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl start maba-backend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl daemon-reload
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl enable maba-backend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl restart maba-backend.service || echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl start maba-backend.service
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
@@ -265,10 +257,10 @@ jobs:
             sleep 10
             
             echo "Checking backend service status..."
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl status maba-backend.service --no-pager || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl status maba-backend.service --no-pager || true
             
             echo "Checking frontend service status..."
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S systemctl status maba-frontend.service --no-pager || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl status maba-frontend.service --no-pager || true
             
             echo "Testing backend endpoint..."
             curl -f http://localhost:9090/swagger/index.html || curl -f http://localhost:9090/api/health || curl -f http://localhost:9090 || echo "⚠️  Backend health check failed"
