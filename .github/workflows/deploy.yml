@@ -146,16 +146,11 @@ jobs:
         working-directory: ./API
         run: dotnet restore --runtime linux-x64
 
-      - name: Build backend
-        working-directory: ./API/Maba.Api
-        run: dotnet build --configuration Release --no-restore
-
       - name: Publish backend for Linux
         working-directory: ./API/Maba.Api
         run: |
           dotnet publish \
             --configuration Release \
-            --no-build \
             --runtime linux-x64 \
             --self-contained false \
             --output ./publish-linux
