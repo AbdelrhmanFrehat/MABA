@@ -23,8 +23,9 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => 
             provider.GetRequiredService<ApplicationDbContext>());
 
-        // Register file storage service
+        // Register file storage service & media service
         services.AddScoped<Maba.Application.Common.Interfaces.IFileStorageService, Services.LocalFileStorageService>();
+        services.AddScoped<Maba.Application.Common.Interfaces.IMediaService, Services.MediaService>();
 
         // Register AI service
         var openAiSection = configuration.GetSection("OpenAi");

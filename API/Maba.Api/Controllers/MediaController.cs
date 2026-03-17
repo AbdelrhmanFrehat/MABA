@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Media.Commands;
 using Maba.Application.Features.Media.DTOs;
 using Maba.Application.Features.Media.Queries;
@@ -14,10 +15,12 @@ namespace Maba.Api.Controllers;
 public class MediaController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IMediaService _mediaService;
 
-    public MediaController(IMediator mediator)
+    public MediaController(IMediator mediator, IMediaService mediaService)
     {
         _mediator = mediator;
+        _mediaService = mediaService;
     }
 
     [HttpPost("upload")]
@@ -55,6 +58,29 @@ public class MediaController : ControllerBase
         var query = new GetMediaByIdQuery { Id = id };
         var result = await _mediator.Send(query);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns the binary content of a media asset by id.
+    /// This endpoint can be used by the frontend everywhere instead of static file URLs.
+    /// </summary>
+    [HttpGet("{id:guid}/content")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetMediaContent(Guid id, CancellationToken cancellationToken)
+    {
+        var streamResult = await _mediaService.GetStreamAsync(id, cancellationToken);
+        if (streamResult is null)
+        {
+            return NotFound();
+        }
+
+        // TODO: Add finer-grained authorization for non-public media (owner/admin/etc.).
+        if (!streamResult.IsPublic && !User.Identity?.IsAuthenticated == true)
+        {
+            return Unauthorized();
+        }
+
+        return File(streamResult.Stream, streamResult.ContentType, streamResult.FileName);
     }
 
     [HttpPut("{id}")]
