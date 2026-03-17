@@ -200,6 +200,16 @@ jobs:
                 echo "⚠️  Warning: appsettings.json not found!"
               fi
             fi
+
+            # Ensure jq is installed for safe JSON editing
+            if ! command -v jq &> /dev/null; then
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' apt-get update -y
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' apt-get install -y jq
+            fi
+
+            # Force the desired DefaultConnection on the server
+            jq '.ConnectionStrings.DefaultConnection = "Server=localhost,1433;Database=MabaDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;"' \
+              appsettings.json > appsettings.tmp && mv appsettings.tmp appsettings.json
             
             # Ensure wwwroot directory exists
             mkdir -p wwwroot
