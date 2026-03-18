@@ -1,5 +1,7 @@
 export const environment = {
     production: false,
-     //apiUrl: 'http://localhost:5000/api/v1'
-    apiUrl: 'https://api.mabasol.com/api/v1'
+    // Backend API base URL (local development)
+    apiUrl: 'http://localhost:5000/api/v1',
+    // Base URL for static assets (/uploads/...) in development
+    imageBaseUrl: 'http://localhost:5000'
 };

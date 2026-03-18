@@ -18,6 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SliderModule } from 'primeng/slider';
 import { LanguageService } from '../../../shared/services/language.service';
+import { MediaUrlService } from '../../../shared/services/media-url.service';
 import { CatalogApiService } from '../../../shared/services/catalog-api.service';
 import { ItemsApiService } from '../../../shared/services/items-api.service';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
@@ -1611,7 +1612,12 @@ export class LaserEngravingLandingComponent implements OnInit {
     }
 
     getItemImage(item: Item): string {
-        return item.primaryImageUrl || (item.mediaAssets && (item.mediaAssets as any)[0]?.fileUrl) || 'assets/img/defult.png';
+        const mediaUrlService = inject(MediaUrlService);
+        const raw =
+            item.primaryImageUrl ||
+            (item.mediaAssets && (item.mediaAssets as any)[0]?.fileUrl) ||
+            null;
+        return mediaUrlService.getUrl(raw ?? '');
     }
 
     getItemName(item: Item): string {

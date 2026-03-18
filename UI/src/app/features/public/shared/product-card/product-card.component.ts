@@ -10,7 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { LanguageService } from '../../../../shared/services/language.service';
 import { Item } from '../../../../shared/models/item.model';
-import { environment } from '../../../../../environments/environment';
+import { MediaUrlService } from '../../../../shared/services/media-url.service';
 
 @Component({
     selector: 'app-product-card',
@@ -385,7 +385,10 @@ export class ProductCardComponent {
     @Output() quickView = new EventEmitter<Item>();
     @Output() addToCart = new EventEmitter<Item>();
 
-    constructor(public languageService: LanguageService) {}
+    constructor(
+        public languageService: LanguageService,
+        private mediaUrl: MediaUrlService
+    ) {}
 
     get productName(): string {
         return this.languageService.getLocalizedName(this.product);
@@ -421,12 +424,7 @@ export class ProductCardComponent {
     }
 
     private getFullImageUrl(url: string): string {
-        if (!url) return 'assets/img/defult.png';
-        if (url.startsWith('http')) return url;
-        // Get base URL from environment
-        const apiUrl = environment.apiUrl || 'http://localhost:5153/api/v1';
-        const baseUrl = apiUrl.replace('/api/v1', '').replace('/api', '');
-        return `${baseUrl}${url}`;
+        return this.mediaUrl.getUrl(url);
     }
 
     get isOutOfStock(): boolean {
