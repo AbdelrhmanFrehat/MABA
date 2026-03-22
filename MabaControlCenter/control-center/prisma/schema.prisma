@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model UserCache {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String
+  orgId     String
+  email     String
+  token     String
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+}
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model License {
+  id           String   @id @default(cuid())
+  orgId        String
+  moduleId     String
+  deviceType   String
+  status       String
+  expiresAt    DateTime
+  updatedAt    DateTime @updatedAt
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  orgId       String
+  moduleId    String
+  deviceType  String
+  name        String
+  status      String
+  lastSeenAt  DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+model ModuleInstall {
+  id            String   @id @default(cuid())
+  moduleId      String
+  version       String
+  installedAt   DateTime @default(now())
+  enabled       Boolean  @default(true)
+  minCoreVersion String
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  moduleId    String
+  deviceType  String
+  name        String
+  latestVersion Int
+  updatedAt   DateTime @updatedAt
+}
+
+model JobVersion {
+  id        String   @id @default(cuid())
+  jobId     String
+  version   Int
+  definition Json
+  createdAt DateTime @default(now())
+}
+
+model ConfigTemplate {
+  id         String   @id @default(cuid())
+  moduleId   String
+  deviceType String
+  name       String
+  schema     Json
+  updatedAt  DateTime @updatedAt
+}
+
+model TelemetryQueueItem {
+  id        String   @id @default(cuid())
+  payload   Json
+  createdAt DateTime @default(now())
+  sentAt    DateTime?
+}
+
+model SyncState {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  lastVersion Int
+  updatedAt DateTime @updatedAt
+}

@@ -10,7 +10,6 @@ import { CatalogApiService } from '../../../shared/services/catalog-api.service'
 import { ItemsApiService } from '../../../shared/services/items-api.service';
 import { CmsApiService } from '../../../shared/services/cms-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
-import { MediaUrlService } from '../../../shared/services/media-url.service';
 import { Category } from '../../../shared/models/catalog.model';
 import { Item } from '../../../shared/models/item.model';
 import { HomePageContent, Banner, FeaturedCategory, FeaturedItem, Testimonial } from '../../../shared/models/cms.model';
@@ -2531,7 +2530,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private cmsApi = inject(CmsApiService);
     private heroTickerApi = inject(HeroTickerApiService);
     public languageService = inject(LanguageService);
-    private mediaUrlService = inject(MediaUrlService);
     showLearnMoreDialog = false;
     private elementRef = inject(ElementRef<HTMLElement>);
     private intersectionObserver: IntersectionObserver | null = null;
@@ -2956,7 +2954,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private getFullImageUrl(url: string): string {
-        return this.mediaUrlService.getUrl(url);
+        if (!url) return 'assets/img/defult.png';
+        if (url.startsWith('http')) return url;
+        const apiUrl = environment.apiUrl || 'http://localhost:5000/api/v1';
+        const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '') || '';
+        const path = url.startsWith('/') ? url : '/' + url;
+        return baseUrl ? `${baseUrl}${path}` : url;
     }
 
     getTestimonialName(testimonial: Testimonial): string {

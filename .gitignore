@@ -1,72 +1,36 @@
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
+# Dependencies (never commit — includes Electron ~200MB+ binaries)
+**/node_modules/
 
-# Visual Studio cache/options directory
-.vs/
+# Electron / build outputs
+**/dist/
+**/out/
+**/release/
+**/.vite/
 
-# Visual Studio Code
-.vscode/
-
-# User-specific files
-*.rsuser
-*.suo
+# .NET
+**/bin/
+**/obj/
 *.user
-*.userosscache
-*.sln.docstates
+*.suo
 
-# Build results
-publish/
-publish-linux/
-publish/backend/
-publish/backend-linux/
-publish/frontend/
-
-# Node modules
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Angular
-dist/
-.angular/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# IDE
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# OS / IDE
 .DS_Store
 Thumbs.db
+.vs/
+.idea/
 
-# Logs
-logs/
+# Logs & local env
 *.log
+.env
+.env.*
 
-# Secrets
-appsettings.Production.json
-appsettings.Development.json
+# Local databases / caches
+*.db
+*.sqlite
 
-# Backup files
-*.bak
-*.backup
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Package manager locks optional (keep lockfiles if you want reproducible CI)
+# Uncomment if needed:
+# package-lock.json

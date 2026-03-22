@@ -19,6 +19,7 @@ using Maba.Domain.Faq;
 using Maba.Domain.HeroTicker;
 using Maba.Domain.Design;
 using Maba.Domain.DesignCad;
+using Maba.Domain.ControlCenter;
 using Maba.Infrastructure.Data.Configurations;
 
 namespace Maba.Infrastructure.Data;
@@ -153,6 +154,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    // Control Center
+    public DbSet<ControlCenterInstance> ControlCenterInstances => Set<ControlCenterInstance>();
+    public DbSet<CcDevice> CcDevices => Set<CcDevice>();
+    public DbSet<CcJobTemplate> CcJobTemplates => Set<CcJobTemplate>();
+    public DbSet<CcJob> CcJobs => Set<CcJob>();
+    public DbSet<CcCommand> CcCommands => Set<CcCommand>();
+    public DbSet<CcTelemetryRecord> CcTelemetryRecords => Set<CcTelemetryRecord>();
+    public DbSet<CcAuditEvent> CcAuditEvents => Set<CcAuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

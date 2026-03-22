@@ -1,0 +1,17 @@
+---
+description: After code changes, close and reopen the Maba Control Center app
+alwaysApply: true
+---
+
+# App restart after changes
+
+When you make any code or asset change to this project:
+
+1. **Close** any running instance of the app:
+   - Kill process `MabaControlCenter` if present.
+   - Optionally stop any `dotnet` process that is hosting this app (e.g. by matching window title or by being the one that was launched from this project).
+
+2. **Open** the app again:
+   - From the project root: `dotnet run` (run in background so the window can be used).
+
+Do this yourself as part of the same change; do not ask the user to restart manually.

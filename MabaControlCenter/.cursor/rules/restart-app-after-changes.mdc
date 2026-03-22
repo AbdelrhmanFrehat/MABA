@@ -1,0 +1,17 @@
+---
+description: Restart MabaControlCenter after code changes so the user can see updates
+alwaysApply: true
+---
+
+# Restart app after changes
+
+After making code or XAML changes to MabaControlCenter:
+
+1. Close any running instance: `Get-Process -Name "MabaControlCenter" -ErrorAction SilentlyContinue | Stop-Process -Force`
+2. Wait 1 second so the process fully exits
+3. Start the app: `cd C:\Users\PC\Desktop\MabaControlCenter; dotnet run`
+4. Run in the background so the window opens and the user can test
+
+Use a single command, e.g.:
+`Get-Process -Name "MabaControlCenter" -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 1; cd C:\Users\PC\Desktop\MabaControlCenter; dotnet run`
+with `is_background: true` so the app stays open.

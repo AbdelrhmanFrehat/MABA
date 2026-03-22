@@ -11,7 +11,7 @@ import { TagModule } from 'primeng/tag';
 import { GalleriaModule } from 'primeng/galleria';
 import { LanguageService } from '../../../../shared/services/language.service';
 import { Item } from '../../../../shared/models/item.model';
-import { MediaUrlService } from '../../../../shared/services/media-url.service';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
     selector: 'app-product-quick-view',
@@ -232,7 +232,6 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     ];
 
     languageService = inject(LanguageService);
-    private mediaUrl = inject(MediaUrlService);
 
     ngOnInit() {
         if (this.product) {
@@ -280,7 +279,11 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     }
 
     private getFullImageUrl(url: string): string {
-        return this.mediaUrl.getUrl(url);
+        if (!url?.trim()) return 'assets/img/defult.png';
+        if (url.startsWith('http')) return url;
+        const apiUrl = environment.apiUrl || '';
+        const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '') || '';
+        return baseUrl ? `${baseUrl}${url.startsWith('/') ? url : '/' + url}` : url;
     }
 
     get isInStock(): boolean {
