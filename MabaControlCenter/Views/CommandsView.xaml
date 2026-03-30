@@ -1,0 +1,53 @@
+<UserControl x:Class="MabaControlCenter.Views.CommandsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDarkBrush}">
+    <StackPanel Margin="24" VerticalAlignment="Stretch">
+        <TextBlock Text="{Binding Source={StaticResource Labels}, Path=Page_Commands_Title}" FontSize="24" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+        <TextBlock Text="{Binding Source={StaticResource Labels}, Path=Page_Commands_Placeholder}" FontSize="14"
+                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,24"/>
+
+        <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{Binding CommandText, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="8,6" Margin="0,0,8,0" MinHeight="28"
+                     Background="{DynamicResource BackgroundLightBrush}"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     BorderBrush="{DynamicResource BorderBrush}"
+                     VerticalContentAlignment="Center"
+                     AcceptsReturn="False"
+                     KeyDown="CommandTextBox_KeyDown"/>
+            <Button Grid.Column="1" Content="{Binding Source={StaticResource Labels}, Path=Button_Send}" Command="{Binding SendCommandCommand}"
+                    Padding="20,8" MinWidth="80"
+                    Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                    BorderThickness="0" Cursor="Hand"/>
+        </Grid>
+
+        <TextBlock Text="{Binding Source={StaticResource Labels}, Path=Label_Output}" FontSize="14" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+        <Border Background="{DynamicResource BackgroundLightBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" Padding="8" MinHeight="200">
+            <ListBox ItemsSource="{Binding Logs}"
+                     Background="Transparent" BorderThickness="0"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     FontFamily="Consolas" FontSize="13"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss}}" Margin="0,0,12,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding Direction}" Margin="0,0,12,0" MinWidth="60"/>
+                            <TextBlock Text="{Binding Message}"/>
+                            <TextBlock Text="{Binding Status}" Margin="8,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,267 @@
+<UserControl x:Class="MabaControlCenter.Views.DexterCalibrationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDarkBrush}"
+             VerticalAlignment="Top" HorizontalAlignment="Stretch">
+    <UserControl.Resources>
+        <!-- Flat template so disabled ≠ system white chrome -->
+        <Style x:Key="DexterMacroPadSecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource BackgroundMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#1a1f2a"/>
+                                <Setter Property="Foreground" Value="#64748b"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#2d3548"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsEnabled" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#2d3548"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DexterMacroPadAccentButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#2d2650"/>
+                                <Setter Property="Foreground" Value="#64748b"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsEnabled" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Dropdown popup is light-themed; force dark text so items stay readable -->
+        <Style x:Key="DexterMacroPadComboItem" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#0f172a"/>
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Foreground" Value="#ffffff"/>
+                    <Setter Property="Background" Value="#6366f1"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="#64748b"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DexterMacroPadCombo" TargetType="ComboBox">
+            <!-- Closed field uses system light chrome → use dark text so it stays readable -->
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="Foreground" Value="#0f172a"/>
+            <Setter Property="BorderBrush" Value="#94a3b8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource DexterMacroPadComboItem}"/>
+            <Setter Property="ItemTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="#0f172a" FontSize="13"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Resources>
+                <Style TargetType="TextBox">
+                    <Setter Property="Foreground" Value="#0f172a"/>
+                    <Setter Property="CaretBrush" Value="#0f172a"/>
+                    <Setter Property="Background" Value="#ffffff"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="FontSize" Value="13"/>
+                </Style>
+            </Style.Resources>
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,24,24,32" VerticalAlignment="Top" HorizontalAlignment="Center" MaxWidth="1440">
+            <TextBlock Text="Dexter MacroPad Configurator" FontSize="24" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+            <TextBlock Text="Map hardware keys a–p. Connect Dexter below or from Devices."
+                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16"/>
+
+            <Border Visibility="{Binding ShowDexterRequired, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Background="{DynamicResource BackgroundLightBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1" Padding="16" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Dexter device required" FontWeight="SemiBold" FontSize="15"
+                               Foreground="#fbbf24" Margin="0,0,0,8"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12"
+                               Text="Use Find &amp; connect to attach your Dexter from here (same as Devices). Pick the COM port your device uses, then connect."/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="COM port" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,10,0"/>
+                        <ComboBox Style="{StaticResource DexterMacroPadCombo}" ItemsSource="{Binding GatePorts}" SelectedItem="{Binding SelectedGatePort}"
+                                  MinWidth="140" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Refresh ports" Command="{Binding RefreshGatePortsCommand}" Padding="12,8" Margin="0,0,10,0"/>
+                        <Button Style="{StaticResource DexterMacroPadAccentButton}" Content="Find &amp; connect Dexter" Command="{Binding FindAndConnectDexterCommand}" Padding="14,8"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Visibility="{Binding CanUseModule, Converter={StaticResource BoolToVisibilityConverter}}">
+
+                <TextBlock Text="Product version &amp; profile" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                <Border Background="{DynamicResource BackgroundLightBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Text="Dexter version" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource DexterMacroPadCombo}"
+                                      ItemsSource="{Binding ProductVersions}"
+                                      SelectedItem="{Binding SelectedProductVersion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      MinWidth="160"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Text="Profile" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource DexterMacroPadCombo}"
+                                      ItemsSource="{Binding Profiles}"
+                                      SelectedItem="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      MinWidth="160"/>
+                        </StackPanel>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Add profile" Command="{Binding AddProfileCommand}" Padding="10,6" Margin="0,16,8,0"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Delete profile" Command="{Binding DeleteProfileCommand}" Padding="10,6" Margin="0,16,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="MacroPad channel" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                <Border Background="{DynamicResource BackgroundLightBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox Style="{StaticResource DexterMacroPadCombo}" ItemsSource="{Binding MacroPorts}" SelectedItem="{Binding SelectedMacroPort}"
+                                  MinWidth="120" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Refresh" Command="{Binding RefreshPortsCommand}" Padding="12,8" Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource DexterMacroPadAccentButton}" Content="Connect" Command="{Binding ConnectMacroCommand}" Padding="12,8" Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Disconnect" Command="{Binding DisconnectMacroCommand}" Padding="12,8" Margin="0,0,16,0"/>
+                        <TextBlock VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}">
+                            <Run Text="Channel: "/><Run Text="{Binding MacroSerialStatus, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="Actions" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                <Border Background="{DynamicResource BackgroundLightBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                    <WrapPanel>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Load" Command="{Binding LoadConfigCommand}" Padding="12,8" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource DexterMacroPadAccentButton}" Content="Apply" Command="{Binding ApplyConfigCommand}" Padding="12,8" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Save" Command="{Binding SaveConfigCommand}" Padding="12,8" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Defaults" Command="{Binding DefaultsCommand}" Padding="12,8" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Auto A→P" Command="{Binding AutoMapCommand}" Padding="12,8" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource DexterMacroPadSecondaryButton}" Content="Calibrate layout" Command="{Binding CalibrateLayoutCommand}" Padding="12,8" Margin="0,0,0,8"/>
+                    </WrapPanel>
+                </Border>
+
+                <TextBlock Text="Key map (a → p)" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                <ItemsControl ItemsSource="{Binding KeyEntries}" Margin="0,4,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10,8" Margin="4" CornerRadius="6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTargetListen}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                                <Setter Property="Background" Value="#171c2b"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel>
+                                    <TextBlock Margin="0,0,0,6">
+                                        <Run Text="{Binding Label, Mode=OneWay}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <Run Text="  "/>
+                                        <Run Text="{Binding PhysicalIndex}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </TextBlock>
+                                    <TextBox Text="{Binding Mapping, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6" Padding="6,4"
+                                             Background="{DynamicResource BackgroundDarkBrush}"
+                                             Foreground="{DynamicResource TextPrimaryBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}"/>
+                                    <Button Content="{Binding ListenButtonText}"
+                                            Command="{Binding DataContext.ListenForKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Id}"
+                                            Padding="8,6" HorizontalAlignment="Stretch">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource DexterMacroPadSecondaryButton}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsTargetListen}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Module log" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,16,0,6"/>
+                <Border Background="{DynamicResource BackgroundLightBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" Padding="12" MinHeight="100">
+                    <ListBox ItemsSource="{Binding ModuleLogEntries}" Background="Transparent" BorderThickness="0"
+                             Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

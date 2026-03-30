@@ -188,8 +188,7 @@ app.MapGet("/check-email", (IConfiguration config) =>
     return Results.Content(html, "text/html");
 });
 
-// Apply migrations and seed database on startup in Development.
-// In Production/other environments, apply migrations only (no seeding).
+// Apply migrations and seed database on startup (in development)
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -198,14 +197,16 @@ if (app.Environment.IsDevelopment())
     
     try
     {
-        logger.LogInformation("Checking database connection and migrations (Development)...");
+        logger.LogInformation("Checking database connection and migrations...");
         
+        // Check if database exists
         var canConnect = await context.Database.CanConnectAsync();
         if (!canConnect)
         {
             logger.LogInformation("Database does not exist. Creating database and applying migrations...");
         }
         
+        // Get pending migrations
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
         var pendingList = pendingMigrations.ToList();
         
@@ -215,9 +216,11 @@ if (app.Environment.IsDevelopment())
                 pendingList.Count, string.Join(", ", pendingList));
         }
         
+        // Apply all pending migrations (this also creates the database if it doesn't exist)
         await context.Database.MigrateAsync();
         logger.LogInformation("Database is up to date!");
         
+        // Seed the database
         logger.LogInformation("Seeding database...");
         await scope.ServiceProvider.SeedDatabaseAsync();
         logger.LogInformation("Database seeding completed!");
@@ -230,12 +233,14 @@ if (app.Environment.IsDevelopment())
         
         try
         {
+            // Delete and recreate the database
             await context.Database.EnsureDeletedAsync();
             logger.LogInformation("Old database deleted.");
             
             await context.Database.MigrateAsync();
             logger.LogInformation("Database recreated with migrations!");
             
+            // Seed the database
             logger.LogInformation("Seeding database...");
             await scope.ServiceProvider.SeedDatabaseAsync();
             logger.LogInformation("Database seeding completed!");
@@ -249,25 +254,6 @@ if (app.Environment.IsDevelopment())
     {
         logger.LogError(ex, "An error occurred while migrating or seeding the database. " +
             "Please ensure SQL Server is running and accessible.");
-    }
-}
-else
-{
-    // Production/other environments: apply migrations once on startup (no seeding)
-    using var scope = app.Services.CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var context = scope.ServiceProvider.GetRequiredService<Maba.Infrastructure.Data.ApplicationDbContext>();
-
-    try
-    {
-        logger.LogInformation("Applying database migrations on startup (non-development)...");
-        await context.Database.MigrateAsync();
-        logger.LogInformation("Database migrations applied successfully.");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "An error occurred while applying database migrations on startup. " +
-            "Please ensure the connection string is correct and SQL Server is accessible.");
     }
 }
 

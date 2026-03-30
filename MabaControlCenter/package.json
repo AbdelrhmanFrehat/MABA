@@ -1,0 +1,32 @@
+{
+  "name": "maba-control-center-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MABA Control Center monorepo (backend, control-center client, shared types).",
+  "workspaces": [
+    "shared",
+    "backend",
+    "control-center"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:backend dev:client",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:client": "npm --workspace control-center run dev",
+    "build": "npm-run-all build:backend build:client",
+    "build:backend": "npm --workspace backend run build",
+    "build:client": "npm --workspace control-center run build",
+    "test": "npm-run-all test:backend test:client",
+    "test:backend": "npm --workspace backend run test",
+    "test:client": "npm --workspace control-center run test",
+    "lint": "npm-run-all lint:backend lint:client",
+    "lint:backend": "npm --workspace backend run lint",
+    "lint:client": "npm --workspace control-center run lint",
+    "typecheck": "npm-run-all typecheck:backend typecheck:client",
+    "typecheck:backend": "npm --workspace backend run typecheck",
+    "typecheck:client": "npm --workspace control-center run typecheck"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.6.0"
+  }
+}

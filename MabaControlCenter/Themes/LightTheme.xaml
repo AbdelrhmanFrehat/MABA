@@ -1,0 +1,67 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Light theme: light backgrounds, dark text, same key names -->
+    <Color x:Key="BackgroundDark">#FFF5F5F6</Color>
+    <Color x:Key="BackgroundMedium">#FFE8EAED</Color>
+    <Color x:Key="BackgroundLight">#FFFFFFFF</Color>
+    <Color x:Key="SidebarColor">#FFE4E6E9</Color>
+    <Color x:Key="HeaderColor">#FFE8EAED</Color>
+    <Color x:Key="AccentColor">#FF2D8B4C</Color>
+    <Color x:Key="AccentHover">#FF3A9E5C</Color>
+    <Color x:Key="TextPrimary">#FF1A1D21</Color>
+    <Color x:Key="TextSecondary">#FF4B5563</Color>
+    <Color x:Key="TextOnLight">#FF1A1D21</Color>
+    <Color x:Key="BorderColor">#FFD1D5DB</Color>
+    <Color x:Key="ErrorHighlight">#FFFEE2E2</Color>
+
+    <SolidColorBrush x:Key="ErrorHighlightBrush" Color="{StaticResource ErrorHighlight}"/>
+    <SolidColorBrush x:Key="TextOnLightBrush" Color="{StaticResource TextOnLight}"/>
+    <SolidColorBrush x:Key="BackgroundDarkBrush" Color="{StaticResource BackgroundDark}"/>
+    <SolidColorBrush x:Key="BackgroundMediumBrush" Color="{StaticResource BackgroundMedium}"/>
+    <SolidColorBrush x:Key="BackgroundLightBrush" Color="{StaticResource BackgroundLight}"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}"/>
+    <SolidColorBrush x:Key="HeaderBrush" Color="{StaticResource HeaderColor}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHover}"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+
+    <Style x:Key="SidebarNavButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" Background="{TemplateBinding Background}"
+                            BorderThickness="0,0,3,0" BorderBrush="{StaticResource AccentBrush}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center"/>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource BackgroundLightBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SidebarNavButtonSelected" TargetType="Button" BasedOn="{StaticResource SidebarNavButton}">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundLightBrush}"/>
+    </Style>
+
+</ResourceDictionary>

@@ -1,0 +1,4 @@
+CoreXY Drawbot by Minnten on Thingiverse: https://www.thingiverse.com/thing:4715450
+
+Summary:
+Dieser Stiftplotter ist eine Zusammenstellung aus 2 anderen Thingiverse-Projekten, die ich ergänzt und verbunden habe.Als Firmware kommt Klipper auf einem Raspberry Pi in Verbindung mit einem alten Anet-Board zum Einsatz.Auf Nachfrage kann ich gerne meine openSCAD-Files online stellen oder anderweitig Hilfestellung geben.Da leider aktuell die Verlinkung der zugrundeliegenden Thingi-Designs nicht funktioniert, hier die beiden als Links:CubeAnet 8 https://www.thingiverse.com/thing:2830408DrawBot https://www.thingiverse.com/thing:2349232Die Bilder sind bei mir im Orginal übrigens scharf, ich weiß nicht, was Thingiverse mit den Bildern anstellt, dass die so schlecht werden.
