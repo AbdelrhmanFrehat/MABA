@@ -2296,37 +2296,52 @@ type DesignSourceType = 'production' | 'image';
         /* ============ CTA SECTION ============ */
         .cta-section {
             padding: 5rem 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
+                linear-gradient(135deg, #4f60cf 0%, #5d49b3 50%, #6b419b 100%);
         }
 
         .cta-content {
             text-align: center;
             color: white;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         .cta-content h2 {
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
         .cta-content p {
             font-size: 1.2rem;
-            opacity: 0.9;
+            color: rgba(255, 255, 255, 0.92);
             margin-bottom: 2rem;
         }
 
         :host ::ng-deep .cta-button {
-            background: white !important;
-            color: #667eea !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f3f5ff 100%) !important;
+            color: #5f6fe0 !important;
             padding: 1rem 2.5rem !important;
             border-radius: 50px !important;
-            font-weight: 600 !important;
+            font-weight: 700 !important;
             border: none !important;
+            box-shadow: 0 8px 24px rgba(35, 40, 82, 0.25);
+        }
+
+        :host ::ng-deep .cta-button .p-button-label,
+        :host ::ng-deep .cta-button .p-button-icon {
+            color: #5f6fe0 !important;
         }
 
         :host ::ng-deep .cta-button:hover {
-            background: #f1f5f9 !important;
+            background: linear-gradient(135deg, #ffffff 0%, #e9edff 100%) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px rgba(35, 40, 82, 0.32);
         }
 
         /* ============ RESPONSIVE ============ */

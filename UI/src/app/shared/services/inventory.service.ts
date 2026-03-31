@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { InventoryAdjustment, StockMovement } from '../models';
 import { PaginationParams, PagedResponse, MovementType, ReferenceType } from '../models/api-response.model';
@@ -96,15 +97,63 @@ export class InventoryService {
         search?: string;
     }): Observable<{ items: any[]; totalCount: number; page: number; pageSize: number; totalPages: number }> {
         let httpParams = new HttpParams();
-        if (params) {
-            Object.keys(params).forEach(key => {
-                const value = params[key as keyof typeof params];
-                if (value !== null && value !== undefined && value !== '') {
-                    httpParams = httpParams.set(key, value.toString());
-                }
-            });
+        const page = params?.page ?? 1;
+        const pageSize = params?.pageSize ?? 10;
+        const stockStatus = params?.stockStatus ?? '';
+
+        httpParams = httpParams
+            .set('pageNumber', page.toString())
+            .set('pageSize', pageSize.toString());
+
+        if (params?.categoryId) {
+            httpParams = httpParams.set('categoryId', params.categoryId);
         }
-        return this.http.get<{ items: any[]; totalCount: number; page: number; pageSize: number; totalPages: number }>(`${environment.apiUrl}/inventory`, { params: httpParams });
+        if (params?.search) {
+            httpParams = httpParams.set('searchTerm', params.search);
+        }
+        if (stockStatus === 'inStock') {
+            httpParams = httpParams.set('inStock', 'true');
+        }
+
+        // Inventory list is sourced from searchable items + embedded inventory payload.
+        return this.http.get<{ items: any[]; totalCount: number; pageNumber: number; pageSize: number; totalPages: number }>(
+            `${environment.apiUrl}/items/search`,
+            { params: httpParams }
+        ).pipe(
+            map((response) => {
+                const sourceItems = response?.items || [];
+                let mappedItems = sourceItems.map((item: any) => {
+                    const inventory = item.inventory || {};
+                    const quantityOnHand = Number(inventory.quantityOnHand ?? 0);
+                    const reorderLevel = Number(inventory.reorderLevel ?? 0);
+                    return {
+                        id: inventory.id || item.id,
+                        itemId: item.id,
+                        quantityOnHand,
+                        reorderLevel,
+                        lastStockInAt: inventory.lastStockInAt,
+                        item
+                    };
+                });
+
+                // "lowStock" and "outOfStock" are derived from item inventory values.
+                if (stockStatus === 'lowStock') {
+                    mappedItems = mappedItems.filter((x: any) => x.quantityOnHand > 0 && x.quantityOnHand <= x.reorderLevel);
+                } else if (stockStatus === 'outOfStock') {
+                    mappedItems = mappedItems.filter((x: any) => x.quantityOnHand <= 0);
+                }
+
+                return {
+                    items: mappedItems,
+                    totalCount: stockStatus ? mappedItems.length : (response?.totalCount ?? mappedItems.length),
+                    page,
+                    pageSize,
+                    totalPages: stockStatus
+                        ? Math.max(1, Math.ceil(mappedItems.length / pageSize))
+                        : (response?.totalPages ?? 1)
+                };
+            })
+        );
     }
 
     adjustInventory(itemId: string, request: UpdateInventoryRequest): Observable<any> {
