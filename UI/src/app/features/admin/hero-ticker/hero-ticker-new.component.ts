@@ -15,6 +15,8 @@ import { MediaApiService } from '../../../shared/services/media-api.service';
 import { environment } from '../../../../environments/environment';
 
 const DEFAULT_IMAGE_MEDIA_TYPE_ID = '00000000-0000-0000-0000-000000000001';
+const HERO_TICKER_TARGET_UPLOAD_BYTES = 1500 * 1024;
+const HERO_TICKER_MAX_DIMENSION = 1920;
 
 @Component({
     selector: 'app-hero-ticker-new',
@@ -130,25 +132,115 @@ export class HeroTickerNewComponent {
         }
         this.uploading = true;
         this.selectedFileName = file.name;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('mediaTypeId', DEFAULT_IMAGE_MEDIA_TYPE_ID);
-        this.mediaApi.uploadMedia(formData).subscribe({
-            next: (media) => {
-                this.imageUrl = media.fileUrl;
-                this.uploading = false;
-                this.selectedFileName = file.name;
-            },
-            error: (err) => {
+        this.prepareImageForUpload(file)
+            .then((preparedFile) => {
+                const formData = new FormData();
+                formData.append('file', preparedFile);
+                formData.append('mediaTypeId', DEFAULT_IMAGE_MEDIA_TYPE_ID);
+                this.mediaApi.uploadMedia(formData).subscribe({
+                    next: (media) => {
+                        this.imageUrl = media.fileUrl;
+                        this.uploading = false;
+                        this.selectedFileName = preparedFile.name;
+                    },
+                    error: (err) => {
+                        this.uploading = false;
+                        this.selectedFileName = '';
+                        const msg = err?.status === 401
+                            ? (this.translate.instant('messages.unauthorized') || 'Please sign in.')
+                            : err?.status === 413
+                                ? 'Image is too large. Please use a smaller image.'
+                                : (err?.error?.message || err?.message || this.translate.instant('common.error'));
+                        this.messageService.add({ severity: 'error', summary: '', detail: String(msg) });
+                    }
+                });
+            })
+            .catch(() => {
                 this.uploading = false;
                 this.selectedFileName = '';
-                const msg = err?.status === 401
-                    ? (this.translate.instant('messages.unauthorized') || 'Please sign in.')
-                    : (err?.error?.message || err?.message || this.translate.instant('common.error'));
-                this.messageService.add({ severity: 'error', summary: '', detail: String(msg) });
-            }
-        });
+                this.messageService.add({ severity: 'error', summary: '', detail: 'Image could not be optimized for upload.' });
+            });
         input.value = '';
+    }
+
+    private async prepareImageForUpload(file: File): Promise<File> {
+        const image = await this.loadImage(file);
+        const { width, height } = this.getScaledDimensions(image.width, image.height, HERO_TICKER_MAX_DIMENSION);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas context not available.');
+        context.drawImage(image, 0, 0, width, height);
+
+        // Always re-encode to keep payload consistently small for strict proxies.
+        let quality = file.size > 5 * 1024 * 1024 ? 0.8 : 0.9;
+        let blob = await this.canvasToBlob(canvas, 'image/webp', quality);
+        while (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES && quality > 0.35) {
+            quality -= 0.1;
+            blob = await this.canvasToBlob(canvas, 'image/webp', quality);
+        }
+
+        if (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES) {
+            const secondPass = document.createElement('canvas');
+            secondPass.width = Math.max(1, Math.round(width * 0.8));
+            secondPass.height = Math.max(1, Math.round(height * 0.8));
+            const secondContext = secondPass.getContext('2d');
+            if (!secondContext) throw new Error('Canvas context not available.');
+            secondContext.drawImage(canvas, 0, 0, secondPass.width, secondPass.height);
+            quality = 0.6;
+            blob = await this.canvasToBlob(secondPass, 'image/webp', quality);
+            while (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES && quality > 0.35) {
+                quality -= 0.1;
+                blob = await this.canvasToBlob(secondPass, 'image/webp', quality);
+            }
+        }
+
+        if (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES) {
+            throw new Error('Image is still too large after compression.');
+        }
+
+        const safeBaseName = (file.name.replace(/\.[^/.]+$/, '') || 'hero-image').slice(0, 80);
+        return new File([blob], `${safeBaseName}.webp`, { type: 'image/webp' });
+    }
+
+    private loadImage(file: File): Promise<HTMLImageElement> {
+        return new Promise((resolve, reject) => {
+            const objectUrl = URL.createObjectURL(file);
+            const image = new Image();
+            image.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            };
+            image.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('Invalid image'));
+            };
+            image.src = objectUrl;
+        });
+    }
+
+    private getScaledDimensions(width: number, height: number, maxDimension: number): { width: number; height: number } {
+        if (width <= maxDimension && height <= maxDimension) {
+            return { width, height };
+        }
+        const ratio = Math.min(maxDimension / width, maxDimension / height);
+        return {
+            width: Math.max(1, Math.round(width * ratio)),
+            height: Math.max(1, Math.round(height * ratio))
+        };
+    }
+
+    private canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    reject(new Error('Failed to encode image.'));
+                    return;
+                }
+                resolve(blob);
+            }, type, quality);
+        });
     }
 
     save() {

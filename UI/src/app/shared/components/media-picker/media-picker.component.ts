@@ -15,8 +15,8 @@ import { MediaApiService } from '../../services/media-api.service';
 import { MediaAsset } from '../../models/media.model';
 
 const DEFAULT_IMAGE_MEDIA_TYPE_ID = '00000000-0000-0000-0000-000000000001';
-const HERO_TICKER_MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-const HERO_TICKER_MAX_DIMENSION = 2560;
+const HERO_TICKER_TARGET_UPLOAD_BYTES = 1500 * 1024;
+const HERO_TICKER_MAX_DIMENSION = 1920;
 
 @Component({
     selector: 'app-media-picker',
@@ -292,10 +292,6 @@ export class MediaPickerComponent implements OnInit {
     }
 
     private async prepareImageForUpload(file: File): Promise<File> {
-        if (file.size <= HERO_TICKER_MAX_UPLOAD_BYTES) {
-            return file;
-        }
-
         const image = await this.loadImage(file);
         const { width, height } = this.getScaledDimensions(image.width, image.height, HERO_TICKER_MAX_DIMENSION);
         const canvas = document.createElement('canvas');
@@ -307,14 +303,31 @@ export class MediaPickerComponent implements OnInit {
         }
         context.drawImage(image, 0, 0, width, height);
 
-        let quality = 0.9;
+        let quality = file.size > 5 * 1024 * 1024 ? 0.8 : 0.9;
         let blob = await this.canvasToBlob(canvas, 'image/webp', quality);
-        while (blob.size > HERO_TICKER_MAX_UPLOAD_BYTES && quality > 0.4) {
+        while (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES && quality > 0.35) {
             quality -= 0.1;
             blob = await this.canvasToBlob(canvas, 'image/webp', quality);
         }
 
-        if (blob.size > HERO_TICKER_MAX_UPLOAD_BYTES) {
+        if (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES) {
+            const secondPass = document.createElement('canvas');
+            secondPass.width = Math.max(1, Math.round(width * 0.8));
+            secondPass.height = Math.max(1, Math.round(height * 0.8));
+            const secondContext = secondPass.getContext('2d');
+            if (!secondContext) {
+                throw new Error('Unable to prepare image upload.');
+            }
+            secondContext.drawImage(canvas, 0, 0, secondPass.width, secondPass.height);
+            quality = 0.6;
+            blob = await this.canvasToBlob(secondPass, 'image/webp', quality);
+            while (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES && quality > 0.35) {
+                quality -= 0.1;
+                blob = await this.canvasToBlob(secondPass, 'image/webp', quality);
+            }
+        }
+
+        if (blob.size > HERO_TICKER_TARGET_UPLOAD_BYTES) {
             throw new Error('Image is too large to upload.');
         }
 
