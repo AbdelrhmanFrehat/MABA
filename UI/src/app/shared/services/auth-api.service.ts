@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { RegisterRequest, LoginRequest, AuthResponse, User } from '../models/auth.model';
+import { RegisterRequest, LoginRequest, AuthResponse, RegisterResponse, User } from '../models/auth.model';
 
 @Injectable({
     providedIn: 'root'
@@ -12,8 +12,8 @@ export class AuthApiService {
 
     constructor(private http: HttpClient) {}
 
-    register(request: RegisterRequest): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.baseUrl}/register`, request);
+    register(request: RegisterRequest): Observable<RegisterResponse> {
+        return this.http.post<RegisterResponse>(`${this.baseUrl}/register`, request);
     }
 
     login(request: LoginRequest): Observable<AuthResponse> {
@@ -30,6 +30,10 @@ export class AuthApiService {
 
     resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
         return this.http.post<{ message: string }>(`${this.baseUrl}/reset-password`, { token, newPassword });
+    }
+
+    resendVerification(email: string): Observable<{ success: boolean; message: string }> {
+        return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/resend-verification`, { email });
     }
 }
 

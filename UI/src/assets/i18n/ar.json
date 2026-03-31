@@ -1635,7 +1635,8 @@
       "email": "البريد الإلكتروني",
       "phone": "الهاتف",
       "roles": "الأدوار",
-      "isActive": "نشط"
+      "isActive": "نشط",
+      "emailConfirmed": "البريد موثق"
     },
     "categories": {
       "title": "الفئات",

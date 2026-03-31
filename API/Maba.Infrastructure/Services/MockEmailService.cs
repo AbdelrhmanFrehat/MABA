@@ -37,4 +37,12 @@ public class MockEmailService : IEmailService
             toEmail);
         return Task.CompletedTask;
     }
+
+    public Task SendPasswordResetAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default)
+    {
+        _logger.LogWarning(
+            "SMTP is not configured (Smtp:Host is empty). Password reset email was NOT sent to {Email}. To send real emails, set Smtp:Host, Smtp:Username, Smtp:Password etc. in User Secrets or appsettings.",
+            toEmail);
+        return Task.CompletedTask;
+    }
 }

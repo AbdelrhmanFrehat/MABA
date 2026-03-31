@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Auth.Commands;
 using Maba.Domain.Users;
@@ -9,10 +10,14 @@ namespace Maba.Application.Features.Auth.Handlers;
 public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
-    public ForgotPasswordCommandHandler(IApplicationDbContext context)
+    public ForgotPasswordCommandHandler(IApplicationDbContext context, IConfiguration configuration, IEmailService emailService)
     {
         _context = context;
+        _configuration = configuration;
+        _emailService = emailService;
     }
 
     public async Task<Unit> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
@@ -34,8 +39,9 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // TODO: Send email with reset link
-        // In production, integrate with email service here
+        var frontendBaseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+        var resetLink = $"{frontendBaseUrl}/auth/reset-password?token={Uri.EscapeDataString(token)}";
+        await _emailService.SendPasswordResetAsync(user.Email, resetLink, cancellationToken);
 
         return Unit.Value;
     }

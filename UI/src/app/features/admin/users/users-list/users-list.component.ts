@@ -186,6 +186,14 @@ export class UsersListComponent implements OnInit {
             falseLabelKey: 'common.no',
             sortable: true
         },
+        {
+            field: 'emailConfirmed',
+            headerKey: 'admin.users.emailConfirmed',
+            type: 'boolean',
+            trueLabelKey: 'common.yes',
+            falseLabelKey: 'common.no',
+            sortable: true
+        },
         { field: 'roles', headerKey: 'admin.users.roles', type: 'custom', sortable: false },
         { field: 'createdAt', headerKey: 'common.createdAt', type: 'date', sortable: true }
     ];

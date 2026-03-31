@@ -90,6 +90,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserD
             Email = userWithRoles.Email,
             Phone = userWithRoles.Phone,
             IsActive = userWithRoles.IsActive,
+            EmailConfirmed = userWithRoles.EmailConfirmed,
             Roles = userWithRoles.UserRoles.Select(ur => ur.Role.Name).ToList(),
             CreatedAt = userWithRoles.CreatedAt,
             UpdatedAt = userWithRoles.UpdatedAt

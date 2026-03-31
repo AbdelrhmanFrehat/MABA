@@ -37,6 +37,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, List<Us
             Email = u.Email,
             Phone = u.Phone,
             IsActive = u.IsActive,
+            EmailConfirmed = u.EmailConfirmed,
             Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList(),
             CreatedAt = u.CreatedAt,
             UpdatedAt = u.UpdatedAt

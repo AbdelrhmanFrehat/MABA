@@ -10,7 +10,6 @@ import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../../shared/services/auth.service';
 import { LanguageService } from '../../../shared/services/language.service';
-import { sanitizeReturnUrl } from '../../../shared/utils/url.utils';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
@@ -438,8 +437,10 @@ export class PublicRegisterComponent {
                     summary: this.languageService.translate('common.success'),
                     detail: this.languageService.translate('auth.registerSuccess')
                 });
-                const rawReturnUrl = this.route.snapshot.queryParams['returnUrl'] as string | undefined;
-                this.router.navigateByUrl(sanitizeReturnUrl(rawReturnUrl));
+                this.loading = false;
+                this.router.navigate(['/auth/check-email'], {
+                    queryParams: { email: formValue.email }
+                });
             },
             error: (error) => {
                 this.loading = false;
@@ -447,4 +448,5 @@ export class PublicRegisterComponent {
             }
         });
     }
+
 }

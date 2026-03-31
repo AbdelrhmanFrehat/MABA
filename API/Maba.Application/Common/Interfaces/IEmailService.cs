@@ -21,4 +21,9 @@ public interface IEmailService
     /// Sends an email verification message with a link. Implementations should not throw on failure; log and return instead.
     /// </summary>
     Task SendEmailVerificationAsync(string toEmail, string verificationLink, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a password reset email message with a reset link.
+    /// </summary>
+    Task SendPasswordResetAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default);
 }

@@ -18,6 +18,11 @@ export interface AuthResponse {
     user: User;
 }
 
+export interface RegisterResponse {
+    message: string;
+    checkEmailUrl?: string;
+}
+
 export interface User {
     id: string; // GUID
     fullName: string;
@@ -25,6 +30,7 @@ export interface User {
     phone?: string;
     roles: string[];
     isActive?: boolean;
+    emailConfirmed?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }

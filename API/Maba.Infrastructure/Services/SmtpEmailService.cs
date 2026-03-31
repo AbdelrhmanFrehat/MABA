@@ -49,27 +49,39 @@ public class SmtpEmailService : IEmailService
 
     public async Task SendEmailVerificationAsync(string toEmail, string verificationLink, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var subject = "Verify your email address";
-            var body = new StringBuilder();
-            body.AppendLine("Please verify your email address by clicking the link below:");
-            body.AppendLine();
-            body.AppendLine(verificationLink);
-            body.AppendLine();
-            body.AppendLine("This link will expire in 24 hours.");
-            body.AppendLine();
-            body.AppendLine("If you did not create an account, you can ignore this email.");
-            body.AppendLine();
-            body.AppendLine("Thank you,");
-            body.AppendLine(_settings.FromName);
-            await SendAsync(toEmail, subject, body.ToString(), cancellationToken);
-            _logger.LogInformation("Verification email sent to {Email}", toEmail);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send email verification to {Email}", toEmail);
-        }
+        var subject = "Verify your email address";
+        var body = new StringBuilder();
+        body.AppendLine("Please verify your email address by clicking the link below:");
+        body.AppendLine();
+        body.AppendLine(verificationLink);
+        body.AppendLine();
+        body.AppendLine("This link will expire in 24 hours.");
+        body.AppendLine();
+        body.AppendLine("If you did not create an account, you can ignore this email.");
+        body.AppendLine();
+        body.AppendLine("Thank you,");
+        body.AppendLine(_settings.FromName);
+        await SendAsync(toEmail, subject, body.ToString(), cancellationToken);
+        _logger.LogInformation("Verification email sent to {Email}", toEmail);
+    }
+
+    public async Task SendPasswordResetAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default)
+    {
+        var subject = "Reset your password";
+        var body = new StringBuilder();
+        body.AppendLine("We received a request to reset your password.");
+        body.AppendLine();
+        body.AppendLine("Use the link below to choose a new password:");
+        body.AppendLine(resetLink);
+        body.AppendLine();
+        body.AppendLine("This link will expire in 24 hours.");
+        body.AppendLine();
+        body.AppendLine("If you did not request this, you can safely ignore this email.");
+        body.AppendLine();
+        body.AppendLine("Thank you,");
+        body.AppendLine(_settings.FromName);
+        await SendAsync(toEmail, subject, body.ToString(), cancellationToken);
+        _logger.LogInformation("Password reset email sent to {Email}", toEmail);
     }
 
     private async Task SendCustomerConfirmationAsync(

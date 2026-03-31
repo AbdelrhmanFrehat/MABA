@@ -30,9 +30,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                     localStorage.removeItem('refresh_token');
                     localStorage.removeItem('auth_user');
                 }
-                // Do NOT redirect to login when user is browsing public pages (Auth rule: browsing 100% public).
-                const publicBrowsePaths = ['/3d-print', '/laser-engraving', '/cnc', '/catalog', '/item/', '/about', '/contact', '/search', '/wishlist', '/compare', '/projects', '/cart', '/'];
-                const isPublicBrowsing = publicBrowsePaths.some(p => router.url.startsWith(p) || router.url === p.replace(/\/$/, ''));
+                // Do NOT redirect to login when user is browsing public pages.
+                // Important: "/" must be exact-match only; using startsWith("/") would match every route.
+                const exactPublicPaths = new Set(['/']);
+                const publicPrefixPaths = ['/3d-print', '/laser-engraving', '/cnc', '/catalog', '/item/', '/about', '/contact', '/search', '/wishlist', '/compare', '/projects', '/cart'];
+                const isPublicBrowsing =
+                    exactPublicPaths.has(router.url) ||
+                    publicPrefixPaths.some(p => router.url.startsWith(p));
                 const alreadyOnLogin = router.url.includes('/auth/login');
                 if (!alreadyOnLogin && !isPublicBrowsing) {
                     router.navigate(['/auth/login'], {

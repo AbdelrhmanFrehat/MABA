@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Auth.Commands;
 using Maba.Domain.Users;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Maba.Application.Features.Auth.Handlers;
 
@@ -19,8 +17,18 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 
     public async Task<Unit> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _context.Set<User>()
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+        var query = _context.Set<User>().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var email = request.Email.Trim().ToLowerInvariant();
+            query = query.Where(u => u.Email.ToLower() == email);
+        }
+        else
+        {
+            query = query.Where(u => u.PasswordResetToken == request.Token);
+        }
+
+        var user = await query.FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
         {
@@ -42,7 +50,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         }
 
         // Update password
-        user.PasswordHash = HashPassword(request.NewPassword);
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.PasswordResetToken = null;
         user.PasswordResetExpiresAt = null;
         user.UpdatedAt = DateTime.UtcNow;
@@ -50,13 +58,6 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
-    }
-
-    private static string HashPassword(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(hashedBytes);
     }
 }
 

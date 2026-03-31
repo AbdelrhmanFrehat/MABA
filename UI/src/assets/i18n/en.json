@@ -1082,6 +1082,7 @@
       "roles": "Roles",
       "rolesReadOnly": "Roles are managed separately",
       "isActive": "Active",
+      "emailConfirmed": "Email Verified",
       "createdAt": "Created At"
     },
     "media": {

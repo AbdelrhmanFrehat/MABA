@@ -41,6 +41,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
             Email = user.Email,
             Phone = user.Phone,
             IsActive = user.IsActive,
+            EmailConfirmed = user.EmailConfirmed,
             Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList(),
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, tap, catchError, throwError, of } from 'rxjs';
 import { AuthApiService } from './auth-api.service';
-import { User, LoginRequest, RegisterRequest, AuthResponse } from '../models/auth.model';
+import { User, LoginRequest, RegisterRequest, AuthResponse, RegisterResponse } from '../models/auth.model';
 
 // Re-export for backward compatibility
 export type AuthUser = User;
@@ -112,11 +112,8 @@ export class AuthService {
         }
     }
 
-    register(request: RegisterRequest): Observable<AuthResponse> {
+    register(request: RegisterRequest): Observable<RegisterResponse> {
         return this.authApi.register(request).pipe(
-            tap(response => {
-                this.storeAuth(response, true);
-            }),
             catchError(error => {
                 return throwError(() => error);
             })
