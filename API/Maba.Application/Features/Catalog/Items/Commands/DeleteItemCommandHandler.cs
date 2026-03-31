@@ -4,6 +4,7 @@ using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Catalog.Items.Commands;
 using Maba.Domain.Catalog;
 using Maba.Domain.Machines;
+using Maba.Domain.Orders;
 using DomainInventory = Maba.Domain.Catalog.Inventory;
 
 namespace Maba.Application.Features.Catalog.Items.Handlers;
@@ -61,7 +62,16 @@ public class DeleteItemCommandHandler : IRequestHandler<DeleteItemCommand, Unit>
             _context.Set<ItemMachineLink>().Remove(link);
         }
 
-        // Note: Reviews, Comments, and OrderItems might be kept for historical purposes
+        // Keep historical orders but detach this item to avoid FK conflicts on delete.
+        var orderItems = await _context.Set<OrderItem>()
+            .Where(oi => oi.ItemId == item.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var orderItem in orderItems)
+        {
+            orderItem.ItemId = null;
+        }
+
+        // Note: Reviews and Comments might be kept for historical purposes
         // If you want to delete them, uncomment the following:
         // foreach (var review in item.Reviews.ToList())
         // {
