@@ -208,6 +208,13 @@ export class UsersListComponent implements OnInit {
             icon: 'pi pi-pencil',
             tooltipKey: 'common.edit',
             action: 'edit'
+        },
+        {
+            icon: 'pi pi-send',
+            tooltipKey: 'admin.users.resendVerification',
+            action: 'resendVerification',
+            severity: 'info',
+            visible: (row: User) => !row.emailConfirmed
         }
     ];
 
@@ -244,6 +251,28 @@ export class UsersListComponent implements OnInit {
         if (event.action === 'view' || event.action === 'edit') {
             // Navigate to edit page
             window.location.href = `/admin/users/${event.data.id}`;
+            return;
+        }
+
+        if (event.action === 'resendVerification') {
+            this.usersApiService.resendVerification(event.data.email).subscribe({
+                next: (res) => {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.translateService.instant('messages.success'),
+                        detail: res?.message || this.translateService.instant('admin.users.verificationSent'),
+                        life: 5000
+                    });
+                },
+                error: () => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: this.translateService.instant('messages.error'),
+                        detail: this.translateService.instant('admin.users.verificationSendError'),
+                        life: 5000
+                    });
+                }
+            });
         }
     }
 }

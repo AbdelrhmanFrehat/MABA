@@ -1636,7 +1636,10 @@
       "phone": "الهاتف",
       "roles": "الأدوار",
       "isActive": "نشط",
-      "emailConfirmed": "البريد موثق"
+      "emailConfirmed": "البريد موثق",
+      "resendVerification": "إعادة إرسال بريد التحقق",
+      "verificationSent": "تم إرسال بريد التحقق.",
+      "verificationSendError": "تعذر إعادة إرسال بريد التحقق."
     },
     "categories": {
       "title": "الفئات",

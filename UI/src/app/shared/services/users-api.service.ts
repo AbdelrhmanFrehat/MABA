@@ -14,6 +14,7 @@ export interface UpdateUserRequest {
 })
 export class UsersApiService {
     private baseUrl = `${environment.apiUrl}/users`;
+    private authBaseUrl = `${environment.apiUrl}/auth`;
 
     constructor(private http: HttpClient) {}
 
@@ -39,6 +40,10 @@ export class UsersApiService {
             params = params.set('isActive', isActive.toString());
         }
         return this.http.get<number>(`${this.baseUrl}/count`, { params });
+    }
+
+    resendVerification(email: string): Observable<{ success: boolean; message: string }> {
+        return this.http.post<{ success: boolean; message: string }>(`${this.authBaseUrl}/resend-verification`, { email });
     }
 }
 

@@ -1083,6 +1083,9 @@
       "rolesReadOnly": "Roles are managed separately",
       "isActive": "Active",
       "emailConfirmed": "Email Verified",
+      "resendVerification": "Resend Verification Email",
+      "verificationSent": "Verification email sent.",
+      "verificationSendError": "Failed to resend verification email.",
       "createdAt": "Created At"
     },
     "media": {
