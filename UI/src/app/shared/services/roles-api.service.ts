@@ -35,6 +35,18 @@ export class RolesApiService {
     getAllPermissions(): Observable<Permission[]> {
         return this.http.get<Permission[]>(`${environment.apiUrl}/permissions`);
     }
+
+    getUserRoles(userId: string): Observable<Role[]> {
+        return this.http.get<Role[]>(`${environment.apiUrl}/users/${userId}/roles`);
+    }
+
+    assignRoleToUser(roleId: string, userId: string): Observable<{ message: string }> {
+        return this.http.post<{ message: string }>(`${this.baseUrl}/${roleId}/users/${userId}`, {});
+    }
+
+    removeRoleFromUser(roleId: string, userId: string): Observable<{ message: string }> {
+        return this.http.delete<{ message: string }>(`${this.baseUrl}/${roleId}/users/${userId}`);
+    }
 }
 
 

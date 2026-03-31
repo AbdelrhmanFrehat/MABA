@@ -5,12 +5,17 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UsersApiService, UpdateUserRequest } from '../../../../shared/services/users-api.service';
 import { User } from '../../../../shared/models/auth.model';
+import { RolesApiService } from '../../../../shared/services/roles-api.service';
+import { Role } from '../../../../shared/models/role.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
     selector: 'app-user-edit',
@@ -22,6 +27,7 @@ import { User } from '../../../../shared/models/auth.model';
         ButtonModule,
         InputTextModule,
         CheckboxModule,
+        MultiSelectModule,
         ToastModule,
         MessageModule,
         TranslateModule
@@ -104,19 +110,24 @@ import { User } from '../../../../shared/models/auth.model';
                         </div>
                     </div>
 
-                    @if (user && user.roles && user.roles.length > 0) {
-                        <div class="form-field form-field-full">
-                            <label>
-                                {{ 'admin.users.roles' | translate }}
-                            </label>
-                            <div class="flex flex-wrap gap-2">
-                                @for (role of user.roles; track role) {
-                                    <span class="p-tag">{{ role }}</span>
-                                }
-                            </div>
-                            <small class="text-surface-500">{{ 'admin.users.rolesReadOnly' | translate }}</small>
-                        </div>
-                    }
+                    <div class="form-field form-field-full">
+                        <label for="roles">
+                            {{ 'admin.users.roles' | translate }}
+                        </label>
+                        <p-multiSelect
+                            id="roles"
+                            formControlName="roleIds"
+                            [options]="availableRoles"
+                            optionLabel="name"
+                            optionValue="id"
+                            [placeholder]="'admin.users.selectRoles' | translate"
+                            [filter]="true"
+                            [showClear]="true"
+                            display="chip"
+                            class="w-full"
+                        ></p-multiSelect>
+                        <small class="text-surface-500">{{ 'admin.users.rolesHelp' | translate }}</small>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -222,19 +233,23 @@ export class UserEditComponent implements OnInit {
     saving = false;
     loading = false;
     errorMessage = '';
+    availableRoles: Role[] = [];
+    private initialRoleIds: string[] = [];
 
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private usersApiService: UsersApiService,
+        private rolesApiService: RolesApiService,
         private messageService: MessageService,
         private translateService: TranslateService
     ) {
         this.userForm = this.fb.group({
             fullName: ['', [Validators.required, Validators.maxLength(200)]],
             phone: [''],
-            isActive: [true]
+            isActive: [true],
+            roleIds: [[] as string[]]
         });
     }
 
@@ -250,13 +265,25 @@ export class UserEditComponent implements OnInit {
         if (!this.userId) return;
 
         this.loading = true;
-        this.usersApiService.getUserById(this.userId).subscribe({
-            next: (user) => {
+        forkJoin({
+            user: this.usersApiService.getUserById(this.userId),
+            roles: this.rolesApiService.getAllRoles(),
+            userRoles: this.rolesApiService.getUserRoles(this.userId).pipe(catchError(() => of([] as Role[])))
+        }).subscribe({
+            next: ({ user, roles, userRoles }) => {
                 this.user = user;
+                this.availableRoles = roles;
+
+                const selectedRoleIds = userRoles.length > 0
+                    ? userRoles.map(r => r.id)
+                    : roles.filter(r => user.roles.includes(r.name)).map(r => r.id);
+
+                this.initialRoleIds = [...selectedRoleIds];
                 this.userForm.patchValue({
                     fullName: user.fullName,
                     phone: user.phone || '',
-                    isActive: user.isActive ?? true
+                    isActive: user.isActive ?? true,
+                    roleIds: selectedRoleIds
                 });
                 this.loading = false;
             },
@@ -287,21 +314,9 @@ export class UserEditComponent implements OnInit {
             phone: this.userForm.value.phone || undefined
         };
 
-        // Note: isActive update might need a separate endpoint or be included in UpdateUserRequest
-        // For now, assuming it's part of the update
-
         this.usersApiService.updateUser(this.userId, updateRequest).subscribe({
             next: () => {
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.translateService.instant('messages.success'),
-                    detail: this.translateService.instant('messages.userUpdatedSuccessfully'),
-                    life: 3000
-                });
-                this.saving = false;
-                setTimeout(() => {
-                    this.router.navigate(['/admin/users']);
-                }, 1000);
+                this.syncRolesAfterProfileUpdate();
             },
             error: (error) => {
                 this.saving = false;
@@ -319,6 +334,56 @@ export class UserEditComponent implements OnInit {
                 }
             }
         });
+    }
+
+    private syncRolesAfterProfileUpdate() {
+        if (!this.userId) {
+            this.saving = false;
+            return;
+        }
+
+        const selectedRoleIds: string[] = this.userForm.value.roleIds || [];
+        const rolesToAssign = selectedRoleIds.filter(id => !this.initialRoleIds.includes(id));
+        const rolesToRemove = this.initialRoleIds.filter(id => !selectedRoleIds.includes(id));
+
+        if (rolesToAssign.length === 0 && rolesToRemove.length === 0) {
+            this.onSaveSuccess();
+            return;
+        }
+
+        const assignRequests = rolesToAssign.map(roleId =>
+            this.rolesApiService.assignRoleToUser(roleId, this.userId as string)
+        );
+        const removeRequests = rolesToRemove.map(roleId =>
+            this.rolesApiService.removeRoleFromUser(roleId, this.userId as string)
+        );
+
+        forkJoin([...assignRequests, ...removeRequests]).subscribe({
+            next: () => this.onSaveSuccess(),
+            error: (error) => {
+                this.saving = false;
+                this.errorMessage = error.error?.message || this.translateService.instant('admin.users.rolesUpdateError');
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.translateService.instant('messages.error'),
+                    detail: this.errorMessage,
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    private onSaveSuccess() {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.translateService.instant('messages.success'),
+            detail: this.translateService.instant('messages.userUpdatedSuccessfully'),
+            life: 3000
+        });
+        this.saving = false;
+        setTimeout(() => {
+            this.router.navigate(['/admin/users']);
+        }, 1000);
     }
 
     onCancel() {
