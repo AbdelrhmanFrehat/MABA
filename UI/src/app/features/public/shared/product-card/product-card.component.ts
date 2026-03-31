@@ -425,8 +425,8 @@ export class ProductCardComponent {
         if (url.startsWith('http')) return url;
         // Get base URL from environment
         const apiUrl = environment.apiUrl || 'http://localhost:5153/api/v1';
-        const baseUrl = apiUrl.replace('/api/v1', '').replace('/api', '');
-        return `${baseUrl}${url}`;
+        const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+        return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
     }
 
     get isOutOfStock(): boolean {
