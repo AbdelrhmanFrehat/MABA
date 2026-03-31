@@ -15,6 +15,8 @@ import { MediaApiService } from '../../services/media-api.service';
 import { MediaAsset } from '../../models/media.model';
 
 const DEFAULT_IMAGE_MEDIA_TYPE_ID = '00000000-0000-0000-0000-000000000001';
+const HERO_TICKER_MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+const HERO_TICKER_MAX_DIMENSION = 2560;
 
 @Component({
     selector: 'app-media-picker',
@@ -265,20 +267,98 @@ export class MediaPickerComponent implements OnInit {
             return;
         }
         this.uploading = true;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('mediaTypeId', DEFAULT_IMAGE_MEDIA_TYPE_ID);
-        this.mediaApiService.uploadMedia(formData).subscribe({
-            next: (media) => {
+        this.prepareImageForUpload(file)
+            .then((preparedFile) => {
+                const formData = new FormData();
+                formData.append('file', preparedFile);
+                formData.append('mediaTypeId', DEFAULT_IMAGE_MEDIA_TYPE_ID);
+                this.mediaApiService.uploadMedia(formData).subscribe({
+                    next: (media) => {
+                        this.uploading = false;
+                        this.mediaSelected.emit([media]);
+                        this.closeDialog();
+                        input.value = '';
+                    },
+                    error: () => {
+                        this.uploading = false;
+                        input.value = '';
+                    }
+                });
+            })
+            .catch(() => {
                 this.uploading = false;
-                this.mediaSelected.emit([media]);
-                this.closeDialog();
                 input.value = '';
-            },
-            error: () => {
-                this.uploading = false;
-                input.value = '';
-            }
+            });
+    }
+
+    private async prepareImageForUpload(file: File): Promise<File> {
+        if (file.size <= HERO_TICKER_MAX_UPLOAD_BYTES) {
+            return file;
+        }
+
+        const image = await this.loadImage(file);
+        const { width, height } = this.getScaledDimensions(image.width, image.height, HERO_TICKER_MAX_DIMENSION);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Unable to prepare image upload.');
+        }
+        context.drawImage(image, 0, 0, width, height);
+
+        let quality = 0.9;
+        let blob = await this.canvasToBlob(canvas, 'image/webp', quality);
+        while (blob.size > HERO_TICKER_MAX_UPLOAD_BYTES && quality > 0.4) {
+            quality -= 0.1;
+            blob = await this.canvasToBlob(canvas, 'image/webp', quality);
+        }
+
+        if (blob.size > HERO_TICKER_MAX_UPLOAD_BYTES) {
+            throw new Error('Image is too large to upload.');
+        }
+
+        const safeBaseName = (file.name.replace(/\.[^/.]+$/, '') || 'image').slice(0, 80);
+        return new File([blob], `${safeBaseName}.webp`, { type: 'image/webp' });
+    }
+
+    private loadImage(file: File): Promise<HTMLImageElement> {
+        return new Promise((resolve, reject) => {
+            const objectUrl = URL.createObjectURL(file);
+            const image = new Image();
+            image.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            };
+            image.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('Invalid image'));
+            };
+            image.src = objectUrl;
+        });
+    }
+
+    private getScaledDimensions(width: number, height: number, maxDimension: number): { width: number; height: number } {
+        if (width <= maxDimension && height <= maxDimension) {
+            return { width, height };
+        }
+
+        const ratio = Math.min(maxDimension / width, maxDimension / height);
+        return {
+            width: Math.max(1, Math.round(width * ratio)),
+            height: Math.max(1, Math.round(height * ratio))
+        };
+    }
+
+    private canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    reject(new Error('Failed to encode image.'));
+                    return;
+                }
+                resolve(blob);
+            }, type, quality);
         });
     }
 
