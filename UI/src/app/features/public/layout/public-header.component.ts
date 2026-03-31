@@ -374,6 +374,11 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             gap: 0.25rem;
         }
 
+        /* Hidden by default; shown only in mobile menu */
+        .mobile-auth-links {
+            display: none;
+        }
+
         .nav-link {
             display: flex;
             align-items: center;
@@ -874,6 +879,7 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             }
 
             .mobile-auth-links {
+                display: block;
                 width: 100%;
                 margin-top: 0.5rem;
                 padding-top: 0.5rem;
