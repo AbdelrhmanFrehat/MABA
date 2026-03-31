@@ -295,7 +295,7 @@ import { LanguageService } from '../../../shared/services/language.service';
         .success-card {
             text-align: center;
             padding: 2rem;
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             border-radius: 16px;
             margin-top: 2rem;
         }
@@ -303,7 +303,7 @@ import { LanguageService } from '../../../shared/services/language.service';
         .success-icon {
             width: 80px;
             height: 80px;
-            background: rgba(34, 197, 94, 0.2);
+            background: rgba(102, 126, 234, 0.2);
             border-radius: 50%;
             display: flex;
             align-items: center;

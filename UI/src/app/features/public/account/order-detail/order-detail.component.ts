@@ -284,8 +284,8 @@ import { LanguageService } from '../../../../shared/services/language.service';
         }
 
         .hero-badge.success-badge {
-            background: rgba(34, 197, 94, 0.3);
-            border: 1px solid rgba(34, 197, 94, 0.5);
+            background: rgba(102, 126, 234, 0.25);
+            border: 1px solid rgba(118, 75, 162, 0.45);
         }
 
         .hero-title {

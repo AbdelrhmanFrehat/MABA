@@ -459,7 +459,7 @@ interface Address {
             align-items: center;
             gap: 0.25rem;
             padding: 0.25rem 0.75rem;
-            background: rgba(34, 197, 94, 0.1);
+            background: rgba(102, 126, 234, 0.1);
             border-radius: 50px;
             color: #667eea;
             font-size: 0.8rem;

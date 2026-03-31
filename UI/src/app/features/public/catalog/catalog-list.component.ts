@@ -1066,11 +1066,17 @@ export class CatalogListComponent implements OnInit {
             }
         });
         
-        // Load max price for slider
-        this.itemsApi.getAllItems({ sortBy: 'price', sortOrder: 'desc' }).subscribe({
-            next: (items) => {
-                if (items && items.length > 0) {
-                    this.maxPrice = Math.ceil(items[0].price / 100) * 100; // Round up to nearest 100
+        // Load max price for slider from highest priced item in catalog.
+        this.itemsApi.searchItems(undefined, {
+            pageNumber: 1,
+            pageSize: 1,
+            sortBy: 'price',
+            sortDescending: true
+        }).subscribe({
+            next: (response) => {
+                const highestPrice = response?.items?.[0]?.price;
+                if (typeof highestPrice === 'number' && highestPrice > 0) {
+                    this.maxPrice = Math.ceil(highestPrice / 100) * 100; // Round up to nearest 100
                     this.priceRange[1] = this.maxPrice;
                 }
             }

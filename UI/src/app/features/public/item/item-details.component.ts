@@ -609,7 +609,7 @@ import { MediaAsset } from '../../../shared/models/media.model';
         }
 
         .stock-badge.in-stock {
-            background: rgba(34, 197, 94, 0.1);
+            background: rgba(102, 126, 234, 0.12);
             color: #667eea;
         }
 
