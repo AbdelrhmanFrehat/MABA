@@ -52,25 +52,25 @@ import { LanguageService } from '../../../shared/services/language.service';
             <section class="map-form-section">
                 <div class="container">
                     <div class="map-form-grid">
-                        <!-- Map Column: static image, click opens Google Maps -->
+                        <!-- Map Column: live map for the new location -->
                         <div class="map-wrapper map-static">
+                            <iframe
+                                title="MABA Location Map"
+                                src="https://maps.google.com/maps?q=31.9233856,35.2081461&z=17&output=embed"
+                                width="100%"
+                                height="100%"
+                                style="border:0"
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
                             <a
-                                href="https://www.google.com/maps/place/31%C2%B054'00.8%22N+35%C2%B012'17.9%22E/@31.9005462,35.2047471,223m/data=!3m1!1e3!4m4!3m3!8m2!3d31.900217!4d35.204973?entry=ttu"
+                                href="https://maps.app.goo.gl/K37Par84yA9Y6oWe9"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="map-static-link"
+                                class="map-static-overlay"
                                 title="فتح في Google Maps / Open in Google Maps">
-                                <img
-                                    src="assets/img/mapImage.png"
-                                    alt="MABA - Ramallah, Palestine"
-                                    class="map-static-img"
-                                    loading="lazy"
-                                    draggable="false"
-                                    referrerpolicy="no-referrer" />
-                                <span class="map-static-overlay">
-                                    <i class="pi pi-map-marker"></i>
-                                    {{ 'contact.openInGoogleMaps' | translate }}
-                                </span>
+                                <i class="pi pi-map-marker"></i>
+                                {{ 'contact.openInGoogleMaps' | translate }}
                             </a>
                         </div>
                         <!-- Form Column -->
@@ -734,9 +734,9 @@ export class ContactComponent {
         {
             icon: 'pi pi-map-marker',
             titleKey: 'contact.address',
-            value: 'فلسطين - رام الله شارع المستشفى مبنى الكلية العصرية الطابق الخامس',
-            valueEn: 'Palestine - Ramallah, Hospital Street, Modern College Building, 5th Floor',
-            link: null
+            value: 'عمارة الارسال، شارع الإذاعة، البيرة',
+            valueEn: 'Al-Irsal Building, Al-Ithaa Street, Al-Bireh',
+            link: 'https://maps.app.goo.gl/K37Par84yA9Y6oWe9'
         }
     ];
 

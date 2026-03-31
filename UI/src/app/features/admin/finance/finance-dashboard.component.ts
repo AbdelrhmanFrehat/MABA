@@ -327,10 +327,18 @@ export class FinanceDashboardComponent implements OnInit {
             }
         });
 
-        // Load recent payments
-        this.apiService.get('/payments', { page: 1, pageSize: 10 }).subscribe({
+        // Load recent payments fallback from orders (there is no /payments endpoint in API).
+        this.ordersApiService.getOrders({ page: 1, pageSize: 10 }).subscribe({
             next: (response: any) => {
-                this.recentPayments = Array.isArray(response) ? response : (response.items || []);
+                const orders = response?.items || [];
+                this.recentPayments = orders.map((order: any) => ({
+                    id: order.id,
+                    orderId: order.id,
+                    amount: order.total ?? 0,
+                    method: order.paymentMethodName || order.paymentMethod || '-',
+                    status: order.paymentStatus || order.statusName || order.status || 'Pending',
+                    paymentDate: order.createdAt || order.updatedAt || new Date().toISOString()
+                }));
                 this.loading = false;
             },
             error: () => {

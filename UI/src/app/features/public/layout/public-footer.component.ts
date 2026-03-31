@@ -71,7 +71,7 @@ import { LanguageService } from '../../../shared/services/language.service';
                                     </div>
                                     <div class="contact-item">
                                         <i class="pi pi-map-marker"></i>
-                                        <span>{{ languageService.language === 'ar' ? 'فلسطين - رام الله، شارع المستشفى، مبنى الكلية الحديثة، الطابق الخامس' : 'Palestine - Ramallah, Hospital Street, Modern College Building, 5th Floor' }}</span>
+                                        <span>{{ languageService.language === 'ar' ? 'عمارة الارسال، شارع الإذاعة، البيرة' : 'Al-Irsal Building, Al-Ithaa Street, Al-Bireh' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -716,8 +716,8 @@ export class PublicFooterComponent {
     currentYear = new Date().getFullYear();
     footerEmail = 'mabaengsol@gmail.com';
     footerPhone = '0598595969';
-    footerAddressAr = 'فلسطين - رام الله، شارع المستشفى، مبنى الكلية الحديثة، الطابق الخامس';
-    footerAddressEn = 'Palestine - Ramallah, Hospital Street, Modern College Building, 5th Floor';
+    footerAddressAr = 'عمارة الارسال، شارع الإذاعة، البيرة';
+    footerAddressEn = 'Al-Irsal Building, Al-Ithaa Street, Al-Bireh';
     showFooterLegal = true;
 
     get footerAddress(): string {
@@ -726,9 +726,9 @@ export class PublicFooterComponent {
 
     get footerAddressLines(): string[] {
         if (this.languageService.language === 'ar') {
-            return ['فلسطين - رام الله', 'شارع المستشفى', 'مبنى الكلية الحديثة – الطابق الخامس'];
+            return ['البيرة', 'شارع الإذاعة', 'عمارة الارسال'];
         }
-        return ['Ramallah, Palestine', 'Hospital Street', 'Modern College Building – 5th Floor'];
+        return ['Al-Bireh', 'Al-Ithaa Street', 'Al-Irsal Building'];
     }
 
     constructor(public languageService: LanguageService) {}

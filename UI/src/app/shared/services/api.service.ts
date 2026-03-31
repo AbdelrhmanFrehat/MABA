@@ -11,6 +11,12 @@ export class ApiService {
 
     constructor(private http: HttpClient) {}
 
+    private buildUrl(endpoint: string): string {
+        const normalizedBase = this.baseUrl.replace(/\/+$/, '');
+        const normalizedEndpoint = (endpoint || '').replace(/^\/+/, '');
+        return normalizedEndpoint ? `${normalizedBase}/${normalizedEndpoint}` : normalizedBase;
+    }
+
     get<T>(endpoint: string, params?: any): Observable<T> {
         let httpParams = new HttpParams();
         if (params) {
@@ -20,27 +26,27 @@ export class ApiService {
                 }
             });
         }
-        return this.http.get<T>(`${this.baseUrl}/${endpoint}`, { params: httpParams });
+        return this.http.get<T>(this.buildUrl(endpoint), { params: httpParams });
     }
 
     getById<T>(endpoint: string, id: number | string): Observable<T> {
-        return this.http.get<T>(`${this.baseUrl}/${endpoint}/${id}`);
+        return this.http.get<T>(`${this.buildUrl(endpoint)}/${id}`);
     }
 
     post<T>(endpoint: string, data: any): Observable<T> {
-        return this.http.post<T>(`${this.baseUrl}/${endpoint}`, data);
+        return this.http.post<T>(this.buildUrl(endpoint), data);
     }
 
     put<T>(endpoint: string, id: number | string, data: any): Observable<T> {
-        return this.http.put<T>(`${this.baseUrl}/${endpoint}/${id}`, data);
+        return this.http.put<T>(`${this.buildUrl(endpoint)}/${id}`, data);
     }
 
     delete<T>(endpoint: string, id: number | string): Observable<T> {
-        return this.http.delete<T>(`${this.baseUrl}/${endpoint}/${id}`);
+        return this.http.delete<T>(`${this.buildUrl(endpoint)}/${id}`);
     }
 
     patch<T>(url: string, data?: any): Observable<T> {
-        const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}/${url}`;
+        const fullUrl = url.startsWith('http') ? url : this.buildUrl(url);
         return this.http.patch<T>(fullUrl, data ?? {});
     }
 }
