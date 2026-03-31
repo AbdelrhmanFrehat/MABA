@@ -22,7 +22,6 @@ import { ProductCardComponent } from '../shared/product-card/product-card.compon
 import { ProductQuickViewComponent } from '../shared/product-quick-view/product-quick-view.component';
 import { Category, Brand, Tag } from '../../../shared/models/catalog.model';
 import { Item } from '../../../shared/models/item.model';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { CartService } from '../../../shared/services/cart.service';
@@ -71,7 +70,7 @@ type SortOption = {
         ProductQuickViewComponent,
         ToastModule
     ],
-    providers: [DialogService, MessageService],
+    providers: [MessageService],
     template: `
         <p-toast></p-toast>
         <div class="catalog-page" [dir]="languageService.direction">
@@ -342,6 +341,12 @@ type SortOption = {
                 </main>
             </div>
         </div>
+
+        <app-product-quick-view
+            [(visible)]="quickViewVisible"
+            [product]="selectedProduct"
+            (addToCart)="onQuickViewAddToCart($event)">
+        </app-product-quick-view>
     `,
     styles: [`
         :host {
@@ -956,13 +961,12 @@ export class CatalogListComponent implements OnInit {
     private router = inject(Router);
     private catalogApi = inject(CatalogApiService);
     private itemsApi = inject(ItemsApiService);
-    private dialogService = inject(DialogService);
     private cartService = inject(CartService);
     private authService = inject(AuthService);
     private messageService = inject(MessageService);
     public languageService = inject(LanguageService);
     
-    quickViewDialogRef: DynamicDialogRef | undefined;
+    quickViewVisible = false;
     selectedProduct: Item | null = null;
 
     ngOnInit() {
@@ -1247,24 +1251,12 @@ export class CatalogListComponent implements OnInit {
     }
 
     openQuickView(item: Item) {
-        const ref = this.dialogService.open(ProductQuickViewComponent, {
-            header: this.languageService.getLocalizedName(item),
-            width: '90vw',
-            style: { 'max-width': '900px' },
-            data: { product: item },
-            modal: true,
-            closable: true,
-            dismissableMask: true
-        });
-        
-        if (ref) {
-            this.quickViewDialogRef = ref;
-            ref.onClose.subscribe((result: any) => {
-                if (result && result.addToCart) {
-                    this.addToCart(result.item, result.quantity);
-                }
-            });
-        }
+        this.selectedProduct = item;
+        this.quickViewVisible = true;
+    }
+
+    onQuickViewAddToCart(event: { item: Item; quantity: number }) {
+        this.addToCart(event.item, event.quantity);
     }
 
     addToCart(item: Item, quantity: number = 1) {

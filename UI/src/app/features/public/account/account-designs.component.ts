@@ -291,17 +291,23 @@ import { environment } from '../../../../environments/environment';
         </p-dialog>
     `,
     styles: [`
+        :host {
+            --maba-primary: #667eea;
+            --maba-secondary: #764ba2;
+        }
+
         .designs-page {
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--surface-ground) 0%, var(--surface-section) 100%);
+            background: linear-gradient(135deg, #f8f9ff 0%, #f3f4ff 100%);
             padding-bottom: 3rem;
         }
 
         /* Header Styles */
         .designs-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%);
             padding: 2rem;
             margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
         }
 
         .header-content {
@@ -339,10 +345,11 @@ import { environment } from '../../../../environments/environment';
 
         :host ::ng-deep .upload-btn {
             background: white !important;
-            color: #667eea !important;
+            color: var(--maba-primary) !important;
             border: none !important;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
+            border-radius: 10px !important;
         }
 
         :host ::ng-deep .upload-btn:hover {
@@ -433,10 +440,11 @@ import { environment } from '../../../../environments/environment';
         }
 
         :host ::ng-deep .upload-btn-large {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
             border: none !important;
             padding: 1rem 2rem;
             font-size: 1.1rem;
+            border-radius: 12px !important;
         }
 
         /* Designs Grid */
@@ -454,20 +462,21 @@ import { environment } from '../../../../environments/environment';
             background: var(--surface-card);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.12);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.08);
             transition: all 0.3s ease;
             cursor: pointer;
         }
 
         .design-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.16);
         }
 
         /* Card Preview */
         .card-preview {
             height: 200px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #111a3d 0%, #1b2d6b 100%);
             position: relative;
             display: flex;
             align-items: center;
@@ -528,7 +537,7 @@ import { environment } from '../../../../environments/environment';
         }
 
         .file-format-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%);
             color: white;
             padding: 0.35rem 1rem;
             border-radius: 20px;
@@ -592,7 +601,7 @@ import { environment } from '../../../../environments/environment';
 
         .meta-item i {
             width: 16px;
-            color: #667eea;
+            color: var(--maba-primary);
         }
 
         .meta-item span {
@@ -608,7 +617,7 @@ import { environment } from '../../../../environments/environment';
         }
 
         :host ::ng-deep .public-tag {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
             color: white !important;
         }
 
@@ -623,7 +632,7 @@ import { environment } from '../../../../environments/environment';
 
         /* Preview Dialog */
         :host ::ng-deep .preview-dialog .p-dialog-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%);
             color: white;
             padding: 1rem 1.5rem;
         }
@@ -649,7 +658,7 @@ import { environment } from '../../../../environments/environment';
         }
 
         .viewer-area {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #111a3d 0%, #1b2d6b 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -763,6 +772,32 @@ import { environment } from '../../../../environments/environment';
             gap: 0.75rem;
         }
 
+        /* Confirm dialog theme alignment */
+        :host ::ng-deep .p-confirmdialog {
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        :host ::ng-deep .p-confirmdialog .p-dialog-header {
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%);
+            color: #fff;
+        }
+        :host ::ng-deep .p-confirmdialog .p-confirm-dialog-icon {
+            color: var(--maba-primary);
+        }
+        :host ::ng-deep .p-confirmdialog .confirm-no-btn {
+            border-color: var(--maba-primary) !important;
+            color: var(--maba-primary) !important;
+            background: #fff !important;
+        }
+        :host ::ng-deep .p-confirmdialog .confirm-yes-btn {
+            border: none !important;
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
+        }
+        :host ::ng-deep .p-confirmdialog .confirm-yes-btn:hover {
+            filter: brightness(0.97);
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .header-content {
@@ -842,12 +877,35 @@ export class AccountDesignsComponent implements OnInit {
             message: this.translateService.instant('account.designs.deleteConfirm'),
             header: this.translateService.instant('common.confirm'),
             icon: 'pi pi-exclamation-triangle',
+            rejectLabel: this.translateService.instant('common.no'),
+            acceptLabel: this.translateService.instant('common.yes'),
+            rejectButtonStyleClass: 'confirm-no-btn',
+            acceptButtonStyleClass: 'confirm-yes-btn',
             accept: () => {
-                // TODO: Implement delete API call
-                this.messageService.add({
-                    severity: 'info',
-                    summary: this.translateService.instant('messages.info'),
-                    detail: this.translateService.instant('account.designs.deleteNotImplemented')
+                this.printingApiService.deleteDesign(design.id).subscribe({
+                    next: () => {
+                        this.designs = this.designs.filter(d => d.id !== design.id);
+                        if (this.selectedDesign?.id === design.id) {
+                            this.previewVisible = false;
+                            this.selectedDesign = null;
+                        }
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: this.translateService.instant('messages.success'),
+                            detail: this.translateService.instant('messages.deleteSuccess')
+                        });
+                    },
+                    error: (error) => {
+                        const detail =
+                            error?.error?.message ||
+                            error?.error ||
+                            this.translateService.instant('messages.deleteError');
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: this.translateService.instant('messages.error'),
+                            detail
+                        });
+                    }
                 });
             }
         });

@@ -186,5 +186,59 @@ public class DesignsController : ControllerBase
         var result = await _mediator.Send(query);
         return Ok(result);
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteDesign(Guid id)
+    {
+        var design = await _context.Set<Maba.Domain.Printing.Design>()
+            .Include(d => d.DesignFiles)
+            .ThenInclude(df => df.MediaAsset)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (design == null)
+            return NotFound();
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var isOwner = Guid.TryParse(userIdClaim, out var currentUserId) && design.UserId == currentUserId;
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("StoreOwner");
+
+        if (!isOwner && !isPrivileged)
+            return Forbid();
+
+        // Restrict delete when design files are referenced by slicing jobs.
+        var designFileIds = design.DesignFiles.Select(df => df.Id).ToList();
+        if (designFileIds.Count > 0)
+        {
+            var hasSlicingJobs = await _context.Set<Maba.Domain.Printing.SlicingJob>()
+                .AnyAsync(sj => designFileIds.Contains(sj.DesignFileId));
+            if (hasSlicingJobs)
+            {
+                return BadRequest("This design is linked to slicing jobs and cannot be deleted.");
+            }
+        }
+
+        foreach (var file in design.DesignFiles)
+        {
+            if (!string.IsNullOrWhiteSpace(file.MediaAsset?.StorageKey))
+            {
+                await _fileStorageService.DeleteFileAsync(file.MediaAsset.StorageKey);
+            }
+        }
+
+        var mediaAssets = design.DesignFiles
+            .Where(df => df.MediaAsset != null)
+            .Select(df => df.MediaAsset!)
+            .ToList();
+
+        _context.Set<Maba.Domain.Printing.DesignFile>().RemoveRange(design.DesignFiles);
+        if (mediaAssets.Count > 0)
+        {
+            _context.Set<MediaAsset>().RemoveRange(mediaAssets);
+        }
+        _context.Set<Maba.Domain.Printing.Design>().Remove(design);
+
+        await _context.SaveChangesAsync(CancellationToken.None);
+        return NoContent();
+    }
 }
 

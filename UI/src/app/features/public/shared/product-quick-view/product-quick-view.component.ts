@@ -32,14 +32,20 @@ import { environment } from '../../../../../environments/environment';
         <p-dialog
             [(visible)]="visible"
             [modal]="true"
-            [closable]="true"
+            [closable]="false"
             [dismissableMask]="true"
             [style]="{ width: '90vw', maxWidth: '900px' }"
             [draggable]="false"
             [resizable]="false"
+            styleClass="quick-view-dialog"
             (onHide)="onClose()">
             <ng-template pTemplate="header">
-                <h2 class="m-0">{{ productName }}</h2>
+                <div class="quick-view-header">
+                    <h2 class="quick-view-title m-0">{{ productName }}</h2>
+                    <button type="button" class="quick-view-close" (click)="onClose()">
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
             </ng-template>
             
             <div *ngIf="product" class="quick-view-content">
@@ -102,7 +108,8 @@ import { environment } from '../../../../../environments/environment';
                             <div class="stock-status mb-3">
                                 <p-tag 
                                     [value]="isInStock ? ('catalog.inStock' | translate) : ('catalog.outOfStock' | translate)" 
-                                    [severity]="isInStock ? 'success' : 'danger'">
+                                    [severity]="isInStock ? 'info' : 'danger'"
+                                    [styleClass]="isInStock ? 'stock-tag stock-tag-in' : 'stock-tag stock-tag-out'">
                                 </p-tag>
                             </div>
 
@@ -137,14 +144,15 @@ import { environment } from '../../../../../environments/environment';
                                         icon="pi pi-shopping-cart"
                                         [disabled]="!isInStock"
                                         (click)="onAddToCart()"
-                                        styleClass="flex-1">
+                                        styleClass="flex-1 quick-add-btn">
                                     </p-button>
                                     <p-button 
                                         [label]="'catalog.viewDetails' | translate" 
                                         icon="pi pi-eye"
                                         [outlined]="true"
                                         [routerLink]="['/item', product.id]"
-                                        (click)="onClose()">
+                                        (click)="onClose()"
+                                        styleClass="quick-view-btn">
                                     </p-button>
                                 </div>
                             </div>
@@ -155,6 +163,12 @@ import { environment } from '../../../../../environments/environment';
         </p-dialog>
     `,
     styles: [`
+        :host {
+            --maba-primary: #667eea;
+            --maba-secondary: #764ba2;
+            --maba-dark-primary: #4f63d8;
+            --maba-dark-secondary: #5e3f88;
+        }
         .quick-view-content {
             padding: 0.5rem;
         }
@@ -169,7 +183,7 @@ import { environment } from '../../../../../environments/environment';
         .product-price {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--maba-primary);
         }
         .product-rating {
             display: flex;
@@ -198,6 +212,78 @@ import { environment } from '../../../../../environments/environment';
             border-top: 1px solid var(--surface-border);
             padding-top: 1rem;
             margin-top: 1rem;
+        }
+        :host ::ng-deep .quick-add-btn {
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
+            border: none !important;
+            color: #fff !important;
+        }
+        :host ::ng-deep .quick-add-btn:hover {
+            filter: brightness(0.97);
+        }
+        :host ::ng-deep .quick-view-btn {
+            border-color: var(--maba-primary) !important;
+            color: var(--maba-primary) !important;
+            background: transparent !important;
+        }
+        :host ::ng-deep .quick-view-btn:hover {
+            background: rgba(102, 126, 234, 0.08) !important;
+        }
+        :host ::ng-deep .stock-tag.stock-tag-in {
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
+            color: #fff !important;
+            border: none !important;
+        }
+        :host ::ng-deep .stock-tag.stock-tag-out {
+            background: #ef4444 !important;
+            color: #fff !important;
+        }
+        :host ::ng-deep .product-rating .p-rating .p-rating-icon,
+        :host ::ng-deep .product-rating .p-rating .p-rating-icon.p-rating-icon-active,
+        :host ::ng-deep .product-rating .p-rating .p-rating-icon:hover,
+        :host ::ng-deep .product-rating .p-rating .p-rating-option-active .p-rating-icon,
+        :host ::ng-deep .product-rating .p-rating .p-icon {
+            color: var(--maba-primary) !important;
+            fill: var(--maba-primary) !important;
+        }
+        :host ::ng-deep .p-dialog-header {
+            background: linear-gradient(135deg, var(--maba-dark-primary) 0%, var(--maba-dark-secondary) 100%);
+            color: #fff;
+            padding: 1rem 1.25rem !important;
+            border-bottom: none !important;
+        }
+        :host ::ng-deep .quick-view-dialog .p-dialog-header-actions {
+            display: none !important;
+        }
+        .quick-view-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .quick-view-title {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.85rem;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+        .quick-view-close {
+            width: 2rem;
+            height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none !important;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .quick-view-close:hover {
+            background: rgba(255,255,255,0.12);
         }
         ::ng-deep .p-dialog-header {
             padding: 1.5rem;

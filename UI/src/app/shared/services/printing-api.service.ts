@@ -170,5 +170,9 @@ export class PrintingApiService {
         }
         return this.http.get<Print3dDesign[]>(`${this.baseUrl}/designs`, { params: httpParams });
     }
+
+    deleteDesign(id: string): Observable<void> {
+        return this.http.delete<void>(`${this.baseUrl}/designs/${id}`);
+    }
 }
 
