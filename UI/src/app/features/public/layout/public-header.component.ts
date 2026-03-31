@@ -121,6 +121,30 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
                     <a routerLink="/about" routerLinkActive="active" class="nav-link">
                         {{ 'nav.about' | translate }}
                     </a>
+
+                    @if (authService.authenticated) {
+                        <div class="mobile-auth-links">
+                            <a routerLink="/account" class="nav-link mobile-account-link" (click)="isMobileMenuOpen = false">
+                                <i class="pi pi-user"></i>
+                                {{ 'menu.clientPortal' | translate }}
+                            </a>
+                            <a routerLink="/account/requests" class="nav-link mobile-account-link" (click)="isMobileMenuOpen = false">
+                                <i class="pi pi-list"></i>
+                                {{ 'menu.myRequests' | translate }}
+                            </a>
+                            <button type="button" class="nav-link mobile-account-link mobile-logout-link" (click)="logout(); isMobileMenuOpen = false">
+                                <i class="pi pi-sign-out"></i>
+                                {{ 'nav.auth.logout' | translate }}
+                            </button>
+                        </div>
+                    } @else {
+                        <div class="mobile-auth-links">
+                            <a [routerLink]="['/auth/login']" [queryParams]="{ returnUrl: '/account' }" class="nav-link mobile-account-link" (click)="isMobileMenuOpen = false">
+                                <i class="pi pi-sign-in"></i>
+                                {{ 'nav.auth.signIn' | translate }}
+                            </a>
+                        </div>
+                    }
                 </nav>
 
                 <!-- Header Actions -->
@@ -833,6 +857,8 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
                 opacity: 0;
                 pointer-events: none;
                 transition: all 0.3s ease;
+                max-height: calc(100vh - 80px);
+                overflow-y: auto;
             }
 
             .main-nav.active {
@@ -845,6 +871,22 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
                 width: 100%;
                 justify-content: flex-start;
                 padding: 0.75rem 1rem;
+            }
+
+            .mobile-auth-links {
+                width: 100%;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            .mobile-account-link i {
+                width: 1rem;
+                text-align: center;
+            }
+
+            .mobile-logout-link {
+                color: #dc2626;
             }
 
             .nav-dropdown {
