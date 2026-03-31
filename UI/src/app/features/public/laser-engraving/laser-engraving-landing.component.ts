@@ -25,6 +25,7 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { Category } from '../../../shared/models/catalog.model';
 import { Item } from '../../../shared/models/item.model';
 import { LaserMaterial, LaserServiceRequestResult } from '../../../shared/models/laser.model';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-laser-engraving-landing',
@@ -1611,7 +1612,16 @@ export class LaserEngravingLandingComponent implements OnInit {
     }
 
     getItemImage(item: Item): string {
-        return item.primaryImageUrl || (item.mediaAssets && (item.mediaAssets as any)[0]?.fileUrl) || 'assets/img/defult.png';
+        const raw = item.primaryImageUrl || (item.mediaAssets && (item.mediaAssets as any)[0]?.fileUrl) || '';
+        return this.buildImageUrl(raw);
+    }
+
+    private buildImageUrl(url: string): string {
+        if (!url) return 'assets/img/defult.png';
+        if (url.startsWith('http')) return url;
+        const baseUrl = (environment.apiUrl || '').replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+        const path = url.startsWith('/') ? url : '/' + url;
+        return baseUrl ? `${baseUrl}${path}` : url;
     }
 
     getItemName(item: Item): string {
