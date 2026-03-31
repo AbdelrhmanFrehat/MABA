@@ -64,7 +64,7 @@ public class DesignCadRequestsController : ControllerBase
         if (string.IsNullOrWhiteSpace(title))
             return BadRequest("Title is required.");
 
-        if (!Enum.TryParse<DesignCadRequestType>(requestType, true, out var requestTypeEnum))
+        if (!TryParseRequestType(requestType, out var requestTypeEnum))
             return BadRequest("Invalid request type.");
 
         if ((requestTypeEnum == DesignCadRequestType.ReverseEngineering || requestTypeEnum == DesignCadRequestType.PhysicalItem) && !legalConfirmation)
@@ -166,6 +166,27 @@ public class DesignCadRequestsController : ControllerBase
             .Include(r => r.Attachments)
             .FirstAsync(r => r.Id == request.Id);
         return CreatedAtAction(nameof(GetById), new { id = request.Id }, MapToDto(created));
+    }
+
+    private static bool TryParseRequestType(string rawRequestType, out DesignCadRequestType requestType)
+    {
+        if (Enum.TryParse<DesignCadRequestType>(rawRequestType, true, out requestType))
+            return true;
+
+        // Support common frontend aliases for backward compatibility.
+        var normalized = rawRequestType?.Trim().Replace("-", "").Replace("_", "").Replace(" ", "").ToLowerInvariant();
+        return normalized switch
+        {
+            "existingcad" => Assign(DesignCadRequestType.ExistingFiles, out requestType),
+            "physicalobject" => Assign(DesignCadRequestType.PhysicalItem, out requestType),
+            _ => false
+        };
+    }
+
+    private static bool Assign(DesignCadRequestType value, out DesignCadRequestType requestType)
+    {
+        requestType = value;
+        return true;
     }
 
     /// <summary>

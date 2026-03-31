@@ -21,6 +21,8 @@ public class MediaController : ControllerBase
     }
 
     [HttpPost("upload")]
+    [DisableRequestSizeLimit]
+    [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
     public async Task<ActionResult<MediaAssetDto>> UploadMedia([FromForm] UploadMediaCommand command)
     {
         // Set uploaded by user ID from claims if not provided

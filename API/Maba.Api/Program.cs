@@ -2,6 +2,7 @@ using Maba.Application;
 using Maba.Infrastructure;
 using Maba.Infrastructure.Data;
 using Maba.Api.Extensions;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -30,6 +31,20 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+});
+
+// Remove ASP.NET Core request body and multipart form size limits.
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = long.MaxValue;
+});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = null;
+});
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = null;
 });
 
 // Add Infrastructure

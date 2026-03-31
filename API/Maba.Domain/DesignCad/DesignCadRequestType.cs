@@ -5,5 +5,7 @@ public enum DesignCadRequestType
     IdeaOnly = 0,
     ExistingFiles = 1,
     ReverseEngineering = 2,
-    PhysicalItem = 3
+    PhysicalItem = 3,
+    ModifyProduct = 4,
+    MechanicalAssembly = 5
 }
