@@ -85,7 +85,7 @@ import { LanguageService } from '../../../../shared/services/language.service';
                                         </h2>
                                         <p-tag 
                                             [value]="getStatusName(order.status)" 
-                                            [severity]="getStatusSeverity(order.status?.key || '')"
+                                            [severity]="getStatusSeverity(order.status.key || '')"
                                             [style]="{ fontSize: '1rem', padding: '0.5rem 1rem' }"
                                         ></p-tag>
                                     </div>
@@ -110,7 +110,7 @@ import { LanguageService } from '../../../../shared/services/language.service';
                                     <h2>
                                         <i class="pi pi-box"></i>
                                         {{ languageService.language === 'ar' ? 'المنتجات' : 'Order Items' }}
-                                        <span class="items-count">({{ order.items?.length || 0 }})</span>
+                                        <span class="items-count">({{ order.items.length || 0 }})</span>
                                     </h2>
                                     <div class="items-list">
                                         <div *ngFor="let item of order.items" class="item-row">

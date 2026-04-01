@@ -86,7 +86,7 @@ const HERO_TICKER_MAX_DIMENSION = 1920;
 
                     <div class="flex gap-2">
                         <p-button [label]="'common.cancel' | translate" [outlined]="true" routerLink="/admin/hero-ticker"></p-button>
-                        <p-button [label]="'common.save' | translate" (onClick)="save()" [loading]="saving" [disabled]="!imageUrl?.trim()"></p-button>
+                        <p-button [label]="'common.save' | translate" (onClick)="save()" [loading]="saving" [disabled]="!imageUrl.trim()"></p-button>
                     </div>
                 </div>
             </p-card>

@@ -13,8 +13,6 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
 import { AuthService } from '../../../shared/services/auth.service';
 import { Wishlist, WishlistItem } from '../../../shared/models/wishlist.model';
 import { LanguageService } from '../../../shared/services/language.service';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { LoadingSkeletonComponent } from '../../../shared/components/loading-skeleton/loading-skeleton.component';
 
 @Component({
     selector: 'app-wishlist',
@@ -27,9 +25,7 @@ import { LoadingSkeletonComponent } from '../../../shared/components/loading-ske
         ToastModule,
         ConfirmDialogModule,
         TooltipModule,
-        TranslateModule,
-        EmptyStateComponent,
-        LoadingSkeletonComponent
+        TranslateModule
     ],
     providers: [MessageService, ConfirmationService],
     template: `

@@ -71,20 +71,20 @@ interface StorageItemVm {
                                         icon="pi pi-minus"
                                         [outlined]="true"
                                         size="small"
-                                        [disabled]="row.savingQty || row.quantity <= 0"
+                                        [disabled]="!!row.savingQty || row.quantity <= 0"
                                         (onClick)="quickAdjust(row, -1)" />
                                     <p-inputNumber
                                         [(ngModel)]="row.quantity"
                                         [min]="0"
                                         [maxFractionDigits]="0"
                                         inputStyleClass="qty-input"
-                                        [disabled]="row.savingQty"
+                                        [disabled]="!!row.savingQty"
                                         (onBlur)="saveQuantity(row)" />
                                     <p-button
                                         icon="pi pi-plus"
                                         [outlined]="true"
                                         size="small"
-                                        [disabled]="row.savingQty"
+                                        [disabled]="!!row.savingQty"
                                         (onClick)="quickAdjust(row, 1)" />
                                 </div>
                             </div>
