@@ -111,6 +111,12 @@ public class DesignFileDto
     public Guid DesignId { get; set; }
     public Guid MediaAssetId { get; set; }
     public string FileUrl { get; set; } = string.Empty;
+    public string OriginalFileUrl { get; set; } = string.Empty;
+    public string? PreviewModelUrl { get; set; }
+    public string? PreviewFormat { get; set; }
+    public string? ThumbnailUrl { get; set; }
+    public string FileType { get; set; } = string.Empty;
+    public bool IsPreviewable { get; set; }
     public string FileName { get; set; } = string.Empty;
     public string Format { get; set; } = string.Empty;
     public long FileSizeBytes { get; set; }

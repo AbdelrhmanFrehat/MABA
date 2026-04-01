@@ -16,6 +16,7 @@ import { PrintingApiService } from '../../../shared/services/printing-api.servic
 import { Print3dDesign, DesignFile } from '../../../shared/models/printing.model';
 import { LanguageService } from '../../../shared/services/language.service';
 import { environment } from '../../../../environments/environment';
+import { Design3dViewerComponent } from '../../../shared/components/design-3d-viewer/design-3d-viewer.component';
 
 @Component({
     selector: 'app-account-designs',
@@ -32,7 +33,8 @@ import { environment } from '../../../../environments/environment';
         TooltipModule,
         ProgressSpinnerModule,
         ConfirmDialogModule,
-        TranslateModule
+        TranslateModule,
+        Design3dViewerComponent
     ],
     providers: [MessageService, ConfirmationService],
     template: `
@@ -152,6 +154,11 @@ import { environment } from '../../../../environments/environment';
                                 severity="info"
                                 [rounded]="true">
                             </p-tag>
+                            <p-tag
+                                [value]="isDesignPreviewable(design) ? '3D Preview' : 'No Preview'"
+                                [severity]="isDesignPreviewable(design) ? 'contrast' : 'secondary'"
+                                [rounded]="true">
+                            </p-tag>
                             <p-tag 
                                 *ngIf="design.isPublic"
                                 value="Public" 
@@ -164,6 +171,14 @@ import { environment } from '../../../../environments/environment';
 
                     <!-- Card Actions -->
                     <div class="card-actions">
+                        <p-button 
+                            icon="pi pi-eye"
+                            [rounded]="true"
+                            [outlined]="true"
+                            severity="contrast"
+                            pTooltip="{{ 'account.designs.preview' | translate }}"
+                            (click)="openPreview(design, $event)">
+                        </p-button>
                         <p-button 
                             icon="pi pi-download"
                             [rounded]="true"
@@ -215,20 +230,27 @@ import { environment } from '../../../../environments/environment';
             <div class="preview-container" *ngIf="selectedDesign">
                 <!-- 3D Viewer Area -->
                 <div class="viewer-area">
-                    <div class="viewer-placeholder">
-                        <div class="rotating-cube">
-                            <div class="cube large">
-                                <div class="face front"></div>
-                                <div class="face back"></div>
-                                <div class="face right"></div>
-                                <div class="face left"></div>
-                                <div class="face top"></div>
-                                <div class="face bottom"></div>
+                    @if (selectedPreviewFile && isFilePreviewable(selectedPreviewFile)) {
+                        <app-design-3d-viewer
+                            [modelUrl]="getPreviewModelUrl(selectedPreviewFile)"
+                            [format]="selectedPreviewFile.previewFormat || selectedPreviewFile.format">
+                        </app-design-3d-viewer>
+                    } @else {
+                        <div class="viewer-placeholder">
+                            <div class="rotating-cube">
+                                <div class="cube large">
+                                    <div class="face front"></div>
+                                    <div class="face back"></div>
+                                    <div class="face right"></div>
+                                    <div class="face left"></div>
+                                    <div class="face top"></div>
+                                    <div class="face bottom"></div>
+                                </div>
                             </div>
+                            <p class="viewer-text">{{ 'account.designs.3dPreview' | translate }}</p>
+                            <p class="viewer-subtext">{{ selectedPreviewFile?.fileName || getPrimaryFileName(selectedDesign) }}</p>
                         </div>
-                        <p class="viewer-text">{{ 'account.designs.3dPreview' | translate }}</p>
-                        <p class="viewer-subtext">{{ getPrimaryFileName(selectedDesign) }}</p>
-                    </div>
+                    }
                 </div>
 
                 <!-- Design Details -->
@@ -262,6 +284,19 @@ import { environment } from '../../../../environments/environment';
                                     {{ file.format || 'Unknown' }} • {{ formatFileSize(file.fileSizeBytes) }}
                                 </span>
                             </div>
+                            <p-tag
+                                [value]="isFilePreviewable(file) ? 'Previewable' : 'File'"
+                                [severity]="isFilePreviewable(file) ? 'info' : 'secondary'"
+                                [rounded]="true">
+                            </p-tag>
+                            <p-button
+                                *ngIf="isFilePreviewable(file)"
+                                icon="pi pi-eye"
+                                [rounded]="true"
+                                [text]="true"
+                                (click)="selectPreviewFile(file)"
+                                pTooltip="Preview">
+                            </p-button>
                             <p-button 
                                 icon="pi pi-download"
                                 [rounded]="true"
@@ -835,6 +870,7 @@ export class AccountDesignsComponent implements OnInit {
     loading = false;
     previewVisible = false;
     selectedDesign: Print3dDesign | null = null;
+    selectedPreviewFile: DesignFile | null = null;
 
     private printingApiService = inject(PrintingApiService);
     private messageService = inject(MessageService);
@@ -864,8 +900,10 @@ export class AccountDesignsComponent implements OnInit {
         });
     }
 
-    openPreview(design: Print3dDesign) {
+    openPreview(design: Print3dDesign, event?: Event) {
+        event?.stopPropagation();
         this.selectedDesign = design;
+        this.selectedPreviewFile = this.getPrimaryFile(design);
         this.previewVisible = true;
     }
 
@@ -899,6 +937,7 @@ export class AccountDesignsComponent implements OnInit {
                         if (this.selectedDesign?.id === design.id) {
                             this.previewVisible = false;
                             this.selectedDesign = null;
+                            this.selectedPreviewFile = null;
                         }
                         this.messageService.add({
                             severity: 'success',
@@ -928,10 +967,36 @@ export class AccountDesignsComponent implements OnInit {
         return primary.fileName;
     }
 
+    getPrimaryFile(design: Print3dDesign): DesignFile | null {
+        if (!design.files || design.files.length === 0) return null;
+        return design.files.find(f => f.isPrimary) || design.files[0];
+    }
+
     getFileFormat(design: Print3dDesign): string {
         if (!design.files || design.files.length === 0) return '3D';
         const primary = design.files.find(f => f.isPrimary) || design.files[0];
         return primary.format || primary.fileName.split('.').pop()?.toUpperCase() || '3D';
+    }
+
+    isFilePreviewable(file: DesignFile): boolean {
+        if (typeof file.isPreviewable === 'boolean') return file.isPreviewable;
+        const format = (file.previewFormat || file.fileType || file.format || file.fileName.split('.').pop() || '').toUpperCase();
+        return format === 'GLB' || format === 'GLTF' || format === 'STL' || format === 'OBJ';
+    }
+
+    isDesignPreviewable(design: Print3dDesign): boolean {
+        return (design.files || []).some(f => this.isFilePreviewable(f));
+    }
+
+    selectPreviewFile(file: DesignFile): void {
+        this.selectedPreviewFile = file;
+    }
+
+    getPreviewModelUrl(file: DesignFile): string {
+        const rawUrl = file.previewModelUrl || file.originalFileUrl || file.fileUrl;
+        if (!rawUrl) return '';
+        if (rawUrl.startsWith('http')) return rawUrl;
+        return (environment.apiUrl?.replace('/api/v1', '') || '') + rawUrl;
     }
 
     getDesignSize(design: Print3dDesign): number {

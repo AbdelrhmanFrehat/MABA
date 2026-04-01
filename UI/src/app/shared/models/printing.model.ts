@@ -201,6 +201,12 @@ export interface DesignFile {
     designId: string;
     mediaAssetId: string;
     fileUrl: string;
+    originalFileUrl?: string;
+    previewModelUrl?: string;
+    previewFormat?: string;
+    thumbnailUrl?: string;
+    fileType?: string;
+    isPreviewable?: boolean;
     fileName: string;
     format: string;
     fileSizeBytes: number;

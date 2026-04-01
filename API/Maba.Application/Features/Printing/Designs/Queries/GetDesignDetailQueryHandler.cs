@@ -4,6 +4,7 @@ using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Printing.Designs.Queries;
 using Maba.Application.Features.Printing.DTOs;
 using Maba.Domain.Printing;
+using System.IO;
 
 namespace Maba.Application.Features.Printing.Designs.Handlers;
 
@@ -59,6 +60,12 @@ public class GetDesignDetailQueryHandler : IRequestHandler<GetDesignDetailQuery,
                 DesignId = df.DesignId,
                 MediaAssetId = df.MediaAssetId,
                 FileUrl = df.MediaAsset.FileUrl,
+                OriginalFileUrl = df.MediaAsset.FileUrl,
+                PreviewModelUrl = GetPreviewModelUrl(df.MediaAsset.FileUrl, df.Format),
+                PreviewFormat = GetPreviewFormat(df.Format),
+                ThumbnailUrl = null,
+                FileType = NormalizeFormat(df.Format, df.MediaAsset.FileName),
+                IsPreviewable = IsPreviewableFormat(df.Format),
                 FileName = df.MediaAsset.FileName,
                 Format = df.Format,
                 FileSizeBytes = df.FileSizeBytes,
@@ -71,6 +78,33 @@ public class GetDesignDetailQueryHandler : IRequestHandler<GetDesignDetailQuery,
             CreatedAt = design.CreatedAt,
             UpdatedAt = design.UpdatedAt
         };
+    }
+
+    private static string NormalizeFormat(string? format, string? fileName)
+    {
+        var normalized = (format ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalized) && !string.IsNullOrWhiteSpace(fileName))
+        {
+            normalized = Path.GetExtension(fileName).TrimStart('.');
+        }
+        return normalized.ToUpperInvariant();
+    }
+
+    private static bool IsPreviewableFormat(string? format)
+    {
+        var value = NormalizeFormat(format, null);
+        return value is "GLB" or "GLTF" or "STL" or "OBJ";
+    }
+
+    private static string? GetPreviewModelUrl(string? fileUrl, string? format)
+    {
+        return IsPreviewableFormat(format) ? fileUrl : null;
+    }
+
+    private static string? GetPreviewFormat(string? format)
+    {
+        var value = NormalizeFormat(format, null);
+        return IsPreviewableFormat(value) ? value : null;
     }
 }
 

@@ -120,6 +120,12 @@ public class DesignsController : ControllerBase
                 DesignId = design.Id,
                 MediaAssetId = designFile.MediaAssetId,
                 FileUrl = fileUrl,
+                OriginalFileUrl = fileUrl,
+                PreviewModelUrl = IsPreviewableFormat(designFile.Format) ? fileUrl : null,
+                PreviewFormat = IsPreviewableFormat(designFile.Format) ? designFile.Format : null,
+                ThumbnailUrl = null,
+                FileType = designFile.Format,
+                IsPreviewable = IsPreviewableFormat(designFile.Format),
                 FileName = file.FileName,
                 Format = designFile.Format,
                 FileSizeBytes = designFile.FileSizeBytes,
@@ -130,6 +136,12 @@ public class DesignsController : ControllerBase
         };
 
         return CreatedAtAction(nameof(GetAllDesigns), new { }, design);
+    }
+
+    private static bool IsPreviewableFormat(string? format)
+    {
+        var value = (format ?? string.Empty).Trim().ToUpperInvariant();
+        return value is "GLB" or "GLTF" or "STL" or "OBJ";
     }
 
     [HttpPost("json")]
