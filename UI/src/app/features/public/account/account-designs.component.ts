@@ -41,6 +41,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
     template: `
         <p-toast />
         <p-confirmDialog />
+        <input #designUploadInput type="file" accept=".stl,.obj,.glb,.gltf,model/*" hidden (change)="onDesignUploadSelected($event)" />
         
         <div class="designs-page">
             <!-- Header Section -->
@@ -57,7 +58,8 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                         [label]="'account.designs.uploadNew' | translate" 
                         icon="pi pi-cloud-upload"
                         styleClass="upload-btn"
-                        (onClick)="goToUploadDesign($event)">
+                        [loading]="uploadingDesign"
+                        (onClick)="designUploadInput.click()">
                     </p-button>
                 </div>
                 
@@ -98,7 +100,8 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                         [label]="'account.designs.uploadFirst' | translate" 
                         icon="pi pi-cloud-upload"
                         styleClass="upload-btn-large"
-                        (onClick)="goToUploadDesign($event)">
+                        [loading]="uploadingDesign"
+                        (onClick)="designUploadInput.click()">
                     </p-button>
                 </div>
             </div>
@@ -330,20 +333,23 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
         :host {
             --maba-primary: #667eea;
             --maba-secondary: #764ba2;
+            --home-dark-1: #0c1445;
+            --home-dark-2: #1a1a2e;
+            --home-dark-3: #16213e;
         }
 
         .designs-page {
             min-height: 100vh;
-            background: linear-gradient(135deg, #f8f9ff 0%, #f3f4ff 100%);
+            background: linear-gradient(180deg, #f8faff 0%, #f4f6ff 45%, #f8faff 100%);
             padding-bottom: 3rem;
         }
 
         /* Header Styles */
         .designs-header {
-            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%);
+            background: linear-gradient(135deg, var(--home-dark-1) 0%, var(--home-dark-2) 52%, var(--home-dark-3) 100%);
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 14px 30px rgba(22, 33, 62, 0.25);
         }
 
         .header-content {
@@ -380,9 +386,9 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
         }
 
         :host ::ng-deep .upload-btn {
-            background: white !important;
-            color: var(--maba-primary) !important;
-            border: none !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f3f5ff 100%) !important;
+            color: #4f60cf !important;
+            border: 1px solid rgba(102, 126, 234, 0.2) !important;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
             border-radius: 10px !important;
@@ -498,15 +504,15 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             background: var(--surface-card);
             border-radius: 16px;
             overflow: hidden;
-            border: 1px solid rgba(102, 126, 234, 0.12);
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.08);
+            border: 1px solid rgba(79, 96, 207, 0.14);
+            box-shadow: 0 6px 22px rgba(17, 26, 61, 0.08);
             transition: all 0.3s ease;
             cursor: pointer;
         }
 
         .design-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.16);
+            box-shadow: 0 14px 36px rgba(17, 26, 61, 0.14);
         }
 
         /* Card Preview */
@@ -876,12 +882,23 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             color: #fff !important;
             background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
         }
+        :host ::ng-deep .p-confirmdialog .p-dialog-footer .p-button {
+            box-shadow: none !important;
+        }
         :host ::ng-deep .p-confirmdialog .confirm-yes-btn.p-button-success,
         :host ::ng-deep .p-confirmdialog .confirm-yes-btn.p-button {
             border: none !important;
             color: #fff !important;
             background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
             box-shadow: none !important;
+        }
+        :host ::ng-deep .p-confirmdialog .p-dialog-footer .p-button.p-button-success,
+        :host ::ng-deep .p-confirmdialog .p-dialog-footer .p-button.p-button-danger,
+        :host ::ng-deep .p-confirmdialog .p-dialog-footer .p-button.p-button-warning,
+        :host ::ng-deep .p-confirmdialog .p-dialog-footer .p-button.p-button-help {
+            border: none !important;
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
         }
         :host ::ng-deep .p-confirmdialog .confirm-no-btn.p-button,
         :host ::ng-deep .p-confirmdialog .confirm-no-btn.p-button-outlined {
@@ -918,6 +935,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
 export class AccountDesignsComponent implements OnInit {
     designs: Print3dDesign[] = [];
     loading = false;
+    uploadingDesign = false;
     previewVisible = false;
     selectedDesign: Print3dDesign | null = null;
     selectedPreviewFile: DesignFile | null = null;
@@ -961,6 +979,35 @@ export class AccountDesignsComponent implements OnInit {
     goToUploadDesign(event?: Event): void {
         event?.stopPropagation();
         this.router.navigate(['/3d-print/new']);
+    }
+
+    onDesignUploadSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.uploadingDesign = true;
+        this.printingApiService.uploadDesign(file).subscribe({
+            next: (created) => {
+                this.uploadingDesign = false;
+                this.designs = [created, ...this.designs];
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.translateService.instant('messages.success'),
+                    detail: this.translateService.instant('messages.itemCreatedSuccessfully')
+                });
+                input.value = '';
+            },
+            error: (error) => {
+                this.uploadingDesign = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.translateService.instant('messages.error'),
+                    detail: error?.error?.message || this.translateService.instant('messages.saveError')
+                });
+                input.value = '';
+            }
+        });
     }
 
     useDesignForPrint(design: Print3dDesign, event?: Event): void {

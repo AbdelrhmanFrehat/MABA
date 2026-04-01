@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -1338,6 +1339,7 @@ export class Print3dNewComponent implements OnInit {
     private printingApiService = inject(PrintingApiService);
     private authService = inject(AuthService);
     private router = inject(Router);
+    private route = inject(ActivatedRoute);
     private messageService = inject(MessageService);
     private translateService = inject(TranslateService);
     public languageService = inject(LanguageService);
@@ -1353,6 +1355,52 @@ export class Print3dNewComponent implements OnInit {
     ngOnInit() {
         this.loadMaterials();
         this.loadProfiles();
+        this.prefillDesignFromQuery();
+    }
+
+    private prefillDesignFromQuery() {
+        const designId = this.route.snapshot.queryParamMap.get('designId');
+        if (!designId) return;
+
+        this.printingApiService.getDesignDetail(designId).subscribe({
+            next: (design) => {
+                const primaryFile = (design.files || []).find(f => f.isPrimary) || design.files?.[0];
+                if (!primaryFile?.fileUrl) return;
+                this.loadFileFromUrl(primaryFile.fileUrl, primaryFile.fileName || 'design.stl');
+            }
+        });
+    }
+
+    private loadFileFromUrl(rawUrl: string, fileName: string) {
+        const fileUrl = rawUrl.startsWith('http')
+            ? rawUrl
+            : `${(environment.apiUrl || '').replace('/api/v1', '')}${rawUrl.startsWith('/') ? rawUrl : '/' + rawUrl}`;
+
+        fetch(fileUrl)
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to fetch');
+                return r.blob();
+            })
+            .then((blob) => {
+                const inferredName = fileName || this.extractFileNameFromUrl(fileUrl) || 'design.stl';
+                const file = new File([blob], inferredName, { type: blob.type || 'application/octet-stream' });
+                if (!this.isValidFile(file)) {
+                    this.showError('print3d.upload.invalidFile');
+                    return;
+                }
+                this.selectedFile = file;
+                this.updateProgress();
+                this.tryGetEstimate();
+            })
+            .catch(() => {
+                this.showError('messages.loadError');
+            });
+    }
+
+    private extractFileNameFromUrl(url: string): string {
+        const clean = url.split('?')[0].split('#')[0];
+        const last = clean.substring(clean.lastIndexOf('/') + 1);
+        return decodeURIComponent(last || 'design.stl');
     }
 
     loadMaterials() {

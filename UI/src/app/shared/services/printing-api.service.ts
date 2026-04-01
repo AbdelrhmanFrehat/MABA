@@ -171,6 +171,10 @@ export class PrintingApiService {
         return this.http.get<Print3dDesign[]>(`${this.baseUrl}/designs`, { params: httpParams });
     }
 
+    getDesignDetail(id: string): Observable<Print3dDesign> {
+        return this.http.get<Print3dDesign>(`${this.baseUrl}/designs/${id}/detail`);
+    }
+
     deleteDesign(id: string): Observable<void> {
         return this.http.post<void>(`${this.baseUrl}/designs/${id}/delete`, {});
     }
