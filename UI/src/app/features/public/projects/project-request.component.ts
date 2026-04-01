@@ -16,6 +16,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { LanguageService } from '../../../shared/services/language.service';
 import { ProjectsApiService } from '../../../shared/services/projects-api.service';
 import { ProjectListItem, ProjectCategory, ProjectRequestType, CreateProjectRequestPayload } from '../../../shared/models/project.model';
+import { AuthService } from '../../../shared/services/auth.service';
 
 @Component({
     selector: 'app-project-request',
@@ -165,29 +166,38 @@ import { ProjectListItem, ProjectCategory, ProjectRequestType, CreateProjectRequ
                             </div>
 
                             <!-- Contact Information -->
-                            <div class="form-section">
-                                <h3>{{ 'projects.request.contactInfo' | translate }}</h3>
-                                <div class="form-grid">
-                                    <div class="form-field">
-                                        <label>{{ 'projects.request.fullName' | translate }} *</label>
-                                        <input pInputText formControlName="fullName" class="w-full" />
-                                        @if (form.get('fullName')?.invalid && form.get('fullName')?.touched) {
-                                            <small class="error">{{ 'validation.required' | translate }}</small>
-                                        }
-                                    </div>
-                                    <div class="form-field">
-                                        <label>{{ 'projects.request.email' | translate }} *</label>
-                                        <input pInputText type="email" formControlName="email" class="w-full" />
-                                        @if (form.get('email')?.invalid && form.get('email')?.touched) {
-                                            <small class="error">{{ 'validation.invalidEmail' | translate }}</small>
-                                        }
-                                    </div>
-                                    <div class="form-field">
-                                        <label>{{ 'projects.request.phone' | translate }}</label>
-                                        <input pInputText formControlName="phone" class="w-full" />
+                            @if (!isLoggedIn()) {
+                                <div class="form-section">
+                                    <h3>{{ 'projects.request.contactInfo' | translate }}</h3>
+                                    <div class="form-grid">
+                                        <div class="form-field">
+                                            <label>{{ 'projects.request.fullName' | translate }} *</label>
+                                            <input pInputText formControlName="fullName" class="w-full" />
+                                            @if (form.get('fullName')?.invalid && form.get('fullName')?.touched) {
+                                                <small class="error">{{ 'validation.required' | translate }}</small>
+                                            }
+                                        </div>
+                                        <div class="form-field">
+                                            <label>{{ 'projects.request.email' | translate }} *</label>
+                                            <input pInputText type="email" formControlName="email" class="w-full" />
+                                            @if (form.get('email')?.invalid && form.get('email')?.touched) {
+                                                <small class="error">{{ 'validation.invalidEmail' | translate }}</small>
+                                            }
+                                        </div>
+                                        <div class="form-field">
+                                            <label>{{ 'projects.request.phone' | translate }}</label>
+                                            <input pInputText formControlName="phone" class="w-full" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            } @else {
+                                <div class="form-section">
+                                    <h3>{{ 'projects.request.contactInfo' | translate }}</h3>
+                                    <p class="hero-description" style="margin: 0;">
+                                        {{ languageService.language === 'ar' ? 'سيتم استخدام بيانات حسابك تلقائياً.' : 'Your account contact info will be used automatically.' }}
+                                    </p>
+                                </div>
+                            }
 
                             <!-- Submit Button -->
                             <div class="form-actions">
@@ -266,6 +276,7 @@ export class ProjectRequestComponent implements OnInit {
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
     private translate = inject(TranslateService);
+    private authService = inject(AuthService);
 
     form!: FormGroup;
     submitted = signal(false);
@@ -316,6 +327,7 @@ export class ProjectRequestComponent implements OnInit {
 
         const initialType = typeParam === 'similar' ? ProjectRequestType.SimilarToExisting : ProjectRequestType.Custom;
 
+        const isLogged = this.isLoggedIn();
         this.form = this.fb.group({
             requestType: [initialType],
             projectId: [null],
@@ -324,10 +336,18 @@ export class ProjectRequestComponent implements OnInit {
             customBudgetText: [''],
             timeline: [null],
             description: [''],
-            fullName: ['', Validators.required],
-            email: ['', [Validators.required, Validators.email]],
+            fullName: ['', isLogged ? [] : [Validators.required]],
+            email: ['', isLogged ? [] : [Validators.required, Validators.email]],
             phone: ['']
         });
+
+        if (isLogged) {
+            this.form.patchValue({
+                fullName: this.authService.user?.fullName || '',
+                email: this.authService.user?.email || '',
+                phone: this.authService.user?.phone || ''
+            });
+        }
 
         this.projectsApi.getProjects({ pageSize: 100 }).subscribe({
             next: (response) => {
@@ -376,9 +396,9 @@ export class ProjectRequestComponent implements OnInit {
             ? formValue.customBudgetText
             : (formValue.budgetRange || undefined);
         const payload: CreateProjectRequestPayload = {
-            fullName: formValue.fullName,
-            email: formValue.email,
-            phone: formValue.phone || undefined,
+            fullName: this.authService.user?.fullName || formValue.fullName,
+            email: this.authService.user?.email || formValue.email,
+            phone: this.authService.user?.phone || formValue.phone || undefined,
             requestType: formValue.requestType,
             projectId: formValue.requestType === ProjectRequestType.SimilarToExisting && formValue.projectId 
                 ? formValue.projectId.id 
@@ -404,5 +424,9 @@ export class ProjectRequestComponent implements OnInit {
                 });
             }
         });
+    }
+
+    isLoggedIn(): boolean {
+        return this.authService.authenticated;
     }
 }

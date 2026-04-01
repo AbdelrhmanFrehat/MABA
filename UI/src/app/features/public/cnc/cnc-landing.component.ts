@@ -620,27 +620,37 @@ type DesignSourceType = 'production' | 'image';
                                     <i class="pi pi-user"></i>
                                     {{ 'cnc.customer.contactInfo' | translate }}
                                 </h3>
-                                <p class="form-hint">{{ 'cnc.customer.requiredHint' | translate }}</p>
-
-                                <div class="contact-form">
-                                    <div class="form-field">
-                                        <label>{{ 'cnc.customer.name' | translate }} *</label>
-                                        <input pInputText [(ngModel)]="customerName" [placeholder]="'cnc.customer.namePlaceholder' | translate">
+                                @if (isLoggedIn()) {
+                                    <p class="form-hint">{{ languageService.language === 'ar' ? 'سيتم استخدام بيانات حسابك تلقائياً.' : 'Your account contact info will be used automatically.' }}</p>
+                                    <div class="contact-form">
+                                        <div class="form-field full-width">
+                                            <label>{{ 'cnc.customer.description' | translate }}</label>
+                                            <textarea pInputTextarea [(ngModel)]="projectDescription" rows="4" 
+                                                [placeholder]="'cnc.customer.descriptionPlaceholder' | translate"></textarea>
+                                        </div>
                                     </div>
-                                    <div class="form-field">
-                                        <label>{{ 'cnc.customer.email' | translate }} *</label>
-                                        <input pInputText type="email" [(ngModel)]="customerEmail" [placeholder]="'cnc.customer.emailPlaceholder' | translate">
+                                } @else {
+                                    <p class="form-hint">{{ 'cnc.customer.requiredHint' | translate }}</p>
+                                    <div class="contact-form">
+                                        <div class="form-field">
+                                            <label>{{ 'cnc.customer.name' | translate }} *</label>
+                                            <input pInputText [(ngModel)]="customerName" [placeholder]="'cnc.customer.namePlaceholder' | translate">
+                                        </div>
+                                        <div class="form-field">
+                                            <label>{{ 'cnc.customer.email' | translate }} *</label>
+                                            <input pInputText type="email" [(ngModel)]="customerEmail" [placeholder]="'cnc.customer.emailPlaceholder' | translate">
+                                        </div>
+                                        <div class="form-field">
+                                            <label>{{ 'cnc.customer.phone' | translate }}</label>
+                                            <input pInputText type="tel" [(ngModel)]="customerPhone" [placeholder]="'cnc.customer.phonePlaceholder' | translate">
+                                        </div>
+                                        <div class="form-field full-width">
+                                            <label>{{ 'cnc.customer.description' | translate }}</label>
+                                            <textarea pInputTextarea [(ngModel)]="projectDescription" rows="4" 
+                                                [placeholder]="'cnc.customer.descriptionPlaceholder' | translate"></textarea>
+                                        </div>
                                     </div>
-                                    <div class="form-field">
-                                        <label>{{ 'cnc.customer.phone' | translate }}</label>
-                                        <input pInputText type="tel" [(ngModel)]="customerPhone" [placeholder]="'cnc.customer.phonePlaceholder' | translate">
-                                    </div>
-                                    <div class="form-field full-width">
-                                        <label>{{ 'cnc.customer.description' | translate }}</label>
-                                        <textarea pInputTextarea [(ngModel)]="projectDescription" rows="4" 
-                                            [placeholder]="'cnc.customer.descriptionPlaceholder' | translate"></textarea>
-                                    </div>
-                                </div>
+                                }
                             </div>
 
                             <!-- Submit Button -->
@@ -2899,7 +2909,14 @@ export class CncLandingComponent implements OnInit {
     }
 
     isFormValid(): boolean {
+        if (this.isLoggedIn()) {
+            return this.width > 0 && this.height > 0;
+        }
         return !!(this.customerName && this.customerEmail && this.width > 0 && this.height > 0);
+    }
+
+    isLoggedIn(): boolean {
+        return this.authService.authenticated;
     }
 
     async submitRequest() {

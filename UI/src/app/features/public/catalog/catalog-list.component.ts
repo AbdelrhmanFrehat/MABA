@@ -968,13 +968,25 @@ export class CatalogListComponent implements OnInit {
     
     quickViewVisible = false;
     selectedProduct: Item | null = null;
+    private activeStatusId: string | null = null;
 
     ngOnInit() {
         this.pageTitle = this.languageService.translate('catalog.title');
         this.selectedSort = this.sortOptions[0];
-        this.loadFilters();
-        this.setupRouteParams();
-        this.loadItems();
+        this.itemsApi.getItemStatuses().subscribe({
+            next: (statuses) => {
+                const active = (statuses || []).find(s => s.key === 'Active');
+                this.activeStatusId = active?.id || null;
+                this.loadFilters();
+                this.setupRouteParams();
+                this.loadItems();
+            },
+            error: () => {
+                this.loadFilters();
+                this.setupRouteParams();
+                this.loadItems();
+            }
+        });
     }
 
     setupRouteParams() {
@@ -1069,9 +1081,10 @@ export class CatalogListComponent implements OnInit {
         // Load max price for slider from highest priced item in catalog.
         this.itemsApi.searchItems(undefined, {
             pageNumber: 1,
-            pageSize: 1,
+            pageSize: 50,
             sortBy: 'price',
-            sortDescending: true
+            sortDescending: true,
+            itemStatusId: this.activeStatusId || undefined
         }).subscribe({
             next: (response) => {
                 const highestPrice = response?.items?.[0]?.price;
@@ -1115,6 +1128,9 @@ export class CatalogListComponent implements OnInit {
         if (this.selectedSort) {
             apiFilters.sortBy = this.selectedSort.sortBy;
             apiFilters.sortDescending = this.selectedSort.sortOrder === 'desc';
+        }
+        if (this.activeStatusId) {
+            apiFilters.itemStatusId = this.activeStatusId;
         }
 
         // Always use search endpoint so we get proper server-side pagination (pageNumber + pageSize).

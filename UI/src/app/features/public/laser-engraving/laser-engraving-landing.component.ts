@@ -323,35 +323,47 @@ import { environment } from '../../../../environments/environment';
                                     <!-- Optional Customer Info -->
                                     <div class="customer-info-section">
                                         <label class="info-label">{{ 'laserEngraving.customer.contactInfo' | translate }}</label>
-                                        <p class="info-hint">{{ 'laserEngraving.customer.optional' | translate }}</p>
-                                        
-                                        <div class="info-fields">
-                                            <input 
-                                                type="text" 
-                                                pInputText 
-                                                [(ngModel)]="customerName"
-                                                [placeholder]="'laserEngraving.customer.name' | translate"
-                                                class="info-input">
-                                            <input 
-                                                type="email" 
-                                                pInputText 
-                                                [(ngModel)]="customerEmail"
-                                                [placeholder]="'laserEngraving.customer.email' | translate"
-                                                class="info-input">
-                                            <input 
-                                                type="tel" 
-                                                pInputText 
-                                                [(ngModel)]="customerPhone"
-                                                [placeholder]="'laserEngraving.customer.phone' | translate"
-                                                class="info-input">
-                                            <textarea 
-                                                pInputTextarea 
-                                                [(ngModel)]="customerNotes"
-                                                [placeholder]="'laserEngraving.customer.notes' | translate"
-                                                rows="2"
-                                                class="info-textarea">
-                                            </textarea>
-                                        </div>
+                                        @if (isLoggedIn()) {
+                                            <p class="info-hint">{{ languageService.language === 'ar' ? 'سيتم استخدام بيانات حسابك تلقائياً.' : 'Your account contact info will be used automatically.' }}</p>
+                                            <div class="info-fields">
+                                                <textarea 
+                                                    pInputTextarea 
+                                                    [(ngModel)]="customerNotes"
+                                                    [placeholder]="'laserEngraving.customer.notes' | translate"
+                                                    rows="2"
+                                                    class="info-textarea">
+                                                </textarea>
+                                            </div>
+                                        } @else {
+                                            <p class="info-hint">{{ 'laserEngraving.customer.optional' | translate }}</p>
+                                            <div class="info-fields">
+                                                <input 
+                                                    type="text" 
+                                                    pInputText 
+                                                    [(ngModel)]="customerName"
+                                                    [placeholder]="'laserEngraving.customer.name' | translate"
+                                                    class="info-input">
+                                                <input 
+                                                    type="email" 
+                                                    pInputText 
+                                                    [(ngModel)]="customerEmail"
+                                                    [placeholder]="'laserEngraving.customer.email' | translate"
+                                                    class="info-input">
+                                                <input 
+                                                    type="tel" 
+                                                    pInputText 
+                                                    [(ngModel)]="customerPhone"
+                                                    [placeholder]="'laserEngraving.customer.phone' | translate"
+                                                    class="info-input">
+                                                <textarea 
+                                                    pInputTextarea 
+                                                    [(ngModel)]="customerNotes"
+                                                    [placeholder]="'laserEngraving.customer.notes' | translate"
+                                                    rows="2"
+                                                    class="info-textarea">
+                                                </textarea>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
 
@@ -1514,6 +1526,10 @@ export class LaserEngravingLandingComponent implements OnInit {
     customerPhone = '';
     customerNotes = '';
 
+    isLoggedIn(): boolean {
+        return this.authService.authenticated;
+    }
+
     filteredMaterials = computed(() => {
         const materials = this.laserApi.materials();
         if (this.selectedServiceMode === 'cut') {
@@ -1740,9 +1756,9 @@ export class LaserEngravingLandingComponent implements OnInit {
                 heightCm: this.projectHeight
             },
             {
-                name: this.customerName || undefined,
-                email: this.customerEmail || undefined,
-                phone: this.customerPhone || undefined,
+                name: this.authService.user?.fullName || this.customerName || undefined,
+                email: this.authService.user?.email || this.customerEmail || undefined,
+                phone: this.authService.user?.phone || this.customerPhone || undefined,
                 notes: this.customerNotes || undefined
             }
         ).subscribe({
