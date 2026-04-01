@@ -136,11 +136,11 @@ export class ItemsApiService {
     // ============ INVENTORY MANAGEMENT ============
 
     getInventoryByItemId(itemId: string): Observable<any> {
-        return this.http.get<any>(`${this.baseUrl}/inventory/${itemId}`);
+        return this.http.get<any>(`${this.baseUrl}/inventory/item/${itemId}`);
     }
 
     updateInventory(itemId: string, request: { quantityOnHand: number; reorderLevel: number }): Observable<any> {
-        return this.http.put<any>(`${this.baseUrl}/inventory/${itemId}`, request);
+        return this.http.put<any>(`${this.baseUrl}/inventory/item/${itemId}`, request);
     }
 
     // ============ ITEM MEDIA MANAGEMENT ============

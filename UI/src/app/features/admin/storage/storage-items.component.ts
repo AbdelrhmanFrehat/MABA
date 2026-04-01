@@ -101,6 +101,13 @@ interface StorageItemVm {
                                     [icon]="row.item.itemStatusKey === 'Active' ? 'pi pi-eye-slash' : 'pi pi-shopping-cart'"
                                     size="small"
                                     (onClick)="togglePublish(row)" />
+                                <p-button
+                                    label="Delete"
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    [outlined]="true"
+                                    size="small"
+                                    (onClick)="deleteStorageItem(row)" />
                             </div>
                         </div>
                     </div>
@@ -120,7 +127,20 @@ interface StorageItemVm {
                 </div>
                 <div class="field field-full">
                     <label>Image</label>
-                    <input type="file" accept="image/*" (change)="onCreateFileSelected($event)" />
+                    <input #createImageInput type="file" accept="image/*" class="hidden-file-input" (change)="onCreateFileSelected($event)" />
+                    <div class="upload-box" (click)="createImageInput.click()">
+                        <i class="pi pi-image"></i>
+                        <div class="upload-main">{{ createImageFile ? 'Image selected' : 'Click to choose image' }}</div>
+                        <div class="upload-sub">PNG/JPG/WEBP - used as card/shop image</div>
+                    </div>
+                    <div class="file-meta" *ngIf="createImageFile">
+                        <img *ngIf="createImagePreviewUrl" [src]="createImagePreviewUrl" alt="selected preview" class="preview-img" />
+                        <div class="file-text">
+                            <strong>{{ createImageFile.name }}</strong>
+                            <small>{{ formatBytes(createImageFile.size) }}</small>
+                        </div>
+                        <p-button icon="pi pi-times" severity="secondary" [outlined]="true" size="small" (onClick)="clearCreateImage($event)" />
+                    </div>
                 </div>
             </div>
             <ng-template pTemplate="footer">
@@ -152,7 +172,20 @@ interface StorageItemVm {
                 </div>
                 <div class="field field-full">
                     <label>Replace/Upload Image (optional)</label>
-                    <input type="file" accept="image/*" (change)="onPublishFileSelected($event)" />
+                    <input #publishImageInput type="file" accept="image/*" class="hidden-file-input" (change)="onPublishFileSelected($event)" />
+                    <div class="upload-box" (click)="publishImageInput.click()">
+                        <i class="pi pi-upload"></i>
+                        <div class="upload-main">{{ publishImageFile ? 'New image selected' : 'Click to replace current image' }}</div>
+                        <div class="upload-sub">Leave empty to keep existing image</div>
+                    </div>
+                    <div class="file-meta" *ngIf="publishImageFile">
+                        <img *ngIf="publishImagePreviewUrl" [src]="publishImagePreviewUrl" alt="selected preview" class="preview-img" />
+                        <div class="file-text">
+                            <strong>{{ publishImageFile.name }}</strong>
+                            <small>{{ formatBytes(publishImageFile.size) }}</small>
+                        </div>
+                        <p-button icon="pi pi-times" severity="secondary" [outlined]="true" size="small" (onClick)="clearPublishImage($event)" />
+                    </div>
                 </div>
             </div>
             <ng-template pTemplate="footer">
@@ -184,6 +217,33 @@ interface StorageItemVm {
         .field label { font-size: 0.85rem; font-weight: 600; }
         .field-full { grid-column: 1 / -1; }
         .native-select { border: 1px solid #cbd5e1; border-radius: 8px; height: 2.5rem; padding: 0 0.6rem; }
+        .hidden-file-input { display: none; }
+        .upload-box {
+            border: 1px dashed #8b95ff;
+            border-radius: 10px;
+            background: #f8faff;
+            padding: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .upload-box:hover { background: #f1f4ff; border-color: #6573f3; }
+        .upload-box i { color: #6573f3; margin-bottom: 0.4rem; display: inline-block; }
+        .upload-main { font-weight: 600; color: #1e293b; }
+        .upload-sub { color: #64748b; font-size: 0.82rem; margin-top: 0.1rem; }
+        .file-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.45rem 0.55rem;
+            background: #fff;
+        }
+        .preview-img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0; }
+        .file-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+        .file-text strong { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-text small { color: #64748b; }
         @media (max-width: 768px) {
             .header { flex-direction: column; align-items: flex-start; }
             .storage-card { grid-template-columns: 1fr; }
@@ -209,12 +269,14 @@ export class StorageItemsComponent implements OnInit {
     creating = false;
     createModel = { name: '', quantity: 0 };
     createImageFile: File | null = null;
+    createImagePreviewUrl = '';
 
     showPublishDialog = false;
     publishAfterSave = false;
     savingPublishDetails = false;
     selectedRow: StorageItemVm | null = null;
     publishImageFile: File | null = null;
+    publishImagePreviewUrl = '';
     publishModel = {
         categoryId: '',
         price: 0,
@@ -229,6 +291,7 @@ export class StorageItemsComponent implements OnInit {
     openCreateDialog(): void {
         this.createModel = { name: '', quantity: 0 };
         this.createImageFile = null;
+        this.createImagePreviewUrl = '';
         this.showCreateDialog = true;
     }
 
@@ -262,12 +325,40 @@ export class StorageItemsComponent implements OnInit {
 
     onCreateFileSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
-        this.createImageFile = input.files?.[0] ?? null;
+        const file = input.files?.[0] ?? null;
+        this.createImageFile = file;
+        this.createImagePreviewUrl = file ? URL.createObjectURL(file) : '';
     }
 
     onPublishFileSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
-        this.publishImageFile = input.files?.[0] ?? null;
+        const file = input.files?.[0] ?? null;
+        this.publishImageFile = file;
+        this.publishImagePreviewUrl = file ? URL.createObjectURL(file) : '';
+    }
+
+    clearCreateImage(event?: Event): void {
+        event?.stopPropagation();
+        this.createImageFile = null;
+        this.createImagePreviewUrl = '';
+    }
+
+    clearPublishImage(event?: Event): void {
+        event?.stopPropagation();
+        this.publishImageFile = null;
+        this.publishImagePreviewUrl = '';
+    }
+
+    formatBytes(bytes: number): string {
+        if (!bytes) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
     }
 
     createStorageItem(): void {
@@ -372,10 +463,26 @@ export class StorageItemsComponent implements OnInit {
         });
     }
 
+    deleteStorageItem(row: StorageItemVm): void {
+        const confirmed = window.confirm(`Delete storage item "${row.item.nameEn}"? This cannot be undone.`);
+        if (!confirmed) return;
+
+        this.itemsApi.deleteItem(row.item.id).subscribe({
+            next: () => {
+                this.toastSuccess('Storage item deleted.');
+                this.loadStorageItems();
+            },
+            error: (err) => {
+                this.toastError(err?.error?.message || 'Failed to delete storage item.');
+            }
+        });
+    }
+
     openPublishDialog(row: StorageItemVm, publishAfterSave: boolean): void {
         this.selectedRow = row;
         this.publishAfterSave = publishAfterSave;
         this.publishImageFile = null;
+        this.publishImagePreviewUrl = '';
         this.publishModel = {
             categoryId: row.item.categoryId || '',
             price: Number(row.item.price || 0),
