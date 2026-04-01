@@ -168,7 +168,8 @@ import { environment } from '../../../../environments/environment';
                             icon="pi pi-download"
                             [rounded]="true"
                             [outlined]="true"
-                            severity="secondary"
+                            severity="info"
+                            styleClass="download-btn"
                             pTooltip="{{ 'account.designs.download' | translate }}"
                             (click)="downloadDesign(design, $event)">
                         </p-button>
@@ -628,6 +629,16 @@ import { environment } from '../../../../environments/environment';
             display: flex;
             justify-content: flex-end;
             gap: 0.5rem;
+        }
+        :host ::ng-deep .card-actions .download-btn.p-button.p-button-outlined {
+            border-color: var(--maba-primary) !important;
+            color: var(--maba-primary) !important;
+            background: #fff !important;
+        }
+        :host ::ng-deep .card-actions .download-btn.p-button.p-button-outlined:hover {
+            border-color: var(--maba-secondary) !important;
+            color: var(--maba-secondary) !important;
+            background: #f8faff !important;
         }
 
         /* Preview Dialog */

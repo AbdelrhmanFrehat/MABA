@@ -193,7 +193,7 @@ import { AuthService } from '../../../shared/services/auth.service';
                             } @else {
                                 <div class="form-section">
                                     <h3>{{ 'projects.request.contactInfo' | translate }}</h3>
-                                    <p class="hero-description" style="margin: 0;">
+                                    <p class="account-info-note">
                                         {{ languageService.language === 'ar' ? 'سيتم استخدام بيانات حسابك تلقائياً.' : 'Your account contact info will be used automatically.' }}
                                     </p>
                                 </div>
@@ -248,6 +248,15 @@ import { AuthService } from '../../../shared/services/auth.service';
         .form-field { display: flex; flex-direction: column; gap: 0.5rem; }
         .form-field label { font-size: 0.875rem; font-weight: 600; color: #374151; }
         .error { color: #ef4444; font-size: 0.75rem; }
+        .account-info-note {
+            margin: 0;
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.92rem;
+        }
 
         .form-actions { text-align: center; padding-top: 1rem; }
         :host ::ng-deep .submit-btn { background: var(--gradient-primary) !important; border: none !important; padding: 0.875rem 2.5rem !important; font-weight: 600 !important; border-radius: 12px !important; }
