@@ -617,6 +617,12 @@ import { DesignThumbnailService } from '../../../shared/services/design-thumbnai
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            pointer-events: none;
+            max-width: calc(100% - 24px);
         }
 
         .preview-overlay {
