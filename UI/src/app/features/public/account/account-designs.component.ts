@@ -216,8 +216,8 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             [modal]="true"
             [closable]="true"
             [dismissableMask]="true"
-            [style]="{width: '90vw', maxWidth: '1000px'}"
-            [contentStyle]="{'padding': '0'}"
+            [style]="{width: '95vw', maxWidth: '1400px'}"
+            [contentStyle]="{'padding': '0', 'height': 'calc(88vh - 7.5rem)', 'overflow': 'hidden'}"
             styleClass="preview-dialog">
             
             <ng-template pTemplate="header">
@@ -294,6 +294,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                                 icon="pi pi-eye"
                                 [rounded]="true"
                                 [text]="true"
+                                styleClass="file-preview-btn"
                                 (click)="selectPreviewFile(file)"
                                 pTooltip="Preview">
                             </p-button>
@@ -301,6 +302,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                                 icon="pi pi-download"
                                 [rounded]="true"
                                 [text]="true"
+                                styleClass="file-download-btn"
                                 (click)="downloadFile(file)">
                             </p-button>
                         </div>
@@ -318,6 +320,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                     <p-button 
                         [label]="'account.designs.useForPrint' | translate" 
                         icon="pi pi-print"
+                        styleClass="use-print-btn"
                         [routerLink]="['/3d-print/new']" 
                         [queryParams]="{designId: selectedDesign?.id}"
                         (click)="previewVisible = false">
@@ -693,21 +696,28 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
 
         .preview-container {
             display: grid;
-            grid-template-columns: 1fr 350px;
-            min-height: 500px;
+            grid-template-columns: minmax(0, 1.9fr) minmax(320px, 0.8fr);
+            height: 100%;
+            min-height: 68vh;
         }
 
         @media (max-width: 768px) {
             .preview-container {
                 grid-template-columns: 1fr;
+                min-height: 60vh;
             }
         }
 
         .viewer-area {
             background: linear-gradient(135deg, #111a3d 0%, #1b2d6b 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .viewer-area app-design-3d-viewer {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
         .viewer-placeholder {
@@ -816,6 +826,24 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
+        }
+        :host ::ng-deep .preview-footer .use-print-btn {
+            border: none !important;
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
+        }
+        :host ::ng-deep .preview-footer .use-print-btn .p-button-icon,
+        :host ::ng-deep .preview-footer .use-print-btn .p-button-label {
+            color: #fff !important;
+        }
+        :host ::ng-deep .files-list .file-preview-btn,
+        :host ::ng-deep .files-list .file-download-btn {
+            color: var(--maba-primary) !important;
+        }
+        :host ::ng-deep .files-list .file-preview-btn:hover,
+        :host ::ng-deep .files-list .file-download-btn:hover {
+            color: var(--maba-secondary) !important;
+            background: rgba(102, 126, 234, 0.1) !important;
         }
 
         /* Confirm dialog theme alignment */

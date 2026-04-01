@@ -225,7 +225,10 @@ public class DesignsController : ControllerBase
                 .AnyAsync(sj => designFileIds.Contains(sj.DesignFileId));
             if (hasSlicingJobs)
             {
-                return BadRequest("This design is linked to slicing jobs and cannot be deleted.");
+                return BadRequest(new
+                {
+                    message = "This design is linked to slicing jobs and cannot be deleted."
+                });
             }
         }
 

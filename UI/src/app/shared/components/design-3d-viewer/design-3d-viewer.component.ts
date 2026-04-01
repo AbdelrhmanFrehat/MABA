@@ -20,9 +20,9 @@ type ViewerFormat = 'GLB' | 'GLTF' | 'STL' | 'OBJ' | string;
             position: relative;
             width: 100%;
             height: 100%;
-            min-height: 320px;
+            min-height: 100%;
             background: radial-gradient(circle at 25% 20%, #1f2d69 0%, #111a3d 40%, #0b122d 100%);
-            border-radius: 12px;
+            border-radius: 0;
             overflow: hidden;
         }
         .viewer-canvas {
@@ -235,9 +235,14 @@ export class Design3dViewerComponent implements AfterViewInit, OnChanges, OnDest
         object.position.sub(center);
 
         const maxSize = Math.max(size.x, size.y, size.z) || 1;
-        const fitDist = maxSize * 1.6;
-        this.camera.position.set(fitDist, fitDist * 0.65, fitDist);
+        const fov = this.camera.fov * (Math.PI / 180);
+        const fitHeightDistance = maxSize / (2 * Math.tan(fov / 2));
+        const fitWidthDistance = fitHeightDistance / this.camera.aspect;
+        const fitDist = Math.max(fitHeightDistance, fitWidthDistance) * 1.25;
+        this.camera.position.set(fitDist, fitDist * 0.35, fitDist);
         this.controls.target.set(0, 0, 0);
+        this.controls.minDistance = Math.max(0.1, fitDist * 0.2);
+        this.controls.maxDistance = fitDist * 8;
         this.controls.update();
     }
 
