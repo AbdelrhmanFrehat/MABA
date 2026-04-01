@@ -391,16 +391,19 @@ import { DesignThumbnailService } from '../../../shared/services/design-thumbnai
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            color: #ffffff;
         }
 
         .page-title i {
             font-size: 1.75rem;
+            color: #ffffff;
         }
 
         .page-subtitle {
             margin: 0;
             opacity: 0.9;
             font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.92);
         }
 
         :host ::ng-deep .upload-btn {
@@ -546,10 +549,11 @@ import { DesignThumbnailService } from '../../../shared/services/design-thumbnai
         .preview-thumbnail {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover;
             background: radial-gradient(circle at 22% 15%, #1a2f74 0%, #111a3d 50%, #0f172a 100%);
-            padding: 0.35rem;
             display: block;
+            transform: scale(1.01);
+            filter: saturate(1.03) contrast(1.04);
         }
 
         .preview-content {

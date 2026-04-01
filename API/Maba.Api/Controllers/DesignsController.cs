@@ -229,18 +229,38 @@ public class DesignsController : ControllerBase
         if (!isOwner && !isPrivileged)
             return Forbid();
 
-        // Restrict delete when design files are referenced by slicing jobs.
+        // Restrict delete when design files are referenced by jobs for normal users.
+        // Privileged users can force-clean test data by removing dependent jobs first.
         var designFileIds = design.DesignFiles.Select(df => df.Id).ToList();
         if (designFileIds.Count > 0)
         {
-            var hasSlicingJobs = await _context.Set<Maba.Domain.Printing.SlicingJob>()
-                .AnyAsync(sj => designFileIds.Contains(sj.DesignFileId));
-            if (hasSlicingJobs)
+            var slicingJobs = await _context.Set<Maba.Domain.Printing.SlicingJob>()
+                .Where(sj => designFileIds.Contains(sj.DesignFileId))
+                .ToListAsync();
+
+            if (slicingJobs.Count > 0)
             {
-                return BadRequest(new
+                if (!isPrivileged)
                 {
-                    message = "This design is linked to slicing jobs and cannot be deleted."
-                });
+                    return BadRequest(new
+                    {
+                        message = "This design is linked to jobs and cannot be deleted from this account."
+                    });
+                }
+
+                var slicingJobIds = slicingJobs.Select(sj => sj.Id).ToList();
+                if (slicingJobIds.Count > 0)
+                {
+                    var printJobs = await _context.Set<Maba.Domain.Printing.PrintJob>()
+                        .Where(pj => slicingJobIds.Contains(pj.SlicingJobId))
+                        .ToListAsync();
+                    if (printJobs.Count > 0)
+                    {
+                        _context.Set<Maba.Domain.Printing.PrintJob>().RemoveRange(printJobs);
+                    }
+                }
+
+                _context.Set<Maba.Domain.Printing.SlicingJob>().RemoveRange(slicingJobs);
             }
         }
 

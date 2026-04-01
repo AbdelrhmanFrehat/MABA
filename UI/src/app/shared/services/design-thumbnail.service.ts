@@ -67,7 +67,7 @@ export class DesignThumbnailService {
             scene.add(modelRoot);
             this.centerAndFrame(modelRoot, THREE, camera);
             renderer.render(scene, camera);
-            return renderer.domElement.toDataURL('image/png');
+            return this.renderTightThumbnail(renderer.domElement, width, height);
         } catch {
             return null;
         } finally {
@@ -88,10 +88,62 @@ export class DesignThumbnailService {
         const fov = camera.fov * (Math.PI / 180);
         const fitHeightDistance = maxSize / (2 * Math.tan(fov / 2));
         const fitWidthDistance = fitHeightDistance / camera.aspect;
-        const fitDist = Math.max(fitHeightDistance, fitWidthDistance) * 1.35;
-        camera.position.set(fitDist, fitDist * 0.42, fitDist);
+        const fitDist = Math.max(fitHeightDistance, fitWidthDistance) * 1.12;
+        camera.position.set(fitDist, fitDist * 0.45, fitDist * 0.9);
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
+    }
+
+    private renderTightThumbnail(source: HTMLCanvasElement, width: number, height: number): string {
+        const srcCtx = source.getContext('2d', { willReadFrequently: true });
+        if (!srcCtx) return source.toDataURL('image/png');
+
+        const imageData = srcCtx.getImageData(0, 0, source.width, source.height).data;
+        const bg = { r: 15, g: 29, b: 79 };
+        const tolerance = 10;
+
+        let minX = source.width;
+        let minY = source.height;
+        let maxX = 0;
+        let maxY = 0;
+        let found = false;
+
+        for (let y = 0; y < source.height; y++) {
+            for (let x = 0; x < source.width; x++) {
+                const idx = (y * source.width + x) * 4;
+                const r = imageData[idx];
+                const g = imageData[idx + 1];
+                const b = imageData[idx + 2];
+                if (Math.abs(r - bg.r) > tolerance || Math.abs(g - bg.g) > tolerance || Math.abs(b - bg.b) > tolerance) {
+                    found = true;
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+
+        if (!found) return source.toDataURL('image/png');
+
+        const cropW = Math.max(1, maxX - minX + 1);
+        const cropH = Math.max(1, maxY - minY + 1);
+        const margin = Math.round(Math.max(cropW, cropH) * 0.22);
+        const sx = Math.max(0, minX - margin);
+        const sy = Math.max(0, minY - margin);
+        const sw = Math.min(source.width - sx, cropW + margin * 2);
+        const sh = Math.min(source.height - sy, cropH + margin * 2);
+
+        const output = document.createElement('canvas');
+        output.width = width;
+        output.height = height;
+        const outCtx = output.getContext('2d');
+        if (!outCtx) return source.toDataURL('image/png');
+
+        outCtx.fillStyle = '#0f1d4f';
+        outCtx.fillRect(0, 0, width, height);
+        outCtx.drawImage(source, sx, sy, sw, sh, 0, 0, width, height);
+        return output.toDataURL('image/png');
     }
 
     private disposeObject(root: any): void {
