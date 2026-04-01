@@ -2992,6 +2992,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private getFullImageUrl(url: string): string {
         if (!url) return 'assets/img/defult.png';
+        // Legacy seed paths often point to sample-* files that don't exist in production.
+        // Remap them to the default image to avoid repeated 404s in console.
+        if (/\/uploads\/images\/sample-\d+\.(jpg|jpeg|png|webp)$/i.test(url)) {
+            return 'assets/img/defult.png';
+        }
         if (url.startsWith('http')) return url;
         const apiUrl = environment.apiUrl || 'http://localhost:5000/api/v1';
         const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '') || '';

@@ -158,7 +158,13 @@
     "errorUpdatingColor": "خطأ في تحديث اللون",
     "errorDeletingColor": "خطأ في حذف اللون",
     "errorLoadingColors": "خطأ في تحميل الألوان",
-    "confirmDeleteColor": "هل أنت متأكد من حذف اللون \"{name}\"؟"
+    "confirmDeleteColor": "هل أنت متأكد من حذف اللون \"{name}\"؟",
+    "badRequest": "الطلب غير صالح.",
+    "notFound": "المورد المطلوب غير موجود.",
+    "forbidden": "ليس لديك صلاحية لتنفيذ هذا الإجراء.",
+    "validationError": "يرجى مراجعة المدخلات.",
+    "serverError": "حدث خطأ في الخادم. يرجى المحاولة لاحقًا.",
+    "serviceUnavailable": "الخدمة غير متاحة مؤقتًا. يرجى المحاولة لاحقًا."
   },
   "menu": {
     "home": "الرئيسية",
