@@ -20,6 +20,7 @@ import { PrintingApiService } from '../../../shared/services/printing-api.servic
 import { AuthService } from '../../../shared/services/auth.service';
 import { LanguageService } from '../../../shared/services/language.service';
 import { Material, Print3dMaterial, Print3dProfile, Print3dEstimate, CreatePrint3dRequestRequest, PrintQualityProfile, MaterialColor } from '../../../shared/models/printing.model';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-print3d-new',
