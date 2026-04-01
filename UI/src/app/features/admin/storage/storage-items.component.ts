@@ -128,6 +128,11 @@ interface StorageItemVm {
                 <div class="field field-full">
                     <label>Image</label>
                     <input #createImageInput type="file" accept="image/*" class="hidden-file-input" (change)="onCreateFileSelected($event)" />
+                    <input #createCameraInput type="file" accept="image/*" capture="environment" class="hidden-file-input" (change)="onCreateCameraSelected($event)" />
+                    <div class="upload-actions">
+                        <p-button label="Upload File" icon="pi pi-upload" [outlined]="true" size="small" (onClick)="createImageInput.click()" />
+                        <p-button label="Take Photo" icon="pi pi-camera" severity="secondary" size="small" (onClick)="createCameraInput.click()" />
+                    </div>
                     <div class="upload-box" (click)="createImageInput.click()">
                         <i class="pi pi-image"></i>
                         <div class="upload-main">{{ createImageFile ? 'Image selected' : 'Click to choose image' }}</div>
@@ -173,6 +178,11 @@ interface StorageItemVm {
                 <div class="field field-full">
                     <label>Replace/Upload Image (optional)</label>
                     <input #publishImageInput type="file" accept="image/*" class="hidden-file-input" (change)="onPublishFileSelected($event)" />
+                    <input #publishCameraInput type="file" accept="image/*" capture="environment" class="hidden-file-input" (change)="onPublishCameraSelected($event)" />
+                    <div class="upload-actions">
+                        <p-button label="Upload File" icon="pi pi-upload" [outlined]="true" size="small" (onClick)="publishImageInput.click()" />
+                        <p-button label="Take Photo" icon="pi pi-camera" severity="secondary" size="small" (onClick)="publishCameraInput.click()" />
+                    </div>
                     <div class="upload-box" (click)="publishImageInput.click()">
                         <i class="pi pi-upload"></i>
                         <div class="upload-main">{{ publishImageFile ? 'New image selected' : 'Click to replace current image' }}</div>
@@ -218,6 +228,12 @@ interface StorageItemVm {
         .field-full { grid-column: 1 / -1; }
         .native-select { border: 1px solid #cbd5e1; border-radius: 8px; height: 2.5rem; padding: 0 0.6rem; }
         .hidden-file-input { display: none; }
+        .upload-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.45rem;
+            flex-wrap: wrap;
+        }
         .upload-box {
             border: 1px dashed #8b95ff;
             border-radius: 10px;
@@ -326,15 +342,25 @@ export class StorageItemsComponent implements OnInit {
     onCreateFileSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0] ?? null;
-        this.createImageFile = file;
-        this.createImagePreviewUrl = file ? URL.createObjectURL(file) : '';
+        this.setCreateImage(file);
+    }
+
+    onCreateCameraSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0] ?? null;
+        this.setCreateImage(file);
     }
 
     onPublishFileSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0] ?? null;
-        this.publishImageFile = file;
-        this.publishImagePreviewUrl = file ? URL.createObjectURL(file) : '';
+        this.setPublishImage(file);
+    }
+
+    onPublishCameraSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0] ?? null;
+        this.setPublishImage(file);
     }
 
     clearCreateImage(event?: Event): void {
@@ -347,6 +373,16 @@ export class StorageItemsComponent implements OnInit {
         event?.stopPropagation();
         this.publishImageFile = null;
         this.publishImagePreviewUrl = '';
+    }
+
+    private setCreateImage(file: File | null): void {
+        this.createImageFile = file;
+        this.createImagePreviewUrl = file ? URL.createObjectURL(file) : '';
+    }
+
+    private setPublishImage(file: File | null): void {
+        this.publishImageFile = file;
+        this.publishImagePreviewUrl = file ? URL.createObjectURL(file) : '';
     }
 
     formatBytes(bytes: number): string {
