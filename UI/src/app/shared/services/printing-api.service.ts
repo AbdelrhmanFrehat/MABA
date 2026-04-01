@@ -172,7 +172,7 @@ export class PrintingApiService {
     }
 
     deleteDesign(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/designs/${id}`);
+        return this.http.post<void>(`${this.baseUrl}/designs/${id}/delete`, {});
     }
 }
 

@@ -202,6 +202,18 @@ public class DesignsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDesign(Guid id)
     {
+        return await DeleteDesignInternal(id);
+    }
+
+    // Fallback endpoint for environments where DELETE preflight is blocked by proxy/WAF.
+    [HttpPost("{id}/delete")]
+    public async Task<IActionResult> DeleteDesignPost(Guid id)
+    {
+        return await DeleteDesignInternal(id);
+    }
+
+    private async Task<IActionResult> DeleteDesignInternal(Guid id)
+    {
         var design = await _context.Set<Maba.Domain.Printing.Design>()
             .Include(d => d.DesignFiles)
             .ThenInclude(df => df.MediaAsset)

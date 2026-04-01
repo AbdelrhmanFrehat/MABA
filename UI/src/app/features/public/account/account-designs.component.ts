@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ViewChild, ElementRef, AfterViewInit } from 
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -56,7 +57,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                         [label]="'account.designs.uploadNew' | translate" 
                         icon="pi pi-cloud-upload"
                         styleClass="upload-btn"
-                        [routerLink]="['/3d-print/new']">
+                        (onClick)="goToUploadDesign($event)">
                     </p-button>
                 </div>
                 
@@ -97,7 +98,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                         [label]="'account.designs.uploadFirst' | translate" 
                         icon="pi pi-cloud-upload"
                         styleClass="upload-btn-large"
-                        [routerLink]="['/3d-print/new']">
+                        (onClick)="goToUploadDesign($event)">
                     </p-button>
                 </div>
             </div>
@@ -191,11 +192,9 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                         <p-button 
                             icon="pi pi-print"
                             [rounded]="true"
-                            severity="primary"
+                            styleClass="print-btn"
                             pTooltip="{{ 'account.designs.useForPrint' | translate }}"
-                            [routerLink]="['/3d-print/new']" 
-                            [queryParams]="{designId: design.id}"
-                            (click)="$event.stopPropagation()">
+                            (click)="useDesignForPrint(design, $event)">
                         </p-button>
                         <p-button 
                             icon="pi pi-trash"
@@ -321,9 +320,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                         [label]="'account.designs.useForPrint' | translate" 
                         icon="pi pi-print"
                         styleClass="use-print-btn"
-                        [routerLink]="['/3d-print/new']" 
-                        [queryParams]="{designId: selectedDesign?.id}"
-                        (click)="previewVisible = false">
+                        (click)="useSelectedDesignForPrint()">
                     </p-button>
                 </div>
             </ng-template>
@@ -678,6 +675,17 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             color: var(--maba-secondary) !important;
             background: #f8faff !important;
         }
+        :host ::ng-deep .card-actions .print-btn {
+            border: none !important;
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
+        }
+        :host ::ng-deep .card-actions .print-btn:hover {
+            filter: brightness(0.97);
+        }
+        :host ::ng-deep .card-actions .print-btn .p-button-icon {
+            color: #fff !important;
+        }
 
         /* Preview Dialog */
         :host ::ng-deep .preview-dialog .p-dialog-header {
@@ -868,6 +876,20 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             color: #fff !important;
             background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
         }
+        :host ::ng-deep .p-confirmdialog .confirm-yes-btn.p-button-success,
+        :host ::ng-deep .p-confirmdialog .confirm-yes-btn.p-button {
+            border: none !important;
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--maba-primary) 0%, var(--maba-secondary) 100%) !important;
+            box-shadow: none !important;
+        }
+        :host ::ng-deep .p-confirmdialog .confirm-no-btn.p-button,
+        :host ::ng-deep .p-confirmdialog .confirm-no-btn.p-button-outlined {
+            border-color: var(--maba-primary) !important;
+            color: var(--maba-primary) !important;
+            background: #fff !important;
+            box-shadow: none !important;
+        }
         :host ::ng-deep .p-confirmdialog .confirm-yes-btn:hover {
             filter: brightness(0.97);
         }
@@ -901,6 +923,7 @@ export class AccountDesignsComponent implements OnInit {
     selectedPreviewFile: DesignFile | null = null;
 
     private printingApiService = inject(PrintingApiService);
+    private router = inject(Router);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
     private translateService = inject(TranslateService);
@@ -933,6 +956,26 @@ export class AccountDesignsComponent implements OnInit {
         this.selectedDesign = design;
         this.selectedPreviewFile = this.getPrimaryFile(design);
         this.previewVisible = true;
+    }
+
+    goToUploadDesign(event?: Event): void {
+        event?.stopPropagation();
+        this.router.navigate(['/3d-print/new']);
+    }
+
+    useDesignForPrint(design: Print3dDesign, event?: Event): void {
+        event?.stopPropagation();
+        this.router.navigate(['/3d-print/new'], { queryParams: { designId: design.id } });
+    }
+
+    useSelectedDesignForPrint(): void {
+        const id = this.selectedDesign?.id;
+        this.previewVisible = false;
+        if (!id) {
+            this.router.navigate(['/3d-print/new']);
+            return;
+        }
+        this.router.navigate(['/3d-print/new'], { queryParams: { designId: id } });
     }
 
     downloadDesign(design: Print3dDesign, event: Event) {
