@@ -16,6 +16,7 @@ import { HomePageContent, Banner, FeaturedCategory, FeaturedItem, Testimonial } 
 import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more-dialog.component';
 import { HeroTickerComponent, HeroTickerItem } from './hero-ticker/hero-ticker.component';
 import { HeroTickerApiService } from '../../../shared/services/hero-ticker-api.service';
+import { SystemSettingsApiService } from '../../../shared/services/system-settings-api.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -2494,6 +2495,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     cmsLoading = true;
     featuredPage = 0;
 
+    private statisticsConfig: { icon: string; value: number; labelEn: string; labelAr: string }[] = [];
     statistics: { icon: string; value: number; label: string }[] = [];
     engineeringDivisions: { icon: string; title: string; items: string[] }[] = [];
     infrastructureCapabilities: { icon: string; label: string; subtitle: string; link?: string }[] = [];
@@ -2529,6 +2531,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private itemsApi = inject(ItemsApiService);
     private cmsApi = inject(CmsApiService);
     private heroTickerApi = inject(HeroTickerApiService);
+    private systemSettingsApi = inject(SystemSettingsApiService);
     public languageService = inject(LanguageService);
     showLearnMoreDialog = false;
     private elementRef = inject(ElementRef<HTMLElement>);
@@ -2544,6 +2547,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngOnInit() {
+        this.loadStatisticsConfig();
         this.loadHomeContent();
         this.loadCategories();
         this.loadFeaturedProducts();
@@ -2592,12 +2596,20 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     updateLabels() {
         const isAr = this.languageService.language === 'ar';
 
-        this.statistics = [
-            { icon: 'pi pi-cog', value: 150, label: isAr ? 'مشروع مُنجز' : 'Projects Completed' },
-            { icon: 'pi pi-building', value: 50, label: isAr ? 'شريك صناعي' : 'Industrial Partners' },
-            { icon: 'pi pi-users', value: 200, label: isAr ? 'عميل نشط' : 'Active Clients' },
-            { icon: 'pi pi-clock', value: 10, label: isAr ? 'سنوات خبرة' : 'Years Experience' }
-        ];
+        if (!this.statisticsConfig.length) {
+            this.statisticsConfig = [
+                { icon: 'pi pi-cog', value: 150, labelAr: 'مشروع مُنجز', labelEn: 'Projects Completed' },
+                { icon: 'pi pi-building', value: 50, labelAr: 'شريك صناعي', labelEn: 'Industrial Partners' },
+                { icon: 'pi pi-users', value: 200, labelAr: 'عميل نشط', labelEn: 'Active Clients' },
+                { icon: 'pi pi-clock', value: 10, labelAr: 'سنوات خبرة', labelEn: 'Years Experience' }
+            ];
+        }
+
+        this.statistics = this.statisticsConfig.map((x) => ({
+            icon: x.icon,
+            value: x.value,
+            label: isAr ? x.labelAr : x.labelEn
+        }));
 
         this.engineeringDivisions = [
             {
@@ -2656,6 +2668,31 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                 subtitle: isAr ? 'الإنتاج المتقدم' : 'Advanced Manufacturing' 
             }
         ];
+    }
+
+    private loadStatisticsConfig() {
+        this.systemSettingsApi.getByKey('home.statistics').subscribe({
+            next: (setting) => {
+                try {
+                    const parsed = JSON.parse(setting.value) as { icon: string; value: number; labelEn: string; labelAr: string }[];
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        this.statisticsConfig = parsed.map((x) => ({
+                            icon: x.icon || 'pi pi-circle',
+                            value: Number(x.value ?? 0),
+                            labelEn: x.labelEn || '',
+                            labelAr: x.labelAr || ''
+                        }));
+                    }
+                } catch {
+                    // Keep defaults when setting value is malformed.
+                }
+                this.updateLabels();
+            },
+            error: () => {
+                // Keep defaults when setting does not exist yet.
+                this.updateLabels();
+            }
+        });
     }
 
     scrollToSection(sectionId: string) {

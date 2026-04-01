@@ -111,6 +111,11 @@ export const adminRoutes: Routes = [
         canActivate: [authGuard]
     },
     {
+        path: 'home-stats',
+        loadComponent: () => import('./cms/home-stats-settings.component').then(m => m.HomeStatsSettingsComponent),
+        canActivate: [authGuard]
+    },
+    {
         path: 'hero-ticker',
         loadChildren: () => import('./hero-ticker/hero-ticker.routes').then(m => m.heroTickerRoutes),
         canActivate: [authGuard]
@@ -158,6 +163,11 @@ export const adminRoutes: Routes = [
     {
         path: 'project-requests',
         loadComponent: () => import('./projects/project-requests-list.component').then(m => m.AdminProjectRequestsListComponent),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'storage',
+        loadComponent: () => import('./storage/storage-items.component').then(m => m.StorageItemsComponent),
         canActivate: [authGuard]
     }
 ];
