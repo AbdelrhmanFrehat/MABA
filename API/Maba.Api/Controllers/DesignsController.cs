@@ -123,7 +123,7 @@ public class DesignsController : ControllerBase
                 OriginalFileUrl = fileUrl,
                 PreviewModelUrl = IsPreviewableFormat(designFile.Format) ? fileUrl : null,
                 PreviewFormat = IsPreviewableFormat(designFile.Format) ? designFile.Format : null,
-                ThumbnailUrl = null,
+                ThumbnailUrl = mediaAsset.ThumbnailUrl,
                 FileType = designFile.Format,
                 IsPreviewable = IsPreviewableFormat(designFile.Format),
                 FileName = file.FileName,

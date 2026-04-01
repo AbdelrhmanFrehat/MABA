@@ -18,6 +18,7 @@ import { Print3dDesign, DesignFile } from '../../../shared/models/printing.model
 import { LanguageService } from '../../../shared/services/language.service';
 import { environment } from '../../../../environments/environment';
 import { Design3dViewerComponent } from '../../../shared/components/design-3d-viewer/design-3d-viewer.component';
+import { DesignThumbnailService } from '../../../shared/services/design-thumbnail.service';
 
 @Component({
     selector: 'app-account-designs',
@@ -111,8 +112,27 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                 <div *ngFor="let design of designs" class="design-card" (click)="openPreview(design)">
                     <!-- Card Preview Area -->
                     <div class="card-preview">
-                        <div class="preview-content" *ngIf="design.files && design.files.length > 0">
-                            <!-- 3D File Icon with animation -->
+                        @if (getCardThumbnail(design); as thumbnail) {
+                            <img [src]="thumbnail" [alt]="design.title" class="preview-thumbnail" />
+                        } @else {
+                            <div class="preview-content" *ngIf="design.files && design.files.length > 0">
+                                <!-- 3D File Icon with animation -->
+                                <div class="file-icon-3d">
+                                    <div class="cube">
+                                        <div class="face front"></div>
+                                        <div class="face back"></div>
+                                        <div class="face right"></div>
+                                        <div class="face left"></div>
+                                        <div class="face top"></div>
+                                        <div class="face bottom"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="file-format-badge" *ngIf="design.files && design.files.length > 0">
+                            {{ getFileFormat(design) }}
+                        </div>
+                        <div class="preview-content" *ngIf="!design.files || design.files.length === 0">
                             <div class="file-icon-3d">
                                 <div class="cube">
                                     <div class="face front"></div>
@@ -123,9 +143,7 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
                                     <div class="face bottom"></div>
                                 </div>
                             </div>
-                            <div class="file-format-badge">
-                                {{ getFileFormat(design) }}
-                            </div>
+                            <div class="file-format-badge">3D</div>
                         </div>
                         <div class="preview-overlay">
                             <i class="pi pi-eye"></i>
@@ -524,6 +542,14 @@ import { Design3dViewerComponent } from '../../../shared/components/design-3d-vi
             align-items: center;
             justify-content: center;
             overflow: hidden;
+        }
+        .preview-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: radial-gradient(circle at 22% 15%, #1a2f74 0%, #111a3d 50%, #0f172a 100%);
+            padding: 0.35rem;
+            display: block;
         }
 
         .preview-content {
@@ -939,9 +965,11 @@ export class AccountDesignsComponent implements OnInit {
     previewVisible = false;
     selectedDesign: Print3dDesign | null = null;
     selectedPreviewFile: DesignFile | null = null;
+    thumbnailMap: Record<string, string> = {};
 
     private printingApiService = inject(PrintingApiService);
     private router = inject(Router);
+    private designThumbnailService = inject(DesignThumbnailService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
     private translateService = inject(TranslateService);
@@ -957,6 +985,7 @@ export class AccountDesignsComponent implements OnInit {
             next: (designs) => {
                 this.designs = designs;
                 this.loading = false;
+                this.prepareDesignThumbnails();
             },
             error: () => {
                 this.loading = false;
@@ -991,6 +1020,7 @@ export class AccountDesignsComponent implements OnInit {
             next: (created) => {
                 this.uploadingDesign = false;
                 this.designs = [created, ...this.designs];
+                this.prepareDesignThumbnails();
                 this.messageService.add({
                     severity: 'success',
                     summary: this.translateService.instant('messages.success'),
@@ -1090,6 +1120,12 @@ export class AccountDesignsComponent implements OnInit {
         return design.files.find(f => f.isPrimary) || design.files[0];
     }
 
+    getCardThumbnail(design: Print3dDesign): string | null {
+        const file = this.getPrimaryFile(design);
+        if (!file) return null;
+        return this.getFileThumbnailUrl(file) || this.thumbnailMap[design.id] || null;
+    }
+
     getFileFormat(design: Print3dDesign): string {
         if (!design.files || design.files.length === 0) return '3D';
         const primary = design.files.find(f => f.isPrimary) || design.files[0];
@@ -1115,6 +1151,35 @@ export class AccountDesignsComponent implements OnInit {
         if (!rawUrl) return '';
         if (rawUrl.startsWith('http')) return rawUrl;
         return (environment.apiUrl?.replace('/api/v1', '') || '') + rawUrl;
+    }
+
+    private getFileThumbnailUrl(file: DesignFile): string | null {
+        if (!file.thumbnailUrl) return null;
+        if (file.thumbnailUrl.startsWith('http')) return file.thumbnailUrl;
+        return (environment.apiUrl?.replace('/api/v1', '') || '') +
+            (file.thumbnailUrl.startsWith('/') ? file.thumbnailUrl : `/${file.thumbnailUrl}`);
+    }
+
+    private prepareDesignThumbnails(): void {
+        for (const design of this.designs) {
+            const file = this.getPrimaryFile(design);
+            if (!file) continue;
+            if (this.getFileThumbnailUrl(file)) continue;
+            if (!this.isFilePreviewable(file)) continue;
+            if (this.thumbnailMap[design.id]) continue;
+
+            const modelUrl = this.getPreviewModelUrl(file);
+            if (!modelUrl) continue;
+
+            this.designThumbnailService
+                .generateThumbnail(modelUrl, file.previewFormat || file.format)
+                .then((thumbnail) => {
+                    if (thumbnail) {
+                        this.thumbnailMap[design.id] = thumbnail;
+                    }
+                })
+                .catch(() => {});
+        }
     }
 
     getDesignSize(design: Print3dDesign): number {

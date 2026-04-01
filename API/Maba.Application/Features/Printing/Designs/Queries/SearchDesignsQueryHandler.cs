@@ -105,7 +105,7 @@ public class SearchDesignsQueryHandler : IRequestHandler<SearchDesignsQuery, Pag
                 OriginalFileUrl = df.MediaAsset.FileUrl,
                 PreviewModelUrl = GetPreviewModelUrl(df.MediaAsset.FileUrl, df.Format),
                 PreviewFormat = GetPreviewFormat(df.Format),
-                ThumbnailUrl = null,
+                ThumbnailUrl = df.MediaAsset.ThumbnailUrl,
                 FileType = NormalizeFormat(df.Format, df.MediaAsset.FileName),
                 IsPreviewable = IsPreviewableFormat(df.Format),
                 FileName = df.MediaAsset.FileName,
