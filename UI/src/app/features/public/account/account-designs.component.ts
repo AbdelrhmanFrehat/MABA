@@ -630,15 +630,24 @@ import { DesignThumbnailService } from '../../../shared/services/design-thumbnai
             gap: 0.5rem;
             color: white;
             opacity: 0;
+            visibility: hidden;
             transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
-        .design-card:hover .preview-overlay {
+        .card-preview:hover .preview-overlay {
             opacity: 1;
+            visibility: visible;
         }
 
         .preview-overlay i {
             font-size: 2rem;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .preview-overlay {
+                display: none !important;
+            }
         }
 
         /* Card Content */

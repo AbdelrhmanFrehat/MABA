@@ -50,37 +50,28 @@ public class SmtpEmailService : IEmailService
     public async Task SendEmailVerificationAsync(string toEmail, string verificationLink, CancellationToken cancellationToken = default)
     {
         var subject = "Verify your email address";
-        var body = new StringBuilder();
-        body.AppendLine("Please verify your email address by clicking the link below:");
-        body.AppendLine();
-        body.AppendLine(verificationLink);
-        body.AppendLine();
-        body.AppendLine("This link will expire in 24 hours.");
-        body.AppendLine();
-        body.AppendLine("If you did not create an account, you can ignore this email.");
-        body.AppendLine();
-        body.AppendLine("Thank you,");
-        body.AppendLine(_settings.FromName);
-        await SendAsync(toEmail, subject, body.ToString(), cancellationToken);
+        var body = BuildEmailTemplate(
+            title: "Verify your email",
+            message: "Welcome to MABA. Please confirm your email address to activate your account and start using the platform.",
+            actionText: "Verify Email",
+            actionUrl: verificationLink,
+            secondaryText: "This verification link expires in 24 hours. If you did not create this account, you can safely ignore this email."
+        );
+        await SendAsync(toEmail, subject, body, cancellationToken);
         _logger.LogInformation("Verification email sent to {Email}", toEmail);
     }
 
     public async Task SendPasswordResetAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default)
     {
         var subject = "Reset your password";
-        var body = new StringBuilder();
-        body.AppendLine("We received a request to reset your password.");
-        body.AppendLine();
-        body.AppendLine("Use the link below to choose a new password:");
-        body.AppendLine(resetLink);
-        body.AppendLine();
-        body.AppendLine("This link will expire in 24 hours.");
-        body.AppendLine();
-        body.AppendLine("If you did not request this, you can safely ignore this email.");
-        body.AppendLine();
-        body.AppendLine("Thank you,");
-        body.AppendLine(_settings.FromName);
-        await SendAsync(toEmail, subject, body.ToString(), cancellationToken);
+        var body = BuildEmailTemplate(
+            title: "Reset your password",
+            message: "We received a request to reset your password. Click the button below to choose a new secure password.",
+            actionText: "Reset Password",
+            actionUrl: resetLink,
+            secondaryText: "This reset link expires in 24 hours. If you did not request a password reset, you can safely ignore this email."
+        );
+        await SendAsync(toEmail, subject, body, cancellationToken);
         _logger.LogInformation("Password reset email sent to {Email}", toEmail);
     }
 
@@ -92,18 +83,19 @@ public class SmtpEmailService : IEmailService
         CancellationToken cancellationToken)
     {
         var displayName = string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName.Trim();
+        var safeDisplayName = WebUtility.HtmlEncode(displayName);
+        var safeRequestType = WebUtility.HtmlEncode(requestTypeLabel);
         var subject = $"Request received – {referenceNumber}";
-        var body = new StringBuilder();
-        body.AppendLine($"Dear {displayName},");
-        body.AppendLine();
-        body.AppendLine($"We have received your {requestTypeLabel} (reference {referenceNumber}).");
-        body.AppendLine();
-        body.AppendLine("MABA will review your request and respond soon.");
-        body.AppendLine();
-        body.AppendLine("Thank you,");
-        body.AppendLine(_settings.FromName);
+        var websiteUrl = "https://mabasol.com";
+        var body = BuildEmailTemplate(
+            title: "Request received",
+            message: $"Hi {safeDisplayName}, we have received your {safeRequestType} request.<br/>Reference Number: <strong>{WebUtility.HtmlEncode(referenceNumber)}</strong>.<br/>Our team will review it and get back to you soon.",
+            actionText: "View Request",
+            actionUrl: websiteUrl,
+            secondaryText: "Keep your reference number for follow-up. If this request was not submitted by you, please contact MABA support."
+        );
 
-        await SendAsync(toEmail, subject, body.ToString(), cancellationToken);
+        await SendAsync(toEmail, subject, body, cancellationToken);
     }
 
     private async Task SendInternalNotificationAsync(
@@ -126,11 +118,76 @@ public class SmtpEmailService : IEmailService
                 ? new MailAddress(_settings.FromEmail)
                 : new MailAddress(_settings.FromEmail, _settings.FromName),
             Subject = subject,
-            Body = body
+            Body = body,
+            IsBodyHtml = true
         };
         message.To.Add(to);
 
         await client.SendMailAsync(message, cancellationToken);
+    }
+
+    private string BuildEmailTemplate(
+        string title,
+        string message,
+        string actionText,
+        string actionUrl,
+        string secondaryText)
+    {
+        var fromName = string.IsNullOrWhiteSpace(_settings.FromName) ? "MABA" : _settings.FromName;
+        var safeTitle = WebUtility.HtmlEncode(title);
+        var safeMessage = message;
+        var safeActionText = WebUtility.HtmlEncode(actionText);
+        var safeActionUrl = WebUtility.HtmlEncode(actionUrl);
+        var safeSecondaryText = WebUtility.HtmlEncode(secondaryText);
+        var safeFromName = WebUtility.HtmlEncode(fromName);
+
+        return $@"
+<!doctype html>
+<html>
+<head>
+  <meta charset=""utf-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+  <title>{safeTitle}</title>
+</head>
+<body style=""margin:0;padding:0;background-color:#f3f6ff;font-family:Arial,Helvetica,sans-serif;"">
+  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""background-color:#f3f6ff;padding:24px 12px;"">
+    <tr>
+      <td align=""center"">
+        <table role=""presentation"" width=""600"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""width:100%;max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;"">
+          <tr>
+            <td style=""padding:22px 28px;background:linear-gradient(135deg,#0c1445 0%,#1a1a2e 52%,#16213e 100%);text-align:center;"">
+              <img src=""https://mabasol.com/assets/img/logo.jpeg"" alt=""MABA"" width=""46"" height=""46"" style=""display:block;margin:0 auto 10px;border-radius:10px;border:0;"" />
+              <div style=""color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.3px;"">MABA</div>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:30px 28px 8px 28px;text-align:center;"">
+              <h1 style=""margin:0 0 12px 0;font-size:24px;line-height:1.3;color:#121a3f;"">{safeTitle}</h1>
+              <p style=""margin:0;font-size:15px;line-height:1.7;color:#46527a;"">{safeMessage}</p>
+            </td>
+          </tr>
+          <tr>
+            <td align=""center"" style=""padding:24px 28px 16px 28px;"">
+              <a href=""{safeActionUrl}"" style=""display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:10px;"">{safeActionText}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:0 28px 24px 28px;text-align:center;"">
+              <p style=""margin:0;font-size:13px;line-height:1.6;color:#6a7493;"">{safeSecondaryText}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:18px 28px;background:#f7f9ff;border-top:1px solid #e8edff;text-align:center;"">
+              <p style=""margin:0 0 6px 0;font-size:12px;color:#7a84a3;"">{safeFromName} • Engineering Solutions</p>
+              <a href=""https://mabasol.com"" style=""font-size:12px;color:#667eea;text-decoration:none;"">mabasol.com</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
     }
 
     private SmtpClient CreateSmtpClient()
