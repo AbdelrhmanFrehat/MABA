@@ -149,6 +149,42 @@ public static class ShopOrderEmailHtmlBuilder
             publicSiteLabel: site.Replace("https://", "").Replace("http://", ""));
     }
 
+    public static string BuildCancelledHtml(ShopOrderCancelledEmailModel m)
+    {
+        var site = m.PublicSiteUrl.TrimEnd('/');
+        var logoUrl = $"{site}/assets/img/logo.jpeg";
+        var contactUrl = $"{site}/contact";
+
+        var reasonBlock = string.IsNullOrWhiteSpace(m.Reason)
+            ? string.Empty
+            : $@"<p style=""margin:16px 0 0 0;padding:14px 16px;background:#fff8f8;border:1px solid #ffd6d6;border-radius:12px;font-size:14px;line-height:1.6;color:#5c2d2d;""><strong style=""display:block;margin-bottom:6px;color:#8b2f2f;"">Note</strong>{H(m.Reason.Trim())}</p>";
+
+        var main = $@"
+<tr>
+  <td style=""padding:28px 28px 8px 28px;text-align:left;"">
+    <h1 style=""margin:0 0 8px 0;font-size:22px;line-height:1.3;color:#121a3f;font-weight:800;"">Order cancelled</h1>
+    <p style=""margin:0 0 16px 0;font-size:13px;color:#7a84a3;text-transform:uppercase;letter-spacing:1.2px;"">MABA Shop</p>
+    <p style=""margin:0 0 18px 0;font-size:15px;line-height:1.65;color:#46527a;"">
+      Your order <strong>{H(m.OrderNumber)}</strong> has been cancelled. You will not be charged further for this order unless otherwise communicated by our team.
+    </p>
+    {reasonBlock}
+  </td>
+</tr>
+<tr>
+  <td align=""center"" style=""padding:8px 28px 28px 28px;"">
+    <a href=""{H(m.ViewOrdersUrl)}"" style=""display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:10px;"">View orders</a>
+  </td>
+</tr>";
+
+        return WrapDocument(
+            title: "Order cancelled",
+            preheader: $"Order {m.OrderNumber} was cancelled.",
+            logoUrl: logoUrl,
+            innerRowsHtml: main,
+            footerSupportUrl: contactUrl,
+            publicSiteLabel: site.Replace("https://", "").Replace("http://", ""));
+    }
+
     /// <summary>Format multi-line address for safe HTML (values must already be plain text).</summary>
     public static string FormatAddressLines(AddressDto? address)
     {

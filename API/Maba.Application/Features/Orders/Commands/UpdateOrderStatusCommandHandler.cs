@@ -213,6 +213,22 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             await _emailService.SendShopOrderShippedAsync(updatedOrder.User.Email, shippedModel, cancellationToken);
         }
 
+        var shouldSendCancelledEmail = newStatusKey == "Cancelled" && oldStatusKey != "Cancelled";
+        if (shouldSendCancelledEmail && updatedOrder?.User != null && !string.IsNullOrWhiteSpace(updatedOrder.User.Email))
+        {
+            var frontendBaseCancel = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            await _emailService.SendShopOrderCancelledAsync(
+                updatedOrder.User.Email,
+                new ShopOrderCancelledEmailModel
+                {
+                    OrderNumber = updatedOrder.OrderNumber,
+                    ViewOrdersUrl = $"{frontendBaseCancel}/account/orders/{updatedOrder.Id}",
+                    PublicSiteUrl = frontendBaseCancel,
+                    Reason = null
+                },
+                cancellationToken);
+        }
+
         var totalPaid = updatedOrder!.Payments?.Sum(p => p.Amount) ?? 0;
         var paymentStatus = "Pending";
         if (totalPaid >= updatedOrder.Total) paymentStatus = "Paid";

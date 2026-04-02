@@ -42,4 +42,20 @@ public interface IEmailService
         string? toEmail,
         ShopOrderShippedEmailModel model,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Shop order cancelled (HTML). No-op when <paramref name="toEmail"/> is empty.</summary>
+    Task SendShopOrderCancelledAsync(
+        string? toEmail,
+        ShopOrderCancelledEmailModel model,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Service request cancelled (e.g. 3D, design, laser). No-op when <paramref name="toEmail"/> is empty.</summary>
+    Task SendRequestCancelledAsync(
+        string? toEmail,
+        string? customerName,
+        string referenceNumber,
+        string requestTypeLabel,
+        string? viewRequestUrl,
+        string? reasonOrNote,
+        CancellationToken cancellationToken = default);
 }

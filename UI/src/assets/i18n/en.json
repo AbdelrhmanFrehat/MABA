@@ -42,6 +42,115 @@
       "categoryLabel": "Category"
     }
   },
+  "helpCenter": {
+    "badge": "MABA Help",
+    "title": "Help Center",
+    "subtitle": "Clear guides for using the platform, understanding our services, and managing your orders and account.",
+    "searchPlaceholder": "Search help articles…",
+    "filterLabel": "Browse by category",
+    "noResults": "No articles match your search. Try different keywords or pick another category.",
+    "categoryCards": {
+      "gettingStarted": {
+        "title": "Getting started",
+        "hint": "Account, uploads, requests, and checkout"
+      },
+      "services": {
+        "title": "Services",
+        "hint": "3D printing, CNC, laser, materials, and files"
+      },
+      "ordersAccount": {
+        "title": "Orders & account",
+        "hint": "Statuses, payments, privacy, and support"
+      }
+    },
+    "sections": {
+      "gettingStarted": {
+        "title": "Getting started",
+        "description": "How to register, send us your work, submit manufacturing or design requests, and buy from the shop."
+      },
+      "services": {
+        "title": "Services help",
+        "description": "What to expect from 3D printing, CNC, and laser workflows, how materials are chosen, and which files to upload."
+      },
+      "ordersAccount": {
+        "title": "Orders & account",
+        "description": "Order progress, payments, signing in, cancellations and refunds, and how your 3D designs are kept private."
+      }
+    },
+    "articles": {
+      "createAccount": {
+        "title": "How do I create an account?",
+        "body": "Use Sign up / Create account from the header. Enter a valid email and password, complete any verification step if prompted, and sign in with the same credentials for the shop, service requests, and your customer portal. Keep your password secure; use password reset on the sign-in page if you forget it."
+      },
+      "uploadDesign": {
+        "title": "How do I upload a design?",
+        "body": "For 3D-related flows, open the relevant service (for example 3D printing or your account’s My Designs area when available). Upload the file types requested on the form (commonly STL, STEP/STP, or OBJ for meshes—see Supported file types). Files are tied to your signed-in account so only you and our team can access them for fulfillment. If the uploader rejects a file, check format, size limits, and that the model is manifold or valid for the workflow."
+      },
+      "submitRequest": {
+        "title": "How do I submit a service request?",
+        "body": "Choose the service you need—3D printing, Design & CAD, laser, CNC, or a broader project—from the site navigation. Complete each step: specifications, quantities, material or process choices, and attachments. Review the summary, then submit. You will receive confirmation by email where configured, and you can track progress from your account requests or order area depending on the product type."
+      },
+      "placeOrder": {
+        "title": "How do I place a shop order?",
+        "body": "Browse the catalog, open a product, choose options and quantity, and add to cart. Open the cart, apply a coupon if you have one, then proceed to checkout. Enter shipping and billing details, choose payment method, and confirm. After payment succeeds, the order appears under My orders with status updates as we process and ship it."
+      },
+      "trackOrder": {
+        "title": "How do I track my order?",
+        "body": "Sign in and go to My orders (or Account → Orders). Open the order to see its current status, totals, and addresses. When the order ships, tracking information may appear there and in shipment emails. If something looks stuck, contact support with your order number."
+      },
+      "print3dGuide": {
+        "title": "How does 3D printing work on MABA?",
+        "body": "You describe the part, choose material and options where offered, and upload your model. We review manufacturability, may suggest changes, then schedule production. Lead time depends on material, queue, and complexity. You will see status updates from receipt through production and shipping. For questions about orientation, supports, or tolerances, note them in your request or contact us."
+      },
+      "cncGuide": {
+        "title": "What should I know for CNC requests?",
+        "body": "Provide accurate CAD or drawings (often STEP, DXF, or similar as requested on the form). State material, tolerances, quantities, and any critical features. CNC jobs may need design review before quoting. Complex setups or tight tolerances can affect price and schedule—include notes so our engineers can respond with the right process."
+      },
+      "laserGuide": {
+        "title": "What should I know for laser jobs?",
+        "body": "Laser cutting and engraving usually need clean vector outlines or approved file types (such as DXF, SVG, or PDF vectors) depending on the form. Specify material type and thickness, whether it is cut-through or surface engraving, and quantities. Kerf and finish can vary by material; if you are unsure, describe the outcome you need and we will advise."
+      },
+      "materials": {
+        "title": "How does material selection work?",
+        "body": "Pick from the materials and options shown in the request or product flow. Those lists reflect what we can source and process for that service. If your application needs a special grade or certification, mention it in the notes. When two options seem close, prefer the one that matches your strength, temperature, or finish requirements—we can help you decide before production."
+      },
+      "fileTypes": {
+        "title": "Which file types are supported for upload and preview?",
+        "body": "For 3D geometry, STL is widely used for printing; STEP/STP and OBJ are common where the form allows them. CNC and mechanical work often use STEP or IGES solids. Laser vector work typically uses DXF, SVG, or PDF with usable vector data. Always follow the accept list on the uploader—if preview fails, re-export from your CAD tool with correct units and scale, and ensure meshes are watertight where required."
+      },
+      "wrongFile": {
+        "title": "I uploaded the wrong file. What should I do?",
+        "body": "Contact support as soon as possible with your request or order reference and attach the correct file if the process still allows changes. If production has not started, we can often swap files. If work has already begun or completed, options may be limited; our team will explain the next steps. Including clear notes when re-submitting reduces delays."
+      },
+      "orderStatuses": {
+        "title": "What do order statuses mean?",
+        "body": "Pending: we received the order and are preparing it. Processing: production or fulfillment steps are underway. Shipped: the package has been handed to the carrier; use tracking if provided. Delivered: the carrier reports delivery—verify receipt. Cancelled: the order will not be completed per policy or your request. Exact labels may match your account language; statuses align with our operational stages."
+      },
+      "payment": {
+        "title": "How do payments work?",
+        "body": "You pay at checkout for shop orders using the methods shown there. Charges are in the currency displayed for that checkout. If a payment fails, update your method or bank details and try again. Invoices or receipts, when issued, appear in your order or email as configured. For billing disputes or payment questions, contact support with your order number."
+      },
+      "loginAccount": {
+        "title": "Login and account help",
+        "body": "Use the same email and password you registered with. If you cannot sign in, use Forgot password and check spam folders for reset mail. Keep your profile and shipping addresses up to date under account settings so orders and notifications reach you correctly. For email verification issues, use resend options where available or contact support."
+      },
+      "cancellationRefunds": {
+        "title": "Cancellations and refunds—basics",
+        "body": "Whether an order can be cancelled depends on status and whether production or shipping has started. Contact support promptly with your order number. Refunds, when applicable, are handled according to our policies and payment provider timelines. Custom or made-to-order work may have different rules than catalog items—we will explain options case by case."
+      },
+      "designPrivacy": {
+        "title": "Are my 3D designs private? What is “My Designs”?",
+        "body": "Designs you upload while signed in are scoped to your account for quoting and production—they are not a public gallery for other customers. Use My Designs (or equivalent in your account) to manage files you have uploaded. Do not share account credentials; if you need a colleague to collaborate, use official sharing or contact options we provide. For data handling details, see our privacy policy."
+      }
+    },
+    "cta": {
+      "title": "Still need help?",
+      "description": "Our team can clarify requirements, timelines, and account issues—reach out or start a new project.",
+      "contact": "Contact support",
+      "startProject": "Start a project",
+      "myOrders": "My orders"
+    }
+  },
   "common": {
     "search": "Search",
     "clear": "Clear",
@@ -129,34 +238,83 @@
     "unique": "This value already exists"
   },
   "messages": {
-    "success": "Operation completed successfully",
-    "error": "An error occurred",
-    "saveSuccess": "Saved successfully",
-    "deleteSuccess": "Deleted successfully",
-    "updateSuccess": "Updated successfully",
-    "createSuccess": "Created successfully",
-    "confirmDelete": "Are you sure you want to delete this item?",
-    "confirmDeleteMultiple": "Are you sure you want to delete the selected items?",
-    "confirmDeleteSpecific": "Are you sure you want to delete \"{item}\"?",
-    "noItemsSelected": "No items selected",
-    "operationCancelled": "Operation cancelled",
-    "loadError": "Error loading data",
-    "saveError": "Error saving data",
-    "deleteError": "Error deleting data",
-    "networkError": "Network error. Please try again.",
-    "sessionExpired": "Your session has expired. Please login again.",
-    "unauthorized": "You are not authorized to perform this action",
-    "tooManyRequests": "Too many requests. Please try again later.",
-    "genericError": "Something went wrong. Please try again.",
+    "itemCreatedSuccessfully": "Item created successfully",
+    "itemUpdatedSuccessfully": "Item updated successfully",
+    "itemDeletedSuccessfully": "Item deleted successfully",
+    "errorSavingItem": "Error saving item",
+    "errorDeletingItem": "Error deleting item",
+    "errorLoadingItems": "Error loading items",
+    "inventoryUpdatedSuccessfully": "Inventory updated successfully",
+    "errorUpdatingInventory": "Error updating inventory",
+    "machineCreatedSuccessfully": "Machine created successfully",
+    "machineUpdatedSuccessfully": "Machine updated successfully",
+    "machineDeletedSuccessfully": "Machine deleted successfully",
+    "errorSavingMachine": "Error saving machine",
+    "errorDeletingMachine": "Error deleting machine",
+    "errorLoadingMachines": "Error loading machines",
+    "linkCreatedSuccessfully": "Link created successfully",
+    "errorCreatingLink": "Error creating link",
+    "errorLoadingLinks": "Error loading links",
+    "confirmDeleteLink": "Are you sure you want to delete this link?",
+    "linkDeletedSuccessfully": "Link deleted successfully",
+    "errorDeletingLink": "Error deleting link",
+    "mediaUploadedSuccessfully": "Media uploaded successfully",
+    "errorUploadingMedia": "Error uploading media",
+    "userUpdatedSuccessfully": "User updated successfully",
+    "errorUpdatingUser": "Error updating user",
+    "categoryCreatedSuccessfully": "Category created successfully",
+    "categoryUpdatedSuccessfully": "Category updated successfully",
+    "categoryDeletedSuccessfully": "Category deleted successfully",
+    "errorSavingCategory": "Error saving category",
+    "errorDeletingCategory": "Error deleting category",
+    "errorLoadingCategories": "Error loading categories",
+    "tagCreatedSuccessfully": "Tag created successfully",
+    "tagUpdatedSuccessfully": "Tag updated successfully",
+    "tagDeletedSuccessfully": "Tag deleted successfully",
+    "errorSavingTag": "Error saving tag",
+    "errorDeletingTag": "Error deleting tag",
+    "errorLoadingTags": "Error loading tags",
+    "brandCreatedSuccessfully": "Brand created successfully",
+    "brandUpdatedSuccessfully": "Brand updated successfully",
+    "brandDeletedSuccessfully": "Brand deleted successfully",
+    "errorSavingBrand": "Error saving brand",
+    "errorDeletingBrand": "Error deleting brand",
+    "errorLoadingBrands": "Error loading brands",
+    "materialCreatedSuccessfully": "Material created successfully",
+    "materialUpdatedSuccessfully": "Material updated successfully",
+    "materialDeletedSuccessfully": "Material deleted successfully",
+    "errorSavingMaterial": "Error saving material",
+    "errorDeletingMaterial": "Error deleting material",
+    "errorLoadingMaterials": "Error loading materials",
+    "colorCreated": "Color created successfully",
+    "colorUpdated": "Color updated successfully",
+    "colorDeleted": "Color deleted successfully",
+    "errorCreatingColor": "Error creating color",
+    "errorUpdatingColor": "Error updating color",
+    "errorDeletingColor": "Error deleting color",
+    "errorLoadingColors": "Error loading colors",
+    "confirmDeleteColor": "Are you sure you want to delete the color \"{name}\"?",
     "badRequest": "Invalid request.",
     "notFound": "The requested resource was not found.",
     "forbidden": "You do not have permission to perform this action.",
     "validationError": "Please check your input.",
     "serverError": "A server error occurred. Please try again later.",
     "serviceUnavailable": "Service temporarily unavailable. Please try again later.",
-    "errorUpdatingOrderStatus": "Could not update order status. Please try again.",
-    "errorLoadingOrderDetail": "Could not load order details.",
-    "unexpectedError": "Something went wrong. Please try again."
+    "roleCreatedSuccessfully": "Role created successfully",
+    "roleUpdatedSuccessfully": "Role updated successfully",
+    "roleDeletedSuccessfully": "Role deleted successfully",
+    "errorSavingRole": "Error saving role",
+    "errorDeletingRole": "Error deleting role",
+    "errorLoadingRoles": "Error loading roles",
+    "errorLoadingPermissions": "Error loading permissions",
+    "errorLoadingUsers": "Error loading users",
+    "errorLoadingDashboard": "Error loading dashboard data",
+    "mediaUpdatedSuccessfully": "Media updated successfully",
+    "mediaDeletedSuccessfully": "Media deleted successfully",
+    "errorUpdatingMedia": "Error updating media",
+    "errorDeletingMedia": "Error deleting media",
+    "errorLoadingMedia": "Error loading media",
+    "confirmDelete": "Are you sure you want to delete \"{name}\"?"
   },
   "menu": {
     "home": "Home",
@@ -231,12 +389,10 @@
     "3dRequests": "3D Print Requests",
     "designRequests": "Design Requests",
     "cadRequests": "CAD Requests",
-    "laserRequests": "Laser Requests",
     "cnc": "CNC",
     "cncMaterials": "CNC Materials",
     "cncRequests": "CNC Requests",
     "cncSettings": "CNC Settings",
-    "projects": "Projects",
     "projectsList": "Projects List",
     "projectRequests": "Project Requests",
     "software": "Software",
@@ -264,12 +420,30 @@
       "badge": "Choose your starting point",
       "title": "Where do you want to start?",
       "start": "Start",
-      "IdeaOnly": { "title": "Idea Only", "desc": "You have a concept and need a design from scratch." },
-      "BrokenDesign": { "title": "Idea + Broken Design", "desc": "You have an idea and partial or broken design files." },
-      "PhysicalObject": { "title": "Physical Object (Reverse Engineering)", "desc": "You have a physical part to reverse engineer." },
-      "ExistingCAD": { "title": "Existing CAD Files", "desc": "You have CAD files that need modification or optimization." },
-      "TechnicalDrawings": { "title": "Technical Drawings", "desc": "You have 2D drawings and need 3D or manufacturing files." },
-      "ImproveExistingProduct": { "title": "Improve Existing Product", "desc": "You want to refine or improve an existing design." }
+      "IdeaOnly": {
+        "title": "Idea Only",
+        "desc": "You have a concept and need a design from scratch."
+      },
+      "BrokenDesign": {
+        "title": "Idea + Broken Design",
+        "desc": "You have an idea and partial or broken design files."
+      },
+      "PhysicalObject": {
+        "title": "Physical Object (Reverse Engineering)",
+        "desc": "You have a physical part to reverse engineer."
+      },
+      "ExistingCAD": {
+        "title": "Existing CAD Files",
+        "desc": "You have CAD files that need modification or optimization."
+      },
+      "TechnicalDrawings": {
+        "title": "Technical Drawings",
+        "desc": "You have 2D drawings and need 3D or manufacturing files."
+      },
+      "ImproveExistingProduct": {
+        "title": "Improve Existing Product",
+        "desc": "You want to refine or improve an existing design."
+      }
     },
     "deliver": {
       "cadModel": "CAD Model",
@@ -315,16 +489,37 @@
       "descriptionPlaceholder": "Describe your project, goals, and any constraints...",
       "intendedUse": "Intended use",
       "selectIntendedUse": "Select...",
-      "intendedUseOpt": { "prototype": "Prototype", "final": "Final product", "academic": "Academic", "industrial": "Industrial" },
+      "intendedUseOpt": {
+        "prototype": "Prototype",
+        "final": "Final product",
+        "academic": "Academic",
+        "industrial": "Industrial"
+      },
       "toleranceLevel": "Tolerance requirement",
       "selectTolerance": "Select...",
-      "toleranceOpt": { "standard": "Standard", "precise": "Precise", "unknown": "Unknown" },
+      "toleranceOpt": {
+        "standard": "Standard",
+        "precise": "Precise",
+        "unknown": "Unknown"
+      },
       "budgetRange": "Budget range",
       "selectBudget": "Select...",
-      "budgetOpt": { "under500": "Under $500", "500-2000": "$500 - $2,000", "2000-5000": "$2,000 - $5,000", "5000plus": "$5,000+", "discuss": "To be discussed" },
+      "budgetOpt": {
+        "under500": "Under $500",
+        "500-2000": "$500 - $2,000",
+        "2000-5000": "$2,000 - $5,000",
+        "5000plus": "$5,000+",
+        "discuss": "To be discussed"
+      },
       "timeline": "Timeline",
       "selectTimeline": "Select...",
-      "timelineOpt": { "asap": "ASAP", "1-2weeks": "1-2 weeks", "1month": "1 month", "2-3months": "2-3 months", "flexible": "Flexible" },
+      "timelineOpt": {
+        "asap": "ASAP",
+        "1-2weeks": "1-2 weeks",
+        "1month": "1 month",
+        "2-3months": "2-3 months",
+        "flexible": "Flexible"
+      },
       "materialPreference": "Material preference (optional)",
       "materialPlaceholder": "e.g. plastic, metal, not sure",
       "dimensionsNotes": "Dimensions (optional)",
@@ -823,8 +1018,7 @@
     "passwordPlaceholder": "Enter your password",
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
-    "email": "Email",
-    "password": "Password"
+    "email": "Email"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -850,23 +1044,23 @@
     "ar": "Arabic",
     "switchTo": "Switch to {lang}"
   },
-    "admin": {
-      "dashboard": {
-        "title": "Dashboard",
-        "welcome": "Welcome to the admin dashboard",
-        "refresh": "Refresh Data",
-        "dateRange": "Date Range",
-        "selectDateRange": "Select Date Range",
-        "fromDate": "From Date",
-        "toDate": "To Date",
-        "today": "Today",
-        "last7days": "Last 7 Days",
-        "last30days": "Last 30 Days",
-        "last90days": "Last 90 Days",
-        "thisMonth": "This Month",
-        "lastMonth": "Last Month",
-        "thisYear": "This Year",
-        "custom": "Custom Range",
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome to the admin dashboard",
+      "refresh": "Refresh Data",
+      "dateRange": "Date Range",
+      "selectDateRange": "Select Date Range",
+      "fromDate": "From Date",
+      "toDate": "To Date",
+      "today": "Today",
+      "last7days": "Last 7 Days",
+      "last30days": "Last 30 Days",
+      "last90days": "Last 90 Days",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "thisYear": "This Year",
+      "custom": "Custom Range",
       "totalOrders": "Total Orders",
       "totalRevenue": "Total Revenue",
       "totalCustomers": "Total Customers",
@@ -1272,7 +1466,7 @@
       "saved": "CNC settings saved successfully"
     },
     "reviews": {
-      "title": "Reviews Management",
+      "title": "Title",
       "filterByStatus": "Filter by Status",
       "allStatuses": "All Statuses",
       "filterByRating": "Filter by Rating",
@@ -1281,7 +1475,6 @@
       "item": "Item",
       "customer": "Customer",
       "rating": "Rating",
-      "title": "Title",
       "comment": "Comment",
       "approve": "Approve",
       "reject": "Reject",
@@ -1578,7 +1771,7 @@
       "notesUpdated": "Notes updated successfully"
     },
     "unifiedRequests": {
-      "title": "All Requests",
+      "title": "Title",
       "subtitle": "Unified view of all service requests",
       "totalRequests": "Total Requests",
       "pending": "pending",
@@ -1603,91 +1796,11 @@
       "statusUnderReview": "Under Review",
       "referenceNumber": "Reference",
       "type": "Type",
-      "title": "Title",
       "customer": "Customer",
       "status": "Status",
       "date": "Date",
       "noRequests": "No requests found"
     }
-  },
-  "messages": {
-    "itemCreatedSuccessfully": "Item created successfully",
-    "itemUpdatedSuccessfully": "Item updated successfully",
-    "itemDeletedSuccessfully": "Item deleted successfully",
-    "errorSavingItem": "Error saving item",
-    "errorDeletingItem": "Error deleting item",
-    "errorLoadingItems": "Error loading items",
-    "inventoryUpdatedSuccessfully": "Inventory updated successfully",
-    "errorUpdatingInventory": "Error updating inventory",
-    "machineCreatedSuccessfully": "Machine created successfully",
-    "machineUpdatedSuccessfully": "Machine updated successfully",
-    "machineDeletedSuccessfully": "Machine deleted successfully",
-    "errorSavingMachine": "Error saving machine",
-    "errorDeletingMachine": "Error deleting machine",
-    "errorLoadingMachines": "Error loading machines",
-    "linkCreatedSuccessfully": "Link created successfully",
-    "errorCreatingLink": "Error creating link",
-    "errorLoadingLinks": "Error loading links",
-    "confirmDeleteLink": "Are you sure you want to delete this link?",
-    "linkDeletedSuccessfully": "Link deleted successfully",
-    "errorDeletingLink": "Error deleting link",
-    "mediaUploadedSuccessfully": "Media uploaded successfully",
-    "errorUploadingMedia": "Error uploading media",
-    "userUpdatedSuccessfully": "User updated successfully",
-    "errorUpdatingUser": "Error updating user",
-    "categoryCreatedSuccessfully": "Category created successfully",
-    "categoryUpdatedSuccessfully": "Category updated successfully",
-    "categoryDeletedSuccessfully": "Category deleted successfully",
-    "errorSavingCategory": "Error saving category",
-    "errorDeletingCategory": "Error deleting category",
-    "errorLoadingCategories": "Error loading categories",
-    "tagCreatedSuccessfully": "Tag created successfully",
-    "tagUpdatedSuccessfully": "Tag updated successfully",
-    "tagDeletedSuccessfully": "Tag deleted successfully",
-    "errorSavingTag": "Error saving tag",
-    "errorDeletingTag": "Error deleting tag",
-    "errorLoadingTags": "Error loading tags",
-    "brandCreatedSuccessfully": "Brand created successfully",
-    "brandUpdatedSuccessfully": "Brand updated successfully",
-    "brandDeletedSuccessfully": "Brand deleted successfully",
-    "errorSavingBrand": "Error saving brand",
-    "errorDeletingBrand": "Error deleting brand",
-    "errorLoadingBrands": "Error loading brands",
-    "materialCreatedSuccessfully": "Material created successfully",
-    "materialUpdatedSuccessfully": "Material updated successfully",
-    "materialDeletedSuccessfully": "Material deleted successfully",
-    "errorSavingMaterial": "Error saving material",
-    "errorDeletingMaterial": "Error deleting material",
-    "errorLoadingMaterials": "Error loading materials",
-    "colorCreated": "Color created successfully",
-    "colorUpdated": "Color updated successfully",
-    "colorDeleted": "Color deleted successfully",
-    "errorCreatingColor": "Error creating color",
-    "errorUpdatingColor": "Error updating color",
-    "errorDeletingColor": "Error deleting color",
-    "errorLoadingColors": "Error loading colors",
-    "confirmDeleteColor": "Are you sure you want to delete the color \"{name}\"?",
-    "badRequest": "Invalid request.",
-    "notFound": "The requested resource was not found.",
-    "forbidden": "You do not have permission to perform this action.",
-    "validationError": "Please check your input.",
-    "serverError": "A server error occurred. Please try again later.",
-    "serviceUnavailable": "Service temporarily unavailable. Please try again later.",
-    "roleCreatedSuccessfully": "Role created successfully",
-    "roleUpdatedSuccessfully": "Role updated successfully",
-    "roleDeletedSuccessfully": "Role deleted successfully",
-    "errorSavingRole": "Error saving role",
-    "errorDeletingRole": "Error deleting role",
-    "errorLoadingRoles": "Error loading roles",
-    "errorLoadingPermissions": "Error loading permissions",
-    "errorLoadingUsers": "Error loading users",
-    "errorLoadingDashboard": "Error loading dashboard data",
-    "mediaUpdatedSuccessfully": "Media updated successfully",
-    "mediaDeletedSuccessfully": "Media deleted successfully",
-    "errorUpdatingMedia": "Error updating media",
-    "errorDeletingMedia": "Error deleting media",
-    "errorLoadingMedia": "Error loading media",
-    "confirmDelete": "Are you sure you want to delete \"{name}\"?"
   },
   "footer": {
     "about": "About Us",
@@ -2261,7 +2374,6 @@
     "subtotal": "Subtotal",
     "discount": "Discount",
     "tax": "Tax",
-    "shipping": "Shipping",
     "total": "Total",
     "previous": "Previous",
     "next": "Next",
@@ -3147,4 +3259,3 @@
     }
   }
 }
-

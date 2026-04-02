@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Laser.DTOs;
 using Maba.Domain.Laser;
@@ -9,10 +10,17 @@ namespace Maba.Application.Features.Laser.Requests.Commands;
 public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLaserServiceRequestCommand, LaserServiceRequestDto?>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public UpdateLaserServiceRequestCommandHandler(IApplicationDbContext context)
+    public UpdateLaserServiceRequestCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<LaserServiceRequestDto?> Handle(UpdateLaserServiceRequestCommand request, CancellationToken cancellationToken)
@@ -26,12 +34,13 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
             return null;
         }
 
+        var previousStatus = serviceRequest.Status;
+
         if (request.Status.HasValue)
         {
-            var oldStatus = serviceRequest.Status;
             serviceRequest.Status = request.Status.Value;
 
-            if (oldStatus == LaserServiceRequestStatus.Pending && 
+            if (previousStatus == LaserServiceRequestStatus.Pending &&
                 request.Status.Value != LaserServiceRequestStatus.Pending)
             {
                 serviceRequest.ReviewedAt = DateTime.UtcNow;
@@ -56,6 +65,24 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
         serviceRequest.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (request.Status.HasValue
+            && request.Status.Value == LaserServiceRequestStatus.Cancelled
+            && previousStatus != LaserServiceRequestStatus.Cancelled)
+        {
+            var toEmail = serviceRequest.CustomerEmail;
+            var custName = serviceRequest.CustomerName;
+            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl = $"{baseUrl}/account/requests?requestId={serviceRequest.Id}&type=laser";
+            await _emailService.SendRequestCancelledAsync(
+                toEmail,
+                custName,
+                serviceRequest.ReferenceNumber,
+                "Laser service request",
+                viewUrl,
+                request.AdminNotes,
+                cancellationToken);
+        }
 
         return new LaserServiceRequestDto
         {

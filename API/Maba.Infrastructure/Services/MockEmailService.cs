@@ -71,4 +71,33 @@ public class MockEmailService : IEmailService
             model.OrderNumber);
         return Task.CompletedTask;
     }
+
+    public Task SendShopOrderCancelledAsync(
+        string? toEmail,
+        ShopOrderCancelledEmailModel model,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug(
+            "Mock email: would send shop order cancelled to {Email} for order {OrderNumber}",
+            toEmail ?? "(none)",
+            model.OrderNumber);
+        return Task.CompletedTask;
+    }
+
+    public Task SendRequestCancelledAsync(
+        string? toEmail,
+        string? customerName,
+        string referenceNumber,
+        string requestTypeLabel,
+        string? viewRequestUrl,
+        string? reasonOrNote,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug(
+            "Mock email: would send request cancelled to {Email} for {ReferenceNumber} ({RequestType})",
+            toEmail ?? "(none)",
+            referenceNumber,
+            requestTypeLabel);
+        return Task.CompletedTask;
+    }
 }

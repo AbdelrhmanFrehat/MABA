@@ -406,7 +406,7 @@ public class Print3dRequestsController : ControllerBase
             return BadRequest("Invalid status");
         }
 
-        var oldStatus = request.Status;
+        var previousStatus = request.Status;
         request.Status = newStatus;
         request.UpdatedAt = DateTime.UtcNow;
 
@@ -435,6 +435,23 @@ public class Print3dRequestsController : ControllerBase
         }
 
         await _context.SaveChangesAsync(CancellationToken.None);
+
+        if (newStatus == Print3dServiceRequestStatus.Cancelled &&
+            previousStatus != Print3dServiceRequestStatus.Cancelled)
+        {
+            var toEmail = request.CustomerEmail ?? request.User?.Email;
+            var custName = request.CustomerName ?? request.User?.FullName;
+            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl = $"{baseUrl}/account/requests?requestId={request.Id}&type=print3d";
+            await _emailService.SendRequestCancelledAsync(
+                toEmail,
+                custName,
+                request.ReferenceNumber,
+                "3D print request",
+                viewUrl,
+                dto.Notes,
+                CancellationToken.None);
+        }
 
         return Ok(new Print3dRequestDto
         {

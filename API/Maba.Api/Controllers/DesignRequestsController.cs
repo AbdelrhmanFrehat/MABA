@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Domain.Design;
 using Maba.Domain.Users;
@@ -18,6 +19,7 @@ public class DesignRequestsController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
     private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<DesignRequestsController> _logger;
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -29,11 +31,17 @@ public class DesignRequestsController : ControllerBase
     private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB
     private const int MaxFiles = 20;
 
-    public DesignRequestsController(IApplicationDbContext context, IFileStorageService fileStorage, IEmailService emailService, ILogger<DesignRequestsController> logger)
+    public DesignRequestsController(
+        IApplicationDbContext context,
+        IFileStorageService fileStorage,
+        IEmailService emailService,
+        IConfiguration configuration,
+        ILogger<DesignRequestsController> logger)
     {
         _context = context;
         _fileStorage = fileStorage;
         _emailService = emailService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -338,6 +346,7 @@ public class DesignRequestsController : ControllerBase
         if (!Enum.TryParse<DesignServiceRequestStatus>(dto.Status, true, out var newStatus))
             return BadRequest("Invalid status.");
 
+        var previousStatus = request.Status;
         request.Status = newStatus;
         request.UpdatedAt = DateTime.UtcNow;
         if (!string.IsNullOrWhiteSpace(dto.Notes))
@@ -351,6 +360,24 @@ public class DesignRequestsController : ControllerBase
             request.DeliveredAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(CancellationToken.None);
+
+        if (newStatus == DesignServiceRequestStatus.Cancelled &&
+            previousStatus != DesignServiceRequestStatus.Cancelled)
+        {
+            var toEmail = request.CustomerEmail ?? request.User?.Email;
+            var custName = request.CustomerName ?? request.User?.FullName;
+            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl = $"{baseUrl}/account";
+            await _emailService.SendRequestCancelledAsync(
+                toEmail,
+                custName,
+                request.ReferenceNumber,
+                "Design request",
+                viewUrl,
+                dto.Notes,
+                CancellationToken.None);
+        }
+
         return Ok(await MapToDto(request));
     }
 

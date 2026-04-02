@@ -30,6 +30,16 @@ public sealed class ShopOrderEmailLineItem
 }
 
 /// <summary>Data for the order shipped notification email.</summary>
+/// <summary>Shop order cancelled by admin or workflow (HTML email).</summary>
+public sealed class ShopOrderCancelledEmailModel
+{
+    public string OrderNumber { get; init; } = string.Empty;
+    public string ViewOrdersUrl { get; init; } = string.Empty;
+    public string PublicSiteUrl { get; init; } = "https://mabasol.com";
+    /// <summary>Optional note shown to the customer (e.g. admin reason).</summary>
+    public string? Reason { get; init; }
+}
+
 public sealed class ShopOrderShippedEmailModel
 {
     public string OrderNumber { get; init; } = string.Empty;

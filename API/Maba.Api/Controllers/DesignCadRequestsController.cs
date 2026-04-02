@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Domain.DesignCad;
 using Maba.Domain.Users;
@@ -17,6 +18,7 @@ public class DesignCadRequestsController : ControllerBase
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
     private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<DesignCadRequestsController> _logger;
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -28,11 +30,17 @@ public class DesignCadRequestsController : ControllerBase
     private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB
     private const int MaxFiles = 20;
 
-    public DesignCadRequestsController(IApplicationDbContext context, IFileStorageService fileStorage, IEmailService emailService, ILogger<DesignCadRequestsController> logger)
+    public DesignCadRequestsController(
+        IApplicationDbContext context,
+        IFileStorageService fileStorage,
+        IEmailService emailService,
+        IConfiguration configuration,
+        ILogger<DesignCadRequestsController> logger)
     {
         _context = context;
         _fileStorage = fileStorage;
         _emailService = emailService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -296,6 +304,7 @@ public class DesignCadRequestsController : ControllerBase
         if (!Enum.TryParse<DesignCadRequestStatus>(dto.Status, true, out var statusEnum))
             return BadRequest("Invalid status.");
 
+        var previousStatus = request.Status;
         request.Status = statusEnum;
         if (statusEnum == DesignCadRequestStatus.UnderReview)
             request.ReviewedAt = DateTime.UtcNow;
@@ -305,6 +314,24 @@ public class DesignCadRequestsController : ControllerBase
             request.AdminNotes = (request.AdminNotes ?? "") + "\n" + dto.Notes.Trim();
 
         await _context.SaveChangesAsync(CancellationToken.None);
+
+        if (statusEnum == DesignCadRequestStatus.Cancelled &&
+            previousStatus != DesignCadRequestStatus.Cancelled)
+        {
+            var toEmail = request.CustomerEmail ?? request.User?.Email;
+            var custName = request.CustomerName ?? request.User?.FullName;
+            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl = $"{baseUrl}/account";
+            await _emailService.SendRequestCancelledAsync(
+                toEmail,
+                custName,
+                request.ReferenceNumber,
+                "Design & CAD request",
+                viewUrl,
+                dto.Notes,
+                CancellationToken.None);
+        }
+
         return Ok(MapToDto(request));
     }
 

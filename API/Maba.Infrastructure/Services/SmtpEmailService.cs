@@ -128,6 +128,77 @@ public class SmtpEmailService : IEmailService
         }
     }
 
+    public async Task SendShopOrderCancelledAsync(
+        string? toEmail,
+        ShopOrderCancelledEmailModel model,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                _logger.LogDebug("No customer email; skipping order cancelled email for order {OrderNumber}", model.OrderNumber);
+                return;
+            }
+
+            var subject = $"Order cancelled – {model.OrderNumber}";
+            var body = ShopOrderEmailHtmlBuilder.BuildCancelledHtml(model);
+            await SendAsync(toEmail, subject, body, cancellationToken);
+            _logger.LogInformation("Shop order cancelled email sent to {Email} for {OrderNumber}", toEmail, model.OrderNumber);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send shop order cancelled email for {OrderNumber}", model.OrderNumber);
+        }
+    }
+
+    public async Task SendRequestCancelledAsync(
+        string? toEmail,
+        string? customerName,
+        string referenceNumber,
+        string requestTypeLabel,
+        string? viewRequestUrl,
+        string? reasonOrNote,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                _logger.LogDebug("No customer email; skipping request cancelled email for {ReferenceNumber}", referenceNumber);
+                return;
+            }
+
+            var displayName = string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName.Trim();
+            var safeDisplayName = WebUtility.HtmlEncode(displayName);
+            var safeRequestType = WebUtility.HtmlEncode(requestTypeLabel);
+            var safeRef = WebUtility.HtmlEncode(referenceNumber);
+            var fallbackBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
+            var actionUrl = !string.IsNullOrWhiteSpace(viewRequestUrl) ? viewRequestUrl.Trim() : fallbackBase;
+            var reasonHtml = string.IsNullOrWhiteSpace(reasonOrNote)
+                ? string.Empty
+                : $"<br/><br/><strong>Note from our team:</strong><br/>{WebUtility.HtmlEncode(reasonOrNote.Trim())}";
+
+            var message =
+                $"Hi {safeDisplayName}, your <strong>{safeRequestType}</strong> request <strong>{safeRef}</strong> has been cancelled.{reasonHtml}<br/><br/>If you have questions or believe this was a mistake, please contact us.";
+
+            var subject = $"Request cancelled – {referenceNumber}";
+            var body = BuildEmailTemplate(
+                title: "Request cancelled",
+                message: message,
+                actionText: "Open MABA",
+                actionUrl: actionUrl,
+                secondaryText: "You can submit a new request anytime from our services pages.");
+
+            await SendAsync(toEmail, subject, body, cancellationToken);
+            _logger.LogInformation("Request cancelled email sent to {Email} for {ReferenceNumber}", toEmail, referenceNumber);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send request cancelled email for {ReferenceNumber}", referenceNumber);
+        }
+    }
+
     private async Task SendCustomerConfirmationAsync(
         string toEmail,
         string? customerName,

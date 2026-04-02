@@ -106,8 +106,7 @@ export const publicRoutes: Routes = [
     },
     {
         path: 'help',
-        loadComponent: () => import('./pages/page.component').then(m => m.PageComponent),
-        data: { slug: 'help' }
+        loadComponent: () => import('./help-center/help-center.component').then(m => m.HelpCenterComponent)
     },
     {
         path: 'projects',

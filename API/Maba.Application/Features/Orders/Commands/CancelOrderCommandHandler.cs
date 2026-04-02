@@ -2,10 +2,12 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Maba.Application.Common.Emails;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Orders.Commands;
 using Maba.Application.Features.Orders.DTOs;
 using Maba.Domain.Orders;
+using Maba.Domain.Users;
 
 namespace Maba.Application.Features.Orders.Handlers;
 
@@ -83,7 +85,27 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
         };
 
         var updateHandler = new UpdateOrderStatusCommandHandler(_context, _emailService, _configuration, _auditService, _httpContextAccessor);
-        return await updateHandler.Handle(updateStatusCommand, cancellationToken);
+        var dto = await updateHandler.Handle(updateStatusCommand, cancellationToken);
+
+        var customer = await _context.Set<User>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
+        if (customer != null && !string.IsNullOrWhiteSpace(customer.Email))
+        {
+            var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            await _emailService.SendShopOrderCancelledAsync(
+                customer.Email,
+                new ShopOrderCancelledEmailModel
+                {
+                    OrderNumber = dto.OrderNumber,
+                    ViewOrdersUrl = $"{frontendBase}/account/orders/{dto.Id}",
+                    PublicSiteUrl = frontendBase,
+                    Reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim()
+                },
+                cancellationToken);
+        }
+
+        return dto;
     }
 }
 
