@@ -18,9 +18,21 @@ public class GetOrdersByStatusQueryHandler : IRequestHandler<GetOrdersByStatusQu
 
     public async Task<List<OrdersByStatusDto>> Handle(GetOrdersByStatusQuery request, CancellationToken cancellationToken)
     {
-        var orders = await _context.Set<Order>()
-            .Include(o => o.OrderStatus)
-            .ToListAsync(cancellationToken);
+        IQueryable<Order> query = _context.Set<Order>()
+            .AsNoTracking()
+            .Include(o => o.OrderStatus);
+
+        if (request.FromDate.HasValue)
+        {
+            query = query.Where(o => o.CreatedAt >= request.FromDate.Value);
+        }
+
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(o => o.CreatedAt <= request.ToDate.Value);
+        }
+
+        var orders = await query.ToListAsync(cancellationToken);
 
         var result = orders
             .GroupBy(o => o.OrderStatus?.NameEn ?? "Unknown")

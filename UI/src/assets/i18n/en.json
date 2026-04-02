@@ -1063,7 +1063,7 @@
       "custom": "Custom Range",
       "totalOrders": "Total Orders",
       "totalRevenue": "Total Revenue",
-      "totalCustomers": "Total Customers",
+      "totalCustomers": "Customers (selected range)",
       "active3DJobs": "Active 3D Print Jobs",
       "lowStockItems": "Low Stock Items",
       "pendingReviews": "Pending Reviews",

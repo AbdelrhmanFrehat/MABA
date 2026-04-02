@@ -18,7 +18,6 @@ import { OrdersApiService } from '../../../shared/services/orders-api.service';
 import { ItemsApiService } from '../../../shared/services/items-api.service';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { ReviewsApiService } from '../../../shared/services/reviews-api.service';
-import { UsersApiService } from '../../../shared/services/users-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
 import { Router } from '@angular/router';
 import { Subject, forkJoin, interval } from 'rxjs';
@@ -146,10 +145,10 @@ import { takeUntil } from 'rxjs/operators';
                             </div>
                             <div class="kpi-text">
                                 <div class="kpi-label">{{ 'admin.dashboard.totalCustomers' | translate }}</div>
-                                <div *ngIf="loadingCustomers" class="kpi-skeleton">
+                                <div *ngIf="loadingSummary" class="kpi-skeleton">
                                     <p-skeleton width="3rem" height="1.5rem" styleClass="mb-0"></p-skeleton>
                                 </div>
-                                <div *ngIf="!loadingCustomers" class="kpi-value text-blue-500">{{ customerCount }}</div>
+                                <div *ngIf="!loadingSummary" class="kpi-value text-blue-500">{{ summary?.totalCustomers ?? 0 }}</div>
                             </div>
                         </div>
                     </p-card>
@@ -806,12 +805,10 @@ import { takeUntil } from 'rxjs/operators';
 export class AdminDashboardComponent implements OnInit, OnDestroy {
     summary: any = null;
     loadingSummary = false;
-    loadingCustomers = false;
     loadingOrders = false;
     loading3DRequests = false;
     loadingCharts = false;
     refreshing = false;
-    customerCount = 0;
     active3DJobs = 0;
     pendingReviews = 0;
     totalItems = 0;
@@ -839,7 +836,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private itemsApiService = inject(ItemsApiService);
     private printingApiService = inject(PrintingApiService);
     private reviewsApiService = inject(ReviewsApiService);
-    private usersApiService = inject(UsersApiService);
     private translateService = inject(TranslateService);
     private languageService = inject(LanguageService);
     private router = inject(Router);
@@ -892,6 +888,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+
+    /** HTML date inputs yield yyyy-MM-dd; parse as local calendar day (avoid UTC-midnight shift from `new Date(string)`). */
+    private parseLocalDateFromInput(dateStr: string, boundary: 'start' | 'end'): Date {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        if (boundary === 'start') {
+            return new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+        return new Date(y, m - 1, d, 23, 59, 59, 999);
     }
 
     getTodayString(): string {
@@ -960,12 +965,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     onCustomDateChange() {
         if (this.fromDateString) {
-            this.fromDate = new Date(this.fromDateString);
-            this.fromDate.setHours(0, 0, 0, 0);
+            this.fromDate = this.parseLocalDateFromInput(this.fromDateString, 'start');
         }
         if (this.toDateString) {
-            this.toDate = new Date(this.toDateString);
-            this.toDate.setHours(23, 59, 59, 999);
+            this.toDate = this.parseLocalDateFromInput(this.toDateString, 'end');
         }
         if (this.fromDate && this.toDate && this.fromDate <= this.toDate) {
             this.loadDashboardData();
@@ -989,7 +992,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     loadDashboardData() {
         this.loadingSummary = true;
-        this.loadingCustomers = true;
         this.loadingOrders = true;
         this.loading3DRequests = true;
         this.loadingCharts = true;
@@ -1015,20 +1017,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                         detail: this.translateService.instant('messages.errorLoadingDashboard'),
                         life: 3000
                     });
-                }
-            });
-
-        // Load customer count
-        this.usersApiService.getUsersCount()
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (count) => {
-                    this.customerCount = count;
-                    this.loadingCustomers = false;
-                },
-                error: () => {
-                    this.loadingCustomers = false;
-                    // Keep default value on error
                 }
             });
 
@@ -1078,7 +1066,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                 ...dateParams, 
                 periods: this.getPeriodsForDateRange() 
             }),
-            ordersByStatus: this.dashboardService.getOrdersByStatus()
+            ordersByStatus: this.dashboardService.getOrdersByStatus(dateParams)
         })
             .pipe(takeUntil(this.destroy$))
             .subscribe({

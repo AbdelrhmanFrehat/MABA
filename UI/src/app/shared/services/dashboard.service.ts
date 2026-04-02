@@ -50,8 +50,13 @@ export class DashboardService {
         return this.http.get<SalesOverTimeData[]>(`${this.apiUrl}/SalesOverTime`, { params: httpParams });
     }
 
-    getOrdersByStatus(): Observable<OrdersByStatusData[]> {
-        return this.http.get<OrdersByStatusData[]>(`${this.apiUrl}/OrdersByStatus`);
+    getOrdersByStatus(params?: DashboardParams): Observable<OrdersByStatusData[]> {
+        let httpParams = new HttpParams();
+        if (params) {
+            if (params.fromDate) httpParams = httpParams.set('fromDate', params.fromDate);
+            if (params.toDate) httpParams = httpParams.set('toDate', params.toDate);
+        }
+        return this.http.get<OrdersByStatusData[]>(`${this.apiUrl}/OrdersByStatus`, { params: httpParams });
     }
 }
 

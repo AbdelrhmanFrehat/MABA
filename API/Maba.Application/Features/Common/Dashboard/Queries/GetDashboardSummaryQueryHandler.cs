@@ -24,18 +24,23 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
         var fromDate = request.FromDate ?? DateTime.UtcNow.AddMonths(-1);
         var toDate = request.ToDate ?? DateTime.UtcNow;
 
-        // Total Orders
+        const string cancelledKey = "Cancelled";
+
+        // Total Orders — all orders created in range (includes cancelled)
         var totalOrders = await _context.Set<Order>()
             .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
             .CountAsync(cancellationToken);
 
-        // Total Revenue
+        // Total Revenue — paid-in-full, non-cancelled (matches order detail payment logic)
         var totalRevenue = await _context.Set<Order>()
             .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
+            .Where(o => o.OrderStatus.Key != cancelledKey)
+            .Where(o => o.Payments.Sum(p => p.Amount) >= o.Total)
             .SumAsync(o => o.Total, cancellationToken);
 
-        // Total Customers
+        // Total Customers — users registered in the selected range (aligns with date filter)
         var totalCustomers = await _context.Set<User>()
+            .Where(u => u.CreatedAt >= fromDate && u.CreatedAt <= toDate)
             .CountAsync(cancellationToken);
 
         // Active 3D Jobs (Printing, Queued)

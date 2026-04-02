@@ -43,9 +43,13 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("OrdersByStatus")]
-    public async Task<ActionResult> GetOrdersByStatus()
+    public async Task<ActionResult> GetOrdersByStatus([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
     {
-        var query = new GetOrdersByStatusQuery();
+        var query = new GetOrdersByStatusQuery
+        {
+            FromDate = fromDate,
+            ToDate = toDate
+        };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
