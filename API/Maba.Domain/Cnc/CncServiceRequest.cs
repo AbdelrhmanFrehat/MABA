@@ -10,7 +10,8 @@ public enum CncServiceRequestStatus
     Accepted,
     InProgress,
     Completed,
-    Cancelled
+    Cancelled,
+    Rejected
 }
 
 public class CncServiceRequest : BaseEntity

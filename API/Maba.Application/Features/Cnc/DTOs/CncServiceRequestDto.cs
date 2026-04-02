@@ -49,6 +49,43 @@ public class CncServiceRequestDto
     public DateTime? UpdatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+
+    public static CncServiceRequestDto FromEntity(CncServiceRequest x) => new()
+    {
+        Id = x.Id,
+        ReferenceNumber = x.ReferenceNumber,
+        ServiceMode = x.ServiceMode,
+        MaterialId = x.MaterialId,
+        MaterialNameEn = x.Material?.NameEn,
+        MaterialNameAr = x.Material?.NameAr,
+        PcbMaterial = x.PcbMaterial,
+        PcbThickness = x.PcbThickness,
+        PcbSide = x.PcbSide,
+        PcbOperation = x.PcbOperation,
+        OperationType = x.OperationType,
+        WidthMm = x.WidthMm,
+        HeightMm = x.HeightMm,
+        ThicknessMm = x.ThicknessMm,
+        Quantity = x.Quantity,
+        DepthMode = x.DepthMode,
+        DepthMm = x.DepthMm,
+        DesignSourceType = x.DesignSourceType,
+        FilePath = x.FilePath,
+        FileName = x.FileName,
+        DesignNotes = x.DesignNotes,
+        CustomerName = x.CustomerName,
+        CustomerEmail = x.CustomerEmail,
+        CustomerPhone = x.CustomerPhone,
+        ProjectDescription = x.ProjectDescription,
+        AdminNotes = x.AdminNotes,
+        EstimatedPrice = x.EstimatedPrice,
+        FinalPrice = x.FinalPrice,
+        Status = x.Status,
+        CreatedAt = x.CreatedAt,
+        UpdatedAt = x.UpdatedAt,
+        ReviewedAt = x.ReviewedAt,
+        CompletedAt = x.CompletedAt
+    };
 }
 
 public class CreateCncServiceRequestResultDto

@@ -1,12 +1,13 @@
 using MediatR;
+using Maba.Application.Features.Cnc.DTOs;
 using Maba.Domain.Cnc;
 
 namespace Maba.Application.Features.Cnc.Requests.Commands;
 
-public class UpdateCncServiceRequestCommand : IRequest<bool>
+public class UpdateCncServiceRequestCommand : IRequest<CncServiceRequestDto?>
 {
     public Guid Id { get; set; }
-    
+
     public CncServiceRequestStatus? Status { get; set; }
     public string? AdminNotes { get; set; }
     public decimal? EstimatedPrice { get; set; }

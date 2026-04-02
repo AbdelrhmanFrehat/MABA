@@ -1,11 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Maba.Application.Common.Interfaces;
+using Maba.Application.Features.Cnc.DTOs;
 using Maba.Domain.Cnc;
 
 namespace Maba.Application.Features.Cnc.Requests.Commands;
 
-public class UpdateCncServiceRequestCommandHandler : IRequestHandler<UpdateCncServiceRequestCommand, bool>
+public class UpdateCncServiceRequestCommandHandler : IRequestHandler<UpdateCncServiceRequestCommand, CncServiceRequestDto?>
 {
     private readonly IApplicationDbContext _context;
 
@@ -14,14 +15,14 @@ public class UpdateCncServiceRequestCommandHandler : IRequestHandler<UpdateCncSe
         _context = context;
     }
 
-    public async Task<bool> Handle(UpdateCncServiceRequestCommand request, CancellationToken cancellationToken)
+    public async Task<CncServiceRequestDto?> Handle(UpdateCncServiceRequestCommand request, CancellationToken cancellationToken)
     {
         var serviceRequest = await _context.Set<CncServiceRequest>()
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
         if (serviceRequest == null)
         {
-            return false;
+            return null;
         }
 
         if (request.Status.HasValue)
@@ -29,8 +30,9 @@ public class UpdateCncServiceRequestCommandHandler : IRequestHandler<UpdateCncSe
             var oldStatus = serviceRequest.Status;
             serviceRequest.Status = request.Status.Value;
 
-            if (oldStatus == CncServiceRequestStatus.Pending && 
-                request.Status.Value == CncServiceRequestStatus.InReview)
+            if (oldStatus == CncServiceRequestStatus.Pending &&
+                (request.Status.Value == CncServiceRequestStatus.InReview ||
+                 request.Status.Value == CncServiceRequestStatus.Rejected))
             {
                 serviceRequest.ReviewedAt = DateTime.UtcNow;
             }
@@ -41,7 +43,7 @@ public class UpdateCncServiceRequestCommandHandler : IRequestHandler<UpdateCncSe
             }
         }
 
-        if (request.AdminNotes != null)
+        if (request.AdminNotes is not null)
         {
             serviceRequest.AdminNotes = request.AdminNotes;
         }
@@ -59,6 +61,11 @@ public class UpdateCncServiceRequestCommandHandler : IRequestHandler<UpdateCncSe
         serviceRequest.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
-        return true;
+
+        var updated = await _context.Set<CncServiceRequest>()
+            .Include(x => x.Material)
+            .FirstAsync(x => x.Id == request.Id, cancellationToken);
+
+        return CncServiceRequestDto.FromEntity(updated);
     }
 }

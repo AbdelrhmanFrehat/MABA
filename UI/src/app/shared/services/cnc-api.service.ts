@@ -12,7 +12,8 @@ import {
     UpdateCncMaterialRequest,
     CncServiceRequestsListResponse,
     CncServiceRequestDto,
-    CncAdminRequestsQuery
+    CncAdminRequestsQuery,
+    UpdateCncServiceRequestPayload
 } from '../models/cnc.model';
 
 @Injectable({
@@ -346,5 +347,13 @@ export class CncApiService {
 
     getAdminRequestById(id: string): Observable<CncServiceRequestDto> {
         return this.http.get<CncServiceRequestDto>(`${this.baseUrl}/cnc/requests/${id}`);
+    }
+
+    updateAdminRequest(id: string, payload: UpdateCncServiceRequestPayload): Observable<CncServiceRequestDto> {
+        return this.http.put<CncServiceRequestDto>(`${this.baseUrl}/cnc/requests/${id}`, payload);
+    }
+
+    downloadRequestFile(id: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/cnc/requests/${id}/file`, { responseType: 'blob' });
     }
 }

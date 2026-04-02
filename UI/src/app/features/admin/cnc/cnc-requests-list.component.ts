@@ -8,11 +8,11 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
-import { DialogModule } from 'primeng/dialog';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { Router } from '@angular/router';
 import { CncApiService } from '../../../shared/services/cnc-api.service';
 import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/models/cnc.model';
 
@@ -29,7 +29,6 @@ import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/m
         TagModule,
         InputTextModule,
         ToastModule,
-        DialogModule,
         DatePickerModule,
         TooltipModule,
         TranslateModule
@@ -220,66 +219,6 @@ import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/m
                 </p-table>
             </p-card>
         </div>
-
-        <p-dialog
-            [(visible)]="showViewDialog"
-            [modal]="true"
-            [style]="{ width: '640px', maxWidth: '96vw' }"
-            [header]="'admin.cncRequests.viewQuick' | translate"
-            (onHide)="selectedRequest = null"
-        >
-            <div class="view-content" *ngIf="selectedRequest">
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <label>{{ 'admin.cncRequests.reference' | translate }}</label>
-                        <span class="ref-number">{{ selectedRequest.referenceNumber }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>{{ 'admin.cncRequests.serviceMode' | translate }}</label>
-                        <p-tag
-                            [value]="modeLabel(selectedRequest.serviceMode)"
-                            [severity]="selectedRequest.serviceMode === 'pcb' ? 'info' : 'warn'"
-                        ></p-tag>
-                    </div>
-                    <div class="detail-item full">
-                        <label>{{ 'admin.cncRequests.summary' | translate }}</label>
-                        <p>{{ buildSummary(selectedRequest) }}</p>
-                    </div>
-                    <div class="detail-item full" *ngIf="selectedRequest.fileName">
-                        <label>{{ 'admin.cncRequests.file' | translate }}</label>
-                        <span>{{ selectedRequest.fileName }}</span>
-                    </div>
-                    <div class="detail-item full" *ngIf="selectedRequest.designNotes">
-                        <label>{{ 'admin.cncRequests.designNotes' | translate }}</label>
-                        <p class="notes">{{ selectedRequest.designNotes }}</p>
-                    </div>
-                    <div class="detail-item full" *ngIf="selectedRequest.projectDescription">
-                        <label>{{ 'admin.cncRequests.description' | translate }}</label>
-                        <p class="notes">{{ selectedRequest.projectDescription }}</p>
-                    </div>
-                    <div class="detail-item full">
-                        <label>{{ 'admin.cncRequests.customer' | translate }}</label>
-                        <div class="customer-details">
-                            <span *ngIf="selectedRequest.customerName"><i class="pi pi-user"></i> {{ selectedRequest.customerName }}</span>
-                            <span *ngIf="selectedRequest.customerEmail"><i class="pi pi-envelope"></i> {{ selectedRequest.customerEmail }}</span>
-                            <span *ngIf="selectedRequest.customerPhone"><i class="pi pi-phone"></i> {{ selectedRequest.customerPhone }}</span>
-                        </div>
-                    </div>
-                    <div class="detail-item">
-                        <label>{{ 'admin.cncRequests.quantity' | translate }}</label>
-                        <span>{{ selectedRequest.quantity }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>{{ 'admin.cncRequests.status' | translate }}</label>
-                        <p-tag [value]="statusLabel(selectedRequest.status)" [severity]="statusSeverity(selectedRequest.status)"></p-tag>
-                    </div>
-                    <div class="detail-item">
-                        <label>{{ 'admin.cncRequests.date' | translate }}</label>
-                        <span>{{ formatDate(selectedRequest.createdAt) }}</span>
-                    </div>
-                </div>
-            </div>
-        </p-dialog>
     `,
     styles: [
         `
@@ -381,35 +320,6 @@ import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/m
                 margin-bottom: 0.5rem;
                 opacity: 0.5;
             }
-            .view-content .detail-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
-            }
-            .view-content .detail-item.full {
-                grid-column: 1 / -1;
-            }
-            .view-content label {
-                display: block;
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: var(--text-color-secondary);
-                margin-bottom: 0.25rem;
-            }
-            .view-content .notes {
-                margin: 0;
-                white-space: pre-wrap;
-            }
-            .customer-details {
-                display: flex;
-                flex-direction: column;
-                gap: 0.35rem;
-            }
-            .customer-details span {
-                display: flex;
-                align-items: center;
-                gap: 0.35rem;
-            }
         `
     ]
 })
@@ -426,15 +336,13 @@ export class CncRequestsListComponent implements OnInit {
     dateFrom: Date | null = null;
     dateTo: Date | null = null;
 
-    showViewDialog = false;
-    selectedRequest: CncServiceRequestDto | null = null;
-
     modeOptions: { label: string; value: string }[] = [];
     statusOptions: { label: string; value: CncServiceRequestStatus }[] = [];
 
     private cncApi = inject(CncApiService);
     private messageService = inject(MessageService);
     private translate = inject(TranslateService);
+    private router = inject(Router);
 
     ngOnInit() {
         this.rebuildFilterOptions();
@@ -453,7 +361,8 @@ export class CncRequestsListComponent implements OnInit {
             { label: this.translate.instant('admin.cncRequests.stAccepted'), value: CncServiceRequestStatus.Accepted },
             { label: this.translate.instant('admin.cncRequests.stInProgress'), value: CncServiceRequestStatus.InProgress },
             { label: this.translate.instant('admin.cncRequests.stCompleted'), value: CncServiceRequestStatus.Completed },
-            { label: this.translate.instant('admin.cncRequests.stCancelled'), value: CncServiceRequestStatus.Cancelled }
+            { label: this.translate.instant('admin.cncRequests.stCancelled'), value: CncServiceRequestStatus.Cancelled },
+            { label: this.translate.instant('admin.cncRequests.stRejected'), value: CncServiceRequestStatus.Rejected }
         ];
     }
 
@@ -530,7 +439,8 @@ export class CncRequestsListComponent implements OnInit {
             [CncServiceRequestStatus.Accepted]: 'admin.cncRequests.stAccepted',
             [CncServiceRequestStatus.InProgress]: 'admin.cncRequests.stInProgress',
             [CncServiceRequestStatus.Completed]: 'admin.cncRequests.stCompleted',
-            [CncServiceRequestStatus.Cancelled]: 'admin.cncRequests.stCancelled'
+            [CncServiceRequestStatus.Cancelled]: 'admin.cncRequests.stCancelled',
+            [CncServiceRequestStatus.Rejected]: 'admin.cncRequests.stRejected'
         };
         const key = keys[status];
         return key ? this.translate.instant(key) : String(status);
@@ -541,6 +451,7 @@ export class CncRequestsListComponent implements OnInit {
             case CncServiceRequestStatus.Completed:
                 return 'success';
             case CncServiceRequestStatus.Cancelled:
+            case CncServiceRequestStatus.Rejected:
                 return 'danger';
             case CncServiceRequestStatus.InProgress:
             case CncServiceRequestStatus.Accepted:
@@ -593,7 +504,6 @@ export class CncRequestsListComponent implements OnInit {
     }
 
     viewRequest(req: CncServiceRequestDto) {
-        this.selectedRequest = req;
-        this.showViewDialog = true;
+        void this.router.navigate(['/admin/cnc-requests', req.id]);
     }
 }

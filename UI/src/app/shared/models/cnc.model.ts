@@ -159,7 +159,8 @@ export enum CncServiceRequestStatus {
     Accepted = 3,
     InProgress = 4,
     Completed = 5,
-    Cancelled = 6
+    Cancelled = 6,
+    Rejected = 7
 }
 
 /** Admin list/detail DTO (camelCase JSON). */
@@ -213,4 +214,12 @@ export interface CncAdminRequestsQuery {
     createdTo?: string | null;
     skip?: number;
     take?: number;
+}
+
+/** Admin PUT /api/v1/cnc/requests/{id} */
+export interface UpdateCncServiceRequestPayload {
+    status?: CncServiceRequestStatus;
+    adminNotes?: string | null;
+    estimatedPrice?: number | null;
+    finalPrice?: number | null;
 }

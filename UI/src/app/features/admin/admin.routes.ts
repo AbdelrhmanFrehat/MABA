@@ -146,6 +146,11 @@ export const adminRoutes: Routes = [
         canActivate: [authGuard]
     },
     {
+        path: 'cnc-requests/:id',
+        loadComponent: () => import('./cnc/cnc-request-detail.component').then(m => m.CncRequestDetailComponent),
+        canActivate: [authGuard]
+    },
+    {
         path: 'cnc-requests',
         loadComponent: () => import('./cnc/cnc-requests-list.component').then(m => m.CncRequestsListComponent),
         canActivate: [authGuard]
