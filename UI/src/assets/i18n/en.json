@@ -48,7 +48,19 @@
     "subtitle": "Clear guides for using the platform, understanding our services, and managing your orders and account.",
     "searchPlaceholder": "Search help articles…",
     "filterLabel": "Browse by category",
+    "loading": "Loading help articles…",
+    "sectionBlurb": "Answers from our knowledge base. Open a question to read the full answer.",
     "noResults": "No articles match your search. Try different keywords or pick another category.",
+    "categoryHints": {
+      "Print3d": "Files, preview, materials, timelines, and print readiness",
+      "Laser": "Vectors, cutting vs engraving, images, and materials",
+      "Cnc": "CAD files, metals, tolerances, and suitability",
+      "Software": "Downloads, versions, checksums, and installation",
+      "OrdersShipping": "Statuses, tracking, changes, and delivery",
+      "Payments": "Methods, charges, failures, and receipts",
+      "Support": "How to reach us, what to include, and response time",
+      "General": "Privacy, designs, previews, and troubleshooting"
+    },
     "categoryCards": {
       "gettingStarted": {
         "title": "Getting started",
@@ -1506,7 +1518,7 @@
       "cardDescription": "Manage images in the hero strip on the home page."
     },
     "faq": {
-      "title": "FAQ Management",
+      "title": "Help Center / FAQ",
       "addNew": "Add FAQ",
       "createTitle": "Create FAQ",
       "editTitle": "Edit FAQ",

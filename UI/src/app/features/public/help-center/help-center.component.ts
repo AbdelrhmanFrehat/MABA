@@ -1,16 +1,39 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { AccordionModule } from 'primeng/accordion';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { LanguageService } from '../../../shared/services/language.service';
+import { FaqApiService } from '../../../shared/services/faq-api.service';
+import { FaqCategory, FaqItem } from '../../../shared/models/faq.model';
 
-export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
+const FAQ_CATEGORY_KEYS: FaqCategory[] = [
+    'Print3d',
+    'Laser',
+    'Cnc',
+    'Software',
+    'OrdersShipping',
+    'Payments',
+    'Support',
+    'General'
+];
+
+const CATEGORY_ICONS: Record<FaqCategory, string> = {
+    Print3d: 'pi pi-print',
+    Laser: 'pi pi-bolt',
+    Cnc: 'pi pi-cog',
+    Software: 'pi pi-desktop',
+    OrdersShipping: 'pi pi-truck',
+    Payments: 'pi pi-credit-card',
+    Support: 'pi pi-comments',
+    General: 'pi pi-info-circle'
+};
 
 @Component({
     selector: 'app-help-center',
@@ -24,7 +47,8 @@ export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
         InputTextModule,
         ButtonModule,
         IconFieldModule,
-        InputIconModule
+        InputIconModule,
+        ProgressSpinnerModule
     ],
     template: `
         <div class="help-center-page" [dir]="languageService.direction">
@@ -56,15 +80,15 @@ export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
 
                         <p class="filter-label">{{ 'helpCenter.filterLabel' | translate }}</p>
                         <div class="category-cards">
-                            @for (c of categoryCards; track c.id) {
+                            @for (c of categoryCards; track c.category) {
                                 <button
                                     type="button"
                                     class="category-card"
-                                    [class.active]="selectedFilter() === c.id"
-                                    (click)="setFilter(c.id)">
+                                    [class.active]="selectedFilter() === c.category"
+                                    (click)="setFilter(c.category)">
                                     <i [class]="c.icon + ' card-icon'"></i>
-                                    <span class="card-title">{{ 'helpCenter.categoryCards.' + c.id + '.title' | translate }}</span>
-                                    <span class="card-hint">{{ 'helpCenter.categoryCards.' + c.id + '.hint' | translate }}</span>
+                                    <span class="card-title">{{ 'faq.categories.' + c.category | translate }}</span>
+                                    <span class="card-hint">{{ 'helpCenter.categoryHints.' + c.category | translate }}</span>
                                 </button>
                             }
                         </div>
@@ -77,51 +101,56 @@ export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
                                 (click)="setFilter('all')">
                                 {{ 'common.all' | translate }}
                             </button>
-                            @for (c of categoryCards; track c.id) {
+                            @for (c of categoryCards; track c.category) {
                                 <button
                                     type="button"
                                     class="chip"
-                                    [class.active]="selectedFilter() === c.id"
-                                    (click)="setFilter(c.id)">
-                                    {{ 'helpCenter.categoryCards.' + c.id + '.title' | translate }}
+                                    [class.active]="selectedFilter() === c.category"
+                                    (click)="setFilter(c.category)">
+                                    {{ 'faq.categories.' + c.category | translate }}
                                 </button>
                             }
                         </div>
 
                         <div class="panel-divider"></div>
 
-                        @if (visibleSections().length === 0) {
+                        @if (loading()) {
+                            <div class="loading-wrap">
+                                <p-progressSpinner strokeWidth="3" styleClass="help-spinner" />
+                                <p class="loading-text">{{ 'helpCenter.loading' | translate }}</p>
+                            </div>
+                        } @else if (visibleSections().length === 0) {
                             <p class="empty-text">{{ 'helpCenter.noResults' | translate }}</p>
                         } @else {
                             <div class="help-layout">
                                 <aside class="help-sidebar">
                                     <nav class="side-nav">
-                                        @for (s of visibleSections(); track s.id) {
-                                            <a class="side-link" [href]="'#' + sectionAnchor(s.id)" (click)="scrollTo($event, s.id)">
+                                        @for (s of visibleSections(); track s.category) {
+                                            <a class="side-link" [href]="'#' + sectionAnchor(s.category)" (click)="scrollTo($event, s.category)">
                                                 <i [class]="s.icon"></i>
-                                                {{ 'helpCenter.sections.' + s.id + '.title' | translate }}
+                                                {{ 'faq.categories.' + s.category | translate }}
                                             </a>
                                         }
                                     </nav>
                                 </aside>
                                 <div class="help-main">
-                                    @for (s of visibleSections(); track s.id) {
-                                        <section class="help-section" [id]="sectionAnchor(s.id)">
+                                    @for (s of visibleSections(); track s.category) {
+                                        <section class="help-section" [id]="sectionAnchor(s.category)">
                                             <div class="section-head">
                                                 <h2 class="section-title">
                                                     <i [class]="s.icon + ' section-icon'"></i>
-                                                    {{ 'helpCenter.sections.' + s.id + '.title' | translate }}
+                                                    {{ 'faq.categories.' + s.category | translate }}
                                                 </h2>
-                                                <p class="section-desc">{{ 'helpCenter.sections.' + s.id + '.description' | translate }}</p>
+                                                <p class="section-desc">{{ 'helpCenter.sectionBlurb' | translate }}</p>
                                             </div>
                                             <p-accordion [multiple]="true" class="help-accordion">
-                                                @for (key of visibleArticleKeys(s); track key) {
-                                                    <p-accordion-panel [value]="key">
+                                                @for (item of s.items; track item.id) {
+                                                    <p-accordion-panel [value]="item.id">
                                                         <p-accordion-header>
-                                                            <span class="accordion-q">{{ 'helpCenter.articles.' + key + '.title' | translate }}</span>
+                                                            <span class="accordion-q">{{ question(item) }}</span>
                                                         </p-accordion-header>
                                                         <p-accordion-content>
-                                                            <p class="accordion-a">{{ 'helpCenter.articles.' + key + '.body' | translate }}</p>
+                                                            <p class="accordion-a">{{ answer(item) }}</p>
                                                         </p-accordion-content>
                                                     </p-accordion-panel>
                                                 }
@@ -266,6 +295,12 @@ export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
             }
         }
 
+        @media (min-width: 1024px) {
+            .category-cards {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
         .category-card {
             display: flex;
             flex-direction: column;
@@ -342,6 +377,25 @@ export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
             height: 1px;
             background: rgba(0, 0, 0, 0.06);
             margin: 1.25rem 0 1.5rem;
+        }
+
+        .loading-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2.5rem 1rem;
+            gap: 1rem;
+        }
+
+        .loading-text {
+            margin: 0;
+            color: var(--text-color-secondary);
+            font-size: 0.95rem;
+        }
+
+        :host ::ng-deep .help-spinner {
+            width: 2.5rem;
+            height: 2.5rem;
         }
 
         .empty-text {
@@ -508,78 +562,117 @@ export type HelpSectionId = 'gettingStarted' | 'services' | 'ordersAccount';
         }
     `]
 })
-export class HelpCenterComponent {
+export class HelpCenterComponent implements OnInit {
     languageService = inject(LanguageService);
-    private translate = inject(TranslateService);
+    private faqApi = inject(FaqApiService);
 
     searchModel = '';
     searchTerm = signal('');
-    selectedFilter = signal<'all' | HelpSectionId>('all');
+    selectedFilter = signal<'all' | FaqCategory>('all');
+    allFaqs = signal<FaqItem[]>([]);
+    loading = signal(true);
 
-    readonly categoryCards: { id: HelpSectionId; icon: string }[] = [
-        { id: 'gettingStarted', icon: 'pi pi-bolt' },
-        { id: 'services', icon: 'pi pi-cog' },
-        { id: 'ordersAccount', icon: 'pi pi-user' }
-    ];
-
-    readonly sections: { id: HelpSectionId; icon: string; articleKeys: string[] }[] = [
-        {
-            id: 'gettingStarted',
-            icon: 'pi pi-flag',
-            articleKeys: ['createAccount', 'uploadDesign', 'submitRequest', 'placeOrder', 'trackOrder']
-        },
-        {
-            id: 'services',
-            icon: 'pi pi-box',
-            articleKeys: ['print3dGuide', 'cncGuide', 'laserGuide', 'materials', 'fileTypes', 'wrongFile']
-        },
-        {
-            id: 'ordersAccount',
-            icon: 'pi pi-shopping-cart',
-            articleKeys: ['orderStatuses', 'payment', 'loginAccount', 'cancellationRefunds', 'designPrivacy']
-        }
-    ];
+    readonly categoryCards = FAQ_CATEGORY_KEYS.map((category) => ({
+        category,
+        icon: CATEGORY_ICONS[category]
+    }));
 
     visibleSections = computed(() => {
-        const _lang = this.languageService.language;
         const q = this.searchTerm().trim().toLowerCase();
-        const f = this.selectedFilter();
+        const filter = this.selectedFilter();
+        let list = this.allFaqs();
 
-        return this.sections
-            .filter((sec) => f === 'all' || sec.id === f)
-            .map((sec) => ({
-                ...sec,
-                articleKeys: sec.articleKeys.filter((key) => this.articleMatches(key, q))
-            }))
-            .filter((sec) => sec.articleKeys.length > 0);
+        if (filter !== 'all') {
+            list = list.filter((item) => this.toCategoryKey(item) === filter);
+        }
+
+        if (q) {
+            list = list.filter((item) => this.itemMatchesSearch(item, q));
+        }
+
+        const byCat = new Map<FaqCategory, FaqItem[]>();
+        for (const cat of FAQ_CATEGORY_KEYS) {
+            byCat.set(cat, []);
+        }
+
+        for (const item of list) {
+            const cat = this.toCategoryKey(item);
+            const bucket = byCat.get(cat);
+            if (bucket) {
+                bucket.push(item);
+            }
+        }
+
+        return FAQ_CATEGORY_KEYS.filter((cat) => (byCat.get(cat)?.length ?? 0) > 0).map((category) => ({
+            category,
+            icon: CATEGORY_ICONS[category],
+            items: (byCat.get(category) ?? []).sort(
+                (a, b) =>
+                    (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
+                    a.questionEn.localeCompare(b.questionEn, undefined, { sensitivity: 'base' })
+            )
+        }));
     });
 
-    onSearch(value: string) {
+    ngOnInit(): void {
+        this.loading.set(true);
+        this.faqApi.getPublicFaq().subscribe({
+            next: (data) => {
+                this.allFaqs.set(Array.isArray(data) ? data : []);
+                this.loading.set(false);
+            },
+            error: () => {
+                this.allFaqs.set([]);
+                this.loading.set(false);
+            }
+        });
+    }
+
+    onSearch(value: string): void {
         this.searchTerm.set(value ?? '');
     }
 
-    setFilter(v: 'all' | HelpSectionId) {
+    setFilter(v: 'all' | FaqCategory): void {
         this.selectedFilter.set(v);
     }
 
-    sectionAnchor(id: string): string {
-        return `help-${id}`;
+    sectionAnchor(category: FaqCategory): string {
+        return `help-cat-${category}`;
     }
 
-    scrollTo(ev: Event, id: HelpSectionId) {
+    scrollTo(ev: Event, category: FaqCategory): void {
         ev.preventDefault();
-        const el = document.getElementById(this.sectionAnchor(id));
+        const el = document.getElementById(this.sectionAnchor(category));
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    visibleArticleKeys(section: { articleKeys: string[] }): string[] {
-        return section.articleKeys;
+    question(item: FaqItem): string {
+        return this.languageService.language === 'ar' && item.questionAr ? item.questionAr : item.questionEn;
     }
 
-    private articleMatches(key: string, q: string): boolean {
-        if (!q) return true;
-        const title = this.translate.instant(`helpCenter.articles.${key}.title`).toLowerCase();
-        const body = this.translate.instant(`helpCenter.articles.${key}.body`).toLowerCase();
-        return title.includes(q) || body.includes(q);
+    answer(item: FaqItem): string {
+        return this.languageService.language === 'ar' && item.answerAr ? item.answerAr : item.answerEn;
+    }
+
+    private toCategoryKey(item: FaqItem): FaqCategory {
+        const c = item.category as FaqCategory | number | string;
+        if (typeof c === 'number' && c >= 0 && c < FAQ_CATEGORY_KEYS.length) {
+            return FAQ_CATEGORY_KEYS[c];
+        }
+        if (typeof c === 'string' && /^\d+$/.test(c)) {
+            const n = parseInt(c, 10);
+            if (n >= 0 && n < FAQ_CATEGORY_KEYS.length) {
+                return FAQ_CATEGORY_KEYS[n];
+            }
+        }
+        if (typeof c === 'string' && (FAQ_CATEGORY_KEYS as string[]).includes(c)) {
+            return c as FaqCategory;
+        }
+        return 'General';
+    }
+
+    private itemMatchesSearch(item: FaqItem, q: string): boolean {
+        const fields = [item.questionEn, item.questionAr, item.answerEn, item.answerAr];
+        return fields.some((f) => (f ?? '').toLowerCase().includes(q));
     }
 }

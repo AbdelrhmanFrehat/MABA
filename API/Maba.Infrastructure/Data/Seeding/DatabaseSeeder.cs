@@ -1823,156 +1823,17 @@ public static class DatabaseSeeder
 
     private static async Task SeedFaq(ApplicationDbContext context)
     {
-        if (await context.FaqItems.AnyAsync()) return;
-
-        var items = new List<FaqItem>
+        var existingQuestions = (await context.FaqItems.Select(x => x.QuestionEn).ToListAsync()).ToHashSet();
+        foreach (var item in FaqContent.All())
         {
-            new FaqItem
+            if (existingQuestions.Contains(item.QuestionEn))
             {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Print3d,
-                QuestionEn = "What file formats do you accept for 3D printing?",
-                QuestionAr = "ما صيغ الملفات المقبولة للطباعة ثلاثية الأبعاد؟",
-                AnswerEn = "We accept STL, OBJ, and 3MF files. STL is the most common. Ensure your model is manifold and scaled to the correct dimensions.",
-                AnswerAr = "نقبل ملفات STL و OBJ و 3MF. STL هي الأكثر شيوعاً. تأكد أن النموذج مغلق ومقياس الأبعاد صحيح.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 0,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Print3d,
-                QuestionEn = "What materials are available for 3D printing?",
-                QuestionAr = "ما المواد المتاحة للطباعة ثلاثية الأبعاد؟",
-                AnswerEn = "We offer PLA, PETG, ABS, TPU, and engineering resins. Each material has different strength, flexibility, and finish properties. Check our 3D Printing page for the full list.",
-                AnswerAr = "نوفر PLA و PETG و ABS و TPU وراتنجات هندسية. كل مادة تختلف في المتانة والمرونة والمظهر. راجع صفحة الطباعة ثلاثية الأبعاد للقائمة الكاملة.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 1,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Laser,
-                QuestionEn = "What materials can you laser cut or engrave?",
-                QuestionAr = "ما المواد التي يمكن قصها أو نقشها بالليزر؟",
-                AnswerEn = "We work with wood, acrylic, leather, fabric, paper, cardboard, and some plastics. Metal cutting is not supported; metal engraving may be available for certain applications.",
-                AnswerAr = "نعمل على الخشب والأكريليك والجلود والأقمشة والورق والكرتون وبعض البلاستيك. قطع المعادن غير مدعوم؛ نقش المعادن قد يكون متاحاً لبعض التطبيقات.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 2,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Laser,
-                QuestionEn = "What is the maximum size for a laser job?",
-                QuestionAr = "ما الحجم الأقصى لعمولة الليزر؟",
-                AnswerEn = "Our laser workspace is 40×40 cm. We can accommodate designs up to that size in a single pass.",
-                AnswerAr = "مساحة عمل الليزر لدينا 40×40 سم. يمكننا تنفيذ تصاميم حتى هذا الحجم في تمريرة واحدة.",
-                IsActive = true,
-                IsFeatured = false,
-                SortOrder = 3,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Cnc,
-                QuestionEn = "Do you support metal machining on CNC?",
-                QuestionAr = "هل تدعم تشغيل المعادن على CNC؟",
-                AnswerEn = "We support wood, plastic, and PCB substrates. Metal machining is not currently offered. For wood and plastic, we offer routing, engraving, pocketing, and drilling.",
-                AnswerAr = "ندعم الخشب والبلاستيك ولوحات PCB. تشغيل المعادن غير متاح حالياً. للخشب والبلاستيك نقدم التفريز والنقش والتجويف والحفر.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 4,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Software,
-                QuestionEn = "How do I download software from MABA?",
-                QuestionAr = "كيف أحمّل البرمجيات من MABA؟",
-                AnswerEn = "Go to the Software section, choose your product, and select the version and platform. You must accept the license agreement before download. Links are valid for authenticated users.",
-                AnswerAr = "انتقل إلى قسم البرمجيات، اختر المنتج، ثم الإصدار والمنصة. يجب الموافقة على اتفاقية الترخيص قبل التحميل. الروابط صالحة للمستخدمين المسجلين.",
-                IsActive = true,
-                IsFeatured = false,
-                SortOrder = 5,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.OrdersShipping,
-                QuestionEn = "How can I track my order?",
-                QuestionAr = "كيف أتابع طلبي؟",
-                AnswerEn = "Log in to your account and go to My Orders. You will see status updates and tracking information when your order is shipped.",
-                AnswerAr = "سجّل الدخول إلى حسابك وانتقل إلى طلباتي. ستظهر تحديثات الحالة ومعلومات التتبع عند شحن الطلب.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 6,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.OrdersShipping,
-                QuestionEn = "What are your shipping options and delivery times?",
-                QuestionAr = "ما خيارات الشحن وأوقات التسليم؟",
-                AnswerEn = "Delivery times depend on the service (shop orders, 3D print, laser, or CNC). Typically 3–7 business days for in-stock items. Custom manufacturing requests are quoted individually.",
-                AnswerAr = "أوقات التسليم تعتمد على الخدمة (طلبات المتجر، طباعة 3D، ليزر، أو CNC). عادة 3–7 أيام عمل للمنتجات المتوفرة. طلبات التصنيع المخصص تُقدّر بشكل فردي.",
-                IsActive = true,
-                IsFeatured = false,
-                SortOrder = 7,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Payments,
-                QuestionEn = "What payment methods do you accept?",
-                QuestionAr = "ما طرق الدفع المقبولة؟",
-                AnswerEn = "We accept major credit cards and local payment options (e.g. bank transfer) where available. Payment is processed at checkout. Invoices are issued for orders as per our terms.",
-                AnswerAr = "نقبل البطاقات الائتمانية الرئيسية وخيارات الدفع المحلية (مثل التحويل البنكي) حيثما تتوفر. تتم معالجة الدفع عند إتمام الشراء. تُصدر الفواتير للطلبات وفقاً لشروطنا.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 8,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.Support,
-                QuestionEn = "How do I get support for my request or order?",
-                QuestionAr = "كيف أحصل على الدعم لطلبي أو طلبي؟",
-                AnswerEn = "Use the Contact page for general inquiries. For an existing order or service request, log in and use the chat or the contact form with your reference number. We aim to respond within one business day.",
-                AnswerAr = "استخدم صفحة تواصل معنا للاستفسارات العامة. لطلب أو طلب خدمة قائم، سجّل الدخول واستخدم الشات أو نموذج التواصل مع ذكر رقم المرجع. نهدف للرد خلال يوم عمل.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 9,
-                CreatedAt = DateTime.UtcNow
-            },
-            new FaqItem
-            {
-                Id = Guid.NewGuid(),
-                Category = FaqCategory.General,
-                QuestionEn = "What is MABA's scope of services?",
-                QuestionAr = "ما نطاق خدمات MABA؟",
-                AnswerEn = "MABA offers industrial 3D printing, laser cutting and engraving, CNC routing and PCB prototyping, custom engineering projects, and software tools. We serve prototyping, small-batch production, and R&D needs.",
-                AnswerAr = "تقدم MABA الطباعة الصناعية ثلاثية الأبعاد، القطع والنقش بالليزر، التفريز CNC ونماذج PCB، مشاريع هندسية مخصصة، وأدوات برمجية. نخدم النماذج الأولية والإنتاج بكميات صغيرة والبحث والتطوير.",
-                IsActive = true,
-                IsFeatured = true,
-                SortOrder = 10,
-                CreatedAt = DateTime.UtcNow
+                continue;
             }
-        };
 
-        context.FaqItems.AddRange(items);
+            context.FaqItems.Add(item);
+            existingQuestions.Add(item.QuestionEn);
+        }
     }
 
     private static async Task SeedCrossCutting(ApplicationDbContext context)

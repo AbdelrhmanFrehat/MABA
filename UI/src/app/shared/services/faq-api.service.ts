@@ -9,6 +9,7 @@ import { FaqItem, CreateFaqPayload, ReorderFaqPayload, FaqCategory } from '../mo
 export class FaqApiService {
     private http = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/faq`;
+    private adminBaseUrl = `${environment.apiUrl}/admin/faq`;
 
     getPublicFaq(params: { search?: string; category?: FaqCategory; featured?: boolean } = {}): Observable<FaqItem[]> {
         let httpParams = new HttpParams();
@@ -23,7 +24,7 @@ export class FaqApiService {
     }
 
     getById(id: string): Observable<FaqItem | null> {
-        return this.http.get<FaqItem>(`${this.baseUrl}/admin/${id}`).pipe(
+        return this.http.get<FaqItem>(`${this.adminBaseUrl}/${id}`).pipe(
             catchError(() => of(null))
         );
     }
@@ -33,7 +34,7 @@ export class FaqApiService {
         if (params.search) httpParams = httpParams.set('search', params.search);
         if (params.category) httpParams = httpParams.set('category', params.category);
         if (params.isActive !== undefined) httpParams = httpParams.set('isActive', params.isActive.toString());
-        return this.http.get<FaqItem[]>(`${this.baseUrl}/admin`, { params: httpParams });
+        return this.http.get<FaqItem[]>(this.adminBaseUrl, { params: httpParams });
     }
 
     create(payload: CreateFaqPayload): Observable<FaqItem> {
@@ -47,7 +48,7 @@ export class FaqApiService {
             isFeatured: payload.isFeatured,
             sortOrder: payload.sortOrder
         };
-        return this.http.post<FaqItem>(`${this.baseUrl}/admin`, body);
+        return this.http.post<FaqItem>(this.adminBaseUrl, body);
     }
 
     update(id: string, payload: CreateFaqPayload): Observable<void> {
@@ -62,19 +63,19 @@ export class FaqApiService {
             isFeatured: payload.isFeatured,
             sortOrder: payload.sortOrder
         };
-        return this.http.put<void>(`${this.baseUrl}/admin/${id}`, body);
+        return this.http.put<void>(`${this.adminBaseUrl}/${id}`, body);
     }
 
     delete(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.baseUrl}/admin/${id}`);
+        return this.http.delete<void>(`${this.adminBaseUrl}/${id}`);
     }
 
     toggleActive(id: string): Observable<void> {
-        return this.http.patch<void>(`${this.baseUrl}/admin/${id}/active`, {});
+        return this.http.patch<void>(`${this.adminBaseUrl}/${id}/active`, {});
     }
 
     reorder(payload: ReorderFaqPayload): Observable<void> {
         const body = { items: payload.items };
-        return this.http.patch<void>(`${this.baseUrl}/admin/reorder`, body);
+        return this.http.patch<void>(`${this.adminBaseUrl}/reorder`, body);
     }
 }
