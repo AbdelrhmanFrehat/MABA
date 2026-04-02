@@ -1,3 +1,5 @@
+using Maba.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -5,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Maba.Infrastructure.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260402140000_AddSupportConversationSubjectAndLinks")]
     public partial class AddSupportConversationSubjectAndLinks : Migration
     {
         /// <inheritdoc />
