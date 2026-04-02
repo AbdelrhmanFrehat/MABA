@@ -154,7 +154,7 @@ public class DesignCadRequestsController : ControllerBase
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design CAD Request", CancellationToken.None);
+            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design CAD Request", null, CancellationToken.None);
         }
         catch (Exception ex)
         {

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Domain.Printing;
 using Maba.Domain.Media;
@@ -19,14 +20,22 @@ public class Print3dRequestsController : ControllerBase
     private readonly IFileStorageService _fileStorageService;
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<Print3dRequestsController> _logger;
 
-    public Print3dRequestsController(IMediator mediator, IFileStorageService fileStorageService, IApplicationDbContext context, IEmailService emailService, ILogger<Print3dRequestsController> logger)
+    public Print3dRequestsController(
+        IMediator mediator,
+        IFileStorageService fileStorageService,
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration,
+        ILogger<Print3dRequestsController> logger)
     {
         _mediator = mediator;
         _fileStorageService = fileStorageService;
         _context = context;
         _emailService = emailService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -185,7 +194,15 @@ public class Print3dRequestsController : ControllerBase
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "3D Print Request", CancellationToken.None);
+            var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl = $"{frontendBase}/account/requests?requestId={request.Id}&type=print3d";
+            await _emailService.SendRequestConfirmationAsync(
+                request.CustomerEmail,
+                request.CustomerName,
+                referenceNumber,
+                "3D Print Request",
+                viewUrl,
+                CancellationToken.None);
         }
         catch (Exception ex)
         {

@@ -4,7 +4,7 @@ import { MessageService } from 'primeng/api';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
 import Aura from '@primeuix/themes/aura';
-import { $t } from '@primeuix/themes';
+import { definePreset } from '@primeuix/themes';
 import { providePrimeNG } from 'primeng/config';
 import { TranslateModule } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -12,22 +12,32 @@ import { appRoutes } from './app.routes';
 import { authInterceptor } from './app/shared/services/auth.interceptor';
 import { errorInterceptor } from './app/shared/services/error.interceptor';
 
-// Main theme: purple/blue gradient (admin + public)
-const mainTheme = {
+/** Same scale as theme-tokens.scss / public MABA UI — primary indigo/purple family. */
+const mabaPrimaryPalette = {
+    50: '#EEF2FF',
+    100: '#E0E7FF',
+    200: '#C7D2FE',
+    300: '#A5B4FC',
+    400: '#818CF8',
+    500: '#667eea',
+    600: '#5a67d8',
+    700: '#4c51bf',
+    800: '#434190',
+    900: '#3730a3',
+    950: '#312e81'
+};
+
+/**
+ * Aura maps success tags, toasts, badges, messages, etc. to `{green.*}`.
+ * Remap primitive `green` / `emerald` to the MABA primary palette so no Tailwind-green leakage in Prime components.
+ */
+const mabaAuraPreset = definePreset(Aura, {
+    primitive: {
+        green: { ...mabaPrimaryPalette },
+        emerald: { ...mabaPrimaryPalette }
+    },
     semantic: {
-        primary: {
-            50: '#EEF2FF',
-            100: '#E0E7FF',
-            200: '#C7D2FE',
-            300: '#A5B4FC',
-            400: '#818CF8',
-            500: '#667eea',
-            600: '#5a67d8',
-            700: '#4c51bf',
-            800: '#434190',
-            900: '#3730a3',
-            950: '#312e81'
-        },
+        primary: { ...mabaPrimaryPalette },
         colorScheme: {
             light: {
                 primary: {
@@ -59,10 +69,7 @@ const mainTheme = {
             }
         }
     }
-};
-
-// Apply main theme (purple/blue)
-$t().preset(Aura).preset(mainTheme).use({ useDefaultOptions: true });
+});
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -70,7 +77,7 @@ export const appConfig: ApplicationConfig = {
         provideRouter(appRoutes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }), withEnabledBlockingInitialNavigation()),
         provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
         provideAnimationsAsync(),
-        providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
+        providePrimeNG({ theme: { preset: mabaAuraPreset, options: { darkModeSelector: '.app-dark' } } }),
         importProvidersFrom(
             TranslateModule.forRoot({
                 defaultLanguage: 'en'

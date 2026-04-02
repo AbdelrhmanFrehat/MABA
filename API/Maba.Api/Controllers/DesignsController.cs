@@ -28,9 +28,14 @@ public class DesignsController : ControllerBase
         _context = context;
     }
 
+    /// <summary>Current user's designs only. User id is taken from the JWT — never from query parameters.</summary>
     [HttpGet]
-    public async Task<ActionResult<List<DesignDto>>> GetAllDesigns([FromQuery] Guid? userId)
+    public async Task<ActionResult<List<DesignDto>>> GetMyDesigns()
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
         var query = new GetAllDesignsQuery { UserId = userId };
         var result = await _mediator.Send(query);
         return Ok(result);
@@ -135,7 +140,7 @@ public class DesignsController : ControllerBase
             }
         };
 
-        return CreatedAtAction(nameof(GetAllDesigns), new { }, design);
+        return CreatedAtAction(nameof(GetMyDesigns), new { }, design);
     }
 
     private static bool IsPreviewableFormat(string? format)
@@ -148,8 +153,12 @@ public class DesignsController : ControllerBase
     [Consumes("application/json")]
     public async Task<ActionResult<DesignDto>> CreateDesign([FromBody] CreateDesignCommand command)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+        command.UserId = userId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetAllDesigns), new { }, result);
+        return CreatedAtAction(nameof(GetMyDesigns), new { }, result);
     }
 
     [HttpGet("{id}/detail")]
@@ -157,6 +166,10 @@ public class DesignsController : ControllerBase
     public async Task<ActionResult<DesignDetailDto>> GetDesignDetail(Guid id)
     {
         var query = new GetDesignDetailQuery { DesignId = id };
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var uid))
+            query.RequestingUserId = uid;
+        query.IsPrivileged = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("StoreOwner");
         var result = await _mediator.Send(query);
         return Ok(result);
     }
@@ -166,6 +179,10 @@ public class DesignsController : ControllerBase
     public async Task<ActionResult<List<DesignFileDto>>> GetDesignFiles(Guid id)
     {
         var query = new GetDesignFilesQuery { DesignId = id };
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var uid))
+            query.RequestingUserId = uid;
+        query.IsPrivileged = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("StoreOwner");
         var result = await _mediator.Send(query);
         return Ok(result);
     }
@@ -183,6 +200,12 @@ public class DesignsController : ControllerBase
         [FromQuery] string? sortBy = null,
         [FromQuery] bool sortDescending = true)
     {
+        Guid? requestingUserId = null;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var uid))
+            requestingUserId = uid;
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("StoreOwner");
+
         var query = new SearchDesignsQuery
         {
             SearchTerm = searchTerm,
@@ -193,7 +216,9 @@ public class DesignsController : ControllerBase
             PageNumber = pageNumber,
             PageSize = pageSize,
             SortBy = sortBy,
-            SortDescending = sortDescending
+            SortDescending = sortDescending,
+            RequestingUserId = requestingUserId,
+            IsPrivileged = isPrivileged
         };
         var result = await _mediator.Send(query);
         return Ok(result);

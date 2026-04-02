@@ -4,6 +4,7 @@ using Maba.Application.Common.Interfaces;
 using Maba.Application.Common.Models;
 using Maba.Application.Features.Printing.Designs.Queries;
 using Maba.Application.Features.Printing.DTOs;
+using Maba.Application.Features.Printing.Designs;
 using Maba.Domain.Printing;
 using System.IO;
 
@@ -25,6 +26,17 @@ public class SearchDesignsQueryHandler : IRequestHandler<SearchDesignsQuery, Pag
             .Include(d => d.DesignFiles)
             .ThenInclude(df => df.MediaAsset)
             .AsQueryable();
+
+        if (!request.IsPrivileged)
+        {
+            var viewingOwnLibrary =
+                request.RequestingUserId.HasValue &&
+                request.UserId.HasValue &&
+                request.RequestingUserId.Value == request.UserId.Value;
+
+            if (!viewingOwnLibrary)
+                query = query.Where(d => d.IsPublic);
+        }
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

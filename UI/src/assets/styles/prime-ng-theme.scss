@@ -50,11 +50,20 @@
     
     // Shadows
     --p-focus-ring-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    
-    // Success Color (Industrial Blue - matching theme). Do NOT use green for primary CTAs; use --p-primary-* or --gradient-primary.
-    --p-green-500: #0066FF;
-    --p-green-600: #0052CC;
-    --p-green-700: #0047AB;
+    --p-focus-ring-color: rgba(102, 126, 234, 0.45);
+
+    // Success / legacy green tokens: same indigo scale as primary (Aura success → {green.*})
+    --p-green-50: var(--p-primary-50);
+    --p-green-100: var(--p-primary-100);
+    --p-green-200: var(--p-primary-200);
+    --p-green-300: var(--p-primary-300);
+    --p-green-400: var(--p-primary-400);
+    --p-green-500: var(--p-primary-500);
+    --p-green-600: var(--p-primary-600);
+    --p-green-700: var(--p-primary-700);
+    --p-green-800: var(--p-primary-800);
+    --p-green-900: var(--p-primary-900);
+    --p-green-950: var(--p-primary-950);
     
     // Warning Color (Orange)
     --p-orange-500: #FF6B35;
@@ -103,6 +112,19 @@
     --p-text-color: var(--p-surface-900);
     --p-text-muted-color: var(--p-surface-600);
     --p-text-hover-color: var(--p-surface-950);
+
+    --p-green-50: var(--p-primary-50);
+    --p-green-100: var(--p-primary-100);
+    --p-green-200: var(--p-primary-200);
+    --p-green-300: var(--p-primary-300);
+    --p-green-400: var(--p-primary-400);
+    --p-green-500: var(--p-primary-500);
+    --p-green-600: var(--p-primary-600);
+    --p-green-700: var(--p-primary-700);
+    --p-green-800: var(--p-primary-800);
+    --p-green-900: var(--p-primary-900);
+    --p-green-950: var(--p-primary-950);
+    --p-focus-ring-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.3);
 }
 
 // Button Overrides
@@ -212,7 +234,7 @@ p-button[outlined] button,
     &:focus-within,
     &.p-inputwrapper-focus {
         border-color: var(--p-primary-color) !important;
-        box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.22) !important;
         outline: none !important;
     }
 }
@@ -222,7 +244,7 @@ p-button[outlined] button,
 .p-inputwrapper:focus-within,
 .p-fluid .p-inputwrapper-focus {
     border-color: var(--p-primary-color) !important;
-    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.22) !important;
 }
 
 // IconField and InputGroup focus
@@ -232,7 +254,7 @@ p-button[outlined] button,
         .p-inputtext,
         .p-password-input {
             border-color: var(--p-primary-color) !important;
-            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.22) !important;
         }
     }
 }
@@ -242,7 +264,7 @@ p-button[outlined] button,
     .p-password-input:focus,
     .p-password-input.p-focus {
         border-color: var(--p-primary-color) !important;
-        box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.22) !important;
     }
 }
 
@@ -251,7 +273,7 @@ p-button[outlined] button,
     .p-inputtext:focus,
     .p-password-input:focus {
         border-color: var(--p-primary-color) !important;
-        box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.22) !important;
     }
 }
 
@@ -265,7 +287,7 @@ p-button[outlined] button,
         .p-inputtext,
         .p-password-input {
             border-color: var(--p-primary-color) !important;
-            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.22) !important;
         }
     }
 }
@@ -423,7 +445,7 @@ body .p-dynamic-dialog .p-dialog-header-content,
     }
     
     .p-toast-message-success {
-        background: var(--p-green-500);
+        background: var(--p-primary-500);
         color: white;
     }
     
@@ -448,10 +470,10 @@ body .p-toast .p-toast-message.p-toast-message-success,
 body .p-toast-message-success,
 html body .p-toast .p-toast-message-success,
 .p-component.p-toast .p-toast-message.p-toast-message-success {
-    background: #0066FF !important;
-    background-color: #0066FF !important;
-    border: 1px solid #0066FF !important;
-    border-left: 6px solid #0052CC !important;
+    background: linear-gradient(135deg, var(--p-primary-500) 0%, var(--p-primary-700) 100%) !important;
+    background-color: var(--p-primary-500) !important;
+    border: 1px solid var(--p-primary-600) !important;
+    border-left: 6px solid var(--p-primary-700) !important;
     color: #ffffff !important;
 }
 
@@ -514,7 +536,7 @@ body .p-toast .p-toast-message.p-toast-message-success svg {
             background-color: var(--p-primary-color) !important;
             border-color: var(--p-primary-color) !important;
             color: white !important;
-            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.3) !important;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
         }
         
         &:disabled {
@@ -542,7 +564,7 @@ body .p-toast .p-toast-message.p-toast-message-success svg {
     padding: 0.25rem 0.75rem;
     
     &.p-badge-success {
-        background: var(--p-green-500);
+        background: var(--p-primary-500);
     }
     
     &.p-badge-warning {
@@ -578,7 +600,7 @@ body .p-toast .p-toast-message.p-toast-message-success svg {
 // Message/Inline Message Overrides
 .p-message {
     &.p-message-success {
-        background: rgba(0, 102, 255, 0.1) !important;
+        background: rgba(102, 126, 234, 0.1) !important;
         border-color: var(--p-primary-color) !important;
         color: var(--p-primary-700) !important;
         

@@ -6,5 +6,7 @@ namespace Maba.Application.Features.Printing.Designs.Queries;
 public class GetDesignFilesQuery : IRequest<List<DesignFileDto>>
 {
     public Guid DesignId { get; set; }
+    public Guid? RequestingUserId { get; set; }
+    public bool IsPrivileged { get; set; }
 }
 

@@ -1,9 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Maba.Application.Common.Emails;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Orders.Commands;
 using Maba.Application.Features.Orders.DTOs;
-using Maba.Application.Features.Catalog.Inventory.Commands;
 using Maba.Domain.Orders;
 using Maba.Domain.Catalog;
 using Maba.Domain.Users;
@@ -13,10 +14,17 @@ namespace Maba.Application.Features.Orders.Handlers;
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public CreateOrderCommandHandler(IApplicationDbContext context)
+    public CreateOrderCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -150,6 +158,39 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Item)
             .FirstOrDefaultAsync(o => o.Id == order.Id, cancellationToken);
+
+        var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+        if (orderWithRelations?.User != null)
+        {
+            var shipAddr = AddressDto.FromJson(orderWithRelations.ShippingAddress);
+            var billAddr = AddressDto.FromJson(orderWithRelations.BillingAddress);
+            var confirmModel = new ShopOrderConfirmationEmailModel
+            {
+                OrderNumber = orderWithRelations.OrderNumber,
+                OrderDateUtc = orderWithRelations.CreatedAt,
+                CustomerName = !string.IsNullOrWhiteSpace(shipAddr?.FullName) ? shipAddr!.FullName.Trim() : orderWithRelations.User.FullName,
+                PaymentMethod = null,
+                ShippingMethod = null,
+                Items = orderWithRelations.OrderItems.Select(oi => new ShopOrderEmailLineItem
+                {
+                    ProductName = oi.Item?.NameEn?.Trim() ?? "Product",
+                    Quantity = oi.Quantity,
+                    UnitPrice = oi.UnitPrice,
+                    LineTotal = oi.UnitPrice * oi.Quantity
+                }).ToList(),
+                SubTotal = orderWithRelations.SubTotal,
+                Shipping = orderWithRelations.ShippingCost,
+                Tax = orderWithRelations.TaxAmount,
+                Discount = orderWithRelations.DiscountAmount,
+                Total = orderWithRelations.Total,
+                Currency = orderWithRelations.Currency,
+                ShippingAddressLinesHtml = ShopOrderEmailHtmlBuilder.FormatAddressLines(shipAddr),
+                BillingAddressLinesHtml = ShopOrderEmailHtmlBuilder.FormatAddressLines(billAddr),
+                ViewOrderUrl = $"{frontendBase}/account/orders/{orderWithRelations.Id}",
+                PublicSiteUrl = frontendBase
+            };
+            await _emailService.SendShopOrderConfirmationAsync(orderWithRelations.User.Email, confirmModel, cancellationToken);
+        }
 
         return new OrderDto
         {

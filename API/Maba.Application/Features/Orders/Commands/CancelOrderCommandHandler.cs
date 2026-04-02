@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Orders.Commands;
 using Maba.Application.Features.Orders.DTOs;
@@ -10,10 +11,17 @@ namespace Maba.Application.Features.Orders.Handlers;
 public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, OrderDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public CancelOrderCommandHandler(IApplicationDbContext context)
+    public CancelOrderCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<OrderDto> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -67,7 +75,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
             OrderStatusId = cancelledStatus.Id
         };
 
-        var updateHandler = new UpdateOrderStatusCommandHandler(_context);
+        var updateHandler = new UpdateOrderStatusCommandHandler(_context, _emailService, _configuration);
         return await updateHandler.Handle(updateStatusCommand, cancellationToken);
     }
 }

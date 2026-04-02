@@ -10,6 +10,9 @@
     --gradient-dark: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
     --color-primary: #667eea;
     --color-primary-dark: #5a67d8;
+    --color-primary-rgb: 102, 126, 234;
+    --maba-focus-ring: 0 0 0 0.2rem rgba(102, 126, 234, 0.28);
+    --maba-focus-ring-strong: 0 0 0 3px rgba(102, 126, 234, 0.35);
 
     // Surfaces & border (align with PrimeNG where possible)
     --surface-card: var(--p-content-background, #fff);

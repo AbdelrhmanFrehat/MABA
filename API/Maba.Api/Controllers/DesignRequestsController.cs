@@ -139,7 +139,7 @@ public class DesignRequestsController : ControllerBase
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design Request", CancellationToken.None);
+            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design Request", null, CancellationToken.None);
         }
         catch (Exception ex)
         {

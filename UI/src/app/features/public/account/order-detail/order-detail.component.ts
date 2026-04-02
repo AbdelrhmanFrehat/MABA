@@ -234,9 +234,24 @@ import { LanguageService } from '../../../../shared/services/language.service';
         </div>
     `,
     styles: [`
+        :host {
+            /* MABA purple accents — do not rely on global --primary-* aliases (avoids teal/green mismatches) */
+            --primary-color: #667eea;
+            --primary-700: #764ba2;
+            --primary-color-rgb: 102, 126, 234;
+        }
+
         .order-detail-page {
             min-height: 100vh;
             background: var(--surface-ground);
+        }
+
+        :host ::ng-deep .p-tag.p-tag-success,
+        :host ::ng-deep .p-tag[data-pc-severity="success"],
+        :host ::ng-deep [data-p-severity="success"].p-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: #fff !important;
+            border: none !important;
         }
 
         /* Hero Section */

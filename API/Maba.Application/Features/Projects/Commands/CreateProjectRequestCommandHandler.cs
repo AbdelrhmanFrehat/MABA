@@ -48,7 +48,7 @@ public class CreateProjectRequestCommandHandler : IRequestHandler<CreateProjectR
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(projectRequest.Email, projectRequest.FullName, referenceNumber, "Project Request", cancellationToken);
+            await _emailService.SendRequestConfirmationAsync(projectRequest.Email, projectRequest.FullName, referenceNumber, "Project Request", null, cancellationToken);
         }
         catch (Exception ex)
         {

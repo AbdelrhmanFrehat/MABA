@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CardModule } from 'primeng/card';
@@ -488,6 +488,8 @@ export class AccountRequestsComponent implements OnInit {
 
     showViewDialog = false;
     selectedRequest: ServiceRequest | null = null;
+    /** Open this request after list loads (e.g. email deep link). */
+    private pendingOpenRequestId: string | null = null;
 
     typeOptions = [
         { label: 'All Types', value: null },
@@ -509,15 +511,32 @@ export class AccountRequestsComponent implements OnInit {
     private laserApiService = inject(LaserApiService);
     private translateService = inject(TranslateService);
     private route = inject(ActivatedRoute);
+    private router = inject(Router);
     public languageService = inject(LanguageService);
 
     ngOnInit() {
-        this.route.queryParams.subscribe(params => {
+        const snap = this.route.snapshot.queryParamMap;
+        if (snap.get('type')) {
+            this.selectedType = snap.get('type');
+        }
+        if (snap.get('status')) {
+            this.selectedStatus = snap.get('status');
+        }
+        if (snap.get('requestId')) {
+            this.pendingOpenRequestId = snap.get('requestId');
+        }
+        this.route.queryParams.subscribe((params) => {
             if (params['type']) {
                 this.selectedType = params['type'];
             }
             if (params['status']) {
                 this.selectedStatus = params['status'];
+            }
+            if (params['requestId']) {
+                this.pendingOpenRequestId = params['requestId'];
+                if (!this.loading && this.allRequests.length) {
+                    this.tryOpenRequestFromQuery();
+                }
             }
         });
         this.loadRequests();
@@ -557,6 +576,7 @@ export class AccountRequestsComponent implements OnInit {
                 );
                 this.filterRequests();
                 this.loading = false;
+                this.tryOpenRequestFromQuery();
             }
         };
 
@@ -620,6 +640,26 @@ export class AccountRequestsComponent implements OnInit {
     viewRequest(request: ServiceRequest) {
         this.selectedRequest = request;
         this.showViewDialog = true;
+    }
+
+    private tryOpenRequestFromQuery() {
+        const id = this.pendingOpenRequestId;
+        if (!id || !this.allRequests.length) {
+            return;
+        }
+        const match = this.allRequests.find(
+            (r) => r.id === id || r.id?.toLowerCase() === String(id).toLowerCase()
+        );
+        if (match) {
+            this.viewRequest(match);
+            this.pendingOpenRequestId = null;
+            this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { requestId: null },
+                queryParamsHandling: 'merge',
+                replaceUrl: true
+            });
+        }
     }
 
     getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {

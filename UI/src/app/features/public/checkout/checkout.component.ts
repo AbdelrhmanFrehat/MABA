@@ -711,7 +711,7 @@ import { User } from '../../../shared/models/auth.model';
         }
 
         .summary-row.discount .value {
-            color: #28a745;
+            color: var(--color-primary);
         }
 
         .summary-total {

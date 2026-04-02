@@ -1,19 +1,29 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Maba.Application.Common.Emails;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Orders.DTOs;
 using Maba.Domain.Orders;
 using Maba.Domain.Catalog;
+using Maba.Domain.Users;
 
 namespace Maba.Application.Features.Cart.Commands;
 
 public class CheckoutCartCommandHandler : IRequestHandler<CheckoutCartCommand, OrderDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public CheckoutCartCommandHandler(IApplicationDbContext context)
+    public CheckoutCartCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<OrderDto> Handle(CheckoutCartCommand request, CancellationToken cancellationToken)
@@ -135,11 +145,49 @@ public class CheckoutCartCommandHandler : IRequestHandler<CheckoutCartCommand, O
             _context.Set<InventoryTransaction>().Add(transaction);
         }
 
+        var cartLinesSnapshot = cart.Items.ToList();
+
         // Clear cart
         _context.Set<CartItem>().RemoveRange(cart.Items);
         _context.Set<Domain.Orders.Cart>().Remove(cart);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+        var customer = await _context.Set<User>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+        if (customer != null)
+        {
+            var shipAddr = AddressDto.FromJson(request.ShippingAddressJson);
+            var billAddr = AddressDto.FromJson(request.BillingAddressJson);
+            var confirmModel = new ShopOrderConfirmationEmailModel
+            {
+                OrderNumber = order.OrderNumber,
+                OrderDateUtc = order.CreatedAt,
+                CustomerName = !string.IsNullOrWhiteSpace(shipAddr?.FullName) ? shipAddr!.FullName.Trim() : customer.FullName,
+                PaymentMethod = request.PaymentMethod,
+                ShippingMethod = request.ShippingMethod,
+                Items = cartLinesSnapshot.Select(ci => new ShopOrderEmailLineItem
+                {
+                    ProductName = ci.Item?.NameEn?.Trim() ?? "Product",
+                    Quantity = ci.Quantity,
+                    UnitPrice = ci.UnitPrice,
+                    LineTotal = ci.UnitPrice * ci.Quantity
+                }).ToList(),
+                SubTotal = order.SubTotal,
+                Shipping = order.ShippingCost,
+                Tax = order.TaxAmount,
+                Discount = order.DiscountAmount,
+                Total = order.Total,
+                Currency = order.Currency,
+                ShippingAddressLinesHtml = ShopOrderEmailHtmlBuilder.FormatAddressLines(shipAddr),
+                BillingAddressLinesHtml = ShopOrderEmailHtmlBuilder.FormatAddressLines(billAddr),
+                ViewOrderUrl = $"{frontendBase}/account/orders/{order.Id}",
+                PublicSiteUrl = frontendBase
+            };
+            await _emailService.SendShopOrderConfirmationAsync(customer.Email, confirmModel, cancellationToken);
+        }
 
         // Return order DTO
         return new OrderDto
@@ -166,7 +214,7 @@ public class CheckoutCartCommandHandler : IRequestHandler<CheckoutCartCommand, O
             ShippingAddressJson = order.ShippingAddress,
             BillingAddressJson = order.BillingAddress,
             Notes = order.Notes,
-            OrderItems = cart.Items.Select(ci => new OrderItemDto
+            OrderItems = cartLinesSnapshot.Select(ci => new OrderItemDto
             {
                 ItemId = ci.ItemId,
                 ItemNameEn = ci.Item?.NameEn ?? "",

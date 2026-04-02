@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Maba.Application.Common.Interfaces;
+using Maba.Application.Features.Printing.Designs;
 using Maba.Application.Features.Printing.Designs.Queries;
 using Maba.Application.Features.Printing.DTOs;
 using Maba.Domain.Printing;
@@ -29,6 +30,9 @@ public class GetDesignDetailQueryHandler : IRequestHandler<GetDesignDetailQuery,
         {
             throw new KeyNotFoundException("Design not found.");
         }
+
+        if (!DesignVisibility.CanView(design, request.RequestingUserId, request.IsPrivileged))
+            throw new KeyNotFoundException("Design not found.");
 
         var designFileIds = design.DesignFiles.Select(df => df.Id).ToList();
         var slicingJobsCount = await _context.Set<SlicingJob>()

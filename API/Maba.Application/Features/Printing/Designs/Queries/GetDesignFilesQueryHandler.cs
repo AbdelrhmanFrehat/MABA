@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Maba.Application.Common.Interfaces;
+using Maba.Application.Features.Printing.Designs;
 using Maba.Application.Features.Printing.Designs.Queries;
 using Maba.Application.Features.Printing.DTOs;
 using Maba.Domain.Printing;
@@ -26,6 +27,9 @@ public class GetDesignFilesQueryHandler : IRequestHandler<GetDesignFilesQuery, L
         {
             throw new KeyNotFoundException("Design not found.");
         }
+
+        if (!DesignVisibility.CanView(design, request.RequestingUserId, request.IsPrivileged))
+            throw new KeyNotFoundException("Design not found.");
 
         var files = await _context.Set<DesignFile>()
             .Include(df => df.MediaAsset)

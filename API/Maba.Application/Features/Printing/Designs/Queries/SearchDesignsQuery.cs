@@ -15,5 +15,9 @@ public class SearchDesignsQuery : IRequest<PagedResult<DesignDto>>
     public int PageSize { get; set; } = 10;
     public string? SortBy { get; set; } // Title, CreatedAt, DownloadCount, LikeCount
     public bool SortDescending { get; set; } = true;
+
+    /// <summary>Authenticated user id from JWT (never from client body).</summary>
+    public Guid? RequestingUserId { get; set; }
+    public bool IsPrivileged { get; set; }
 }
 

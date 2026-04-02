@@ -19,17 +19,14 @@ public class GetAllDesignsQueryHandler : IRequestHandler<GetAllDesignsQuery, Lis
 
     public async Task<List<DesignDto>> Handle(GetAllDesignsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Set<Design>()
+        if (!request.UserId.HasValue)
+            return new List<DesignDto>();
+
+        var designs = await _context.Set<Design>()
             .Include(d => d.DesignFiles)
             .ThenInclude(df => df.MediaAsset)
-            .AsQueryable();
-
-        if (request.UserId.HasValue)
-        {
-            query = query.Where(d => d.UserId == request.UserId.Value);
-        }
-
-        var designs = await query.ToListAsync(cancellationToken);
+            .Where(d => d.UserId == request.UserId.Value)
+            .ToListAsync(cancellationToken);
 
         return designs.Select(d => new DesignDto
         {

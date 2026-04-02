@@ -1,3 +1,5 @@
+using Maba.Application.Common.Emails;
+
 namespace Maba.Application.Common.Interfaces;
 
 /// <summary>
@@ -10,11 +12,13 @@ public interface IEmailService
     /// Sends a confirmation email to the customer and optionally a notification to the company inbox.
     /// If customerEmail is null or empty, no customer email is sent (notification may still be sent if configured).
     /// </summary>
+    /// <param name="viewRequestUrl">Optional deep link (e.g. account request detail). If null, button uses <c>App:FrontendBaseUrl</c> only.</param>
     Task SendRequestConfirmationAsync(
         string? customerEmail,
         string? customerName,
         string referenceNumber,
         string requestTypeLabel,
+        string? viewRequestUrl,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -26,4 +30,16 @@ public interface IEmailService
     /// Sends a password reset email message with a reset link.
     /// </summary>
     Task SendPasswordResetAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default);
+
+    /// <summary>Shop order confirmation (HTML). No-op when <paramref name="toEmail"/> is empty.</summary>
+    Task SendShopOrderConfirmationAsync(
+        string? toEmail,
+        ShopOrderConfirmationEmailModel model,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Shop order shipped notification (HTML). No-op when <paramref name="toEmail"/> is empty.</summary>
+    Task SendShopOrderShippedAsync(
+        string? toEmail,
+        ShopOrderShippedEmailModel model,
+        CancellationToken cancellationToken = default);
 }

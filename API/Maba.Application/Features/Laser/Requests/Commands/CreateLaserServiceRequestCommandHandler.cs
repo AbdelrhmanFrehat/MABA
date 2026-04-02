@@ -80,7 +80,7 @@ public class CreateLaserServiceRequestCommandHandler : IRequestHandler<CreateLas
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(serviceRequest.CustomerEmail, serviceRequest.CustomerName, referenceNumber, "Laser Service Request", cancellationToken);
+            await _emailService.SendRequestConfirmationAsync(serviceRequest.CustomerEmail, serviceRequest.CustomerName, referenceNumber, "Laser Service Request", null, cancellationToken);
         }
         catch (Exception ex)
         {

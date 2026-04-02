@@ -527,9 +527,9 @@ import { LanguageService } from '../../../shared/services/language.service';
             gap: 0.5rem;
             margin-top: 1rem;
             padding: 1rem;
-            background: rgba(40, 167, 69, 0.1);
+            background: rgba(102, 126, 234, 0.12);
             border-radius: 12px;
-            color: #28a745;
+            color: #667eea;
         }
 
         .coupon-applied i {

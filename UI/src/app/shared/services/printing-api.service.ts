@@ -155,20 +155,9 @@ export class PrintingApiService {
         return this.http.post<Print3dDesign>(`${this.baseUrl}/designs`, formData);
     }
 
-    getDesigns(params?: {
-        page?: number;
-        pageSize?: number;
-        userId?: string;
-    }): Observable<Print3dDesign[]> {
-        let httpParams = new HttpParams();
-        if (params) {
-            Object.keys(params).forEach(key => {
-                if (params[key as keyof typeof params] !== null && params[key as keyof typeof params] !== undefined && params[key as keyof typeof params] !== '') {
-                    httpParams = httpParams.set(key, params[key as keyof typeof params]!.toString());
-                }
-            });
-        }
-        return this.http.get<Print3dDesign[]>(`${this.baseUrl}/designs`, { params: httpParams });
+    /** Authenticated: returns only the current user's designs (server enforces via JWT). */
+    getDesigns(): Observable<Print3dDesign[]> {
+        return this.http.get<Print3dDesign[]>(`${this.baseUrl}/designs`);
     }
 
     getDesignDetail(id: string): Observable<Print3dDesign> {

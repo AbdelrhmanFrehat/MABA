@@ -1,3 +1,4 @@
+using Maba.Application.Common.Emails;
 using Maba.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +21,7 @@ public class MockEmailService : IEmailService
         string? customerName,
         string referenceNumber,
         string requestTypeLabel,
+        string? viewRequestUrl,
         CancellationToken cancellationToken = default)
     {
         _logger.LogDebug(
@@ -43,6 +45,30 @@ public class MockEmailService : IEmailService
         _logger.LogWarning(
             "SMTP is not configured (Smtp:Host is empty). Password reset email was NOT sent to {Email}. To send real emails, set Smtp:Host, Smtp:Username, Smtp:Password etc. in User Secrets or appsettings.",
             toEmail);
+        return Task.CompletedTask;
+    }
+
+    public Task SendShopOrderConfirmationAsync(
+        string? toEmail,
+        ShopOrderConfirmationEmailModel model,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug(
+            "Mock email: would send shop order confirmation to {Email} for order {OrderNumber}",
+            toEmail ?? "(none)",
+            model.OrderNumber);
+        return Task.CompletedTask;
+    }
+
+    public Task SendShopOrderShippedAsync(
+        string? toEmail,
+        ShopOrderShippedEmailModel model,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug(
+            "Mock email: would send shop shipped email to {Email} for order {OrderNumber}",
+            toEmail ?? "(none)",
+            model.OrderNumber);
         return Task.CompletedTask;
     }
 }

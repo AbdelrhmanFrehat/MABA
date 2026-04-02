@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Maba.Application.Common.Emails;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Orders.Commands;
 using Maba.Application.Features.Orders.DTOs;
@@ -11,10 +13,17 @@ namespace Maba.Application.Features.Orders.Handlers;
 public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatusCommand, OrderDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public UpdateOrderStatusCommandHandler(IApplicationDbContext context)
+    public UpdateOrderStatusCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<OrderDto> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
@@ -131,6 +140,8 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        var shouldSendShippedEmail = newStatusKey == "Shipped" && oldStatusKey != "Shipped";
+
         // Reload order with updated status
         var updatedOrder = await _context.Set<Order>()
             .Include(o => o.User)
@@ -138,6 +149,41 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Item)
             .FirstOrDefaultAsync(o => o.Id == order.Id, cancellationToken);
+
+        if (shouldSendShippedEmail && updatedOrder?.User != null)
+        {
+            var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var tracking = updatedOrder.TrackingNumber?.Trim();
+            string? trackingUrl = null;
+            if (!string.IsNullOrEmpty(tracking) &&
+                (tracking.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                 tracking.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+            {
+                trackingUrl = tracking;
+            }
+
+            DateTime? estUtc = null;
+            if (updatedOrder.EstimatedDeliveryDate.HasValue)
+            {
+                var d = updatedOrder.EstimatedDeliveryDate.Value;
+                estUtc = d.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                    : d.ToUniversalTime();
+            }
+
+            var shippedModel = new ShopOrderShippedEmailModel
+            {
+                OrderNumber = updatedOrder.OrderNumber,
+                TrackingNumber = tracking,
+                Carrier = null,
+                ShippedDateUtc = DateTime.UtcNow,
+                EstimatedDeliveryUtc = estUtc,
+                ViewOrderUrl = $"{frontendBase}/account/orders/{updatedOrder.Id}",
+                TrackingUrl = trackingUrl,
+                PublicSiteUrl = frontendBase
+            };
+            await _emailService.SendShopOrderShippedAsync(updatedOrder.User.Email, shippedModel, cancellationToken);
+        }
 
         return new OrderDto
         {

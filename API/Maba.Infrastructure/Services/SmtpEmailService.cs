@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using Maba.Application.Common.Emails;
 using Maba.Application.Common.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,10 +13,12 @@ public class SmtpEmailService : IEmailService
 {
     private readonly SmtpSettings _settings;
     private readonly ILogger<SmtpEmailService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public SmtpEmailService(IOptions<SmtpSettings> options, ILogger<SmtpEmailService> logger)
+    public SmtpEmailService(IOptions<SmtpSettings> options, IConfiguration configuration, ILogger<SmtpEmailService> logger)
     {
         _settings = options.Value;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -23,13 +27,14 @@ public class SmtpEmailService : IEmailService
         string? customerName,
         string referenceNumber,
         string requestTypeLabel,
+        string? viewRequestUrl,
         CancellationToken cancellationToken = default)
     {
         try
         {
             if (!string.IsNullOrWhiteSpace(customerEmail))
             {
-                await SendCustomerConfirmationAsync(customerEmail, customerName, referenceNumber, requestTypeLabel, cancellationToken);
+                await SendCustomerConfirmationAsync(customerEmail, customerName, referenceNumber, requestTypeLabel, viewRequestUrl, cancellationToken);
             }
             else
             {
@@ -75,23 +80,73 @@ public class SmtpEmailService : IEmailService
         _logger.LogInformation("Password reset email sent to {Email}", toEmail);
     }
 
+    public async Task SendShopOrderConfirmationAsync(
+        string? toEmail,
+        ShopOrderConfirmationEmailModel model,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                _logger.LogDebug("No customer email; skipping order confirmation for order {OrderNumber}", model.OrderNumber);
+                return;
+            }
+
+            var subject = $"Order confirmed – {model.OrderNumber}";
+            var body = ShopOrderEmailHtmlBuilder.BuildConfirmationHtml(model);
+            await SendAsync(toEmail, subject, body, cancellationToken);
+            _logger.LogInformation("Shop order confirmation email sent to {Email} for {OrderNumber}", toEmail, model.OrderNumber);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send shop order confirmation for {OrderNumber}", model.OrderNumber);
+        }
+    }
+
+    public async Task SendShopOrderShippedAsync(
+        string? toEmail,
+        ShopOrderShippedEmailModel model,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                _logger.LogDebug("No customer email; skipping shipped email for order {OrderNumber}", model.OrderNumber);
+                return;
+            }
+
+            var subject = $"Your order has been shipped – {model.OrderNumber}";
+            var body = ShopOrderEmailHtmlBuilder.BuildShippedHtml(model);
+            await SendAsync(toEmail, subject, body, cancellationToken);
+            _logger.LogInformation("Shop order shipped email sent to {Email} for {OrderNumber}", toEmail, model.OrderNumber);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send shop shipped email for {OrderNumber}", model.OrderNumber);
+        }
+    }
+
     private async Task SendCustomerConfirmationAsync(
         string toEmail,
         string? customerName,
         string referenceNumber,
         string requestTypeLabel,
+        string? viewRequestUrl,
         CancellationToken cancellationToken)
     {
         var displayName = string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName.Trim();
         var safeDisplayName = WebUtility.HtmlEncode(displayName);
         var safeRequestType = WebUtility.HtmlEncode(requestTypeLabel);
         var subject = $"Request received – {referenceNumber}";
-        var websiteUrl = "https://mabasol.com";
+        var fallbackBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
+        var actionUrl = !string.IsNullOrWhiteSpace(viewRequestUrl) ? viewRequestUrl.Trim() : fallbackBase;
         var body = BuildEmailTemplate(
             title: "Request received",
             message: $"Hi {safeDisplayName}, we have received your {safeRequestType} request.<br/>Reference Number: <strong>{WebUtility.HtmlEncode(referenceNumber)}</strong>.<br/>Our team will review it and get back to you soon.",
             actionText: "View Request",
-            actionUrl: websiteUrl,
+            actionUrl: actionUrl,
             secondaryText: "Keep your reference number for follow-up. If this request was not submitted by you, please contact MABA support."
         );
 
