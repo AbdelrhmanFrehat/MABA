@@ -163,6 +163,37 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// When enabled (e.g. Production appsettings or env Database__ApplyMigrationsOnStartup), apply EF migrations
+// on startup so deployed API schema matches the code (prevents 500s from missing columns/tables).
+var applyMigrationsOnStartup = builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false);
+if (applyMigrationsOnStartup)
+{
+    using var migrationScope = app.Services.CreateScope();
+    var migrationLogger = migrationScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var db = migrationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        var pending = await db.Database.GetPendingMigrationsAsync();
+        var pendingList = pending.ToList();
+        if (pendingList.Count > 0)
+        {
+            migrationLogger.LogInformation(
+                "Applying {Count} pending database migration(s): {Migrations}",
+                pendingList.Count,
+                string.Join(", ", pendingList));
+        }
+
+        await db.Database.MigrateAsync();
+        migrationLogger.LogInformation("Database schema is up to date.");
+    }
+    catch (Exception ex)
+    {
+        migrationLogger.LogError(ex,
+            "Failed to apply database migrations on startup. Fix the database or set Database:ApplyMigrationsOnStartup to false and run migrations manually.");
+        throw;
+    }
+}
+
 // Log email provider so it's clear whether verification/confirmation emails will be sent
 var smtpHost = builder.Configuration["Smtp:Host"];
 if (string.IsNullOrWhiteSpace(smtpHost))

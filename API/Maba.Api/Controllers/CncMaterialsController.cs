@@ -25,11 +25,12 @@ public class CncMaterialsController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<List<CncMaterialDto>>> GetAllMaterials(
-        [FromQuery] string? type = null)
+        [FromQuery] string? type = null,
+        [FromQuery] bool activeOnly = true)
     {
         var query = new GetAllCncMaterialsQuery
         {
-            ActiveOnly = true,
+            ActiveOnly = activeOnly,
             ExcludeMetal = true,
             Type = type
         };

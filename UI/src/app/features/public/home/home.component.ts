@@ -54,6 +54,14 @@ import { environment } from '../../../../environments/environment';
                             (onClick)="scrollToSection('capabilities')"
                             styleClass="hero-btn-secondary">
                         </p-button>
+                        <p-button
+                            [label]="languageService.language === 'ar' ? 'اتصل بنا' : 'Contact Us'"
+                            icon="pi pi-envelope"
+                            iconPos="left"
+                            [outlined]="true"
+                            routerLink="/contact"
+                            styleClass="hero-btn-secondary">
+                        </p-button>
                     </div>
                 </div>
             </section>
