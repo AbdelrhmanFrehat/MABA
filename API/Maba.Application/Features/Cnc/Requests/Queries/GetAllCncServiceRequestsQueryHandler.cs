@@ -6,8 +6,11 @@ using Maba.Domain.Cnc;
 
 namespace Maba.Application.Features.Cnc.Requests.Queries;
 
-public class GetAllCncServiceRequestsQueryHandler : IRequestHandler<GetAllCncServiceRequestsQuery, List<CncServiceRequestDto>>
+public class GetAllCncServiceRequestsQueryHandler : IRequestHandler<GetAllCncServiceRequestsQuery, CncServiceRequestsListResult>
 {
+    private const int DefaultTake = 25;
+    private const int MaxTake = 500;
+
     private readonly IApplicationDbContext _context;
 
     public GetAllCncServiceRequestsQueryHandler(IApplicationDbContext context)
@@ -15,11 +18,9 @@ public class GetAllCncServiceRequestsQueryHandler : IRequestHandler<GetAllCncSer
         _context = context;
     }
 
-    public async Task<List<CncServiceRequestDto>> Handle(GetAllCncServiceRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<CncServiceRequestsListResult> Handle(GetAllCncServiceRequestsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Set<CncServiceRequest>()
-            .Include(x => x.Material)
-            .AsQueryable();
+        var query = _context.Set<CncServiceRequest>().AsQueryable();
 
         if (request.Status.HasValue)
         {
@@ -28,65 +29,100 @@ public class GetAllCncServiceRequestsQueryHandler : IRequestHandler<GetAllCncSer
 
         if (!string.IsNullOrWhiteSpace(request.ServiceMode))
         {
-            query = query.Where(x => x.ServiceMode == request.ServiceMode);
+            var mode = request.ServiceMode.Trim();
+            query = query.Where(x => x.ServiceMode == mode);
+        }
+
+        if (request.CreatedFromUtc.HasValue)
+        {
+            var from = request.CreatedFromUtc.Value.Date;
+            query = query.Where(x => x.CreatedAt >= from);
+        }
+
+        if (request.CreatedToUtc.HasValue)
+        {
+            var toExclusive = request.CreatedToUtc.Value.Date.AddDays(1);
+            query = query.Where(x => x.CreatedAt < toExclusive);
         }
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var term = request.SearchTerm.ToLower();
-            query = query.Where(x => 
-                x.ReferenceNumber.ToLower().Contains(term) ||
-                x.CustomerName.ToLower().Contains(term) ||
-                x.CustomerEmail.ToLower().Contains(term));
+            var term = request.SearchTerm.Trim();
+            if (Guid.TryParse(term, out var id))
+            {
+                query = query.Where(x => x.Id == id);
+            }
+            else
+            {
+                var termLower = term.ToLowerInvariant();
+                query = query.Where(x =>
+                    x.ReferenceNumber.ToLower().Contains(termLower) ||
+                    x.CustomerName.ToLower().Contains(termLower) ||
+                    x.CustomerEmail.ToLower().Contains(termLower) ||
+                    (x.FileName != null && x.FileName.ToLower().Contains(termLower)));
+            }
         }
 
-        query = query.OrderByDescending(x => x.CreatedAt);
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        if (request.Skip.HasValue)
+        var skip = Math.Max(0, request.Skip ?? 0);
+        var take = request.Take ?? DefaultTake;
+        if (take < 1)
         {
-            query = query.Skip(request.Skip.Value);
+            take = DefaultTake;
         }
 
-        if (request.Take.HasValue)
+        if (take > MaxTake)
         {
-            query = query.Take(request.Take.Value);
+            take = MaxTake;
         }
 
-        return await query.Select(x => new CncServiceRequestDto
+        var items = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .Select(x => new CncServiceRequestDto
+            {
+                Id = x.Id,
+                ReferenceNumber = x.ReferenceNumber,
+                ServiceMode = x.ServiceMode,
+                MaterialId = x.MaterialId,
+                MaterialNameEn = x.Material != null ? x.Material.NameEn : null,
+                MaterialNameAr = x.Material != null ? x.Material.NameAr : null,
+                PcbMaterial = x.PcbMaterial,
+                PcbThickness = x.PcbThickness,
+                PcbSide = x.PcbSide,
+                PcbOperation = x.PcbOperation,
+                OperationType = x.OperationType,
+                WidthMm = x.WidthMm,
+                HeightMm = x.HeightMm,
+                ThicknessMm = x.ThicknessMm,
+                Quantity = x.Quantity,
+                DepthMode = x.DepthMode,
+                DepthMm = x.DepthMm,
+                DesignSourceType = x.DesignSourceType,
+                FilePath = x.FilePath,
+                FileName = x.FileName,
+                DesignNotes = x.DesignNotes,
+                CustomerName = x.CustomerName,
+                CustomerEmail = x.CustomerEmail,
+                CustomerPhone = x.CustomerPhone,
+                ProjectDescription = x.ProjectDescription,
+                AdminNotes = x.AdminNotes,
+                EstimatedPrice = x.EstimatedPrice,
+                FinalPrice = x.FinalPrice,
+                Status = x.Status,
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt,
+                ReviewedAt = x.ReviewedAt,
+                CompletedAt = x.CompletedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return new CncServiceRequestsListResult
         {
-            Id = x.Id,
-            ReferenceNumber = x.ReferenceNumber,
-            ServiceMode = x.ServiceMode,
-            MaterialId = x.MaterialId,
-            MaterialNameEn = x.Material != null ? x.Material.NameEn : null,
-            MaterialNameAr = x.Material != null ? x.Material.NameAr : null,
-            PcbMaterial = x.PcbMaterial,
-            PcbThickness = x.PcbThickness,
-            PcbSide = x.PcbSide,
-            PcbOperation = x.PcbOperation,
-            OperationType = x.OperationType,
-            WidthMm = x.WidthMm,
-            HeightMm = x.HeightMm,
-            ThicknessMm = x.ThicknessMm,
-            Quantity = x.Quantity,
-            DepthMode = x.DepthMode,
-            DepthMm = x.DepthMm,
-            DesignSourceType = x.DesignSourceType,
-            FilePath = x.FilePath,
-            FileName = x.FileName,
-            DesignNotes = x.DesignNotes,
-            CustomerName = x.CustomerName,
-            CustomerEmail = x.CustomerEmail,
-            CustomerPhone = x.CustomerPhone,
-            ProjectDescription = x.ProjectDescription,
-            AdminNotes = x.AdminNotes,
-            EstimatedPrice = x.EstimatedPrice,
-            FinalPrice = x.FinalPrice,
-            Status = x.Status,
-            CreatedAt = x.CreatedAt,
-            UpdatedAt = x.UpdatedAt,
-            ReviewedAt = x.ReviewedAt,
-            CompletedAt = x.CompletedAt
-        }).ToListAsync(cancellationToken);
+            Items = items,
+            TotalCount = totalCount
+        };
     }
 }

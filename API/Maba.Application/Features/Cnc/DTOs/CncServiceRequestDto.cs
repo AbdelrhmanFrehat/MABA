@@ -57,3 +57,9 @@ public class CreateCncServiceRequestResultDto
     public string ReferenceNumber { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }
+
+public class CncServiceRequestsListResult
+{
+    public List<CncServiceRequestDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+}

@@ -44,6 +44,15 @@ public class CncMaterial : BaseEntity
     public string? NotesEn { get; set; }
     public string? NotesAr { get; set; }
     
-    // PCB-only flag (material only available in PCB mode)
+    // PCB-only flag (material only available in PCB mode; false when Type is "both")
     public bool IsPcbOnly { get; set; }
+
+    /// <summary>PCB substrate family (e.g. FR4, FR1). Used when Type is pcb or both.</summary>
+    public string? PcbMaterialType { get; set; }
+
+    /// <summary>Comma-separated board thicknesses in mm (e.g. "0.8,1.0,1.6").</summary>
+    public string? SupportedBoardThicknesses { get; set; }
+
+    public bool SupportsSingleSided { get; set; } = true;
+    public bool SupportsDoubleSided { get; set; } = true;
 }

@@ -9,7 +9,10 @@ import {
     CncServiceRequestPayload,
     CncServiceRequestResult,
     CreateCncMaterialRequest,
-    UpdateCncMaterialRequest
+    UpdateCncMaterialRequest,
+    CncServiceRequestsListResponse,
+    CncServiceRequestDto,
+    CncAdminRequestsQuery
 } from '../models/cnc.model';
 
 @Injectable({
@@ -27,11 +30,15 @@ export class CncApiService {
     readonly isLoading = computed(() => this.cacheLoading());
 
     readonly routingMaterials = computed(() =>
-        this.materialsCache().filter(m => m.isActive && !m.isPcbOnly && m.type === 'routing')
+        this.materialsCache().filter(
+            m => m.isActive && !m.isMetal && (m.type === 'routing' || m.type === 'both')
+        )
     );
 
     readonly pcbMaterials = computed(() =>
-        this.materialsCache().filter(m => m.isActive && m.type === 'pcb')
+        this.materialsCache().filter(
+            m => m.isActive && !m.isMetal && (m.type === 'pcb' || m.type === 'both')
+        )
     );
 
     constructor(private http: HttpClient) {}
@@ -311,5 +318,33 @@ export class CncApiService {
         });
 
         return this.http.post<CncServiceRequestResult>(`${this.baseUrl}/cnc/requests`, formData);
+    }
+
+    getAdminRequests(query: CncAdminRequestsQuery): Observable<CncServiceRequestsListResponse> {
+        let params = new HttpParams();
+        if (query.status !== undefined && query.status !== null) {
+            params = params.set('status', String(query.status));
+        }
+        if (query.serviceMode) {
+            params = params.set('serviceMode', query.serviceMode);
+        }
+        if (query.search) {
+            params = params.set('search', query.search);
+        }
+        if (query.createdFrom) {
+            params = params.set('createdFrom', query.createdFrom);
+        }
+        if (query.createdTo) {
+            params = params.set('createdTo', query.createdTo);
+        }
+        const skip = query.skip ?? 0;
+        const take = query.take ?? 25;
+        params = params.set('skip', String(skip));
+        params = params.set('take', String(take));
+        return this.http.get<CncServiceRequestsListResponse>(`${this.baseUrl}/cnc/requests`, { params });
+    }
+
+    getAdminRequestById(id: string): Observable<CncServiceRequestDto> {
+        return this.http.get<CncServiceRequestDto>(`${this.baseUrl}/cnc/requests/${id}`);
     }
 }

@@ -44,7 +44,9 @@ public class UpdateCncMaterialCommand : IRequest<CncMaterialDto?>
     // General Notes
     public string? NotesEn { get; set; }
     public string? NotesAr { get; set; }
-    
-    // PCB-only flag
-    public bool IsPcbOnly { get; set; }
+
+    public string? PcbMaterialType { get; set; }
+    public string? SupportedBoardThicknesses { get; set; }
+    public bool SupportsSingleSided { get; set; } = true;
+    public bool SupportsDoubleSided { get; set; } = true;
 }

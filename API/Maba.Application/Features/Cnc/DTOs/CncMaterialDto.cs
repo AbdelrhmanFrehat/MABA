@@ -1,3 +1,5 @@
+using Maba.Domain.Cnc;
+
 namespace Maba.Application.Features.Cnc.DTOs;
 
 public class CncMaterialDto
@@ -44,7 +46,52 @@ public class CncMaterialDto
     
     // PCB-only flag
     public bool IsPcbOnly { get; set; }
-    
+
+    public string? PcbMaterialType { get; set; }
+    public string? SupportedBoardThicknesses { get; set; }
+    public bool SupportsSingleSided { get; set; }
+    public bool SupportsDoubleSided { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    public static CncMaterialDto FromEntity(CncMaterial m) => new()
+    {
+        Id = m.Id,
+        NameEn = m.NameEn,
+        NameAr = m.NameAr,
+        DescriptionEn = m.DescriptionEn,
+        DescriptionAr = m.DescriptionAr,
+        Type = m.Type,
+        MinThicknessMm = m.MinThicknessMm,
+        MaxThicknessMm = m.MaxThicknessMm,
+        IsMetal = m.IsMetal,
+        IsActive = m.IsActive,
+        SortOrder = m.SortOrder,
+        AllowCut = m.AllowCut,
+        AllowEngrave = m.AllowEngrave,
+        AllowPocket = m.AllowPocket,
+        AllowDrill = m.AllowDrill,
+        MaxCutDepthMm = m.MaxCutDepthMm,
+        MaxEngraveDepthMm = m.MaxEngraveDepthMm,
+        MaxPocketDepthMm = m.MaxPocketDepthMm,
+        MaxDrillDepthMm = m.MaxDrillDepthMm,
+        CutNotesEn = m.CutNotesEn,
+        CutNotesAr = m.CutNotesAr,
+        EngraveNotesEn = m.EngraveNotesEn,
+        EngraveNotesAr = m.EngraveNotesAr,
+        PocketNotesEn = m.PocketNotesEn,
+        PocketNotesAr = m.PocketNotesAr,
+        DrillNotesEn = m.DrillNotesEn,
+        DrillNotesAr = m.DrillNotesAr,
+        NotesEn = m.NotesEn,
+        NotesAr = m.NotesAr,
+        IsPcbOnly = m.IsPcbOnly,
+        PcbMaterialType = m.PcbMaterialType,
+        SupportedBoardThicknesses = m.SupportedBoardThicknesses,
+        SupportsSingleSided = m.SupportsSingleSided,
+        SupportsDoubleSided = m.SupportsDoubleSided,
+        CreatedAt = m.CreatedAt,
+        UpdatedAt = m.UpdatedAt
+    };
 }

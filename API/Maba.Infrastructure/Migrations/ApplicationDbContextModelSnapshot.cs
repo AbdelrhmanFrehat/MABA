@@ -1299,8 +1299,20 @@ namespace Maba.Infrastructure.Migrations
                     b.Property<string>("PocketNotesEn")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PcbMaterialType")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
+
+                    b.Property<string>("SupportedBoardThicknesses")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("SupportsDoubleSided")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SupportsSingleSided")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Type")
                         .HasColumnType("nvarchar(max)");

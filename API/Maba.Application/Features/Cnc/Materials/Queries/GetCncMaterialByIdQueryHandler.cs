@@ -20,45 +20,6 @@ public class GetCncMaterialByIdQueryHandler : IRequestHandler<GetCncMaterialById
         var material = await _context.Set<CncMaterial>()
             .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
-        if (material == null)
-        {
-            return null;
-        }
-
-        return new CncMaterialDto
-        {
-            Id = material.Id,
-            NameEn = material.NameEn,
-            NameAr = material.NameAr,
-            DescriptionEn = material.DescriptionEn,
-            DescriptionAr = material.DescriptionAr,
-            Type = material.Type,
-            MinThicknessMm = material.MinThicknessMm,
-            MaxThicknessMm = material.MaxThicknessMm,
-            IsMetal = material.IsMetal,
-            IsActive = material.IsActive,
-            SortOrder = material.SortOrder,
-            AllowCut = material.AllowCut,
-            AllowEngrave = material.AllowEngrave,
-            AllowPocket = material.AllowPocket,
-            AllowDrill = material.AllowDrill,
-            MaxCutDepthMm = material.MaxCutDepthMm,
-            MaxEngraveDepthMm = material.MaxEngraveDepthMm,
-            MaxPocketDepthMm = material.MaxPocketDepthMm,
-            MaxDrillDepthMm = material.MaxDrillDepthMm,
-            CutNotesEn = material.CutNotesEn,
-            CutNotesAr = material.CutNotesAr,
-            EngraveNotesEn = material.EngraveNotesEn,
-            EngraveNotesAr = material.EngraveNotesAr,
-            PocketNotesEn = material.PocketNotesEn,
-            PocketNotesAr = material.PocketNotesAr,
-            DrillNotesEn = material.DrillNotesEn,
-            DrillNotesAr = material.DrillNotesAr,
-            NotesEn = material.NotesEn,
-            NotesAr = material.NotesAr,
-            IsPcbOnly = material.IsPcbOnly,
-            CreatedAt = material.CreatedAt,
-            UpdatedAt = material.UpdatedAt
-        };
+        return material == null ? null : CncMaterialDto.FromEntity(material);
     }
 }

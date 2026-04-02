@@ -31,7 +31,13 @@ public class GetAllCncMaterialsQueryHandler : IRequestHandler<GetAllCncMaterials
 
         if (!string.IsNullOrEmpty(request.Type))
         {
-            query = query.Where(m => m.Type == request.Type);
+            var t = request.Type.Trim().ToLowerInvariant();
+            query = t switch
+            {
+                "routing" => query.Where(m => m.Type == "routing" || m.Type == "both"),
+                "pcb" => query.Where(m => m.Type == "pcb" || m.Type == "both"),
+                _ => query.Where(m => m.Type == t)
+            };
         }
 
         if (request.IsPcbOnly.HasValue)
@@ -44,42 +50,6 @@ public class GetAllCncMaterialsQueryHandler : IRequestHandler<GetAllCncMaterials
             .ThenBy(m => m.NameEn)
             .ToListAsync(cancellationToken);
 
-        return materials.Select(MapToDto).ToList();
+        return materials.Select(CncMaterialDto.FromEntity).ToList();
     }
-
-    private static CncMaterialDto MapToDto(CncMaterial m) => new()
-    {
-        Id = m.Id,
-        NameEn = m.NameEn,
-        NameAr = m.NameAr,
-        DescriptionEn = m.DescriptionEn,
-        DescriptionAr = m.DescriptionAr,
-        Type = m.Type,
-        MinThicknessMm = m.MinThicknessMm,
-        MaxThicknessMm = m.MaxThicknessMm,
-        IsMetal = m.IsMetal,
-        IsActive = m.IsActive,
-        SortOrder = m.SortOrder,
-        AllowCut = m.AllowCut,
-        AllowEngrave = m.AllowEngrave,
-        AllowPocket = m.AllowPocket,
-        AllowDrill = m.AllowDrill,
-        MaxCutDepthMm = m.MaxCutDepthMm,
-        MaxEngraveDepthMm = m.MaxEngraveDepthMm,
-        MaxPocketDepthMm = m.MaxPocketDepthMm,
-        MaxDrillDepthMm = m.MaxDrillDepthMm,
-        CutNotesEn = m.CutNotesEn,
-        CutNotesAr = m.CutNotesAr,
-        EngraveNotesEn = m.EngraveNotesEn,
-        EngraveNotesAr = m.EngraveNotesAr,
-        PocketNotesEn = m.PocketNotesEn,
-        PocketNotesAr = m.PocketNotesAr,
-        DrillNotesEn = m.DrillNotesEn,
-        DrillNotesAr = m.DrillNotesAr,
-        NotesEn = m.NotesEn,
-        NotesAr = m.NotesAr,
-        IsPcbOnly = m.IsPcbOnly,
-        CreatedAt = m.CreatedAt,
-        UpdatedAt = m.UpdatedAt
-    };
 }

@@ -1353,7 +1353,11 @@ public static class DatabaseSeeder
                 AllowEngrave = false,
                 AllowPocket = false,
                 AllowDrill = false,
-                IsPcbOnly = true
+                IsPcbOnly = true,
+                PcbMaterialType = "FR4",
+                SupportedBoardThicknesses = "1.6",
+                SupportsSingleSided = true,
+                SupportsDoubleSided = true
             },
             new CncMaterial
             {
@@ -1372,7 +1376,11 @@ public static class DatabaseSeeder
                 AllowEngrave = false,
                 AllowPocket = false,
                 AllowDrill = false,
-                IsPcbOnly = true
+                IsPcbOnly = true,
+                PcbMaterialType = "FR4",
+                SupportedBoardThicknesses = "0.8",
+                SupportsSingleSided = true,
+                SupportsDoubleSided = true
             },
             new CncMaterial
             {
@@ -1391,7 +1399,11 @@ public static class DatabaseSeeder
                 AllowEngrave = false,
                 AllowPocket = false,
                 AllowDrill = false,
-                IsPcbOnly = true
+                IsPcbOnly = true,
+                PcbMaterialType = "FR1",
+                SupportedBoardThicknesses = "1.0",
+                SupportsSingleSided = true,
+                SupportsDoubleSided = false
             },
             // Metal (reference only - inactive)
             new CncMaterial

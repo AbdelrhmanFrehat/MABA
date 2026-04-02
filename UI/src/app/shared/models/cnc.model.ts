@@ -4,7 +4,7 @@ export interface CncMaterial {
     nameAr?: string;
     descriptionEn?: string;
     descriptionAr?: string;
-    type: 'routing' | 'pcb';
+    type: 'routing' | 'pcb' | 'both';
     
     // Core Constraints
     minThicknessMm: number | null;
@@ -39,9 +39,14 @@ export interface CncMaterial {
     notesEn?: string;
     notesAr?: string;
     
-    // PCB-only flag
+    /** Legacy: true when type is pcb (exclusive PCB mode). */
     isPcbOnly: boolean;
-    
+
+    pcbMaterialType?: string | null;
+    supportedBoardThicknesses?: string | null;
+    supportsSingleSided: boolean;
+    supportsDoubleSided: boolean;
+
     createdAt: string;
     updatedAt?: string;
 }
@@ -112,9 +117,9 @@ export interface CreateCncMaterialRequest {
     nameAr?: string;
     descriptionEn?: string;
     descriptionAr?: string;
-    type: 'routing' | 'pcb';
-    minThicknessMm?: number;
-    maxThicknessMm?: number;
+    type: 'routing' | 'pcb' | 'both';
+    minThicknessMm?: number | null;
+    maxThicknessMm?: number | null;
     isMetal?: boolean;
     isActive?: boolean;
     sortOrder?: number;
@@ -122,10 +127,10 @@ export interface CreateCncMaterialRequest {
     allowEngrave?: boolean;
     allowPocket?: boolean;
     allowDrill?: boolean;
-    maxCutDepthMm?: number;
-    maxEngraveDepthMm?: number;
-    maxPocketDepthMm?: number;
-    maxDrillDepthMm?: number;
+    maxCutDepthMm?: number | null;
+    maxEngraveDepthMm?: number | null;
+    maxPocketDepthMm?: number | null;
+    maxDrillDepthMm?: number | null;
     cutNotesEn?: string;
     cutNotesAr?: string;
     engraveNotesEn?: string;
@@ -136,9 +141,76 @@ export interface CreateCncMaterialRequest {
     drillNotesAr?: string;
     notesEn?: string;
     notesAr?: string;
-    isPcbOnly?: boolean;
+    pcbMaterialType?: string | null;
+    supportedBoardThicknesses?: string | null;
+    supportsSingleSided?: boolean;
+    supportsDoubleSided?: boolean;
 }
 
 export interface UpdateCncMaterialRequest extends CreateCncMaterialRequest {
     id: string;
+}
+
+/** Matches API CncServiceRequestStatus (numeric). */
+export enum CncServiceRequestStatus {
+    Pending = 0,
+    InReview = 1,
+    Quoted = 2,
+    Accepted = 3,
+    InProgress = 4,
+    Completed = 5,
+    Cancelled = 6
+}
+
+/** Admin list/detail DTO (camelCase JSON). */
+export interface CncServiceRequestDto {
+    id: string;
+    referenceNumber: string;
+    serviceMode: string;
+    materialId?: string | null;
+    materialNameEn?: string | null;
+    materialNameAr?: string | null;
+    pcbMaterial?: string | null;
+    pcbThickness?: number | null;
+    pcbSide?: string | null;
+    pcbOperation?: string | null;
+    operationType?: string | null;
+    widthMm?: number | null;
+    heightMm?: number | null;
+    thicknessMm?: number | null;
+    quantity: number;
+    depthMode?: string | null;
+    depthMm?: number | null;
+    designSourceType: string;
+    filePath?: string | null;
+    fileName?: string | null;
+    designNotes?: string | null;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string | null;
+    projectDescription?: string | null;
+    adminNotes?: string | null;
+    estimatedPrice?: number | null;
+    finalPrice?: number | null;
+    status: CncServiceRequestStatus;
+    statusName?: string;
+    createdAt: string;
+    updatedAt?: string | null;
+    reviewedAt?: string | null;
+    completedAt?: string | null;
+}
+
+export interface CncServiceRequestsListResponse {
+    items: CncServiceRequestDto[];
+    totalCount: number;
+}
+
+export interface CncAdminRequestsQuery {
+    status?: CncServiceRequestStatus | null;
+    serviceMode?: string | null;
+    search?: string | null;
+    createdFrom?: string | null;
+    createdTo?: string | null;
+    skip?: number;
+    take?: number;
 }

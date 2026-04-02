@@ -25,12 +25,8 @@ public class UpdateCncMaterialCommandHandler : IRequestHandler<UpdateCncMaterial
             return null;
         }
 
-        var validTypes = new[] { "routing", "pcb" };
-        var type = request.Type?.ToLowerInvariant() ?? "routing";
-        if (!validTypes.Contains(type))
-        {
-            throw new ArgumentException($"Invalid material type '{request.Type}'. Valid types: routing, pcb");
-        }
+        var type = CncMaterialTypeHelper.Normalize(request.Type);
+        CncMaterialTypeHelper.Validate(type);
 
         material.NameEn = request.NameEn;
         material.NameAr = request.NameAr;
@@ -60,44 +56,14 @@ public class UpdateCncMaterialCommandHandler : IRequestHandler<UpdateCncMaterial
         material.DrillNotesAr = request.DrillNotesAr;
         material.NotesEn = request.NotesEn;
         material.NotesAr = request.NotesAr;
-        material.IsPcbOnly = request.IsPcbOnly;
+        material.IsPcbOnly = CncMaterialTypeHelper.IsPcbOnlyFromType(type);
+        material.PcbMaterialType = request.PcbMaterialType;
+        material.SupportedBoardThicknesses = request.SupportedBoardThicknesses;
+        material.SupportsSingleSided = request.SupportsSingleSided;
+        material.SupportsDoubleSided = request.SupportsDoubleSided;
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new CncMaterialDto
-        {
-            Id = material.Id,
-            NameEn = material.NameEn,
-            NameAr = material.NameAr,
-            DescriptionEn = material.DescriptionEn,
-            DescriptionAr = material.DescriptionAr,
-            Type = material.Type,
-            MinThicknessMm = material.MinThicknessMm,
-            MaxThicknessMm = material.MaxThicknessMm,
-            IsMetal = material.IsMetal,
-            IsActive = material.IsActive,
-            SortOrder = material.SortOrder,
-            AllowCut = material.AllowCut,
-            AllowEngrave = material.AllowEngrave,
-            AllowPocket = material.AllowPocket,
-            AllowDrill = material.AllowDrill,
-            MaxCutDepthMm = material.MaxCutDepthMm,
-            MaxEngraveDepthMm = material.MaxEngraveDepthMm,
-            MaxPocketDepthMm = material.MaxPocketDepthMm,
-            MaxDrillDepthMm = material.MaxDrillDepthMm,
-            CutNotesEn = material.CutNotesEn,
-            CutNotesAr = material.CutNotesAr,
-            EngraveNotesEn = material.EngraveNotesEn,
-            EngraveNotesAr = material.EngraveNotesAr,
-            PocketNotesEn = material.PocketNotesEn,
-            PocketNotesAr = material.PocketNotesAr,
-            DrillNotesEn = material.DrillNotesEn,
-            DrillNotesAr = material.DrillNotesAr,
-            NotesEn = material.NotesEn,
-            NotesAr = material.NotesAr,
-            IsPcbOnly = material.IsPcbOnly,
-            CreatedAt = material.CreatedAt,
-            UpdatedAt = material.UpdatedAt
-        };
+        return CncMaterialDto.FromEntity(material);
     }
 }
