@@ -67,15 +67,16 @@ public class SupportConversationsController : ControllerBase
         return Ok(dtos);
     }
 
-    /// <summary>Customer: create a conversation with optional first message.</summary>
+    /// <summary>Create a conversation for the current user (subject + optional first message). Works for any authenticated user; customer id is always taken from the token.</summary>
     [HttpPost]
     public async Task<ActionResult<SupportConversationDto>> Create(
-        [FromBody] CreateSupportConversationRequest request,
+        [FromBody] CreateSupportConversationRequest? request,
         CancellationToken cancellationToken)
     {
+        if (request == null)
+            return BadRequest("Request body is required.");
+
         var userId = GetUserId();
-        if (IsAdminOrStoreOwner())
-            return BadRequest("Staff cannot create customer conversations via this endpoint.");
 
         var subject = string.IsNullOrWhiteSpace(request.Subject)
             ? "Support"
