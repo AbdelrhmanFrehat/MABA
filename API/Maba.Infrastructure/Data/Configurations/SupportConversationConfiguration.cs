@@ -15,6 +15,10 @@ public class SupportConversationConfiguration : IEntityTypeConfiguration<Support
             .HasConversion<int>()
             .HasDefaultValue(SupportConversationStatus.Open);
 
+        builder.Property(c => c.Subject)
+            .HasMaxLength(200)
+            .HasDefaultValue("Support");
+
         builder.HasOne(c => c.Customer)
             .WithMany()
             .HasForeignKey(c => c.CustomerId)

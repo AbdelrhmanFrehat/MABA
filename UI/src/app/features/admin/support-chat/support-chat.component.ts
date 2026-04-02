@@ -52,9 +52,11 @@ import { environment } from '../../../../environments/environment';
                 [class.active]="selectedConversation?.id === c.id"
                 (click)="selectConversation(c)">
                 <div class="conv-meta">
+                  <span class="conv-subject">{{ c.subject }}</span>
                   <span class="conv-customer">{{ c.customerName || c.customerId }}</span>
                   <span class="conv-preview">{{ c.lastMessagePreview || ('admin.supportChat.noMessagesPreview' | translate) }}</span>
                   <span class="conv-date">{{ c.lastMessageAt ? formatDate(c.lastMessageAt) : formatDate(c.createdAt) }}</span>
+                  <span class="status-tag" *ngIf="c.status === 1">{{ 'admin.supportChat.closed' | translate }}</span>
                 </div>
               </div>
               <div *ngIf="!conversationsLoading && conversations.length === 0" class="empty-list">
@@ -66,7 +68,14 @@ import { environment } from '../../../../environments/environment';
         <div class="messages-panel">
           <p-card *ngIf="selectedConversation">
             <div class="conv-header">
-              <h3>{{ selectedConversation.customerName || selectedConversation.customerId }}</h3>
+              <div>
+                <h3>{{ selectedConversation.subject }}</h3>
+                <p class="conv-sub">{{ selectedConversation.customerName || selectedConversation.customerId }}</p>
+              </div>
+              <div class="conv-actions">
+                <button *ngIf="selectedConversation.status === 0" type="button" pButton class="p-button-sm p-button-secondary" [label]="'admin.supportChat.close' | translate" (click)="closeSelected()" [disabled]="statusBusy"></button>
+                <button *ngIf="selectedConversation.status === 1" type="button" pButton class="p-button-sm" [label]="'admin.supportChat.reopen' | translate" (click)="reopenSelected()" [disabled]="statusBusy"></button>
+              </div>
             </div>
             <div #messagesContainer class="messages-container">
               <div *ngIf="messagesLoading" class="loading-state">
@@ -110,7 +119,7 @@ import { environment } from '../../../../environments/environment';
             </div>
             <div class="input-area">
               <input type="file" #fileInput class="file-input-hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" (change)="onFileSelected($event)">
-              <button type="button" class="attach-btn" (click)="fileInput.click()" [disabled]="sending" [pTooltip]="'chat.attach' | translate">
+              <button type="button" class="attach-btn" (click)="fileInput.click()" [disabled]="sending || selectedConversation?.status === 1" [pTooltip]="'chat.attach' | translate">
                 <i class="pi pi-paperclip"></i>
               </button>
               <input
@@ -118,12 +127,12 @@ import { environment } from '../../../../environments/environment';
                 [(ngModel)]="messageText"
                 [placeholder]="'chat.typeMessage' | translate"
                 (keyup.enter)="sendMessage()"
-                [disabled]="sending" />
+                [disabled]="sending || selectedConversation?.status === 1" />
               <span class="pending-attachment" *ngIf="pendingAttachment"><i class="pi pi-file"></i> {{ pendingAttachment.fileName }}</span>
               <button
                 pButton
                 icon="pi pi-send"
-                [disabled]="(!messageText.trim() && !pendingAttachment) || sending"
+                [disabled]="(!messageText.trim() && !pendingAttachment) || sending || selectedConversation?.status === 1"
                 (click)="sendMessage()">
               </button>
             </div>
@@ -145,7 +154,9 @@ import { environment } from '../../../../environments/environment';
     .conv-row { padding: 0.75rem; cursor: pointer; border-radius: 8px; margin-bottom: 4px; }
     .conv-row:hover { background: #f4f4f4; }
     .conv-row.active { background: #e3f2fd; }
-    .conv-customer { font-weight: 600; display: block; }
+    .conv-subject { font-weight: 700; display: block; font-size: 0.9rem; }
+    .conv-customer { font-weight: 600; display: block; font-size: 0.85rem; color: #555; }
+    .status-tag { font-size: 0.7rem; color: #888; }
     .conv-preview { font-size: 0.85rem; color: #666; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .conv-date { font-size: 0.75rem; color: #999; }
     .empty-list, .empty-state, .empty-chat { text-align: center; color: #888; padding: 2rem; }
@@ -177,6 +188,9 @@ import { environment } from '../../../../environments/environment';
     .attachment-image { max-width: 240px; max-height: 180px; border-radius: 8px; object-fit: cover; }
     .attachment-file { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f0f0f0; border-radius: 8px; color: #667eea; text-decoration: none; }
     .loading-state { text-align: center; padding: 1rem; }
+    .conv-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+    .conv-sub { margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666; }
+    .conv-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
     @media (max-width: 768px) { .chat-layout { grid-template-columns: 1fr; } }
   `]
 })
@@ -191,6 +205,7 @@ export class SupportChatComponent implements OnInit, OnDestroy, AfterViewChecked
   conversationsLoading = false;
   messagesLoading = false;
   sending = false;
+  statusBusy = false;
   private shouldScroll = false;
 
   private supportApi = inject(SupportChatApiService);
@@ -202,8 +217,10 @@ export class SupportChatComponent implements OnInit, OnDestroy, AfterViewChecked
     this.loadConversations();
     this.hub.onReceiveMessage((msg) => {
       if (this.selectedConversation && msg.conversationId === this.selectedConversation.id) {
-        this.messages = [...this.messages, msg];
-        this.shouldScroll = true;
+        if (!this.messages.some((m) => m.id === msg.id)) {
+          this.messages = [...this.messages, msg];
+          this.shouldScroll = true;
+        }
       }
     });
     this.hub.start().catch(() => {});
@@ -252,20 +269,94 @@ export class SupportChatComponent implements OnInit, OnDestroy, AfterViewChecked
   }
 
   sendMessage() {
-    if ((!this.messageText.trim() && !this.pendingAttachment) || !this.selectedConversation || this.sending) return;
+    if (
+      (!this.messageText.trim() && !this.pendingAttachment) ||
+      !this.selectedConversation ||
+      this.selectedConversation.status === 1 ||
+      this.sending
+    )
+      return;
     const content = this.messageText.trim();
     const att = this.pendingAttachment;
+    const convId = this.selectedConversation.id;
     this.messageText = '';
     this.pendingAttachment = null;
     this.sending = true;
-    this.hub.sendMessage(this.selectedConversation.id, content, att?.url, att?.fileName).then(() => {
+    const done = () => {
       this.sending = false;
       this.shouldScroll = true;
-    }).catch(() => {
+    };
+    const fail = () => {
       this.sending = false;
       this.messageText = content;
       if (att) this.pendingAttachment = att;
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to send message' });
+      this.messageService.add({
+        severity: 'error',
+        summary: this.translate.instant('common.error'),
+        detail: this.translate.instant('chat.sendFailed')
+      });
+    };
+    this.hub
+      .sendMessage(convId, content, att?.url, att?.fileName)
+      .then(done)
+      .catch(() => {
+        this.supportApi
+          .postMessage(convId, {
+            content: content || undefined,
+            attachmentUrl: att?.url,
+            attachmentFileName: att?.fileName
+          })
+          .subscribe({
+            next: (msg) => {
+              if (!this.messages.some((m) => m.id === msg.id)) {
+                this.messages = [...this.messages, msg];
+              }
+              done();
+            },
+            error: fail
+          });
+      });
+  }
+
+  closeSelected() {
+    if (!this.selectedConversation || this.statusBusy) return;
+    this.statusBusy = true;
+    this.supportApi.closeConversation(this.selectedConversation.id).subscribe({
+      next: () => {
+        this.statusBusy = false;
+        const id = this.selectedConversation!.id;
+        this.conversations = this.conversations.map((c) => (c.id === id ? { ...c, status: 1 as const } : c));
+        this.selectedConversation = this.conversations.find((c) => c.id === id) || null;
+      },
+      error: () => {
+        this.statusBusy = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: this.translate.instant('common.error'),
+          detail: this.translate.instant('chat.closeFailed')
+        });
+      }
+    });
+  }
+
+  reopenSelected() {
+    if (!this.selectedConversation || this.statusBusy) return;
+    this.statusBusy = true;
+    this.supportApi.reopenConversation(this.selectedConversation.id).subscribe({
+      next: () => {
+        this.statusBusy = false;
+        const id = this.selectedConversation!.id;
+        this.conversations = this.conversations.map((c) => (c.id === id ? { ...c, status: 0 as const } : c));
+        this.selectedConversation = this.conversations.find((c) => c.id === id) || null;
+      },
+      error: () => {
+        this.statusBusy = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: this.translate.instant('common.error'),
+          detail: this.translate.instant('chat.createFailed')
+        });
+      }
     });
   }
 

@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Maba.Infrastructure.Data;
 using Maba.Domain.SupportChat;
-using Maba.Domain.Users;
 using Maba.Api.DTOs.SupportChat;
 using System.Security.Claims;
 using Maba.Application.Common.Interfaces;
+using Maba.Api.Services;
 
 namespace Maba.Api.Controllers;
 
@@ -17,11 +17,16 @@ public class SupportConversationsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
+    private readonly SupportChatMessagingService _messaging;
 
-    public SupportConversationsController(ApplicationDbContext context, IFileStorageService fileStorage)
+    public SupportConversationsController(
+        ApplicationDbContext context,
+        IFileStorageService fileStorage,
+        SupportChatMessagingService messaging)
     {
         _context = context;
         _fileStorage = fileStorage;
+        _messaging = messaging;
     }
 
     private Guid GetUserId()
@@ -33,40 +38,106 @@ public class SupportConversationsController : ControllerBase
 
     private bool IsAdminOrStoreOwner()
     {
-        return User.IsInRole("Admin") || User.IsInRole("StoreOwner");
+        return User.IsInRole("Admin") || User.IsInRole("StoreOwner") || User.IsInRole("Manager");
     }
 
-    /// <summary>Customer: get or create my conversation. Admin: not used.</summary>
+    /// <summary>Customer: list my conversations (newest first). Does not create rows.</summary>
     [HttpGet("mine")]
-    public async Task<ActionResult<SupportConversationDto>> GetOrCreateMine(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<SupportConversationDto>>> GetMine(CancellationToken cancellationToken)
     {
         var userId = GetUserId();
-        var conv = await _context.SupportConversations
+        if (IsAdminOrStoreOwner())
+            return Ok(new List<SupportConversationDto>());
+
+        var list = await _context.SupportConversations
+            .AsNoTracking()
             .Include(c => c.Customer)
             .Include(c => c.AssignedToUser)
             .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
-            .FirstOrDefaultAsync(c => c.CustomerId == userId && c.Status == SupportConversationStatus.Open, cancellationToken);
+            .Where(c => c.CustomerId == userId)
+            .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt)
+            .ToListAsync(cancellationToken);
 
-        if (conv == null)
+        var dtos = list.Select(c =>
         {
-            conv = new SupportConversation
-            {
-                CustomerId = userId,
-                Status = SupportConversationStatus.Open
-            };
-            _context.SupportConversations.Add(conv);
-            await _context.SaveChangesAsync(cancellationToken);
-            conv = await _context.SupportConversations
-                .Include(c => c.Customer)
-                .Include(c => c.AssignedToUser)
-                .FirstAsync(c => c.Id == conv.Id, cancellationToken);
-        }
+            var last = c.Messages.FirstOrDefault();
+            return MapToDto(c, last?.Content, last?.CreatedAt, 0);
+        }).ToList();
 
-        var lastMsg = conv.Messages.FirstOrDefault();
-        return Ok(MapToDto(conv, lastMsg?.Content, lastMsg?.CreatedAt, 0));
+        return Ok(dtos);
     }
 
-    /// <summary>Admin/StoreOwner: list all conversations.</summary>
+    /// <summary>Customer: create a conversation with optional first message.</summary>
+    [HttpPost]
+    public async Task<ActionResult<SupportConversationDto>> Create(
+        [FromBody] CreateSupportConversationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (IsAdminOrStoreOwner())
+            return BadRequest("Staff cannot create customer conversations via this endpoint.");
+
+        var subject = string.IsNullOrWhiteSpace(request.Subject)
+            ? "Support"
+            : request.Subject.Trim();
+        if (subject.Length > 200)
+            return BadRequest("Subject is too long.");
+
+        var conv = new SupportConversation
+        {
+            CustomerId = userId,
+            Subject = subject,
+            Status = SupportConversationStatus.Open,
+            RelatedOrderId = request.RelatedOrderId,
+            RelatedDesignId = request.RelatedDesignId
+        };
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            _context.SupportConversations.Add(conv);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(request.InitialMessage))
+            {
+                await _messaging.SendAsync(
+                    conv.Id,
+                    userId,
+                    actingAsStaff: false,
+                    request.InitialMessage,
+                    null,
+                    null,
+                    cancellationToken);
+            }
+
+            await tx.CommitAsync(cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return BadRequest(ex.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return Forbid();
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        conv = await _context.SupportConversations
+            .Include(c => c.Customer)
+            .Include(c => c.AssignedToUser)
+            .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
+            .FirstAsync(c => c.Id == conv.Id, cancellationToken);
+
+        var last = conv.Messages.FirstOrDefault();
+        return Ok(MapToDto(conv, last?.Content, last?.CreatedAt, 0));
+    }
+
+    /// <summary>Admin/StoreOwner/Manager: list all conversations.</summary>
     [HttpGet]
     public async Task<ActionResult<List<SupportConversationDto>>> GetAll(
         [FromQuery] SupportConversationStatus? status,
@@ -78,6 +149,7 @@ public class SupportConversationsController : ControllerBase
             return Forbid();
 
         var query = _context.SupportConversations
+            .AsNoTracking()
             .Include(c => c.Customer)
             .Include(c => c.AssignedToUser)
             .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
@@ -101,7 +173,7 @@ public class SupportConversationsController : ControllerBase
         return Ok(dtos);
     }
 
-    /// <summary>Get messages for a conversation (customer: only own; admin: any).</summary>
+    /// <summary>Get messages for a conversation (customer: only own; staff: any).</summary>
     [HttpGet("{id:guid}/messages")]
     public async Task<ActionResult<List<SupportMessageDto>>> GetMessages(
         Guid id,
@@ -110,7 +182,7 @@ public class SupportConversationsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var userId = GetUserId();
-        var conv = await _context.SupportConversations.FindAsync([id], cancellationToken);
+        var conv = await _context.SupportConversations.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         if (conv == null) return NotFound();
 
         if (conv.CustomerId != userId && !IsAdminOrStoreOwner())
@@ -124,7 +196,6 @@ public class SupportConversationsController : ControllerBase
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var isCustomer = conv.CustomerId == userId;
         var dtos = messages.Select(m => new SupportMessageDto(
             m.Id,
             m.ConversationId,
@@ -141,7 +212,70 @@ public class SupportConversationsController : ControllerBase
         return Ok(dtos);
     }
 
-    /// <summary>Upload an attachment (image or file) for a conversation. Returns URL and filename to send in a message.</summary>
+    /// <summary>Send a message (REST fallback when SignalR is unavailable).</summary>
+    [HttpPost("{id:guid}/messages")]
+    public async Task<ActionResult<SupportMessageDto>> PostMessage(
+        Guid id,
+        [FromBody] SendMessageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        try
+        {
+            var dto = await _messaging.SendAsync(
+                id,
+                userId,
+                IsAdminOrStoreOwner(),
+                request.Content,
+                request.AttachmentUrl,
+                request.AttachmentFileName,
+                cancellationToken);
+            return Ok(dto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    /// <summary>Customer or staff: close conversation.</summary>
+    [HttpPost("{id:guid}/close")]
+    public async Task<ActionResult> Close(Guid id, CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        var conv = await _context.SupportConversations.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (conv == null) return NotFound();
+
+        if (conv.CustomerId != userId && !IsAdminOrStoreOwner())
+            return Forbid();
+
+        conv.Status = SupportConversationStatus.Closed;
+        conv.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        return Ok();
+    }
+
+    /// <summary>Staff: reopen a closed conversation.</summary>
+    [HttpPost("{id:guid}/reopen")]
+    public async Task<ActionResult> Reopen(Guid id, CancellationToken cancellationToken = default)
+    {
+        if (!IsAdminOrStoreOwner())
+            return Forbid();
+
+        var conv = await _context.SupportConversations.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (conv == null) return NotFound();
+
+        conv.Status = SupportConversationStatus.Open;
+        conv.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        return Ok();
+    }
+
+    /// <summary>Upload an attachment for a conversation. Returns URL and filename to send in a message.</summary>
     [HttpPost("{id:guid}/upload")]
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<UploadAttachmentResponse>> UploadAttachment(
@@ -151,12 +285,14 @@ public class SupportConversationsController : ControllerBase
     {
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded.");
-        if (file.Length > 10 * 1024 * 1024) // 10 MB
+        if (file.Length > 10 * 1024 * 1024)
             return BadRequest("File size must be under 10 MB.");
 
         var userId = GetUserId();
-        var conv = await _context.SupportConversations.FindAsync([id], cancellationToken);
+        var conv = await _context.SupportConversations.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         if (conv == null) return NotFound();
+        if (conv.Status != SupportConversationStatus.Open)
+            return BadRequest("Conversation is closed.");
         if (conv.CustomerId != userId && !IsAdminOrStoreOwner())
             return Forbid();
 
@@ -179,7 +315,7 @@ public class SupportConversationsController : ControllerBase
     {
         if (!IsAdminOrStoreOwner()) return Forbid();
 
-        var conv = await _context.SupportConversations.FindAsync([id], cancellationToken);
+        var conv = await _context.SupportConversations.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         if (conv == null) return NotFound();
 
         conv.AssignedToUserId = assignToUserId;
@@ -194,9 +330,12 @@ public class SupportConversationsController : ControllerBase
             c.Id,
             c.CustomerId,
             c.Customer?.FullName,
+            c.Subject,
             c.AssignedToUserId,
             c.AssignedToUser?.FullName,
             c.Status,
+            c.RelatedOrderId,
+            c.RelatedDesignId,
             c.CreatedAt,
             c.UpdatedAt,
             lastPreview != null && lastPreview.Length > 80 ? lastPreview[..80] + "…" : lastPreview,

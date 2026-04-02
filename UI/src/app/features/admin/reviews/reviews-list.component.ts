@@ -341,7 +341,7 @@ export class ReviewsListComponent implements OnInit {
     setupColumns() {
         const lang = this.languageService.language;
         this.columns = [
-            { field: 'itemName', header: lang === 'ar' ? 'المنتج' : 'Item', sortable: true },
+            { field: lang === 'ar' ? 'itemNameAr' : 'itemNameEn', header: lang === 'ar' ? 'المنتج' : 'Item', sortable: true },
             { field: 'userName', header: lang === 'ar' ? 'العميل' : 'Customer', sortable: true },
             { field: 'rating', header: lang === 'ar' ? 'التقييم' : 'Rating', sortable: true },
             { field: 'title', header: lang === 'ar' ? 'العنوان' : 'Title', sortable: true },

@@ -100,6 +100,7 @@ builder.Services.AddAuthorization(options =>
 
 // Register permission handler
 builder.Services.AddScoped<IAuthorizationHandler, Maba.Api.Authorization.PermissionHandler>();
+builder.Services.AddScoped<Maba.Api.Services.SupportChatMessagingService>();
 builder.Services.AddHttpContextAccessor();
 
 // Rate limiting: protect API from abuse and DoS (built-in .NET 8)

@@ -6,9 +6,12 @@ public record SupportConversationDto(
     Guid Id,
     Guid CustomerId,
     string? CustomerName,
+    string Subject,
     Guid? AssignedToUserId,
     string? AssignedToUserName,
     SupportConversationStatus Status,
+    Guid? RelatedOrderId,
+    Guid? RelatedDesignId,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     string? LastMessagePreview,
@@ -31,4 +34,10 @@ public record SupportMessageDto(
 
 public record UploadAttachmentResponse(string Url, string FileName);
 
-public record SendMessageRequest(string Content);
+public record SendMessageRequest(string? Content, string? AttachmentUrl, string? AttachmentFileName);
+
+public record CreateSupportConversationRequest(
+    string? Subject,
+    string? InitialMessage,
+    Guid? RelatedOrderId,
+    Guid? RelatedDesignId);

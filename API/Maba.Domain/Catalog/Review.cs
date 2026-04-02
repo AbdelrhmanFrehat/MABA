@@ -11,6 +11,8 @@ public class Review : BaseEntity
     public string? Title { get; set; }
     public string? Body { get; set; }
     public bool IsApproved { get; set; }
+    /// <summary>Moderation: rejected by admin (not shown publicly).</summary>
+    public bool IsRejected { get; set; }
     
     // Navigation properties
     public Item Item { get; set; } = null!;

@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Maba.Domain.SupportChat;
 using Maba.Infrastructure.Data;
+using Maba.Api.Services;
+using Maba.Api.DTOs.SupportChat;
 using System.Security.Claims;
 
 namespace Maba.Api.Hubs;
@@ -11,10 +12,12 @@ namespace Maba.Api.Hubs;
 public class SupportChatHub : Hub
 {
     private readonly ApplicationDbContext _context;
+    private readonly SupportChatMessagingService _messaging;
 
-    public SupportChatHub(ApplicationDbContext context)
+    public SupportChatHub(ApplicationDbContext context, SupportChatMessagingService messaging)
     {
         _context = context;
+        _messaging = messaging;
     }
 
     private Guid GetUserId()
@@ -26,78 +29,78 @@ public class SupportChatHub : Hub
 
     private bool IsAdminOrStoreOwner()
     {
-        return Context.User?.IsInRole("Admin") == true || Context.User?.IsInRole("StoreOwner") == true;
+        return Context.User?.IsInRole("Admin") == true
+            || Context.User?.IsInRole("StoreOwner") == true
+            || Context.User?.IsInRole("Manager") == true;
     }
 
-    /// <summary>Customer: join my open conversation. Group = conversation Id.</summary>
-    public async Task JoinMyConversation()
+    /// <summary>Customer: join SignalR groups for all my conversations (receive messages on every thread).</summary>
+    public async Task JoinMyConversations()
     {
         var userId = GetUserId();
         if (IsAdminOrStoreOwner()) return;
 
-        var conv = await _context.SupportConversations
-            .FirstOrDefaultAsync(c => c.CustomerId == userId && c.Status == SupportConversationStatus.Open);
-        if (conv != null)
-            await Groups.AddToGroupAsync(Context.ConnectionId, conv.Id.ToString());
+        var ids = await _context.SupportConversations
+            .AsNoTracking()
+            .Where(c => c.CustomerId == userId)
+            .Select(c => c.Id)
+            .ToListAsync();
+
+        foreach (var id in ids)
+            await Groups.AddToGroupAsync(Context.ConnectionId, id.ToString());
     }
 
-    /// <summary>Admin/StoreOwner: join a specific conversation to receive/send messages.</summary>
+    /// <summary>Join a specific conversation (customer must own it, or staff).</summary>
     public async Task JoinConversation(Guid conversationId)
     {
-        if (!IsAdminOrStoreOwner()) throw new HubException("Forbidden.");
-        var conv = await _context.SupportConversations.FindAsync(conversationId);
-        if (conv == null) throw new HubException("Conversation not found.");
-        await Groups.AddToGroupAsync(Context.ConnectionId, conversationId.ToString());
-    }
-
-    /// <summary>Send a message; validate, save, then broadcast ReceiveMessage to the conversation group. Content can be empty if attachment is provided.</summary>
-    public async Task SendMessage(Guid conversationId, string content, string? attachmentUrl = null, string? attachmentFileName = null)
-    {
-        var hasContent = !string.IsNullOrWhiteSpace(content);
-        var hasAttachment = !string.IsNullOrWhiteSpace(attachmentUrl);
-        if (!hasContent && !hasAttachment)
-            throw new HubException("Message must have content or an attachment.");
-        if (hasContent && content!.Length > 4000)
-            throw new HubException("Message content too long.");
-        if (attachmentUrl?.Length > 2048 == true || attachmentFileName?.Length > 512 == true)
-            throw new HubException("Invalid attachment data.");
-
         var userId = GetUserId();
-        var conv = await _context.SupportConversations
-            .Include(c => c.Customer)
-            .Include(c => c.AssignedToUser)
-            .FirstOrDefaultAsync(c => c.Id == conversationId);
+        var conv = await _context.SupportConversations.AsNoTracking().FirstOrDefaultAsync(c => c.Id == conversationId);
         if (conv == null) throw new HubException("Conversation not found.");
 
         var isCustomer = conv.CustomerId == userId;
         var isStaff = IsAdminOrStoreOwner();
         if (!isCustomer && !isStaff) throw new HubException("Forbidden.");
 
-        var message = new SupportMessage
-        {
-            ConversationId = conversationId,
-            SenderUserId = userId,
-            Content = content?.Trim() ?? "",
-            AttachmentUrl = attachmentUrl,
-            AttachmentFileName = attachmentFileName
-        };
-        _context.SupportMessages.Add(message);
-        conv.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await Groups.AddToGroupAsync(Context.ConnectionId, conversationId.ToString());
+    }
 
-        var senderName = (isCustomer ? conv.Customer : conv.AssignedToUser)?.FullName ?? "User";
+    /// <summary>Send a message; validate, save, then broadcast ReceiveMessage to the conversation group.</summary>
+    public async Task SendMessage(Guid conversationId, string content, string? attachmentUrl = null, string? attachmentFileName = null)
+    {
+        var userId = GetUserId();
+        SupportMessageDto dto;
+        try
+        {
+            dto = await _messaging.SendAsync(
+                conversationId,
+                userId,
+                IsAdminOrStoreOwner(),
+                content,
+                attachmentUrl,
+                attachmentFileName,
+                Context.ConnectionAborted);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw new HubException("Forbidden.");
+        }
+
         await Clients.Group(conversationId.ToString()).SendAsync("ReceiveMessage", new
         {
-            message.Id,
-            message.ConversationId,
-            message.SenderUserId,
-            SenderName = senderName,
-            IsFromCustomer = isCustomer,
-            message.Content,
-            message.AttachmentUrl,
-            message.AttachmentFileName,
-            message.CreatedAt,
-            message.ReadAt
+            dto.Id,
+            dto.ConversationId,
+            dto.SenderUserId,
+            SenderName = dto.SenderName,
+            dto.IsFromCustomer,
+            dto.Content,
+            dto.AttachmentUrl,
+            dto.AttachmentFileName,
+            dto.CreatedAt,
+            dto.ReadAt
         });
     }
 }

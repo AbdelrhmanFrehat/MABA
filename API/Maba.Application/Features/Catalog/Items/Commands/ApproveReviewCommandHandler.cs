@@ -30,13 +30,14 @@ public class ApproveReviewCommandHandler : IRequestHandler<ApproveReviewCommand,
 
         var wasApproved = review.IsApproved;
         review.IsApproved = true;
+        review.IsRejected = false;
         review.UpdatedAt = DateTime.UtcNow;
 
         // If this is a new approval, recalculate average rating
         if (!wasApproved)
         {
             var approvedReviews = await _context.Set<Review>()
-                .Where(r => r.ItemId == review.ItemId && r.IsApproved)
+                .Where(r => r.ItemId == review.ItemId && r.IsApproved && !r.IsRejected)
                 .ToListAsync(cancellationToken);
 
             var item = review.Item;

@@ -49,10 +49,10 @@ export class SupportChatHubService implements OnDestroy {
     this.onMessageCallback = callback;
   }
 
-  /** Customer: join my conversation group */
-  async joinMyConversation(): Promise<void> {
+  /** Customer: join SignalR groups for all my conversations */
+  async joinMyConversations(): Promise<void> {
     if (this.connection?.state !== signalR.HubConnectionState.Connected) return;
-    await this.connection.invoke('JoinMyConversation');
+    await this.connection.invoke('JoinMyConversations');
   }
 
   /** Admin: join a specific conversation */
