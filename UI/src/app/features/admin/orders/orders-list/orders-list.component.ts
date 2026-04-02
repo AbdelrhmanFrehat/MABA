@@ -424,17 +424,13 @@ export class OrdersListComponent implements OnInit {
         if (this.filters.statusId) {
             params.statusId = this.filters.statusId;
         }
-        if (this.filters.dateFrom) {
-            const date = this.filters.dateFrom instanceof Date ? this.filters.dateFrom : new Date(this.filters.dateFrom);
-            if (!isNaN(date.getTime())) {
-                params.dateFrom = date.toISOString().split('T')[0];
-            }
+        const dateFromStr = this.formatFilterDate(this.filters.dateFrom);
+        if (dateFromStr) {
+            params.dateFrom = dateFromStr;
         }
-        if (this.filters.dateTo) {
-            const date = this.filters.dateTo instanceof Date ? this.filters.dateTo : new Date(this.filters.dateTo);
-            if (!isNaN(date.getTime())) {
-                params.dateTo = date.toISOString().split('T')[0];
-            }
+        const dateToStr = this.formatFilterDate(this.filters.dateTo);
+        if (dateToStr) {
+            params.dateTo = dateToStr;
         }
         if (this.filters.paymentStatus) {
             params.paymentStatus = this.filters.paymentStatus;
@@ -456,6 +452,24 @@ export class OrdersListComponent implements OnInit {
     onFilterChange() {
         this.currentPage = 1;
         this.loadOrders();
+    }
+
+    /** Pass yyyy-MM-dd as entered in the date filter (avoid UTC shift from toISOString). */
+    private formatFilterDate(value: Date | string | null): string | undefined {
+        if (value == null || value === '') {
+            return undefined;
+        }
+        if (typeof value === 'string') {
+            return value.length >= 10 ? value.slice(0, 10) : undefined;
+        }
+        const d = value;
+        if (isNaN(d.getTime())) {
+            return undefined;
+        }
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
     }
 
     clearFilters() {
@@ -496,22 +510,22 @@ export class OrdersListComponent implements OnInit {
         // Get total amount
         const totalAmount = order.total || order.totalAmount || 0;
         
-        // Get status - check multiple possible fields
+        // Get status - prefer full status DTO from API
         let statusKey = 'Unknown';
         let statusName = 'Unknown';
-        
-        if (order.orderStatusKey) {
-            statusKey = order.orderStatusKey;
-            statusName = order.orderStatusKey;
-        } else if (order.status?.key) {
+
+        if (order.status?.key) {
             statusKey = order.status.key;
             statusName = this.languageService.language === 'ar' ? order.status.nameAr : order.status.nameEn;
+        } else if (order.orderStatusKey) {
+            statusKey = order.orderStatusKey;
+            statusName = order.orderStatusKey;
         } else if (order.status) {
-            statusKey = order.status;
-            statusName = order.status;
+            statusKey = typeof order.status === 'string' ? order.status : 'Unknown';
+            statusName = statusKey;
         }
-        
-        // Get payment status (default to Pending if not available)
+
+        // Payment status from API (same rules as order detail: sum(payments) vs total)
         const paymentStatus = order.paymentStatus || 'Pending';
         
         return {

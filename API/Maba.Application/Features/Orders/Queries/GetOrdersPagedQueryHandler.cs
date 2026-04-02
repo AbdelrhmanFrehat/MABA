@@ -17,11 +17,20 @@ public class GetOrdersPagedQueryHandler : IRequestHandler<GetOrdersPagedQuery, P
         _context = context;
     }
 
+    /// <summary>Matches order detail: sum of payment amounts vs order total.</summary>
+    private static string ComputePaymentStatus(decimal totalPaid, decimal orderTotal)
+    {
+        if (totalPaid >= orderTotal) return "Paid";
+        if (totalPaid > 0) return "PartiallyPaid";
+        return "Pending";
+    }
+
     public async Task<PagedResult<OrderDto>> Handle(GetOrdersPagedQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Set<Order>()
             .Include(o => o.User)
             .Include(o => o.OrderStatus)
+            .Include(o => o.Payments)
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Item)
             .AsQueryable();
@@ -44,6 +53,20 @@ public class GetOrdersPagedQueryHandler : IRequestHandler<GetOrdersPagedQuery, P
         if (request.DateTo.HasValue)
         {
             query = query.Where(o => o.CreatedAt <= request.DateTo.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PaymentStatus))
+        {
+            var ps = request.PaymentStatus.Trim();
+            query = ps switch
+            {
+                "Paid" => query.Where(o => o.Payments.Sum(p => p.Amount) >= o.Total),
+                "PartiallyPaid" => query.Where(o =>
+                    o.Payments.Sum(p => p.Amount) > 0 &&
+                    o.Payments.Sum(p => p.Amount) < o.Total),
+                "Pending" => query.Where(o => o.Payments.Sum(p => p.Amount) < o.Total),
+                _ => query
+            };
         }
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -85,7 +108,10 @@ public class GetOrdersPagedQueryHandler : IRequestHandler<GetOrdersPagedQuery, P
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        var items = orders.Select(o => new OrderDto
+        var items = orders.Select(o =>
+        {
+            var totalPaid = o.Payments.Sum(p => p.Amount);
+            return new OrderDto
         {
             Id = o.Id,
             OrderNumber = o.OrderNumber,
@@ -93,12 +119,20 @@ public class GetOrdersPagedQueryHandler : IRequestHandler<GetOrdersPagedQuery, P
             UserFullName = o.User.FullName,
             OrderStatusId = o.OrderStatusId,
             OrderStatusKey = o.OrderStatus.Key,
+            Status = new OrderStatusDto
+            {
+                Id = o.OrderStatus.Id,
+                Key = o.OrderStatus.Key,
+                NameEn = o.OrderStatus.NameEn,
+                NameAr = o.OrderStatus.NameAr
+            },
             SubTotal = o.SubTotal,
             TaxAmount = o.TaxAmount,
             ShippingCost = o.ShippingCost,
             DiscountAmount = o.DiscountAmount,
             Total = o.Total,
             Currency = o.Currency,
+            PaymentStatus = ComputePaymentStatus(totalPaid, o.Total),
             ShippingAddressJson = o.ShippingAddress,
             BillingAddressJson = o.BillingAddress,
             Notes = o.Notes,
@@ -120,6 +154,7 @@ public class GetOrdersPagedQueryHandler : IRequestHandler<GetOrdersPagedQuery, P
             }).ToList(),
             CreatedAt = o.CreatedAt,
             UpdatedAt = o.UpdatedAt
+        };
         }).ToList();
 
         return new PagedResult<OrderDto>

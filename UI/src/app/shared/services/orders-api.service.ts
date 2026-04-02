@@ -20,20 +20,52 @@ export class OrdersApiService {
 
     getOrders(params?: {
         page?: number;
+        pageNumber?: number;
         pageSize?: number;
         statusId?: string;
+        orderStatusId?: string;
         userId?: string;
         dateFrom?: string;
         dateTo?: string;
+        searchTerm?: string;
         paymentStatus?: string;
+        sortBy?: string;
+        sortDescending?: boolean;
     }): Observable<OrderListResponse> {
         let httpParams = new HttpParams();
         if (params) {
-            Object.keys(params).forEach(key => {
-                if (params[key as keyof typeof params] !== null && params[key as keyof typeof params] !== undefined && params[key as keyof typeof params] !== '') {
-                    httpParams = httpParams.set(key, params[key as keyof typeof params]!.toString());
-                }
-            });
+            const pageNum = params.pageNumber ?? params.page;
+            if (pageNum !== undefined && pageNum !== null) {
+                httpParams = httpParams.set('pageNumber', String(pageNum));
+            }
+            if (params.pageSize !== undefined && params.pageSize !== null) {
+                httpParams = httpParams.set('pageSize', String(params.pageSize));
+            }
+            const orderStatusId = params.orderStatusId ?? params.statusId;
+            if (orderStatusId) {
+                httpParams = httpParams.set('orderStatusId', orderStatusId);
+            }
+            if (params.userId) {
+                httpParams = httpParams.set('userId', params.userId);
+            }
+            if (params.dateFrom) {
+                httpParams = httpParams.set('dateFrom', params.dateFrom);
+            }
+            if (params.dateTo) {
+                httpParams = httpParams.set('dateTo', params.dateTo);
+            }
+            if (params.searchTerm) {
+                httpParams = httpParams.set('searchTerm', params.searchTerm);
+            }
+            if (params.paymentStatus) {
+                httpParams = httpParams.set('paymentStatus', params.paymentStatus);
+            }
+            if (params.sortBy) {
+                httpParams = httpParams.set('sortBy', params.sortBy);
+            }
+            if (params.sortDescending !== undefined && params.sortDescending !== null) {
+                httpParams = httpParams.set('sortDescending', String(params.sortDescending));
+            }
         }
         return this.http.get<OrderListResponse>(`${this.baseUrl}/orders`, { params: httpParams });
     }
@@ -49,11 +81,16 @@ export class OrdersApiService {
     }): Observable<OrderListResponse> {
         let httpParams = new HttpParams();
         if (params) {
-            Object.keys(params).forEach(key => {
-                if (params[key as keyof typeof params] !== null && params[key as keyof typeof params] !== undefined && params[key as keyof typeof params] !== '') {
-                    httpParams = httpParams.set(key, params[key as keyof typeof params]!.toString());
-                }
-            });
+            const pageNum = params.page;
+            if (pageNum !== undefined && pageNum !== null) {
+                httpParams = httpParams.set('pageNumber', String(pageNum));
+            }
+            if (params.pageSize !== undefined && params.pageSize !== null) {
+                httpParams = httpParams.set('pageSize', String(params.pageSize));
+            }
+            if (params.statusId) {
+                httpParams = httpParams.set('orderStatusId', params.statusId);
+            }
         }
         return this.http.get<OrderListResponse>(`${this.baseUrl}/orders/user/${userId}`, { params: httpParams });
     }
