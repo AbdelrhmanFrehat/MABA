@@ -132,6 +132,10 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
                                 <i class="pi pi-list"></i>
                                 {{ 'menu.myRequests' | translate }}
                             </a>
+                            <a routerLink="/account/designs" class="nav-link mobile-account-link" (click)="isMobileMenuOpen = false">
+                                <i class="pi pi-images"></i>
+                                {{ 'menu.myDesigns' | translate }}
+                            </a>
                             <button type="button" class="nav-link mobile-account-link mobile-logout-link" (click)="logout(); isMobileMenuOpen = false">
                                 <i class="pi pi-sign-out"></i>
                                 {{ 'nav.auth.logout' | translate }}
@@ -230,6 +234,10 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
                                 <a routerLink="/account/requests" class="dropdown-menu-item" (click)="showUserMenu = false">
                                     <i class="pi pi-list"></i>
                                     <span>{{ 'menu.myRequests' | translate }}</span>
+                                </a>
+                                <a routerLink="/account/designs" class="dropdown-menu-item" (click)="showUserMenu = false">
+                                    <i class="pi pi-images"></i>
+                                    <span>{{ 'menu.myDesigns' | translate }}</span>
                                 </a>
                                 <a routerLink="/projects/request" class="dropdown-menu-item" (click)="showUserMenu = false">
                                     <i class="pi pi-briefcase"></i>

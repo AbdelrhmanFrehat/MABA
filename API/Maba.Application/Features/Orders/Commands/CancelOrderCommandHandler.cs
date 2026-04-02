@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
@@ -13,15 +14,21 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly IAuditService _auditService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public CancelOrderCommandHandler(
         IApplicationDbContext context,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAuditService auditService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
+        _auditService = auditService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<OrderDto> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -75,7 +82,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
             OrderStatusId = cancelledStatus.Id
         };
 
-        var updateHandler = new UpdateOrderStatusCommandHandler(_context, _emailService, _configuration);
+        var updateHandler = new UpdateOrderStatusCommandHandler(_context, _emailService, _configuration, _auditService, _httpContextAccessor);
         return await updateHandler.Handle(updateStatusCommand, cancellationToken);
     }
 }

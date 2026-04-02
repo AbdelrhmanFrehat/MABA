@@ -1,4 +1,7 @@
+using System.Security.Claims;
+using System.Text.Json;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Emails;
@@ -15,15 +18,21 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly IAuditService _auditService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public UpdateOrderStatusCommandHandler(
         IApplicationDbContext context,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAuditService auditService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
+        _auditService = auditService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<OrderDto> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
@@ -140,6 +149,24 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        Guid? actorUserId = null;
+        var sub = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(sub, out var parsedUserId))
+        {
+            actorUserId = parsedUserId;
+        }
+
+        var oldAudit = JsonSerializer.Serialize(new { orderStatusId = order.OrderStatusId, orderStatusKey = oldStatusKey });
+        var newAudit = JsonSerializer.Serialize(new { orderStatusId = request.OrderStatusId, orderStatusKey = newStatusKey });
+        await _auditService.LogActionAsync(
+            "Order",
+            order.Id,
+            "UpdateStatus",
+            actorUserId,
+            oldAudit,
+            newAudit,
+            cancellationToken: cancellationToken);
+
         var shouldSendShippedEmail = newStatusKey == "Shipped" && oldStatusKey != "Shipped";
 
         // Reload order with updated status
@@ -148,6 +175,7 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             .Include(o => o.OrderStatus)
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Item)
+            .Include(o => o.Payments)
             .FirstOrDefaultAsync(o => o.Id == order.Id, cancellationToken);
 
         if (shouldSendShippedEmail && updatedOrder?.User != null)
@@ -185,20 +213,35 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             await _emailService.SendShopOrderShippedAsync(updatedOrder.User.Email, shippedModel, cancellationToken);
         }
 
+        var totalPaid = updatedOrder!.Payments?.Sum(p => p.Amount) ?? 0;
+        var paymentStatus = "Pending";
+        if (totalPaid >= updatedOrder.Total) paymentStatus = "Paid";
+        else if (totalPaid > 0) paymentStatus = "PartiallyPaid";
+
         return new OrderDto
         {
-            Id = updatedOrder!.Id,
+            Id = updatedOrder.Id,
             OrderNumber = updatedOrder.OrderNumber,
             UserId = updatedOrder.UserId,
             UserFullName = updatedOrder.User.FullName,
             OrderStatusId = updatedOrder.OrderStatusId,
             OrderStatusKey = updatedOrder.OrderStatus.Key,
+            Status = updatedOrder.OrderStatus != null
+                ? new OrderStatusDto
+                {
+                    Id = updatedOrder.OrderStatus.Id,
+                    Key = updatedOrder.OrderStatus.Key,
+                    NameEn = updatedOrder.OrderStatus.NameEn,
+                    NameAr = updatedOrder.OrderStatus.NameAr
+                }
+                : null,
             SubTotal = updatedOrder.SubTotal,
             TaxAmount = updatedOrder.TaxAmount,
             ShippingCost = updatedOrder.ShippingCost,
             DiscountAmount = updatedOrder.DiscountAmount,
             Total = updatedOrder.Total,
             Currency = updatedOrder.Currency,
+            PaymentStatus = paymentStatus,
             TrackingNumber = updatedOrder.TrackingNumber,
             EstimatedDeliveryDate = updatedOrder.EstimatedDeliveryDate,
             OrderItems = updatedOrder.OrderItems.Select(oi => new OrderItemDto
@@ -207,6 +250,8 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
                 OrderId = oi.OrderId,
                 ItemId = oi.ItemId,
                 ItemNameEn = oi.Item?.NameEn,
+                ItemNameAr = oi.Item?.NameAr,
+                ItemSku = oi.Item?.Sku,
                 Quantity = oi.Quantity,
                 UnitPrice = oi.UnitPrice,
                 DiscountAmount = oi.DiscountAmount,

@@ -18,16 +18,24 @@ public class GetAllOrderStatusesQueryHandler : IRequestHandler<GetAllOrderStatus
 
     public async Task<List<OrderStatusDto>> Handle(GetAllOrderStatusesQuery request, CancellationToken cancellationToken)
     {
-        var statuses = await _context.Set<OrderStatus>()
-            .OrderBy(s => s.NameEn)
-            .ToListAsync(cancellationToken);
+        var statuses = await _context.Set<OrderStatus>().ToListAsync(cancellationToken);
 
-        return statuses.Select(s => new OrderStatusDto
-        {
-            Id = s.Id,
-            Key = s.Key,
-            NameEn = s.NameEn,
-            NameAr = s.NameAr
-        }).ToList();
+        var workflowOrder = new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" };
+
+        return statuses
+            .OrderBy(s =>
+            {
+                var i = Array.IndexOf(workflowOrder, s.Key);
+                return i >= 0 ? i : 100;
+            })
+            .ThenBy(s => s.NameEn)
+            .Select(s => new OrderStatusDto
+            {
+                Id = s.Id,
+                Key = s.Key,
+                NameEn = s.NameEn,
+                NameAr = s.NameAr
+            })
+            .ToList();
     }
 }

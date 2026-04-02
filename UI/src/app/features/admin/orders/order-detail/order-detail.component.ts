@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -8,7 +9,8 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrdersApiService } from '../../../../shared/services/orders-api.service';
 import { Order } from '../../../../shared/models/order.model';
@@ -27,11 +29,13 @@ import { LanguageService } from '../../../../shared/services/language.service';
         TextareaModule,
         ToastModule,
         TagModule,
-        TranslateModule
+        TranslateModule,
+        ConfirmDialogModule
     ],
-    providers: [MessageService],
+    providers: [MessageService, ConfirmationService],
     template: `
         <p-toast />
+        <p-confirmDialog />
         <div class="order-detail-container">
             <!-- Header -->
             <div class="order-header">
@@ -244,7 +248,7 @@ import { LanguageService } from '../../../../shared/services/language.service';
                                         [label]="'admin.orders.updateStatus' | translate" 
                                         icon="pi pi-check"
                                         (onClick)="updateStatus()"
-                                        [disabled]="!selectedStatusId || selectedStatusId === orderStatusId"
+                                        [disabled]="updatingStatus || !selectedStatusId || selectedStatusId === orderStatusId"
                                         [loading]="updatingStatus"
                                         styleClass="w-full mt-2"
                                     ></p-button>
@@ -750,6 +754,7 @@ export class OrderDetailComponent implements OnInit {
     private router = inject(Router);
     private ordersApiService = inject(OrdersApiService);
     private messageService = inject(MessageService);
+    private confirmationService = inject(ConfirmationService);
     private translateService = inject(TranslateService);
     private languageService = inject(LanguageService);
 
@@ -766,15 +771,15 @@ export class OrderDetailComponent implements OnInit {
         this.ordersApiService.getOrderById(id).subscribe({
             next: (order) => {
                 this.order = this.transformOrderData(order);
-                this.selectedStatusId = this.orderStatusId;
+                this.selectedStatusId = String(this.orderStatusId || '');
                 this.loading = false;
             },
             error: () => {
                 this.loading = false;
                 this.messageService.add({
                     severity: 'error',
-                    summary: this.translateService.instant('messages.error'),
-                    detail: this.translateService.instant('messages.errorLoadingOrder')
+                    summary: this.translateService.instant('common.error'),
+                    detail: this.translateService.instant('messages.errorLoadingOrderDetail')
                 });
             }
         });
@@ -786,12 +791,19 @@ export class OrderDetailComponent implements OnInit {
                 const lang = this.languageService.language;
                 this.orderStatuses = statuses;
                 this.statusOptions = statuses.map((s: any) => ({
-                    id: s.id,
+                    id: typeof s.id === 'string' ? s.id : String(s.id),
                     name: lang === 'ar' ? s.nameAr : s.nameEn
                 }));
+                if (this.order) {
+                    this.selectedStatusId = this.orderStatusId;
+                }
             },
             error: () => {
-                // Silently fail - statuses are optional
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: this.translateService.instant('common.warning'),
+                    detail: this.translateService.instant('messages.loadError')
+                });
             }
         });
     }
@@ -836,7 +848,7 @@ export class OrderDetailComponent implements OnInit {
             displayShippingAddress: shippingAddress,
             displayBillingAddress: billingAddress,
             displayOrderItems: orderItems,
-            orderStatusId: order.orderStatusId || order.statusId || '',
+            orderStatusId: String(order.orderStatusId ?? order.statusId ?? ''),
             status: order.status || { key: statusKey, nameEn: statusName, nameAr: statusName }
         };
     }
@@ -908,35 +920,85 @@ export class OrderDetailComponent implements OnInit {
     }
 
     get orderStatusId(): string {
-        return this.order?.orderStatusId || this.order?.statusId || '';
+        const raw = this.order?.orderStatusId ?? this.order?.statusId;
+        return raw != null ? String(raw) : '';
+    }
+
+    private statusKeyForId(statusId: string | null | undefined): string | null {
+        if (!statusId) return null;
+        const id = String(statusId);
+        const row = this.orderStatuses.find((s: any) => String(s.id) === id);
+        return row?.key ?? null;
     }
 
     updateStatus() {
+        if (!this.order || !this.selectedStatusId || this.updatingStatus) return;
+
+        const targetKey = this.statusKeyForId(this.selectedStatusId);
+        const proceed = () => this.executeStatusUpdate();
+
+        if (targetKey === 'Cancelled' || targetKey === 'Delivered') {
+            const msgKey =
+                targetKey === 'Cancelled'
+                    ? 'admin.orders.confirmCancelStatus'
+                    : 'admin.orders.confirmDeliveredStatus';
+            this.confirmationService.confirm({
+                message: this.translateService.instant(msgKey),
+                header: this.translateService.instant('common.confirm'),
+                icon: 'pi pi-exclamation-triangle',
+                acceptLabel: this.translateService.instant('common.yes'),
+                rejectLabel: this.translateService.instant('common.no'),
+                accept: () => proceed()
+            });
+            return;
+        }
+
+        proceed();
+    }
+
+    private executeStatusUpdate() {
         if (!this.order || !this.selectedStatusId) return;
 
         this.updatingStatus = true;
-        this.ordersApiService.updateOrderStatus(this.order.id, {
-            statusId: this.selectedStatusId,
-            notes: ''
-        }).subscribe({
-            next: (updatedOrder) => {
-                this.order = this.transformOrderData(updatedOrder);
-                this.updatingStatus = false;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.translateService.instant('messages.success'),
-                    detail: this.translateService.instant('admin.orders.statusUpdated')
-                });
-            },
-            error: () => {
-                this.updatingStatus = false;
-                this.messageService.add({
-                    severity: 'error',
-                    summary: this.translateService.instant('messages.error'),
-                    detail: this.translateService.instant('messages.errorUpdatingOrderStatus')
-                });
-            }
-        });
+        this.ordersApiService
+            .updateOrderStatus(this.order.id, { orderStatusId: String(this.selectedStatusId) })
+            .subscribe({
+                next: (updatedOrder) => {
+                    this.order = this.transformOrderData(updatedOrder);
+                    this.selectedStatusId = this.orderStatusId;
+                    this.updatingStatus = false;
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.translateService.instant('common.success'),
+                        detail: this.translateService.instant('admin.orders.statusUpdated')
+                    });
+                },
+                error: (err: HttpErrorResponse) => {
+                    this.updatingStatus = false;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: this.translateService.instant('common.error'),
+                        detail: this.mapStatusUpdateError(err)
+                    });
+                }
+            });
+    }
+
+    private mapStatusUpdateError(err: HttpErrorResponse): string {
+        if (err.error && typeof err.error === 'object' && 'message' in err.error) {
+            const m = (err.error as { message?: string }).message;
+            if (m && m.trim()) return m;
+        }
+        if (err.status === 403 || err.status === 401) {
+            return this.translateService.instant('messages.forbidden');
+        }
+        if (err.status === 404) {
+            return this.translateService.instant('messages.notFound');
+        }
+        if (err.status === 400) {
+            return this.translateService.instant('messages.badRequest');
+        }
+        return this.translateService.instant('messages.errorUpdatingOrderStatus');
     }
 
     downloadInvoice() {
@@ -957,7 +1019,7 @@ export class OrderDetailComponent implements OnInit {
                 this.downloadingInvoice = false;
                 this.messageService.add({
                     severity: 'error',
-                    summary: this.translateService.instant('messages.error'),
+                    summary: this.translateService.instant('common.error'),
                     detail: this.translateService.instant('messages.loadError')
                 });
             }
@@ -969,7 +1031,7 @@ export class OrderDetailComponent implements OnInit {
         if (status === 'delivered' || status === 'completed') return 'success';
         if (status === 'shipped' || status === 'processing') return 'info';
         if (status === 'pending') return 'warn';
-        if (status === 'cancelled' || status === 'cancelled') return 'danger';
+        if (status === 'cancelled' || status === 'canceled') return 'danger';
         return 'secondary';
     }
 

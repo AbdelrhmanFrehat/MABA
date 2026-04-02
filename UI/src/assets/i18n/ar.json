@@ -164,7 +164,9 @@
     "forbidden": "ليس لديك صلاحية لتنفيذ هذا الإجراء.",
     "validationError": "يرجى مراجعة المدخلات.",
     "serverError": "حدث خطأ في الخادم. يرجى المحاولة لاحقًا.",
-    "serviceUnavailable": "الخدمة غير متاحة مؤقتًا. يرجى المحاولة لاحقًا."
+    "serviceUnavailable": "الخدمة غير متاحة مؤقتًا. يرجى المحاولة لاحقًا.",
+    "errorLoadingOrderDetail": "تعذر تحميل تفاصيل الطلب.",
+    "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
   },
   "menu": {
     "home": "الرئيسية",
@@ -246,6 +248,7 @@
     "softwareProducts": "منتجات البرمجيات",
     "myAccount": "حسابي",
     "myOrders": "طلباتي",
+    "myDesigns": "تصاميمي",
     "wishlist": "المفضلة",
     "toggle": "تبديل القائمة",
     "clientPortal": "بوابة العميل",
@@ -1631,7 +1634,9 @@
       "actions": "الإجراءات",
       "changeStatus": "تغيير الحالة",
       "updateStatus": "تحديث الحالة",
-      "statusUpdated": "تم تحديث حالة الطلب بنجاح"
+      "statusUpdated": "تم تحديث حالة الطلب بنجاح",
+      "confirmCancelStatus": "تأكيد إلغاء هذا الطلب؟ سيرى العميل الطلب كملغى.",
+      "confirmDeliveredStatus": "تأكيد تسليم الطلب؟ تأكد من أن العميل استلم الشحنة قبل التأكيد."
     },
     "users": {
       "title": "إدارة المستخدمين",

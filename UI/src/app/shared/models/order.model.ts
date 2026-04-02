@@ -130,9 +130,9 @@ export interface CreateOrderRequest {
     couponCode?: string;
 }
 
+/** Must match API UpdateOrderStatusCommand: OrderStatusId → JSON camelCase orderStatusId */
 export interface UpdateOrderStatusRequest {
-    statusId: string;
-    notes?: string;
+    orderStatusId: string;
 }
 
 export interface AddOrderNoteRequest {

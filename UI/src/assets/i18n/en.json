@@ -153,7 +153,10 @@
     "forbidden": "You do not have permission to perform this action.",
     "validationError": "Please check your input.",
     "serverError": "A server error occurred. Please try again later.",
-    "serviceUnavailable": "Service temporarily unavailable. Please try again later."
+    "serviceUnavailable": "Service temporarily unavailable. Please try again later.",
+    "errorUpdatingOrderStatus": "Could not update order status. Please try again.",
+    "errorLoadingOrderDetail": "Could not load order details.",
+    "unexpectedError": "Something went wrong. Please try again."
   },
   "menu": {
     "home": "Home",
@@ -219,6 +222,7 @@
     "chat": "Chat",
     "myAccount": "My Account",
     "myOrders": "My Orders",
+    "myDesigns": "My Designs",
     "wishlist": "Wishlist",
     "toggle": "Toggle Menu",
     "supportChat": "Support Chat",
@@ -1449,7 +1453,9 @@
       "selectStatus": "Select Status",
       "updatedDate": "Updated Date",
       "each": "each",
-      "errorLoadingOrder": "Error loading order details"
+      "errorLoadingOrder": "Error loading order details",
+      "confirmCancelStatus": "Mark this order as cancelled? The customer will see this order as cancelled.",
+      "confirmDeliveredStatus": "Mark this order as delivered? Confirm only after the customer has received their order."
     },
     "software": {
       "title": "Software Management",
