@@ -990,7 +990,11 @@ export class PublicHeaderComponent implements OnInit {
 
     ngOnInit() {
         this.setupUserMenu();
-        this.loadCartCount();
+        if (this.authService.authenticated) {
+            this.loadCartCount();
+        } else {
+            this.cartItemsCount = 0;
+        }
         
         if (this.authService.authenticated) {
             this.authService.getCurrentUser().subscribe(() => {

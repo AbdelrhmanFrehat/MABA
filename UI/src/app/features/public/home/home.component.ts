@@ -2671,9 +2671,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private loadStatisticsConfig() {
-        this.systemSettingsApi.getByKey('home.statistics').subscribe({
-            next: (setting) => {
+        this.systemSettingsApi.getSettings(undefined, true).subscribe({
+            next: (settings) => {
                 try {
+                    const setting = (settings || []).find(s => s.key === 'home.statistics');
+                    if (!setting?.value) {
+                        this.updateLabels();
+                        return;
+                    }
                     const parsed = JSON.parse(setting.value) as { icon: string; value: number; labelEn: string; labelAr: string }[];
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         this.statisticsConfig = parsed.map((x) => ({
@@ -2994,7 +2999,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!url) return 'assets/img/defult.png';
         // Legacy seed paths often point to sample-* files that don't exist in production.
         // Remap them to the default image to avoid repeated 404s in console.
-        if (/\/uploads\/images\/sample-\d+\.(jpg|jpeg|png|webp)$/i.test(url)) {
+        if (/^(https?:\/\/[^/]+)?\/uploads\/images\/sample-\d+\.(jpg|jpeg|png|webp)$/i.test(url)) {
             return 'assets/img/defult.png';
         }
         if (url.startsWith('http')) return url;

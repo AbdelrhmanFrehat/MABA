@@ -48,6 +48,14 @@ export class SystemSettingsApiService {
         return this.http.get<SystemSettingDto>(`${this.baseUrl}/key/${encodeURIComponent(key)}`);
     }
 
+    getSettings(category?: string, isPublic?: boolean): Observable<SystemSettingDto[]> {
+        const params: string[] = [];
+        if (category) params.push(`category=${encodeURIComponent(category)}`);
+        if (typeof isPublic === 'boolean') params.push(`isPublic=${isPublic}`);
+        const query = params.length ? `?${params.join('&')}` : '';
+        return this.http.get<SystemSettingDto[]>(`${this.baseUrl}${query}`);
+    }
+
     create(request: CreateSystemSettingRequest): Observable<SystemSettingDto> {
         return this.http.post<SystemSettingDto>(this.baseUrl, request);
     }
