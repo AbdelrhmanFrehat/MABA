@@ -18,15 +18,18 @@ public class SupportConversationsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
     private readonly SupportChatMessagingService _messaging;
+    private readonly ILogger<SupportConversationsController> _logger;
 
     public SupportConversationsController(
         ApplicationDbContext context,
         IFileStorageService fileStorage,
-        SupportChatMessagingService messaging)
+        SupportChatMessagingService messaging,
+        ILogger<SupportConversationsController> logger)
     {
         _context = context;
         _fileStorage = fileStorage;
         _messaging = messaging;
+        _logger = logger;
     }
 
     private Guid GetUserId()
@@ -122,20 +125,52 @@ public class SupportConversationsController : ControllerBase
             await tx.RollbackAsync(cancellationToken);
             return Forbid();
         }
-        catch
+        catch (DbUpdateException ex)
         {
             await tx.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Support conversation create failed (database update).");
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new
+                {
+                    error = "Support chat could not be saved. The database may be missing recent migrations (SupportConversations.Subject).",
+                    code = "support_conversation_db"
+                });
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Support conversation create failed.");
             throw;
         }
 
-        conv = await _context.SupportConversations
-            .Include(c => c.Customer)
-            .Include(c => c.AssignedToUser)
-            .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
-            .FirstAsync(c => c.Id == conv.Id, cancellationToken);
+        var newId = conv.Id;
+        try
+        {
+            var reloaded = await _context.SupportConversations
+                .Include(c => c.Customer)
+                .Include(c => c.AssignedToUser)
+                .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
+                .FirstOrDefaultAsync(c => c.Id == newId, cancellationToken);
 
-        var last = conv.Messages.FirstOrDefault();
-        return Ok(MapToDto(conv, last?.Content, last?.CreatedAt, 0));
+            if (reloaded == null)
+            {
+                _logger.LogError("Support conversation {ConversationId} not found after commit.", newId);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { error = "Conversation was saved but could not be reloaded. Try refreshing the conversation list.", code = "support_conversation_reload" });
+            }
+
+            var last = reloaded.Messages.FirstOrDefault();
+            return Ok(MapToDto(reloaded, last?.Content, last?.CreatedAt, 0));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Support conversation reload after create failed for {ConversationId}.", newId);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = "Conversation may have been created. Refresh the page or open Support Chat again.", code = "support_conversation_reload" });
+        }
     }
 
     /// <summary>Admin/StoreOwner/Manager: list all conversations.</summary>
