@@ -1,0 +1,43 @@
+<p-toast />
+<div class="filament-spools-list-container">
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1>{{ 'admin.filamentSpools.title' | translate }}</h1>
+                <p class="subtitle">{{ 'admin.filamentSpools.subtitle' | translate }}</p>
+            </div>
+            <div class="header-actions">
+                <p-button
+                    [label]="'admin.filamentSpools.create' | translate"
+                    icon="pi pi-plus"
+                    (click)="openCreateDialog()"
+                ></p-button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <app-data-table
+            [data]="spools"
+            [columns]="columns"
+            [actions]="actions"
+            [loading]="loading"
+            [title]="'admin.filamentSpools.listTitle' | translate"
+            [showAddButton]="false"
+            (onAction)="handleAction($event)"
+        >
+            <ng-template #customColumn let-row let-column="column">
+                @if (column.field === 'remainingWeightGrams') {
+                    <span class="remaining-stock-cell">
+                        <span class="remaining-grams">{{ row.remainingWeightGrams }}g</span>
+                        <p-tag
+                            [value]="remainingStockTierKey(row.remainingWeightGrams) | translate"
+                            [severity]="remainingSeverity(row.remainingWeightGrams)"
+                            styleClass="remaining-stock-tag text-xs"
+                        />
+                    </span>
+                }
+            </ng-template>
+        </app-data-table>
+    </div>
+</div>

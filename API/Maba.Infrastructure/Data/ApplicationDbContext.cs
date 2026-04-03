@@ -73,6 +73,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PrintQualityProfile> PrintQualityProfiles => Set<PrintQualityProfile>();
     public DbSet<Design> Designs => Set<Design>();
     public DbSet<Print3dServiceRequest> Print3dServiceRequests => Set<Print3dServiceRequest>();
+    public DbSet<FilamentSpool> FilamentSpools => Set<FilamentSpool>();
     public DbSet<DesignFile> DesignFiles => Set<DesignFile>();
     public DbSet<SlicingJob> SlicingJobs => Set<SlicingJob>();
     public DbSet<SlicingJobStatus> SlicingJobStatuses => Set<SlicingJobStatus>();

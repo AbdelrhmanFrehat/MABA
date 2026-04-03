@@ -1,0 +1,91 @@
+<p-toast />
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    @if (isEdit && spool) {
+        <div class="readonly-block mb-3">
+            <div class="field-row">
+                <span class="label">{{ 'admin.filamentSpools.material' | translate }}</span>
+                <span>{{ lang === 'ar' && spool.materialNameAr ? spool.materialNameAr : spool.materialNameEn }}</span>
+            </div>
+            <div class="field-row">
+                <span class="label">{{ 'admin.filamentSpools.color' | translate }}</span>
+                <span>{{
+                    spool.colorNameEn || spool.colorNameAr
+                        ? (lang === 'ar' && spool.colorNameAr ? spool.colorNameAr : spool.colorNameEn)
+                        : '—'
+                }}</span>
+            </div>
+        </div>
+    }
+
+    @if (!isEdit) {
+        <div class="form-field mb-3">
+            <label for="materialId">{{ 'admin.filamentSpools.material' | translate }} *</label>
+            <p-select
+                inputId="materialId"
+                formControlName="materialId"
+                [options]="materialOptions"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'admin.filamentSpools.selectMaterial' | translate"
+                styleClass="w-full"
+            ></p-select>
+        </div>
+        <div class="form-field mb-3">
+            <label for="materialColorId">{{ 'admin.filamentSpools.color' | translate }}</label>
+            <p-select
+                inputId="materialColorId"
+                formControlName="materialColorId"
+                [options]="colorOptions"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                [placeholder]="'admin.filamentSpools.selectColor' | translate"
+                styleClass="w-full"
+            ></p-select>
+        </div>
+        <div class="form-field mb-3">
+            <label for="initialWeightGrams">{{ 'admin.filamentSpools.initial' | translate }} (g) *</label>
+            <p-inputNumber
+                inputId="initialWeightGrams"
+                formControlName="initialWeightGrams"
+                [min]="1"
+                [useGrouping]="false"
+                styleClass="w-full"
+            ></p-inputNumber>
+        </div>
+    }
+
+    <div class="form-field mb-3">
+        <label for="name">{{ 'admin.filamentSpools.name' | translate }}</label>
+        <input pInputText id="name" formControlName="name" class="w-full" maxlength="200" />
+        <p class="name-hint">{{ 'admin.filamentSpools.nameHint' | translate }}</p>
+    </div>
+
+    @if (isEdit) {
+        <div class="form-field mb-3">
+            <label for="remainingWeightGrams">{{ 'admin.filamentSpools.remaining' | translate }} (g) *</label>
+            <p-inputNumber
+                inputId="remainingWeightGrams"
+                formControlName="remainingWeightGrams"
+                [min]="0"
+                [useGrouping]="false"
+                styleClass="w-full"
+            ></p-inputNumber>
+        </div>
+        <div class="form-field mb-3 flex align-items-center gap-2">
+            <p-checkbox formControlName="isActive" inputId="isActive" [binary]="true"></p-checkbox>
+            <label for="isActive" class="m-0">{{ 'admin.filamentSpools.active' | translate }}</label>
+        </div>
+    }
+
+    <div class="form-actions">
+        <p-button type="button" [label]="'common.cancel' | translate" [text]="true" (onClick)="cancel()"></p-button>
+        <p-button
+            type="submit"
+            [label]="'common.save' | translate"
+            icon="pi pi-check"
+            [loading]="saving"
+            [disabled]="saving || form.invalid"
+        ></p-button>
+    </div>
+</form>

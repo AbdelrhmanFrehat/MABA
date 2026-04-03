@@ -96,6 +96,10 @@ export const adminRoutes: Routes = [
         loadChildren: () => import('./print-quality-profiles/print-quality-profiles.routes').then(m => m.printQualityProfilesRoutes)
     },
     {
+        path: 'filament-spools',
+        loadChildren: () => import('./filament-spools/filament-spools.routes').then(m => m.FILAMENT_SPOOLS_ROUTES)
+    },
+    {
         path: 'reviews',
         loadComponent: () => import('./reviews/reviews-list.component').then(m => m.ReviewsListComponent),
         canActivate: [authGuard]

@@ -11,6 +11,8 @@ import {
     Print3dDesign,
     CreatePrint3dRequestRequest,
     UpdatePrint3dRequestStatusRequest,
+    Print3dPricingSuggestionRequest,
+    Print3dPricingSuggestionResponse,
     Material,
     MaterialColor,
     CreateMaterialRequest,
@@ -19,7 +21,10 @@ import {
     UpdateMaterialColorRequest,
     PrintQualityProfile,
     CreatePrintQualityProfileRequest,
-    UpdatePrintQualityProfileRequest
+    UpdatePrintQualityProfileRequest,
+    FilamentSpool,
+    CreateFilamentSpoolPayload,
+    UpdateFilamentSpoolPayload
 } from '../models/printing.model';
 
 @Injectable({
@@ -145,6 +150,11 @@ export class PrintingApiService {
         return this.http.put<Print3dRequest>(`${this.baseUrl}/3d-requests/${id}/status`, request);
     }
 
+    /** Suggested price only — persists when admin saves status with suggestedPrice / estimatedPrintTimeHours. */
+    suggestPrint3dPricing(id: string, body: Print3dPricingSuggestionRequest): Observable<Print3dPricingSuggestionResponse> {
+        return this.http.post<Print3dPricingSuggestionResponse>(`${this.baseUrl}/3d-requests/${id}/pricing-suggestion`, body);
+    }
+
     getEstimate(requestId: string): Observable<Print3dEstimate> {
         return this.http.get<Print3dEstimate>(`${this.baseUrl}/3d-requests/${requestId}/estimate`);
     }
@@ -166,6 +176,26 @@ export class PrintingApiService {
 
     deleteDesign(id: string): Observable<void> {
         return this.http.post<void>(`${this.baseUrl}/designs/${id}/delete`, {});
+    }
+
+    getFilamentSpools(): Observable<FilamentSpool[]> {
+        return this.http.get<FilamentSpool[]>(`${this.baseUrl}/filament-spools`);
+    }
+
+    getFilamentSpool(id: string): Observable<FilamentSpool> {
+        return this.http.get<FilamentSpool>(`${this.baseUrl}/filament-spools/${id}`);
+    }
+
+    createFilamentSpool(payload: CreateFilamentSpoolPayload): Observable<FilamentSpool> {
+        return this.http.post<FilamentSpool>(`${this.baseUrl}/filament-spools`, payload);
+    }
+
+    updateFilamentSpool(id: string, payload: UpdateFilamentSpoolPayload): Observable<FilamentSpool> {
+        return this.http.put<FilamentSpool>(`${this.baseUrl}/filament-spools/${id}`, payload);
+    }
+
+    deleteFilamentSpool(id: string): Observable<void> {
+        return this.http.delete<void>(`${this.baseUrl}/filament-spools/${id}`);
     }
 }
 

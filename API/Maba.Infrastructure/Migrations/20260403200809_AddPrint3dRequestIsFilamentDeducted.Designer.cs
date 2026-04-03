@@ -4,6 +4,7 @@ using Maba.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maba.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260403200809_AddPrint3dRequestIsFilamentDeducted")]
+    partial class AddPrint3dRequestIsFilamentDeducted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3837,9 +3840,6 @@ namespace Maba.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("ActualFilamentGrams")
-                        .HasColumnType("int");
-
                     b.Property<string>("AdminNotes")
                         .HasColumnType("nvarchar(max)");
 
@@ -3877,9 +3877,6 @@ namespace Maba.Infrastructure.Migrations
                     b.Property<decimal?>("EstimatedPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal?>("EstimatedPrintTimeHours")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -3915,9 +3912,6 @@ namespace Maba.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
-
-                    b.Property<decimal?>("SuggestedPrice")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

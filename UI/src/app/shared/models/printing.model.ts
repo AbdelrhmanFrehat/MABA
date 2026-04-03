@@ -84,6 +84,21 @@ export interface Print3dRequest {
     reviewedAt?: string;
     approvedAt?: string;
     completedAt?: string;
+    /** Linked filament spool (admin production tracking). */
+    usedSpoolId?: string | null;
+    estimatedFilamentGrams?: number | null;
+    /** Reserved for future use (optional actual grams). */
+    actualFilamentGrams?: number | null;
+    /** Server-built label, e.g. "PLA Black — S1 (950g)". */
+    usedSpoolName?: string | null;
+    /** Set by server after one-time filament deduction on approval. */
+    isFilamentDeducted?: boolean;
+    estimatedPrintTimeHours?: number | null;
+    suggestedPrice?: number | null;
+    /** From material (admin pricing assistant). */
+    materialPricePerGram?: number | null;
+    /** From quality profile (machine cost multiplier). */
+    profilePriceMultiplier?: number | null;
 }
 
 export enum Print3dRequestStatus {
@@ -227,6 +242,45 @@ export interface UpdatePrint3dRequestStatusRequest {
     status: Print3dRequestStatus;
     notes?: string;
     finalPrice?: number;
+    usedSpoolId?: string | null;
+    estimatedFilamentGrams?: number | null;
+    estimatedPrintTimeHours?: number | null;
+    suggestedPrice?: number | null;
+}
+
+/** POST .../3d-requests/{id}/pricing-suggestion — does not persist. */
+export interface Print3dPricingSuggestionRequest {
+    estimatedPrintTimeHours: number;
+    hourlyRate?: number | null;
+    profileId?: string | null;
+    estimatedFilamentGrams?: number | null;
+    profitMargin?: number | null;
+    minimumPrice?: number | null;
+    /** 0 = no rounding; omit = use server default. */
+    roundToNearest?: number | null;
+}
+
+export interface Print3dPricingSuggestionResponse {
+    suggestedPrice: number;
+    materialCost: number;
+    machineCost: number;
+    baseCost: number;
+    adjustedCost: number;
+    afterMargin: number;
+    afterMinimum: number;
+    minimumApplied: boolean;
+    roundingApplied: boolean;
+    roundStep?: number | null;
+    grams: number;
+    costPerGram: number;
+    printTimeHours: number;
+    hourlyRate: number;
+    qualityMultiplier: number;
+    profitMargin: number;
+    minimumPrice: number;
+    defaultHourlyRate: number;
+    defaultProfitMargin: number;
+    defaultMinimumPrice: number;
 }
 
 export interface Print3dRequestListResponse {
@@ -235,5 +289,34 @@ export interface Print3dRequestListResponse {
     page: number;
     pageSize: number;
     totalPages: number;
+}
+
+/** Filament spool inventory (admin; Phase 1 — not tied to print requests). */
+export interface FilamentSpool {
+    id: string;
+    materialId: string;
+    materialNameEn: string;
+    materialNameAr?: string | null;
+    materialColorId?: string | null;
+    colorNameEn?: string | null;
+    colorNameAr?: string | null;
+    name?: string | null;
+    initialWeightGrams: number;
+    remainingWeightGrams: number;
+    isActive: boolean;
+    createdAt: string;
+}
+
+export interface CreateFilamentSpoolPayload {
+    materialId: string;
+    materialColorId?: string | null;
+    name?: string | null;
+    initialWeightGrams: number;
+}
+
+export interface UpdateFilamentSpoolPayload {
+    name?: string | null;
+    remainingWeightGrams: number;
+    isActive: boolean;
 }
 

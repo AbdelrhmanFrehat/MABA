@@ -22,6 +22,7 @@ public class Print3dRequestsController : ControllerBase
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<Print3dRequestsController> _logger;
+    private readonly IPricingService _pricingService;
 
     public Print3dRequestsController(
         IMediator mediator,
@@ -29,7 +30,8 @@ public class Print3dRequestsController : ControllerBase
         IApplicationDbContext context,
         IEmailService emailService,
         IConfiguration configuration,
-        ILogger<Print3dRequestsController> logger)
+        ILogger<Print3dRequestsController> logger,
+        IPricingService pricingService)
     {
         _mediator = mediator;
         _fileStorageService = fileStorageService;
@@ -37,7 +39,52 @@ public class Print3dRequestsController : ControllerBase
         _emailService = emailService;
         _configuration = configuration;
         _logger = logger;
+        _pricingService = pricingService;
     }
+
+    private static string? FormatUsedSpoolLabel(FilamentSpool? spool)
+    {
+        if (spool == null)
+        {
+            return null;
+        }
+
+        var material = spool.Material?.NameEn ?? "?";
+        var spoolName = !string.IsNullOrWhiteSpace(spool.Name) ? spool.Name.Trim() : "—";
+        return $"{material} — {spoolName} ({spool.RemainingWeightGrams}g)";
+    }
+
+    private static Print3dRequestDto MapToDto(Print3dServiceRequest r) => new()
+    {
+        Id = r.Id,
+        ReferenceNumber = r.ReferenceNumber,
+        Status = r.Status.ToString(),
+        MaterialId = r.MaterialId,
+        MaterialName = r.Material?.NameEn,
+        ProfileId = r.ProfileId,
+        ProfileName = r.Profile?.NameEn,
+        FileName = r.FileName,
+        FileSizeBytes = r.FileSizeBytes,
+        CustomerName = r.CustomerName ?? r.User?.FullName,
+        CustomerEmail = r.CustomerEmail ?? r.User?.Email,
+        CustomerNotes = r.CustomerNotes,
+        AdminNotes = r.AdminNotes,
+        EstimatedPrice = r.EstimatedPrice,
+        FinalPrice = r.FinalPrice,
+        CreatedAt = r.CreatedAt,
+        ReviewedAt = r.ReviewedAt,
+        ApprovedAt = r.ApprovedAt,
+        CompletedAt = r.CompletedAt,
+        UsedSpoolId = r.UsedSpoolId,
+        EstimatedFilamentGrams = r.EstimatedFilamentGrams,
+        ActualFilamentGrams = r.ActualFilamentGrams,
+        UsedSpoolName = FormatUsedSpoolLabel(r.UsedSpool),
+        IsFilamentDeducted = r.IsFilamentDeducted,
+        EstimatedPrintTimeHours = r.EstimatedPrintTimeHours,
+        SuggestedPrice = r.SuggestedPrice,
+        MaterialPricePerGram = r.Material?.PricePerGram,
+        ProfilePriceMultiplier = r.Profile?.PriceMultiplier
+    };
 
     /// <summary>
     /// Create a new 3D print request with file upload
@@ -224,7 +271,16 @@ public class Print3dRequestsController : ControllerBase
             CustomerName = request.CustomerName,
             CustomerEmail = request.CustomerEmail,
             CustomerNotes = request.CustomerNotes,
-            CreatedAt = request.CreatedAt
+            CreatedAt = request.CreatedAt,
+            UsedSpoolId = null,
+            EstimatedFilamentGrams = null,
+            ActualFilamentGrams = null,
+            UsedSpoolName = null,
+            IsFilamentDeducted = false,
+            EstimatedPrintTimeHours = null,
+            SuggestedPrice = null,
+            MaterialPricePerGram = material.PricePerGram,
+            ProfilePriceMultiplier = profile?.PriceMultiplier
         });
     }
 
@@ -267,32 +323,18 @@ public class Print3dRequestsController : ControllerBase
 
         var totalCount = await query.CountAsync();
         var requests = await query
+            .Include(r => r.UsedSpool!)
+                .ThenInclude(s => s.Material)
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new Print3dRequestDto
-            {
-                Id = r.Id,
-                ReferenceNumber = r.ReferenceNumber,
-                Status = r.Status.ToString(),
-                MaterialId = r.MaterialId,
-                MaterialName = r.Material.NameEn,
-                ProfileId = r.ProfileId,
-                ProfileName = r.Profile != null ? r.Profile.NameEn : null,
-                FileName = r.FileName,
-                FileSizeBytes = r.FileSizeBytes,
-                CustomerName = r.CustomerName ?? (r.User != null ? r.User.FullName : null),
-                CustomerEmail = r.CustomerEmail ?? (r.User != null ? r.User.Email : null),
-                CustomerNotes = r.CustomerNotes,
-                EstimatedPrice = r.EstimatedPrice,
-                FinalPrice = r.FinalPrice,
-                CreatedAt = r.CreatedAt
-            })
             .ToListAsync();
+
+        var items = requests.Select(MapToDto).ToList();
 
         return Ok(new Print3dRequestListDto
         {
-            Items = requests,
+            Items = items,
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
@@ -309,6 +351,8 @@ public class Print3dRequestsController : ControllerBase
             .Include(r => r.Material)
             .Include(r => r.Profile)
             .Include(r => r.User)
+            .Include(r => r.UsedSpool!)
+                .ThenInclude(s => s.Material)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (request == null)
@@ -327,28 +371,7 @@ public class Print3dRequestsController : ControllerBase
             }
         }
 
-        return Ok(new Print3dRequestDto
-        {
-            Id = request.Id,
-            ReferenceNumber = request.ReferenceNumber,
-            Status = request.Status.ToString(),
-            MaterialId = request.MaterialId,
-            MaterialName = request.Material?.NameEn,
-            ProfileId = request.ProfileId,
-            ProfileName = request.Profile?.NameEn,
-            FileName = request.FileName,
-            FileSizeBytes = request.FileSizeBytes,
-            CustomerName = request.CustomerName ?? request.User?.FullName,
-            CustomerEmail = request.CustomerEmail ?? request.User?.Email,
-            CustomerNotes = request.CustomerNotes,
-            AdminNotes = request.AdminNotes,
-            EstimatedPrice = request.EstimatedPrice,
-            FinalPrice = request.FinalPrice,
-            CreatedAt = request.CreatedAt,
-            ReviewedAt = request.ReviewedAt,
-            ApprovedAt = request.ApprovedAt,
-            CompletedAt = request.CompletedAt
-        });
+        return Ok(MapToDto(request));
     }
 
     /// <summary>
@@ -434,6 +457,62 @@ public class Print3dRequestsController : ControllerBase
             request.FinalPrice = dto.FinalPrice.Value;
         }
 
+        request.EstimatedPrintTimeHours = dto.EstimatedPrintTimeHours;
+        request.SuggestedPrice = dto.SuggestedPrice;
+
+        if (!request.IsFilamentDeducted)
+        {
+            if (dto.EstimatedFilamentGrams.HasValue && dto.EstimatedFilamentGrams.Value < 0)
+            {
+                return BadRequest("EstimatedFilamentGrams must be >= 0");
+            }
+
+            if (dto.UsedSpoolId.HasValue)
+            {
+                var spoolExists = await _context.Set<FilamentSpool>()
+                    .AnyAsync(s => s.Id == dto.UsedSpoolId.Value, CancellationToken.None);
+                if (!spoolExists)
+                {
+                    return BadRequest("Filament spool not found.");
+                }
+            }
+
+            request.UsedSpoolId = dto.UsedSpoolId;
+            request.EstimatedFilamentGrams = dto.EstimatedFilamentGrams;
+        }
+
+        // Controlled filament deduction: once per request, only on transition into Approved (backend only).
+        if (newStatus == Print3dServiceRequestStatus.Approved
+            && previousStatus != Print3dServiceRequestStatus.Approved
+            && !request.IsFilamentDeducted
+            && request.UsedSpoolId.HasValue
+            && request.EstimatedFilamentGrams.HasValue)
+        {
+            var spool = await _context.Set<FilamentSpool>()
+                .Include(s => s.Material)
+                .FirstOrDefaultAsync(s => s.Id == request.UsedSpoolId!.Value, CancellationToken.None);
+            if (spool == null)
+            {
+                return BadRequest("Filament spool not found.");
+            }
+
+            var usedGrams = request.EstimatedFilamentGrams.Value;
+            spool.RemainingWeightGrams -= usedGrams;
+            request.IsFilamentDeducted = true;
+
+            var spoolLogName = FormatUsedSpoolLabel(spool) ?? spool.Id.ToString();
+            _logger.LogInformation(
+                "[3D PRINT]" + Environment.NewLine
+                + "Request: {ReferenceNumber}" + Environment.NewLine
+                + "Spool: {SpoolName}" + Environment.NewLine
+                + "Used: {UsedGrams}g" + Environment.NewLine
+                + "Remaining: {RemainingGrams}g",
+                request.ReferenceNumber,
+                spoolLogName,
+                usedGrams,
+                spool.RemainingWeightGrams);
+        }
+
         await _context.SaveChangesAsync(CancellationToken.None);
 
         if (newStatus == Print3dServiceRequestStatus.Cancelled &&
@@ -453,24 +532,140 @@ public class Print3dRequestsController : ControllerBase
                 CancellationToken.None);
         }
 
-        return Ok(new Print3dRequestDto
+        var refreshed = await _context.Set<Print3dServiceRequest>()
+            .AsNoTracking()
+            .Include(r => r.Material)
+            .Include(r => r.Profile)
+            .Include(r => r.User)
+            .Include(r => r.UsedSpool!)
+                .ThenInclude(s => s.Material)
+            .FirstAsync(r => r.Id == id, CancellationToken.None);
+
+        return Ok(MapToDto(refreshed));
+    }
+
+    /// <summary>
+    /// Compute a suggested price from material, profile, and time (does not persist — save via PUT /status).
+    /// </summary>
+    [HttpPost("{id}/pricing-suggestion")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<PricingSuggestionResponseDto>> GetPricingSuggestion(Guid id, [FromBody] PricingSuggestionRequestDto dto)
+    {
+        var request = await _context.Set<Print3dServiceRequest>()
+            .Include(r => r.Material)
+            .Include(r => r.Profile)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (request == null)
         {
-            Id = request.Id,
-            ReferenceNumber = request.ReferenceNumber,
-            Status = request.Status.ToString(),
-            MaterialId = request.MaterialId,
-            MaterialName = request.Material?.NameEn,
-            ProfileId = request.ProfileId,
-            ProfileName = request.Profile?.NameEn,
-            FileName = request.FileName,
-            FileSizeBytes = request.FileSizeBytes,
-            CustomerName = request.CustomerName ?? request.User?.FullName,
-            CustomerEmail = request.CustomerEmail ?? request.User?.Email,
-            CustomerNotes = request.CustomerNotes,
-            AdminNotes = request.AdminNotes,
-            EstimatedPrice = request.EstimatedPrice,
-            FinalPrice = request.FinalPrice,
-            CreatedAt = request.CreatedAt
+            return NotFound();
+        }
+
+        if (dto.EstimatedPrintTimeHours <= 0)
+        {
+            return BadRequest("EstimatedPrintTimeHours must be greater than zero.");
+        }
+
+        var gramsInt = dto.EstimatedFilamentGrams ?? request.EstimatedFilamentGrams;
+        if (!gramsInt.HasValue || gramsInt.Value < 0)
+        {
+            return BadRequest("Estimated filament grams are required (enter and save grams, or pass estimatedFilamentGrams in the request body).");
+        }
+
+        var grams = (decimal)gramsInt.Value;
+        var costPerGram = request.Material?.PricePerGram ?? 0m;
+        if (costPerGram < 0)
+        {
+            return BadRequest("Invalid material price per gram.");
+        }
+
+        var profileId = dto.ProfileId ?? request.ProfileId;
+        decimal qualityMultiplier = 1m;
+        if (profileId.HasValue)
+        {
+            var profile = await _context.Set<PrintQualityProfile>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == profileId.Value, CancellationToken.None);
+            if (profile != null)
+            {
+                qualityMultiplier = profile.PriceMultiplier;
+            }
+        }
+        else if (request.Profile != null)
+        {
+            qualityMultiplier = request.Profile.PriceMultiplier;
+        }
+
+        var defaultHourly = _configuration.GetValue<decimal>("App:Print3dPricing:DefaultHourlyRate", 15m);
+        var hourlyRate = dto.HourlyRate ?? defaultHourly;
+        if (hourlyRate < 0)
+        {
+            return BadRequest("Hourly rate must be non-negative.");
+        }
+
+        var defaultProfitMargin = _configuration.GetValue<decimal>("App:Print3dPricing:DefaultProfitMargin", 1.5m);
+        var defaultMinimumPrice = _configuration.GetValue<decimal>("App:Print3dPricing:DefaultMinimumPrice", 10m);
+        var profitMargin = dto.ProfitMargin ?? defaultProfitMargin;
+        var minimumPrice = dto.MinimumPrice ?? defaultMinimumPrice;
+        if (profitMargin <= 0)
+        {
+            return BadRequest("Profit margin must be greater than zero.");
+        }
+
+        if (minimumPrice < 0)
+        {
+            return BadRequest("Minimum price must be non-negative.");
+        }
+
+        decimal? roundToNearest;
+        if (dto.RoundToNearest.HasValue)
+        {
+            if (dto.RoundToNearest.Value < 0)
+            {
+                return BadRequest("Round step must be non-negative.");
+            }
+
+            roundToNearest = dto.RoundToNearest.Value == 0 ? null : dto.RoundToNearest.Value;
+        }
+        else
+        {
+            var cfgRound = _configuration.GetValue<decimal?>("App:Print3dPricing:RoundToNearest", 5m);
+            roundToNearest = cfgRound is > 0 ? cfgRound : null;
+        }
+
+        var printHours = dto.EstimatedPrintTimeHours;
+        var adv = _pricingService.CalculateAdvancedPrice(
+            grams,
+            costPerGram,
+            printHours,
+            hourlyRate,
+            qualityMultiplier,
+            profitMargin,
+            minimumPrice,
+            roundToNearest);
+
+        return Ok(new PricingSuggestionResponseDto
+        {
+            SuggestedPrice = adv.FinalSuggested,
+            MaterialCost = adv.MaterialCost,
+            MachineCost = adv.MachineCost,
+            BaseCost = adv.BaseCost,
+            AdjustedCost = adv.AdjustedCost,
+            AfterMargin = adv.AfterMargin,
+            AfterMinimum = adv.AfterMinimum,
+            MinimumApplied = adv.MinimumApplied,
+            RoundingApplied = adv.RoundingApplied,
+            RoundStep = adv.RoundStep,
+            Grams = grams,
+            CostPerGram = costPerGram,
+            PrintTimeHours = printHours,
+            HourlyRate = hourlyRate,
+            QualityMultiplier = qualityMultiplier,
+            ProfitMargin = profitMargin,
+            MinimumPrice = minimumPrice,
+            DefaultHourlyRate = defaultHourly,
+            DefaultProfitMargin = defaultProfitMargin,
+            DefaultMinimumPrice = defaultMinimumPrice
         });
     }
 }
@@ -497,6 +692,18 @@ public class Print3dRequestDto
     public DateTime? ReviewedAt { get; set; }
     public DateTime? ApprovedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public Guid? UsedSpoolId { get; set; }
+    public int? EstimatedFilamentGrams { get; set; }
+    public int? ActualFilamentGrams { get; set; }
+    /// <summary>Display label for the linked spool, e.g. "PLA Black — S1 (950g)".</summary>
+    public string? UsedSpoolName { get; set; }
+    public bool IsFilamentDeducted { get; set; }
+    public decimal? EstimatedPrintTimeHours { get; set; }
+    public decimal? SuggestedPrice { get; set; }
+    /// <summary>From material — for pricing assistant display.</summary>
+    public decimal? MaterialPricePerGram { get; set; }
+    /// <summary>From quality profile — applied to base (material + machine) cost.</summary>
+    public decimal? ProfilePriceMultiplier { get; set; }
 }
 
 public class Print3dRequestListDto
@@ -512,4 +719,45 @@ public class UpdatePrint3dRequestStatusDto
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public decimal? FinalPrice { get; set; }
+    public Guid? UsedSpoolId { get; set; }
+    public int? EstimatedFilamentGrams { get; set; }
+    public decimal? EstimatedPrintTimeHours { get; set; }
+    public decimal? SuggestedPrice { get; set; }
+}
+
+public class PricingSuggestionRequestDto
+{
+    public decimal EstimatedPrintTimeHours { get; set; }
+    public decimal? HourlyRate { get; set; }
+    public Guid? ProfileId { get; set; }
+    /// <summary>Optional override when form grams differ from saved request.</summary>
+    public int? EstimatedFilamentGrams { get; set; }
+    public decimal? ProfitMargin { get; set; }
+    public decimal? MinimumPrice { get; set; }
+    /// <summary>Optional rounding step (e.g. 0.5, 1, 5). Use 0 to disable rounding.</summary>
+    public decimal? RoundToNearest { get; set; }
+}
+
+public class PricingSuggestionResponseDto
+{
+    public decimal SuggestedPrice { get; set; }
+    public decimal MaterialCost { get; set; }
+    public decimal MachineCost { get; set; }
+    public decimal BaseCost { get; set; }
+    public decimal AdjustedCost { get; set; }
+    public decimal AfterMargin { get; set; }
+    public decimal AfterMinimum { get; set; }
+    public bool MinimumApplied { get; set; }
+    public bool RoundingApplied { get; set; }
+    public decimal? RoundStep { get; set; }
+    public decimal Grams { get; set; }
+    public decimal CostPerGram { get; set; }
+    public decimal PrintTimeHours { get; set; }
+    public decimal HourlyRate { get; set; }
+    public decimal QualityMultiplier { get; set; }
+    public decimal ProfitMargin { get; set; }
+    public decimal MinimumPrice { get; set; }
+    public decimal DefaultHourlyRate { get; set; }
+    public decimal DefaultProfitMargin { get; set; }
+    public decimal DefaultMinimumPrice { get; set; }
 }

@@ -4,6 +4,7 @@ using Maba.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Maba.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260403194946_AddFilamentSpools")]
+    partial class AddFilamentSpools
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3837,9 +3840,6 @@ namespace Maba.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("ActualFilamentGrams")
-                        .HasColumnType("int");
-
                     b.Property<string>("AdminNotes")
                         .HasColumnType("nvarchar(max)");
 
@@ -3871,13 +3871,7 @@ namespace Maba.Infrastructure.Migrations
                     b.Property<Guid?>("DesignId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("EstimatedFilamentGrams")
-                        .HasColumnType("int");
-
                     b.Property<decimal?>("EstimatedPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("EstimatedPrintTimeHours")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("FileName")
@@ -3893,9 +3887,6 @@ namespace Maba.Infrastructure.Migrations
 
                     b.Property<decimal?>("FinalPrice")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsFilamentDeducted")
-                        .HasColumnType("bit");
 
                     b.Property<Guid?>("MaterialColorId")
                         .HasColumnType("uniqueidentifier");
@@ -3916,14 +3907,8 @@ namespace Maba.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("SuggestedPrice")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UsedSpoolId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -3937,8 +3922,6 @@ namespace Maba.Infrastructure.Migrations
                     b.HasIndex("MaterialId");
 
                     b.HasIndex("ProfileId");
-
-                    b.HasIndex("UsedSpoolId");
 
                     b.HasIndex("UserId");
 
@@ -5664,11 +5647,6 @@ namespace Maba.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ProfileId");
 
-                    b.HasOne("Maba.Domain.Printing.FilamentSpool", "UsedSpool")
-                        .WithMany()
-                        .HasForeignKey("UsedSpoolId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Maba.Domain.Users.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
@@ -5680,8 +5658,6 @@ namespace Maba.Infrastructure.Migrations
                     b.Navigation("MaterialColor");
 
                     b.Navigation("Profile");
-
-                    b.Navigation("UsedSpool");
 
                     b.Navigation("User");
                 });

@@ -19,7 +19,12 @@ import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
-import { Print3dRequest, Print3dRequestStatus } from '../../../shared/models/printing.model';
+import {
+    FilamentSpool,
+    Print3dPricingSuggestionResponse,
+    Print3dRequest,
+    Print3dRequestStatus
+} from '../../../shared/models/printing.model';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -224,6 +229,41 @@ import { environment } from '../../../../environments/environment';
                         <label>{{ 'admin.3dRequests.finalPrice' | translate }}</label>
                         <span class="price final">{{ selectedRequest.finalPrice | currency:'ILS' }}</span>
                     </div>
+                    <div
+                        class="detail-item full-width pricing-view-section"
+                        *ngIf="selectedRequest.estimatedPrintTimeHours != null || selectedRequest.suggestedPrice != null">
+                        <label class="section-label">{{ 'admin.3dRequests.pricing' | translate }}</label>
+                        <div class="detail-grid pricing-view-grid">
+                            <div class="detail-item" *ngIf="selectedRequest.estimatedPrintTimeHours != null">
+                                <label>{{ 'admin.3dRequests.estimatedPrintTimeHours' | translate }}</label>
+                                <span>{{ selectedRequest.estimatedPrintTimeHours }} {{ 'admin.3dRequests.hoursAbbr' | translate }}</span>
+                            </div>
+                            <div class="detail-item" *ngIf="selectedRequest.suggestedPrice != null">
+                                <label>{{ 'admin.3dRequests.suggestedPrice' | translate }}</label>
+                                <span class="price suggested-view">{{ selectedRequest.suggestedPrice | currency:'ILS' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-item full-width production-section">
+                        <label class="section-label">{{ 'admin.3dRequests.productionInfo' | translate }}</label>
+                        <div class="production-grid production-grid--three">
+                            <div class="detail-item">
+                                <label>{{ 'admin.3dRequests.filamentSpool' | translate }}</label>
+                                <span>{{ selectedRequest.usedSpoolName || '—' }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>{{ 'admin.3dRequests.estimatedFilamentGrams' | translate }}</label>
+                                <span>{{ selectedRequest.estimatedFilamentGrams != null ? (selectedRequest.estimatedFilamentGrams + ' g') : '—' }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>{{ 'admin.3dRequests.filamentDeducted' | translate }}</label>
+                                <p-tag
+                                    [value]="(selectedRequest.isFilamentDeducted ? 'admin.3dRequests.yes' : 'admin.3dRequests.no') | translate"
+                                    [severity]="selectedRequest.isFilamentDeducted ? 'success' : 'secondary'">
+                                </p-tag>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </p-dialog>
@@ -232,7 +272,7 @@ import { environment } from '../../../../environments/environment';
         <p-dialog 
             [(visible)]="showEditDialog" 
             [modal]="true"
-            [style]="{ width: '500px', maxWidth: '95vw' }"
+            [style]="{ width: '640px', maxWidth: '95vw' }"
             [header]="editDialogHeader">
             <div class="edit-content" *ngIf="selectedRequest">
                 <div class="form-field">
@@ -245,16 +285,190 @@ import { environment } from '../../../../environments/environment';
                         styleClass="w-full">
                     </p-select>
                 </div>
-                <div class="form-field">
-                    <label>{{ 'admin.3dRequests.finalPrice' | translate }}</label>
-                    <p-inputNumber 
-                        [(ngModel)]="editFinalPrice"
-                        mode="currency"
-                        currency="ILS"
-                        locale="en-IL"
-                        styleClass="w-full">
-                    </p-inputNumber>
+
+                <div class="edit-section-card production-edit-block">
+                    <div class="section-label">{{ 'admin.3dRequests.productionInfo' | translate }}</div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.filamentSpool' | translate }}</label>
+                        <p-select
+                            [(ngModel)]="editUsedSpoolId"
+                            [options]="sortedSpoolDropdownOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            [showClear]="true"
+                            [filter]="true"
+                            filterBy="label"
+                            [filterPlaceholder]="'common.search' | translate"
+                            [disabled]="productionFieldsLocked"
+                            [placeholder]="'admin.3dRequests.noSpoolSelected' | translate"
+                            styleClass="w-full">
+                        </p-select>
+                        <p class="field-hint">{{ 'admin.3dRequests.spoolNamingHint' | translate }}</p>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.estimatedFilamentGrams' | translate }}</label>
+                        <p-inputNumber
+                            [(ngModel)]="editEstimatedGrams"
+                            [min]="0"
+                            [useGrouping]="false"
+                            [showButtons]="false"
+                            [disabled]="productionFieldsLocked"
+                            placeholder="—"
+                            styleClass="w-full">
+                        </p-inputNumber>
+                    </div>
+                    <div class="warn-hints" *ngIf="!productionFieldsLocked && (showLowFilamentWarning || showExceedsWarning)">
+                        <p class="warn-hint" *ngIf="showLowFilamentWarning">
+                            <span aria-hidden="true">⚠️</span> {{ 'admin.3dRequests.warnLowFilament' | translate }}
+                        </p>
+                        <p class="warn-hint" *ngIf="showExceedsWarning">
+                            <span aria-hidden="true">⚠️</span> {{ 'admin.3dRequests.warnMayExceed' | translate }}
+                        </p>
+                    </div>
                 </div>
+
+                <div class="edit-section-card pricing-edit-block">
+                    <div class="section-label">{{ 'admin.3dRequests.pricing' | translate }}</div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.estimatedPrintTimeHours' | translate }}</label>
+                        <p-inputNumber
+                            [(ngModel)]="editPrintTimeHours"
+                            mode="decimal"
+                            [min]="0"
+                            [minFractionDigits]="0"
+                            [maxFractionDigits]="2"
+                            [useGrouping]="false"
+                            [showButtons]="false"
+                            placeholder="—"
+                            styleClass="w-full">
+                        </p-inputNumber>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.hourlyRate' | translate }}</label>
+                        <p-inputNumber
+                            [(ngModel)]="editHourlyRate"
+                            mode="currency"
+                            currency="ILS"
+                            locale="en-IL"
+                            [min]="0"
+                            styleClass="w-full">
+                        </p-inputNumber>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.qualityMultiplier' | translate }}</label>
+                        <input
+                            pInputText
+                            class="w-full readonly-input"
+                            [value]="profileMultiplierDisplay"
+                            readonly
+                            tabindex="-1" />
+                        <p class="field-hint">{{ 'admin.3dRequests.qualityMultiplierHint' | translate }}</p>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.profitMargin' | translate }}</label>
+                        <p-inputNumber
+                            [(ngModel)]="editProfitMargin"
+                            mode="decimal"
+                            [min]="0.01"
+                            [minFractionDigits]="0"
+                            [maxFractionDigits]="3"
+                            [useGrouping]="false"
+                            styleClass="w-full">
+                        </p-inputNumber>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.minimumPrice' | translate }}</label>
+                        <p-inputNumber
+                            [(ngModel)]="editMinimumPrice"
+                            mode="currency"
+                            currency="ILS"
+                            locale="en-IL"
+                            [min]="0"
+                            styleClass="w-full">
+                        </p-inputNumber>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.roundToNearest' | translate }}</label>
+                        <p-select
+                            [(ngModel)]="editRoundToNearest"
+                            [options]="roundStepOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            styleClass="w-full">
+                        </p-select>
+                        <p class="field-hint">{{ 'admin.3dRequests.roundToNearestHint' | translate }}</p>
+                    </div>
+                    <div class="form-field pricing-actions">
+                        <p-button
+                            type="button"
+                            [label]="'admin.3dRequests.calculatePrice' | translate"
+                            icon="pi pi-calculator"
+                            (onClick)="calculateSuggestedPrice()"
+                            [loading]="calculatingPrice"
+                            [outlined]="true">
+                        </p-button>
+                    </div>
+                    <div class="suggested-price-box" *ngIf="editSuggestedPrice != null">
+                        <label>{{ 'admin.3dRequests.suggestedPrice' | translate }}</label>
+                        <span class="suggested-amount">{{ editSuggestedPrice | currency:'ILS' }}</span>
+                        <p class="field-hint">{{ 'admin.3dRequests.suggestedPriceHint' | translate }}</p>
+                    </div>
+                    <div class="pricing-breakdown" *ngIf="pricingBreakdown">
+                        <div class="breakdown-line">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdMaterial' | translate }}</span>
+                            <span class="mono">{{ pricingBreakdown.grams }}g × {{ pricingBreakdown.costPerGram }} = {{ pricingBreakdown.materialCost | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdMachine' | translate }}</span>
+                            <span class="mono">{{ pricingBreakdown.printTimeHours }}h × {{ pricingBreakdown.hourlyRate }} = {{ pricingBreakdown.machineCost | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdBase' | translate }}</span>
+                            <span class="mono">{{ pricingBreakdown.baseCost | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdAfterQuality' | translate }}</span>
+                            <span class="mono">× {{ pricingBreakdown.qualityMultiplier }} → {{ pricingBreakdown.adjustedCost | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdAfterMargin' | translate }}</span>
+                            <span class="mono">× {{ pricingBreakdown.profitMargin }} → {{ pricingBreakdown.afterMargin | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line" *ngIf="pricingBreakdown.minimumApplied">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdMinimum' | translate }}</span>
+                            <span class="mono">≥ {{ pricingBreakdown.minimumPrice | currency:'ILS' }} → {{ pricingBreakdown.afterMinimum | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line" *ngIf="pricingBreakdown.roundingApplied && pricingBreakdown.roundStep">
+                            <span class="bd-label">{{ 'admin.3dRequests.bdRound' | translate }}</span>
+                            <span class="mono">{{ 'admin.3dRequests.bdRoundStep' | translate: { step: pricingBreakdown.roundStep } }} → {{ pricingBreakdown.suggestedPrice | currency:'ILS' }}</span>
+                        </div>
+                        <div class="breakdown-line breakdown-total">
+                            <span>{{ 'admin.3dRequests.breakdownFinalSuggested' | translate }}: {{ pricingBreakdown.suggestedPrice | currency:'ILS' }}</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>{{ 'admin.3dRequests.finalPrice' | translate }}</label>
+                        <p-inputNumber
+                            [(ngModel)]="editFinalPrice"
+                            mode="currency"
+                            currency="ILS"
+                            locale="en-IL"
+                            styleClass="w-full">
+                        </p-inputNumber>
+                    </div>
+                </div>
+
+                <div class="edit-section-card system-status-block">
+                    <div class="section-label">{{ 'admin.3dRequests.systemStatus' | translate }}</div>
+                    <div class="system-status-row">
+                        <span class="system-status-label">{{ 'admin.3dRequests.filamentDeducted' | translate }}</span>
+                        <p-tag
+                            [value]="(selectedRequest.isFilamentDeducted ? 'admin.3dRequests.yes' : 'admin.3dRequests.no') | translate"
+                            [severity]="selectedRequest.isFilamentDeducted ? 'success' : 'secondary'">
+                        </p-tag>
+                    </div>
+                </div>
+
                 <div class="form-field">
                     <label>{{ 'admin.3dRequests.adminNotes' | translate }}</label>
                     <textarea 
@@ -349,9 +563,89 @@ import { environment } from '../../../../environments/environment';
         .price { font-weight: 600; color: #667eea; }
         .price.final { color: #764ba2; }
 
+        .production-section .section-label,
+        .production-edit-block .section-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .production-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 0.25rem;
+        }
+        .production-grid--three {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        @media (max-width: 640px) {
+            .production-grid--three { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 500px) {
+            .production-grid:not(.production-grid--three) { grid-template-columns: 1fr; }
+        }
+
         .edit-content { padding: 0.5rem 0; }
         .form-field { margin-bottom: 1rem; }
         .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .edit-section-card {
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(248, 250, 252, 0.85);
+        }
+        .system-status-block .system-status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .system-status-label { font-size: 0.875rem; color: #475569; font-weight: 500; }
+        .field-hint {
+            margin: 0.35rem 0 0;
+            font-size: 0.75rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .warn-hints { margin-top: 0.25rem; }
+        .warn-hint {
+            margin: 0.25rem 0 0;
+            font-size: 0.8rem;
+            color: #b45309;
+            line-height: 1.4;
+        }
+        .production-edit-block { margin-bottom: 1rem; }
+        .production-edit-block .form-field:last-of-type { margin-bottom: 0; }
+        .pricing-edit-block .pricing-actions { margin-bottom: 0.75rem; }
+        .readonly-input { cursor: default; opacity: 0.95; }
+        .suggested-price-box {
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.25);
+        }
+        .suggested-price-box label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+        .suggested-amount { display: block; font-size: 1.35rem; font-weight: 700; color: #4f46e5; margin-top: 0.25rem; }
+        .pricing-breakdown {
+            margin-bottom: 1rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+        .breakdown-line { font-size: 0.8rem; color: #334155; margin: 0.2rem 0; }
+        .breakdown-line .mono { font-family: ui-monospace, monospace; }
+        .breakdown-total { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(148, 163, 184, 0.4); font-weight: 600; color: #1e293b; }
+        .breakdown-line .bd-label { display: inline-block; min-width: 9.5rem; margin-right: 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; vertical-align: top; }
+        .pricing-view-section { margin-top: 0.25rem; }
+        .pricing-view-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.35rem; }
+        .price.suggested-view { color: #4f46e5; font-weight: 600; }
     `]
 })
 export class ThreeDRequestsListComponent implements OnInit {
@@ -391,6 +685,128 @@ export class ThreeDRequestsListComponent implements OnInit {
     editStatus: Print3dRequestStatus = Print3dRequestStatus.Pending;
     editFinalPrice: number | null = null;
     editNotes = '';
+    editEstimatedGrams: number | null = null;
+    /** Selected spool id, or undefined when cleared */
+    editUsedSpoolId?: string | null;
+    filamentSpools: FilamentSpool[] = [];
+
+    editPrintTimeHours: number | null = null;
+    editHourlyRate = environment.print3dDefaultHourlyRate;
+    editProfitMargin = environment.print3dDefaultProfitMargin;
+    editMinimumPrice = environment.print3dDefaultMinimumPrice;
+    /** 0 = no rounding; otherwise step (e.g. 5). */
+    editRoundToNearest = environment.print3dDefaultRoundToNearest;
+    editSuggestedPrice: number | null = null;
+    pricingBreakdown: Print3dPricingSuggestionResponse | null = null;
+    calculatingPrice = false;
+
+    roundStepOptions: { label: string; value: number }[] = [
+        { label: '5', value: 5 },
+        { label: '1', value: 1 },
+        { label: '0.5', value: 0.5 },
+        { label: '—', value: 0 }
+    ];
+
+    /** Spool / estimated locked after server-side filament deduction. */
+    get productionFieldsLocked(): boolean {
+        return !!this.selectedRequest?.isFilamentDeducted;
+    }
+
+    get sortedSpoolDropdownOptions(): { label: string; value: string }[] {
+        const reqMat = this.selectedRequest?.materialId;
+        const sorted = [...this.filamentSpools].sort((a, b) => {
+            const aSame = reqMat && a.materialId === reqMat ? 1 : 0;
+            const bSame = reqMat && b.materialId === reqMat ? 1 : 0;
+            if (aSame !== bSame) {
+                return bSame - aSame;
+            }
+            return b.remainingWeightGrams - a.remainingWeightGrams;
+        });
+        return sorted.map((s) => ({
+            label: this.formatSpoolLabel(s),
+            value: s.id
+        }));
+    }
+
+    get selectedEditSpool(): FilamentSpool | undefined {
+        if (!this.editUsedSpoolId) {
+            return undefined;
+        }
+        return this.filamentSpools.find((s) => s.id === this.editUsedSpoolId);
+    }
+
+    get showLowFilamentWarning(): boolean {
+        const s = this.selectedEditSpool;
+        return !!s && s.remainingWeightGrams < 100;
+    }
+
+    get showExceedsWarning(): boolean {
+        const s = this.selectedEditSpool;
+        const est = this.editEstimatedGrams;
+        if (!s || est == null) {
+            return false;
+        }
+        return est > s.remainingWeightGrams;
+    }
+
+    get profileMultiplierDisplay(): string {
+        const m = this.selectedRequest?.profilePriceMultiplier;
+        if (m === undefined || m === null) {
+            return '—';
+        }
+        return String(m);
+    }
+
+    calculateSuggestedPrice() {
+        if (!this.selectedRequest) {
+            return;
+        }
+        const hours = this.editPrintTimeHours;
+        if (hours == null || hours <= 0) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translateService.instant('common.warning'),
+                detail: this.translateService.instant('admin.3dRequests.pricingNeedTime')
+            });
+            return;
+        }
+        const grams = this.editEstimatedGrams ?? this.selectedRequest.estimatedFilamentGrams;
+        if (grams == null || grams < 0) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translateService.instant('common.warning'),
+                detail: this.translateService.instant('admin.3dRequests.pricingNeedGrams')
+            });
+            return;
+        }
+
+        this.calculatingPrice = true;
+        this.printingApiService
+            .suggestPrint3dPricing(this.selectedRequest.id, {
+                estimatedPrintTimeHours: hours,
+                hourlyRate: this.editHourlyRate,
+                profileId: this.selectedRequest.profileId ?? null,
+                estimatedFilamentGrams: grams,
+                profitMargin: this.editProfitMargin,
+                minimumPrice: this.editMinimumPrice,
+                roundToNearest: this.editRoundToNearest
+            })
+            .subscribe({
+                next: (res) => {
+                    this.calculatingPrice = false;
+                    this.editSuggestedPrice = res.suggestedPrice;
+                    this.pricingBreakdown = res;
+                },
+                error: () => {
+                    this.calculatingPrice = false;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: this.translateService.instant('messages.error'),
+                        detail: this.translateService.instant('admin.3dRequests.pricingCalcError')
+                    });
+                }
+            });
+    }
 
     get viewDialogHeader(): string {
         return this.translateService.instant('admin.3dRequests.viewDetails');
@@ -402,6 +818,24 @@ export class ThreeDRequestsListComponent implements OnInit {
 
     ngOnInit() {
         this.loadRequests();
+        this.loadFilamentSpools();
+    }
+
+    private loadFilamentSpools() {
+        this.printingApiService.getFilamentSpools().subscribe({
+            next: (rows) => {
+                this.filamentSpools = rows ?? [];
+            },
+            error: () => {
+                this.filamentSpools = [];
+            }
+        });
+    }
+
+    formatSpoolLabel(s: FilamentSpool): string {
+        const material = s.materialNameEn || '?';
+        const spoolName = s.name?.trim() ? s.name.trim() : '—';
+        return `${material} — ${spoolName} (${s.remainingWeightGrams}g)`;
     }
 
     loadRequests() {
@@ -441,7 +875,17 @@ export class ThreeDRequestsListComponent implements OnInit {
         this.selectedRequest = request;
         this.editStatus = request.status as Print3dRequestStatus;
         this.editFinalPrice = request.finalPrice || null;
-        this.editNotes = '';
+        this.editNotes = request.adminNotes ?? '';
+        this.editEstimatedGrams = request.estimatedFilamentGrams ?? null;
+        this.editUsedSpoolId = request.usedSpoolId ?? undefined;
+        this.editPrintTimeHours = request.estimatedPrintTimeHours ?? null;
+        this.editHourlyRate = environment.print3dDefaultHourlyRate;
+        this.editProfitMargin = environment.print3dDefaultProfitMargin;
+        this.editMinimumPrice = environment.print3dDefaultMinimumPrice;
+        this.editRoundToNearest = environment.print3dDefaultRoundToNearest;
+        this.editSuggestedPrice = request.suggestedPrice ?? null;
+        this.pricingBreakdown = null;
+        this.loadFilamentSpools();
         this.showEditDialog = true;
     }
 
@@ -452,12 +896,17 @@ export class ThreeDRequestsListComponent implements OnInit {
         this.printingApiService.updateRequestStatus(this.selectedRequest.id, {
             status: this.editStatus,
             notes: this.editNotes || undefined,
-            finalPrice: this.editFinalPrice || undefined
+            finalPrice: this.editFinalPrice || undefined,
+            usedSpoolId: this.editUsedSpoolId ?? null,
+            estimatedFilamentGrams: this.editEstimatedGrams ?? null,
+            estimatedPrintTimeHours: this.editPrintTimeHours ?? null,
+            suggestedPrice: this.editSuggestedPrice ?? null
         }).subscribe({
             next: () => {
                 this.saving = false;
                 this.showEditDialog = false;
                 this.loadRequests();
+                this.loadFilamentSpools();
                 this.messageService.add({
                     severity: 'success',
                     summary: this.translateService.instant('messages.success'),
