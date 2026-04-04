@@ -15,6 +15,8 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { Router } from '@angular/router';
 import { Order, OrderListResponse, OrderStatus } from '../../../shared/models/order.model';
 import { LanguageService } from '../../../shared/services/language.service';
+import { MabaInvoicePdfService } from '../../../shared/services/maba-invoice-pdf.service';
+import { mapOrderToMabaInvoice } from '../../../shared/utils/map-order-to-maba-invoice';
 
 @Component({
     selector: 'app-account-orders',
@@ -587,6 +589,7 @@ export class AccountOrdersComponent implements OnInit {
     private messageService = inject(MessageService);
     private translateService = inject(TranslateService);
     public languageService = inject(LanguageService);
+    private mabaInvoicePdf = inject(MabaInvoicePdfService);
 
     ngOnInit() {
         this.loadUser();
@@ -665,19 +668,26 @@ export class AccountOrdersComponent implements OnInit {
     }
 
     downloadInvoice(orderId: string) {
-        this.ordersApiService.downloadInvoice(orderId).subscribe({
-            next: (blob) => {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `invoice-${orderId}.pdf`;
-                link.click();
-                window.URL.revokeObjectURL(url);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.translateService.instant('messages.success'),
-                    detail: this.translateService.instant('account.orders.invoiceDownloaded')
-                });
+        this.ordersApiService.getOrderById(orderId).subscribe({
+            next: async (order) => {
+                try {
+                    const lang = this.languageService.language === 'ar' ? 'ar' : 'en';
+                    const doc = mapOrderToMabaInvoice(order, lang);
+                    const blob = await this.mabaInvoicePdf.generatePdf(doc);
+                    const safeNum = (order.orderNumber || orderId).replace(/[^\w.-]/g, '_');
+                    this.mabaInvoicePdf.downloadBlob(blob, `MABA-invoice-${safeNum}.pdf`);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.translateService.instant('messages.success'),
+                        detail: this.translateService.instant('account.orders.invoiceDownloaded')
+                    });
+                } catch {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: this.translateService.instant('messages.error'),
+                        detail: this.translateService.instant('messages.loadError')
+                    });
+                }
             },
             error: () => {
                 this.messageService.add({

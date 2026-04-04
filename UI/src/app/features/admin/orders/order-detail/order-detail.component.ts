@@ -15,6 +15,11 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrdersApiService } from '../../../../shared/services/orders-api.service';
 import { Order } from '../../../../shared/models/order.model';
 import { LanguageService } from '../../../../shared/services/language.service';
+import { DialogModule } from 'primeng/dialog';
+import { MabaInvoicePreviewComponent } from '../../../../shared/components/maba-invoice-preview/maba-invoice-preview.component';
+import { MabaInvoicePdfService } from '../../../../shared/services/maba-invoice-pdf.service';
+import { mapOrderToMabaInvoice } from '../../../../shared/utils/map-order-to-maba-invoice';
+import { MabaInvoiceDocument } from '../../../../shared/models/maba-invoice.model';
 
 @Component({
     selector: 'app-order-detail',
@@ -30,12 +35,37 @@ import { LanguageService } from '../../../../shared/services/language.service';
         ToastModule,
         TagModule,
         TranslateModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DialogModule,
+        MabaInvoicePreviewComponent
     ],
     providers: [MessageService, ConfirmationService],
     template: `
         <p-toast />
         <p-confirmDialog />
+        <p-dialog
+            [(visible)]="invoicePreviewVisible"
+            [modal]="true"
+            [draggable]="false"
+            [resizable]="false"
+            [style]="{ width: 'min(96vw, 920px)' }"
+            [header]="'admin.orders.invoicePreview' | translate"
+            [dismissableMask]="true">
+            <app-maba-invoice-preview [invoice]="invoiceDocument" />
+            <div class="invoice-dialog-actions">
+                <p-button
+                    [label]="'admin.orders.downloadInvoicePdf' | translate"
+                    icon="pi pi-download"
+                    (onClick)="downloadInvoicePdf()"
+                    [loading]="downloadingInvoice" />
+                <p-button
+                    [label]="'admin.orders.openInvoicePdf' | translate"
+                    icon="pi pi-external-link"
+                    [outlined]="true"
+                    (onClick)="openInvoicePdfTab()"
+                    [disabled]="downloadingInvoice" />
+            </div>
+        </p-dialog>
         <div class="order-detail-container">
             <!-- Header -->
             <div class="order-header">
@@ -255,14 +285,19 @@ import { LanguageService } from '../../../../shared/services/language.service';
                                 </div>
                                 
                                 <div class="action-divider"></div>
-                                
-                                <p-button 
-                                    [label]="'admin.orders.downloadInvoice' | translate" 
+                                <p-button
+                                    [label]="'admin.orders.previewInvoice' | translate"
+                                    icon="pi pi-eye"
+                                    (onClick)="openInvoicePreview()"
+                                    styleClass="w-full"
+                                ></p-button>
+                                <p-button
+                                    [label]="'admin.orders.downloadInvoice' | translate"
                                     icon="pi pi-download"
                                     [outlined]="true"
-                                    (onClick)="downloadInvoice()"
+                                    (onClick)="downloadInvoicePdf()"
                                     [loading]="downloadingInvoice"
-                                    styleClass="w-full"
+                                    styleClass="w-full mt-2"
                                 ></p-button>
                             </div>
                         </p-card>
@@ -681,6 +716,16 @@ import { LanguageService } from '../../../../shared/services/language.service';
             margin: 0.5rem 0;
         }
 
+        .invoice-dialog-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--surface-border);
+        }
+
         /* Mobile optimizations */
         @media (max-width: 575px) {
             .order-detail-container {
@@ -749,6 +794,8 @@ export class OrderDetailComponent implements OnInit {
     selectedStatusId: string = '';
     updatingStatus = false;
     downloadingInvoice = false;
+    invoicePreviewVisible = false;
+    invoiceDocument: MabaInvoiceDocument | null = null;
 
     private route = inject(ActivatedRoute);
     private router = inject(Router);
@@ -757,6 +804,7 @@ export class OrderDetailComponent implements OnInit {
     private confirmationService = inject(ConfirmationService);
     private translateService = inject(TranslateService);
     private languageService = inject(LanguageService);
+    private mabaInvoicePdf = inject(MabaInvoicePdfService);
 
     ngOnInit() {
         const orderId = this.route.snapshot.paramMap.get('id');
@@ -1001,29 +1049,56 @@ export class OrderDetailComponent implements OnInit {
         return this.translateService.instant('messages.errorUpdatingOrderStatus');
     }
 
-    downloadInvoice() {
-        if (!this.order) return;
+    private buildInvoiceDocument(): MabaInvoiceDocument | null {
+        if (!this.order) return null;
+        const lang = this.languageService.language === 'ar' ? 'ar' : 'en';
+        return mapOrderToMabaInvoice(this.order, lang);
+    }
 
+    openInvoicePreview() {
+        this.invoiceDocument = this.buildInvoiceDocument();
+        this.invoicePreviewVisible = !!this.invoiceDocument;
+    }
+
+    async downloadInvoicePdf() {
+        const doc = this.buildInvoiceDocument();
+        if (!doc) return;
         this.downloadingInvoice = true;
-        this.ordersApiService.downloadInvoice(this.order.id).subscribe({
-            next: (blob) => {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `invoice-${this.displayOrderNumber}.pdf`;
-                link.click();
-                window.URL.revokeObjectURL(url);
-                this.downloadingInvoice = false;
-            },
-            error: () => {
-                this.downloadingInvoice = false;
-                this.messageService.add({
-                    severity: 'error',
-                    summary: this.translateService.instant('common.error'),
-                    detail: this.translateService.instant('messages.loadError')
-                });
-            }
-        });
+        try {
+            const blob = await this.mabaInvoicePdf.generatePdf(doc);
+            this.mabaInvoicePdf.downloadBlob(blob, `invoice-${this.displayOrderNumber}.pdf`);
+            this.messageService.add({
+                severity: 'success',
+                summary: this.translateService.instant('common.success'),
+                detail: this.translateService.instant('admin.orders.invoicePdfReady')
+            });
+        } catch {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.translateService.instant('common.error'),
+                detail: this.translateService.instant('messages.loadError')
+            });
+        } finally {
+            this.downloadingInvoice = false;
+        }
+    }
+
+    async openInvoicePdfTab() {
+        const doc = this.invoiceDocument || this.buildInvoiceDocument();
+        if (!doc) return;
+        this.downloadingInvoice = true;
+        try {
+            const blob = await this.mabaInvoicePdf.generatePdf(doc);
+            this.mabaInvoicePdf.openInNewTab(blob);
+        } catch {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.translateService.instant('common.error'),
+                detail: this.translateService.instant('messages.loadError')
+            });
+        } finally {
+            this.downloadingInvoice = false;
+        }
     }
 
     getStatusSeverity(statusKey: string): "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | null | undefined {

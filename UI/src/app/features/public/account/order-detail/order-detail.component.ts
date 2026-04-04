@@ -11,6 +11,11 @@ import { OrdersApiService } from '../../../../shared/services/orders-api.service
 import { CartService } from '../../../../shared/services/cart.service';
 import { Order } from '../../../../shared/models/order.model';
 import { LanguageService } from '../../../../shared/services/language.service';
+import { DialogModule } from 'primeng/dialog';
+import { MabaInvoicePreviewComponent } from '../../../../shared/components/maba-invoice-preview/maba-invoice-preview.component';
+import { MabaInvoicePdfService } from '../../../../shared/services/maba-invoice-pdf.service';
+import { mapOrderToMabaInvoice } from '../../../../shared/utils/map-order-to-maba-invoice';
+import { MabaInvoiceDocument } from '../../../../shared/models/maba-invoice.model';
 
 @Component({
     selector: 'app-order-detail',
@@ -22,11 +27,33 @@ import { LanguageService } from '../../../../shared/services/language.service';
         ButtonModule,
         TagModule,
         ToastModule,
-        TranslateModule
+        TranslateModule,
+        DialogModule,
+        MabaInvoicePreviewComponent
     ],
     providers: [MessageService],
     template: `
         <p-toast />
+        <p-dialog
+            [(visible)]="invoicePreviewVisible"
+            [modal]="true"
+            [draggable]="false"
+            [resizable]="false"
+            [style]="{ width: 'min(96vw, 920px)' }"
+            [header]="languageService.language === 'ar' ? 'معاينة الفاتورة' : 'Invoice preview'"
+            [dismissableMask]="true">
+            <app-maba-invoice-preview [invoice]="invoiceDocument" />
+            <div class="invoice-dialog-actions">
+                <button type="button" class="action-btn primary" (click)="downloadInvoicePdf()" [disabled]="downloadingInvoice">
+                    <i class="pi pi-download"></i>
+                    {{ languageService.language === 'ar' ? 'تحميل PDF' : 'Download PDF' }}
+                </button>
+                <button type="button" class="action-btn secondary" (click)="openInvoicePdfTab()" [disabled]="downloadingInvoice">
+                    <i class="pi pi-external-link"></i>
+                    {{ languageService.language === 'ar' ? 'فتح PDF' : 'Open PDF' }}
+                </button>
+            </div>
+        </p-dialog>
         <div class="order-detail-page" [dir]="languageService.direction">
             <!-- Hero Section -->
             <section class="hero-section">
@@ -200,9 +227,13 @@ import { LanguageService } from '../../../../shared/services/language.service';
                                 <!-- Actions -->
                                 <div class="actions-card">
                                     <h3>{{ languageService.language === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
-                                    <button class="action-btn primary" (click)="downloadInvoice()">
+                                    <button type="button" class="action-btn secondary" (click)="openInvoicePreview()">
+                                        <i class="pi pi-eye"></i>
+                                        {{ languageService.language === 'ar' ? 'معاينة الفاتورة' : 'Preview invoice' }}
+                                    </button>
+                                    <button type="button" class="action-btn primary" (click)="downloadInvoicePdf()" [disabled]="downloadingInvoice">
                                         <i class="pi pi-download"></i>
-                                        {{ languageService.language === 'ar' ? 'تحميل الفاتورة' : 'Download Invoice' }}
+                                        {{ languageService.language === 'ar' ? 'تحميل الفاتورة (PDF)' : 'Download invoice (PDF)' }}
                                     </button>
                                     <button *ngIf="canReorder(order)" class="action-btn secondary" (click)="reorder()">
                                         <i class="pi pi-refresh"></i>
@@ -657,6 +688,16 @@ import { LanguageService } from '../../../../shared/services/language.service';
             color: white;
         }
 
+        .invoice-dialog-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--surface-border);
+        }
+
         /* Error State */
         .error-state {
             text-align: center;
@@ -742,6 +783,9 @@ export class OrderDetailComponent implements OnInit {
     order: Order | null = null;
     loading = false;
     isSuccess = false;
+    invoicePreviewVisible = false;
+    invoiceDocument: MabaInvoiceDocument | null = null;
+    downloadingInvoice = false;
 
     private route = inject(ActivatedRoute);
     private router = inject(Router);
@@ -750,6 +794,7 @@ export class OrderDetailComponent implements OnInit {
     private messageService = inject(MessageService);
     private translateService = inject(TranslateService);
     public languageService = inject(LanguageService);
+    private mabaInvoicePdf = inject(MabaInvoicePdfService);
 
     ngOnInit() {
         // Check for success query param
@@ -793,30 +838,56 @@ export class OrderDetailComponent implements OnInit {
         img.src = 'assets/img/defult.png';
     }
 
-    downloadInvoice() {
-        if (!this.order) return;
-        this.ordersApiService.downloadInvoice(this.order.id).subscribe({
-            next: (blob) => {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `invoice-${this.order!.orderNumber}.pdf`;
-                link.click();
-                window.URL.revokeObjectURL(url);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.languageService.language === 'ar' ? 'تم!' : 'Done!',
-                    detail: this.languageService.language === 'ar' ? 'تم تحميل الفاتورة' : 'Invoice downloaded'
-                });
-            },
-            error: () => {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: this.languageService.language === 'ar' ? 'خطأ' : 'Error',
-                    detail: this.languageService.language === 'ar' ? 'فشل تحميل الفاتورة' : 'Failed to download invoice'
-                });
-            }
-        });
+    private buildInvoiceDocument(): MabaInvoiceDocument | null {
+        if (!this.order) return null;
+        const lang = this.languageService.language === 'ar' ? 'ar' : 'en';
+        return mapOrderToMabaInvoice(this.order, lang);
+    }
+
+    openInvoicePreview() {
+        this.invoiceDocument = this.buildInvoiceDocument();
+        this.invoicePreviewVisible = !!this.invoiceDocument;
+    }
+
+    async downloadInvoicePdf() {
+        const doc = this.buildInvoiceDocument();
+        if (!doc) return;
+        this.downloadingInvoice = true;
+        try {
+            const blob = await this.mabaInvoicePdf.generatePdf(doc);
+            this.mabaInvoicePdf.downloadBlob(blob, `invoice-${this.order!.orderNumber}.pdf`);
+            this.messageService.add({
+                severity: 'success',
+                summary: this.languageService.language === 'ar' ? 'تم!' : 'Done!',
+                detail: this.languageService.language === 'ar' ? 'تم تحميل الفاتورة' : 'Invoice downloaded'
+            });
+        } catch {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.languageService.language === 'ar' ? 'خطأ' : 'Error',
+                detail: this.languageService.language === 'ar' ? 'فشل إنشاء الفاتورة' : 'Could not generate invoice'
+            });
+        } finally {
+            this.downloadingInvoice = false;
+        }
+    }
+
+    async openInvoicePdfTab() {
+        const doc = this.invoiceDocument || this.buildInvoiceDocument();
+        if (!doc) return;
+        this.downloadingInvoice = true;
+        try {
+            const blob = await this.mabaInvoicePdf.generatePdf(doc);
+            this.mabaInvoicePdf.openInNewTab(blob);
+        } catch {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.languageService.language === 'ar' ? 'خطأ' : 'Error',
+                detail: this.languageService.language === 'ar' ? 'فشل إنشاء الفاتورة' : 'Could not generate invoice'
+            });
+        } finally {
+            this.downloadingInvoice = false;
+        }
     }
 
     reorder() {

@@ -1810,7 +1810,13 @@
       "updateStatus": "تحديث الحالة",
       "statusUpdated": "تم تحديث حالة الطلب بنجاح",
       "confirmCancelStatus": "تأكيد إلغاء هذا الطلب؟ سيرى العميل الطلب كملغى.",
-      "confirmDeliveredStatus": "تأكيد تسليم الطلب؟ تأكد من أن العميل استلم الشحنة قبل التأكيد."
+      "confirmDeliveredStatus": "تأكيد تسليم الطلب؟ تأكد من أن العميل استلم الشحنة قبل التأكيد.",
+      "downloadInvoice": "تحميل الفاتورة",
+      "previewInvoice": "معاينة الفاتورة",
+      "invoicePreview": "معاينة الفاتورة",
+      "downloadInvoicePdf": "تحميل PDF",
+      "openInvoicePdf": "فتح PDF في تبويب جديد",
+      "invoicePdfReady": "تم إنشاء ملف الفاتورة"
     },
     "users": {
       "title": "إدارة المستخدمين",
