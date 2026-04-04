@@ -107,9 +107,7 @@ export class OrdersApiService {
         return this.http.post<Order>(`${this.baseUrl}/orders/${id}/notes`, request);
     }
 
-    downloadInvoice(id: string): Observable<Blob> {
-        return this.http.get(`${this.baseUrl}/orders/${id}/invoice`, { responseType: 'blob' });
-    }
+    /** Store invoices are generated in the browser (see MabaInvoicePdfService). No server /invoice route. */
 
     getOrderStatuses(): Observable<any[]> {
         return this.http.get<any[]>(`${this.baseUrl}/orders/statuses`);

@@ -250,6 +250,13 @@
     "unique": "This value already exists"
   },
   "messages": {
+    "success": "Success",
+    "error": "Error",
+    "loadError": "Could not load data. Please try again.",
+    "saveError": "Could not save data. Please try again.",
+    "deleteError": "Could not delete data. Please try again.",
+    "errorLoadingOrderDetail": "Could not load order details.",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
     "itemCreatedSuccessfully": "Item created successfully",
     "itemUpdatedSuccessfully": "Item updated successfully",
     "itemDeletedSuccessfully": "Item deleted successfully",
@@ -1808,6 +1815,7 @@
       "downloadInvoicePdf": "Download PDF",
       "openInvoicePdf": "Open PDF in new tab",
       "invoicePdfReady": "Invoice PDF is ready",
+      "invoicePdfError": "Could not generate the invoice PDF. If this continues, try another browser or disable extensions.",
       "search": "Search",
       "searchPlaceholder": "Search by order number, customer...",
       "allStatuses": "All Statuses",

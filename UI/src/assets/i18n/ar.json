@@ -1816,7 +1816,8 @@
       "invoicePreview": "معاينة الفاتورة",
       "downloadInvoicePdf": "تحميل PDF",
       "openInvoicePdf": "فتح PDF في تبويب جديد",
-      "invoicePdfReady": "تم إنشاء ملف الفاتورة"
+      "invoicePdfReady": "تم إنشاء ملف الفاتورة",
+      "invoicePdfError": "تعذر إنشاء ملف الفاتورة. جرّب متصفحاً آخر أو عطّل الإضافات إذا تكرر الخطأ."
     },
     "users": {
       "title": "إدارة المستخدمين",

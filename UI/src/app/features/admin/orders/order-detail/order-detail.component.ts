@@ -1076,7 +1076,7 @@ export class OrderDetailComponent implements OnInit {
             this.messageService.add({
                 severity: 'error',
                 summary: this.translateService.instant('common.error'),
-                detail: this.translateService.instant('messages.loadError')
+                detail: this.translateService.instant('admin.orders.invoicePdfError')
             });
         } finally {
             this.downloadingInvoice = false;
@@ -1094,7 +1094,7 @@ export class OrderDetailComponent implements OnInit {
             this.messageService.add({
                 severity: 'error',
                 summary: this.translateService.instant('common.error'),
-                detail: this.translateService.instant('messages.loadError')
+                detail: this.translateService.instant('admin.orders.invoicePdfError')
             });
         } finally {
             this.downloadingInvoice = false;
