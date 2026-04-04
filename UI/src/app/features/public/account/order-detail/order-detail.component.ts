@@ -36,6 +36,7 @@ import { MabaInvoiceDocument } from '../../../../shared/models/maba-invoice.mode
         <p-toast />
         <p-dialog
             [(visible)]="invoicePreviewVisible"
+            [appendTo]="'body'"
             [modal]="true"
             [draggable]="false"
             [resizable]="false"

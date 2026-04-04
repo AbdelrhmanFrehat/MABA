@@ -45,6 +45,7 @@ import { MabaInvoiceDocument } from '../../../../shared/models/maba-invoice.mode
         <p-confirmDialog />
         <p-dialog
             [(visible)]="invoicePreviewVisible"
+            [appendTo]="'body'"
             [modal]="true"
             [draggable]="false"
             [resizable]="false"
@@ -1056,13 +1057,47 @@ export class OrderDetailComponent implements OnInit {
     }
 
     openInvoicePreview() {
-        this.invoiceDocument = this.buildInvoiceDocument();
-        this.invoicePreviewVisible = !!this.invoiceDocument;
+        try {
+            this.invoiceDocument = this.buildInvoiceDocument();
+            this.invoicePreviewVisible = !!this.invoiceDocument;
+            if (!this.invoiceDocument) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: this.translateService.instant('common.warning'),
+                    detail: this.translateService.instant('messages.errorLoadingOrderDetail')
+                });
+            }
+        } catch {
+            this.invoiceDocument = null;
+            this.invoicePreviewVisible = false;
+            this.messageService.add({
+                severity: 'error',
+                summary: this.translateService.instant('common.error'),
+                detail: this.translateService.instant('messages.unexpectedError')
+            });
+        }
     }
 
     async downloadInvoicePdf() {
-        const doc = this.buildInvoiceDocument();
-        if (!doc) return;
+        let doc: MabaInvoiceDocument | null = null;
+        try {
+            doc = this.buildInvoiceDocument();
+        } catch {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.translateService.instant('common.error'),
+                detail: this.translateService.instant('messages.unexpectedError')
+            });
+            return;
+        }
+        if (!doc) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translateService.instant('common.warning'),
+                detail: this.translateService.instant('messages.errorLoadingOrderDetail')
+            });
+            return;
+        }
         this.downloadingInvoice = true;
         try {
             const blob = await this.mabaInvoicePdf.generatePdf(doc);
@@ -1084,7 +1119,19 @@ export class OrderDetailComponent implements OnInit {
     }
 
     async openInvoicePdfTab() {
-        const doc = this.invoiceDocument || this.buildInvoiceDocument();
+        let doc: MabaInvoiceDocument | null = this.invoiceDocument;
+        if (!doc) {
+            try {
+                doc = this.buildInvoiceDocument();
+            } catch {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.translateService.instant('common.error'),
+                    detail: this.translateService.instant('messages.unexpectedError')
+                });
+                return;
+            }
+        }
         if (!doc) return;
         this.downloadingInvoice = true;
         try {

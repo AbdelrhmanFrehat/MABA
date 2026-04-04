@@ -77,7 +77,11 @@ export const appConfig: ApplicationConfig = {
         provideRouter(appRoutes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }), withEnabledBlockingInitialNavigation()),
         provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
         provideAnimationsAsync(),
-        providePrimeNG({ theme: { preset: mabaAuraPreset, options: { darkModeSelector: '.app-dark' } } }),
+        providePrimeNG({
+            theme: { preset: mabaAuraPreset, options: { darkModeSelector: '.app-dark' } },
+            /** Default 'self' leaves overlays inside routed views; they can be clipped or invisible. */
+            overlayAppendTo: 'body'
+        }),
         importProvidersFrom(
             TranslateModule.forRoot({
                 defaultLanguage: 'en'

@@ -1,4 +1,4 @@
-import { Order, PaymentStatus } from '../models/order.model';
+import { Order, OrderNote, PaymentStatus } from '../models/order.model';
 import { MabaInvoiceDocument, MabaInvoiceLineItem, MabaInvoiceStatus } from '../models/maba-invoice.model';
 import {
     MABA_INVOICE_COMPANY,
@@ -20,6 +20,20 @@ function paymentStatusToInvoice(order: Order | Record<string, unknown>): { statu
         return { status: 'refunded', label: 'Refunded' };
     if (s === PaymentStatus.Failed.toLowerCase() || s === 'failed') return { status: 'unpaid', label: 'Unpaid' };
     return { status: 'unpaid', label: 'Unpaid' };
+}
+
+/** API may send notes as an object, null, or omit; never assume an array. */
+function asOrderNoteList(raw: unknown): OrderNote[] {
+    if (raw == null) return [];
+    if (Array.isArray(raw)) return raw as OrderNote[];
+    return [];
+}
+
+/** Line items may be wrapped or sent as a non-array; avoid .map on non-arrays. */
+function asUnknownItemList(raw: unknown): unknown[] {
+    if (raw == null) return [];
+    if (Array.isArray(raw)) return raw;
+    return [];
 }
 
 function formatAddressLines(order: Order | Record<string, unknown>): string[] {
@@ -46,7 +60,9 @@ export function mapOrderToMabaInvoice(order: Order | Record<string, unknown>, la
     const due = new Date(issue);
     due.setDate(due.getDate() + 14);
 
-    const rawItems = (o['displayOrderItems'] ?? o['items'] ?? o['orderItems'] ?? []) as unknown[];
+    const rawItems = asUnknownItemList(
+        o['displayOrderItems'] ?? o['items'] ?? o['orderItems'] ?? []
+    );
     const lineItems: MabaInvoiceLineItem[] = rawItems.map((raw) => {
         const it = raw as Record<string, unknown>;
         return {
@@ -74,10 +90,10 @@ export function mapOrderToMabaInvoice(order: Order | Record<string, unknown>, la
     const clientPhone = String(o['customerPhone'] ?? ship?.phone ?? '');
     const addrLines = formatAddressLines({ ...(order as Order), shippingAddress: ship } as Order);
 
-    const notesArr = (o['notes'] ?? []) as Order['notes'];
+    const notesArr = asOrderNoteList(o['notes']);
     const notesPublic = notesArr
-        .filter((n) => !n.isInternal)
-        .map((n) => n.note)
+        .filter((note) => !note.isInternal)
+        .map((note) => note.note)
         .filter(Boolean)
         .join('\n');
 
