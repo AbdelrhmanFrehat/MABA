@@ -21,8 +21,7 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             <div class="header-container">
                 <!-- Logo -->
                 <a routerLink="/" class="logo-link">
-                    <img src="assets/img/logo.jpeg" alt="MABA Logo" class="logo-img" />
-                    <span class="logo-text">MABA</span>
+                    <img src="assets/images/maba-hero-logo.png" alt="MABA" class="header-logo-img" width="2048" height="1364" />
                     <span class="beta-chip" [pTooltip]="'beta.tooltip' | translate" tooltipPosition="bottom">{{ 'beta.label' | translate }}</span>
                 </a>
 
@@ -335,44 +334,43 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             height: 64px;
         }
 
-        /* Logo */
+        /* Logo — height drives scale; wide max-width avoids squashing below bar height */
         .logo-link {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             text-decoration: none;
+            flex-shrink: 0;
         }
 
-        .logo-img {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            object-fit: cover;
+        .header-logo-img {
+            display: block;
+            height: 56px;
+            width: auto;
+            max-height: 56px;
+            max-width: min(320px, 72vw);
+            object-fit: contain;
+            object-position: left center;
         }
-
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: 800;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        [dir="rtl"] .header-logo-img {
+            object-position: right center;
         }
 
         .beta-chip {
             display: inline-flex;
             align-items: center;
-            padding: 0.15rem 0.5rem;
-            margin-inline-start: 0.35rem;
-            font-size: 0.65rem;
+            padding: 0.2rem 0.55rem;
+            margin-inline-start: 0.2rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
             color: #667eea;
             border: 1px solid #667eea;
-            border-radius: 10px;
+            border-radius: 999px;
             background: transparent;
             cursor: default;
+            flex-shrink: 0;
         }
 
         /* Navigation */
@@ -853,6 +851,17 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
         @media (max-width: 768px) {
             .header-container {
                 height: 60px;
+            }
+
+            .header-logo-img {
+                height: 48px;
+                max-height: 48px;
+                max-width: min(280px, 78vw);
+            }
+
+            .beta-chip {
+                font-size: 0.68rem;
+                padding: 0.18rem 0.5rem;
             }
 
             .main-nav {

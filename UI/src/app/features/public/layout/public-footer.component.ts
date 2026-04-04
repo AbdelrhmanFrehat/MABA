@@ -19,9 +19,12 @@ import { LanguageService } from '../../../shared/services/language.service';
                         <div class="footer-grid">
                             <div class="footer-brand">
                                 <div class="brand-logo">
-                                    <img src="assets/img/logo.jpeg" alt="MABA Logo" class="logo-img" />
-                                    <span class="logo-text">MABA</span>
-                                    <span class="logo-badge">Engineering</span>
+                                    <img
+                                        src="assets/images/maba-hero-logo.png"
+                                        alt="MABA"
+                                        class="footer-brand-logo-img"
+                                        width="2048"
+                                        height="1364" />
                                 </div>
                                 <p class="brand-description">{{ 'footer.aboutDescription' | translate }}</p>
                                 <div class="social-links">
@@ -81,9 +84,13 @@ import { LanguageService } from '../../../shared/services/language.service';
                     <!-- Mobile layout: compact header + social + accordion -->
                     <div class="footer-mobile">
                         <div class="footer-mobile-header">
-                            <img src="assets/img/logo.jpeg" alt="MABA" class="footer-mobile-logo" />
+                            <img
+                                src="assets/images/maba-hero-logo.png"
+                                alt="MABA"
+                                class="footer-mobile-logo"
+                                width="2048"
+                                height="1364" />
                             <div class="footer-mobile-brand">
-                                <span class="footer-mobile-title">MABA</span>
                                 <p class="footer-mobile-tagline">{{ 'footer.aboutDescription' | translate }}</p>
                             </div>
                         </div>
@@ -234,34 +241,22 @@ import { LanguageService } from '../../../shared/services/language.service';
         .brand-logo {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
             margin-bottom: 1.5rem;
+            min-width: 0;
         }
 
-        .logo-img {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            object-fit: cover;
+        .footer-brand-logo-img {
+            display: block;
+            height: 130px;
+            width: auto;
+            max-height: 130px;
+            max-width: min(650px, 100%);
+            object-fit: contain;
+            object-position: left center;
+            flex-shrink: 0;
         }
-
-        .logo-text {
-            font-size: 2rem;
-            font-weight: 800;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .logo-badge {
-            padding: 0.25rem 0.75rem;
-            background: rgba(102, 126, 234, 0.2);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 50px;
-            font-size: 0.75rem;
-            color: var(--color-primary);
-            font-weight: 600;
+        [dir="rtl"] .footer-brand-logo-img {
+            object-position: right center;
         }
 
         .brand-description {
@@ -503,26 +498,23 @@ import { LanguageService } from '../../../shared/services/language.service';
                 margin-bottom: 0.75rem;
             }
             .footer-mobile-logo {
-                width: 36px;
-                height: 36px;
-                border-radius: 8px;
-                object-fit: cover;
+                width: auto;
+                height: 110px;
+                max-height: 110px;
+                max-width: min(550px, 92vw);
+                border-radius: 0;
+                object-fit: contain;
+                object-position: left center;
                 flex-shrink: 0;
             }
-            .footer-mobile-brand { min-width: 0; }
-            .footer-mobile-title {
-                font-size: 1.25rem;
-                font-weight: 700;
-                background: var(--gradient-primary);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-                display: block;
+            [dir="rtl"] .footer-mobile-logo {
+                object-position: right center;
             }
+            .footer-mobile-brand { min-width: 0; }
             .footer-mobile-tagline {
                 font-size: 0.8rem;
                 color: rgba(255,255,255,0.5);
-                margin: 0.15rem 0 0 0;
+                margin: 0;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;

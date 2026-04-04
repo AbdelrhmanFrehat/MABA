@@ -140,9 +140,10 @@
 }
 
 // Our Direction: 2-column grid (text left, logo right); stacks on mobile
+// minmax(0, …) + min-width:0 — huge intrinsic PNG width must not inflate grid tracks
 .about-direction-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     gap: 40px;
     align-items: center;
 }
@@ -155,12 +156,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 0;
+    max-width: 100%;
 
     img {
-        max-width: 400px;
+        display: block;
         width: 100%;
+        max-width: 400px;
+        height: auto;
         object-fit: contain;
-        filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.12));
+        object-position: center;
+        image-rendering: auto;
     }
 }
 
@@ -171,7 +177,7 @@
     }
 
     .direction-logo img {
-        max-width: min(400px, 90vw);
+        max-width: min(380px, 100%);
     }
 }
 

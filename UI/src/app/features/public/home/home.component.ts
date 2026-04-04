@@ -32,36 +32,52 @@ import { environment } from '../../../../environments/environment';
                 <div class="hero-circle hero-circle-2"></div>
                 <div class="hero-circle hero-circle-3"></div>
                 <app-hero-ticker [items]="heroTickerItems"></app-hero-ticker>
-                <div class="hero-content">
-                    <div class="hero-brand">MABA</div>
-                    <h1 class="hero-main-title">
-                        <span class="hero-title-line1">{{ languageService.language === 'ar' ? 'هندسة أنظمة عالية الأداء' : 'Engineering High-Performance Systems' }}</span>
-                    </h1>
-                    <p class="hero-tagline">{{ languageService.language === 'ar' ? 'روبوتات مخصصة، منصات CNC، أنظمة مدمجة، وحلول صناعية ذكية.' : 'Custom robotics, CNC platforms, embedded systems, and intelligent industrial solutions.' }}</p>
-                    <div class="hero-actions">
-                        <p-button
-                            [label]="languageService.language === 'ar' ? 'ابدأ مشروعك' : 'Start a Project'"
-                            icon="pi pi-arrow-right"
-                            iconPos="right"
-                            routerLink="/projects"
-                            styleClass="hero-btn-primary">
-                        </p-button>
-                        <p-button
-                            [label]="languageService.language === 'ar' ? 'استكشف القدرات' : 'Explore Capabilities'"
-                            icon="pi pi-cog"
-                            iconPos="left"
-                            [outlined]="true"
-                            (onClick)="scrollToSection('capabilities')"
-                            styleClass="hero-btn-secondary">
-                        </p-button>
-                        <p-button
-                            [label]="languageService.language === 'ar' ? 'اتصل بنا' : 'Contact Us'"
-                            icon="pi pi-envelope"
-                            iconPos="left"
-                            [outlined]="true"
-                            routerLink="/contact"
-                            styleClass="hero-btn-secondary">
-                        </p-button>
+                <div class="hero-inner">
+                    <div class="hero-brand-shell">
+                        <div class="hero-brand-row">
+                            <div class="hero-brand-logoCol">
+                                <div class="hero-brand-logoFrame">
+                                    <img
+                                        class="hero-brand-logoImg"
+                                        src="assets/images/maba-hero-logo.png"
+                                        alt="MABA"
+                                        width="2048"
+                                        height="1364"
+                                        loading="eager" />
+                                </div>
+                            </div>
+                            <div class="hero-brand-copy">
+                                <h1 class="hero-brand-heading">
+                                    <span class="hero-brand-titleLine">{{ languageService.language === 'ar' ? 'هندسة أنظمة عالية الأداء' : 'Engineering High-Performance Systems' }}</span>
+                                </h1>
+                                <p class="hero-brand-subtitle">{{ languageService.language === 'ar' ? 'روبوتات مخصصة، منصات CNC، أنظمة مدمجة، وحلول صناعية ذكية.' : 'Custom robotics, CNC platforms, embedded systems, and intelligent industrial solutions.' }}</p>
+                                <div class="hero-actions">
+                                    <p-button
+                                        [label]="languageService.language === 'ar' ? 'ابدأ مشروعك' : 'Start a Project'"
+                                        icon="pi pi-arrow-right"
+                                        iconPos="right"
+                                        routerLink="/projects"
+                                        styleClass="hero-btn-primary">
+                                    </p-button>
+                                    <p-button
+                                        [label]="languageService.language === 'ar' ? 'استكشف القدرات' : 'Explore Capabilities'"
+                                        icon="pi pi-cog"
+                                        iconPos="left"
+                                        [outlined]="true"
+                                        (onClick)="scrollToSection('capabilities')"
+                                        styleClass="hero-btn-secondary">
+                                    </p-button>
+                                    <p-button
+                                        [label]="languageService.language === 'ar' ? 'اتصل بنا' : 'Contact Us'"
+                                        icon="pi pi-envelope"
+                                        iconPos="left"
+                                        [outlined]="true"
+                                        routerLink="/contact"
+                                        styleClass="hero-btn-secondary">
+                                    </p-button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -540,17 +556,17 @@ import { environment } from '../../../../environments/environment';
             padding: 0 1rem;
         }
 
-        /* ============ HERO SECTION - Welcoming style ============ */
+        /* ============ HERO — brand-led row: mark left, copy right (left-weighted band) ============ */
         .hero-section {
             position: relative;
-            min-height: 70vh;
+            min-height: 72vh;
             max-height: 820px;
             box-sizing: border-box;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             justify-content: center;
-            /* Ticker sits just below header (moved up); content starts below ticker */
-            padding: calc(var(--public-header-offset, 70px) + 108px + 1.5rem) 2rem 2.75rem;
+            padding: calc(var(--public-header-offset, 70px) + 108px + 1.5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(2.5rem, 5vh, 3.5rem);
             overflow: hidden;
         }
 
@@ -589,53 +605,137 @@ import { environment } from '../../../../environments/environment';
             transform: translateY(-50%);
         }
 
-        .hero-content {
+        .hero-inner {
             position: relative;
             z-index: 10;
-            text-align: center;
-            max-width: 720px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 1200px;
+            margin-inline: auto;
+            animation: hero-inner-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        .hero-brand {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 900;
-            letter-spacing: 0.06em;
-            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #667eea 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.4rem;
-            text-shadow: 0 0 60px rgba(102, 126, 234, 0.5);
-            line-height: 1;
-            filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.3));
+        @keyframes hero-inner-in {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
 
-        .hero-main-title {
-            margin-bottom: 1rem;
+        /* Outer shell: asymmetric padding balances the wider logo + text spread */
+        .hero-brand-shell {
+            width: 100%;
+            box-sizing: border-box;
+            padding-inline-end: clamp(1.5rem, 5.5vw, 4.75rem);
+            padding-inline-start: 0;
+        }
+
+        .hero-brand-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            gap: clamp(1.75rem, 3.75vw, 3rem);
+        }
+        [dir="rtl"] .hero-brand-row {
+            flex-direction: row-reverse;
+        }
+
+        .hero-brand-logoCol {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            min-width: 0;
+        }
+        /* Slight inward nudge toward the band edge — reset on small screens */
+        [dir="ltr"] .hero-brand-logoCol {
+            margin-inline-start: clamp(-0.5rem, -1.1vw, -0.125rem);
+        }
+        [dir="rtl"] .hero-brand-logoCol {
+            justify-content: flex-end;
+            margin-inline-end: clamp(-0.5rem, -1.1vw, -0.125rem);
+        }
+
+        .hero-brand-logoFrame {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: none;
+            line-height: 0;
+            display: block;
+        }
+
+        /* Logo asset uses transparency (black removed in source file); no blend-mode card effect */
+        .hero-brand-logoImg {
+            display: block;
+            width: auto;
+            height: auto;
+            max-height: clamp(260px, 36vh, 390px);
+            max-width: min(52vw, 546px);
+            object-fit: contain;
+            object-position: left center;
+        }
+        [dir="rtl"] .hero-brand-logoImg {
+            object-position: right center;
+        }
+
+        .hero-brand-copy {
+            flex: 0 1 auto;
+            min-width: 0;
+            max-width: 31rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: start;
+            gap: 0.625rem;
+        }
+        [dir="ltr"] .hero-brand-copy {
+            margin-inline-start: clamp(0.35rem, 1.35vw, 1rem);
+        }
+        [dir="rtl"] .hero-brand-copy {
+            align-items: flex-end;
+            text-align: end;
+            margin-inline-end: clamp(0.35rem, 1.35vw, 1rem);
+        }
+
+        .hero-brand-heading {
+            margin: 0;
             line-height: 1.2;
+            width: 100%;
         }
-        .hero-title-line1 {
+        .hero-brand-titleLine {
             display: block;
             font-size: clamp(1.35rem, 3.5vw, 2.25rem);
             font-weight: 700;
-            color: rgba(255,255,255,0.95);
+            color: rgba(255, 255, 255, 0.95);
             letter-spacing: -0.01em;
-            line-height: 1.3;
+            line-height: 1.28;
         }
 
-        .hero-tagline {
-            font-size: clamp(0.95rem, 1.8vw, 1.15rem);
-            color: rgba(255,255,255,0.9);
-            line-height: 1.6;
-            margin-bottom: 1.75rem;
+        .hero-brand-subtitle {
+            font-size: clamp(0.95rem, 1.8vw, 1.12rem);
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.58;
+            margin: 0 0 0.5rem 0;
+            max-width: 100%;
         }
 
         .hero-actions {
             display: flex;
-            gap: 1.25rem;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.625rem 0.875rem;
+            margin-top: 0.125rem;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        [dir="rtl"] .hero-actions {
+            justify-content: flex-end;
         }
 
         :host ::ng-deep .hero-btn-primary {
@@ -2382,11 +2482,70 @@ import { environment } from '../../../../environments/environment';
             }
         }
 
+        /* Allow button row to wrap before it collides with the mark */
+        @media (max-width: 1180px) {
+            .hero-actions {
+                flex-wrap: wrap;
+            }
+        }
+
         @media (max-width: 992px) {
             .hero-section {
                 min-height: 60vh;
                 max-height: none;
                 padding: calc(var(--public-header-offset, 70px) + 88px + 1rem) 1.5rem 2.5rem;
+            }
+            .hero-inner {
+                margin-inline: auto;
+            }
+            .hero-brand-shell {
+                padding-inline: 0;
+            }
+            [dir="ltr"] .hero-brand-logoCol,
+            [dir="rtl"] .hero-brand-logoCol {
+                margin-inline: 0;
+            }
+            [dir="ltr"] .hero-brand-copy,
+            [dir="rtl"] .hero-brand-copy {
+                margin-inline: 0;
+            }
+            .hero-brand-row {
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+            }
+            [dir="rtl"] .hero-brand-row {
+                flex-direction: column;
+            }
+            .hero-brand-logoCol {
+                width: 100%;
+                max-width: 400px;
+                justify-content: center;
+            }
+            [dir="rtl"] .hero-brand-logoCol {
+                justify-content: center;
+            }
+            .hero-brand-logoImg {
+                max-height: clamp(132px, 26vw, 188px);
+                max-width: 100%;
+                object-position: center;
+            }
+            .hero-brand-copy {
+                align-items: center;
+                text-align: center;
+                max-width: 32rem;
+            }
+            [dir="rtl"] .hero-brand-copy {
+                align-items: center;
+                text-align: center;
+            }
+            .hero-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            [dir="rtl"] .hero-actions {
+                justify-content: center;
             }
             .manufacturing-grid {
                 grid-template-columns: 1fr;
@@ -2397,14 +2556,16 @@ import { environment } from '../../../../environments/environment';
             .hero-section {
                 min-height: unset;
                 max-height: none;
-                /* Ticker hidden on mobile; standard top padding */
                 padding: 4.5rem 1rem 5rem;
+                justify-content: center;
             }
-            .hero-content {
-                max-width: 100%;
+            .hero-brand-logoImg {
+                max-height: clamp(108px, 32vw, 152px);
             }
             .hero-actions {
                 flex-direction: column;
+                align-items: stretch;
+                width: 100%;
             }
             .stats-grid,
             .divisions-grid {
