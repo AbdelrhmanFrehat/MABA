@@ -6,6 +6,7 @@ namespace Maba.Domain.Orders;
 public class Order : BaseEntity
 {
     public string OrderNumber { get; set; } = string.Empty; // ORD-YYYY-XXX
+    public bool IsStorefrontOrder { get; set; } = true;
     public Guid UserId { get; set; }
     public Guid OrderStatusId { get; set; }
     public decimal SubTotal { get; set; }

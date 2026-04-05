@@ -13,6 +13,13 @@ using Maba.Domain.Software;
 using Maba.Domain.Cnc;
 using Maba.Domain.Projects;
 using Maba.Domain.Faq;
+using Maba.Domain.Lookups;
+using Maba.Domain.Crm;
+using Maba.Domain.Pricing;
+using Maba.Domain.Inventory;
+using Maba.Domain.Numbering;
+using Maba.Domain.Tax;
+using Maba.Domain.Accounting;
 using Maba.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -49,6 +56,8 @@ public static class DatabaseSeeder
             await SeedProjects(context);
             await SeedFaq(context);
             await SeedCrossCutting(context);
+            await SeedCommercialFoundation(context);
+            await SeedCrm(context);
 
             await context.SaveChangesAsync();
         }
@@ -2211,6 +2220,353 @@ public static class DatabaseSeeder
                 }
             };
             context.Projects.AddRange(projects);
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedCommercialFoundation(ApplicationDbContext context)
+    {
+        await SeedCommercialPermissions(context);
+        await SeedLookups(context);
+        await SeedUnitsAndWarehouses(context);
+        await SeedPricingAndNumbering(context);
+        await SeedAccountingFoundation(context);
+        await SeedTaxConfiguration(context);
+    }
+
+    private static async Task SeedCommercialPermissions(ApplicationDbContext context)
+    {
+        var permissions = new List<Permission>
+        {
+            new() { Id = Guid.NewGuid(), Key = "lookups.manage", Name = "Manage Lookups", Category = "Lookups", Description = "Manage commercial lookup types and values" },
+            new() { Id = Guid.NewGuid(), Key = "customers.view", Name = "View Customers", Category = "CRM", Description = "View customer records" },
+            new() { Id = Guid.NewGuid(), Key = "customers.manage", Name = "Manage Customers", Category = "CRM", Description = "Create and update customers" },
+            new() { Id = Guid.NewGuid(), Key = "suppliers.view", Name = "View Suppliers", Category = "CRM", Description = "View supplier records" },
+            new() { Id = Guid.NewGuid(), Key = "suppliers.manage", Name = "Manage Suppliers", Category = "CRM", Description = "Create and update suppliers" },
+            new() { Id = Guid.NewGuid(), Key = "inventory.manage_warehouses", Name = "Manage Warehouses", Category = "Inventory", Description = "Create and update warehouses" },
+            new() { Id = Guid.NewGuid(), Key = "pricing.manage", Name = "Manage Pricing", Category = "Pricing", Description = "Manage price lists and pricing rules" },
+            new() { Id = Guid.NewGuid(), Key = "accounting.view", Name = "View Accounting", Category = "Accounting", Description = "View chart of accounts and journals" },
+            new() { Id = Guid.NewGuid(), Key = "accounting.manage_accounts", Name = "Manage Accounts", Category = "Accounting", Description = "Manage chart of accounts" }
+        };
+
+        var existingKeys = await context.Permissions.Select(x => x.Key).ToListAsync();
+        var toAdd = permissions.Where(x => !existingKeys.Contains(x.Key)).ToList();
+        if (toAdd.Count > 0)
+        {
+            context.Permissions.AddRange(toAdd);
+            await context.SaveChangesAsync();
+        }
+
+        var adminRole = await context.Roles.FirstOrDefaultAsync(x => x.Name == "Admin");
+        if (adminRole == null)
+        {
+            return;
+        }
+
+        var allPermissionIds = await context.Permissions
+            .Where(x => permissions.Select(p => p.Key).Contains(x.Key))
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        var existingRolePermissionIds = await context.RolePermissions
+            .Where(x => x.RoleId == adminRole.Id)
+            .Select(x => x.PermissionId)
+            .ToListAsync();
+
+        var missingRolePermissions = allPermissionIds
+            .Where(x => !existingRolePermissionIds.Contains(x))
+            .Select(permissionId => new RolePermission
+            {
+                RoleId = adminRole.Id,
+                PermissionId = permissionId
+            })
+            .ToList();
+
+        if (missingRolePermissions.Count > 0)
+        {
+            context.RolePermissions.AddRange(missingRolePermissions);
+            await context.SaveChangesAsync();
+        }
+    }
+
+    private static async Task SeedLookups(ApplicationDbContext context)
+    {
+        if (await context.LookupTypes.AnyAsync())
+        {
+            return;
+        }
+
+        var definitions = new Dictionary<string, (string En, string Ar, string[] Values)>
+        {
+            ["CustomerType"] = ("Customer Type", "نوع العميل", new[] { "Retail", "Wholesale", "VIP" }),
+            ["SupplierType"] = ("Supplier Type", "نوع المورد", new[] { "Local", "International" }),
+            ["ApprovalStatus"] = ("Approval Status", "حالة الموافقة", new[] { "Pending", "Approved", "Rejected" }),
+            ["PaymentMethod"] = ("Payment Method", "طريقة الدفع", new[] { "Cash", "BankTransfer", "Card", "Check", "OnlineGateway" }),
+            ["PaymentDirection"] = ("Payment Direction", "اتجاه الدفع", new[] { "Incoming", "Outgoing" }),
+            ["PriceListType"] = ("Price List Type", "نوع قائمة الأسعار", new[] { "Retail", "Wholesale", "VIP" }),
+            ["ReturnReason"] = ("Return Reason", "سبب الإرجاع", new[] { "Defective", "WrongItem", "CustomerChanged", "QualityIssue", "DamagedInTransit", "Other" }),
+            ["JournalEntryType"] = ("Journal Entry Type", "نوع القيد اليومي", new[] { "Sales", "Purchase", "PaymentReceived", "PaymentMade", "Expense", "SalesReturn", "PurchaseReturn", "Adjustment", "Opening", "Closing" })
+        };
+
+        foreach (var definition in definitions)
+        {
+            var type = new LookupType
+            {
+                Id = Guid.NewGuid(),
+                Key = definition.Key,
+                NameEn = definition.Value.En,
+                NameAr = definition.Value.Ar,
+                IsSystem = true,
+                IsActive = true
+            };
+
+            context.LookupTypes.Add(type);
+
+            for (var i = 0; i < definition.Value.Values.Length; i++)
+            {
+                var value = definition.Value.Values[i];
+                context.LookupValues.Add(new LookupValue
+                {
+                    Id = Guid.NewGuid(),
+                    LookupTypeId = type.Id,
+                    Key = value,
+                    NameEn = value,
+                    NameAr = value,
+                    SortOrder = i + 1,
+                    IsDefault = i == 0,
+                    IsSystem = true,
+                    IsActive = true
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedUnitsAndWarehouses(ApplicationDbContext context)
+    {
+        if (!await context.UnitsOfMeasure.AnyAsync())
+        {
+            var piece = new UnitOfMeasure { Id = Guid.NewGuid(), NameEn = "Piece", NameAr = "قطعة", Abbreviation = "pcs", IsBase = true, IsActive = true };
+            var box = new UnitOfMeasure { Id = Guid.NewGuid(), NameEn = "Box", NameAr = "علبة", Abbreviation = "box", IsBase = false, IsActive = true };
+            var carton = new UnitOfMeasure { Id = Guid.NewGuid(), NameEn = "Carton", NameAr = "كرتون", Abbreviation = "ctn", IsBase = false, IsActive = true };
+
+            context.UnitsOfMeasure.AddRange(piece, box, carton);
+            context.UnitConversions.AddRange(
+                new UnitConversion { Id = Guid.NewGuid(), FromUnitId = box.Id, ToUnitId = piece.Id, ConversionFactor = 12 },
+                new UnitConversion { Id = Guid.NewGuid(), FromUnitId = carton.Id, ToUnitId = piece.Id, ConversionFactor = 48 });
+        }
+
+        if (!await context.Warehouses.AnyAsync())
+        {
+            context.Warehouses.Add(new Warehouse
+            {
+                Id = Guid.NewGuid(),
+                Code = "WH-MAIN",
+                NameEn = "Main Warehouse",
+                NameAr = "المخزن الرئيسي",
+                IsDefault = true,
+                IsActive = true
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedPricingAndNumbering(ApplicationDbContext context)
+    {
+        if (!await context.PriceLists.AnyAsync())
+        {
+            var retailTypeId = await context.LookupValues
+                .Where(x => x.LookupType.Key == "PriceListType" && x.Key == "Retail")
+                .Select(x => x.Id)
+                .FirstAsync();
+            var wholesaleTypeId = await context.LookupValues
+                .Where(x => x.LookupType.Key == "PriceListType" && x.Key == "Wholesale")
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            context.PriceLists.AddRange(
+                new PriceList
+                {
+                    Id = Guid.NewGuid(),
+                    NameEn = "Retail",
+                    NameAr = "تجزئة",
+                    PriceListTypeId = retailTypeId,
+                    Currency = "ILS",
+                    IsDefault = true,
+                    IsActive = true
+                },
+                new PriceList
+                {
+                    Id = Guid.NewGuid(),
+                    NameEn = "Wholesale",
+                    NameAr = "جملة",
+                    PriceListTypeId = wholesaleTypeId,
+                    Currency = "ILS",
+                    IsDefault = false,
+                    IsActive = true
+                });
+        }
+
+        if (!await context.DocumentSequences.AnyAsync())
+        {
+            var year = DateTime.UtcNow.Year;
+            context.DocumentSequences.AddRange(
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "Customer", Prefix = "CUS", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "Supplier", Prefix = "SUP", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "SalesQuotation", Prefix = "SQ", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "SalesOrder", Prefix = "SO", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "SalesInvoice", Prefix = "SI", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "PurchaseOrder", Prefix = "PO", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
+                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "JournalEntry", Prefix = "JE", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedAccountingFoundation(ApplicationDbContext context)
+    {
+        if (!await context.AccountTypes.AnyAsync())
+        {
+            context.AccountTypes.AddRange(
+                new AccountType { Id = Guid.NewGuid(), Key = "Asset", NameEn = "Asset", NameAr = "أصل", NormalBalance = "Debit" },
+                new AccountType { Id = Guid.NewGuid(), Key = "Liability", NameEn = "Liability", NameAr = "التزام", NormalBalance = "Credit" },
+                new AccountType { Id = Guid.NewGuid(), Key = "Equity", NameEn = "Equity", NameAr = "حقوق ملكية", NormalBalance = "Credit" },
+                new AccountType { Id = Guid.NewGuid(), Key = "Revenue", NameEn = "Revenue", NameAr = "إيراد", NormalBalance = "Credit" },
+                new AccountType { Id = Guid.NewGuid(), Key = "Expense", NameEn = "Expense", NameAr = "مصروف", NormalBalance = "Debit" });
+            await context.SaveChangesAsync();
+        }
+
+        if (!await context.Accounts.AnyAsync())
+        {
+            var assetTypeId = await context.AccountTypes.Where(x => x.Key == "Asset").Select(x => x.Id).FirstAsync();
+            var liabilityTypeId = await context.AccountTypes.Where(x => x.Key == "Liability").Select(x => x.Id).FirstAsync();
+            var equityTypeId = await context.AccountTypes.Where(x => x.Key == "Equity").Select(x => x.Id).FirstAsync();
+            var revenueTypeId = await context.AccountTypes.Where(x => x.Key == "Revenue").Select(x => x.Id).FirstAsync();
+            var expenseTypeId = await context.AccountTypes.Where(x => x.Key == "Expense").Select(x => x.Id).FirstAsync();
+
+            context.Accounts.AddRange(
+                new Account { Id = Guid.NewGuid(), Code = "1000", NameEn = "Cash", NameAr = "النقدية", AccountTypeId = assetTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "1010", NameEn = "Bank", NameAr = "البنك", AccountTypeId = assetTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "1200", NameEn = "Accounts Receivable", NameAr = "الذمم المدينة", AccountTypeId = assetTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "1300", NameEn = "Inventory", NameAr = "المخزون", AccountTypeId = assetTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "2000", NameEn = "Accounts Payable", NameAr = "الذمم الدائنة", AccountTypeId = liabilityTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "2100", NameEn = "Tax Payable", NameAr = "الضريبة المستحقة", AccountTypeId = liabilityTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "3000", NameEn = "Owner's Equity", NameAr = "حقوق الملكية", AccountTypeId = equityTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "4000", NameEn = "Sales Revenue", NameAr = "إيراد المبيعات", AccountTypeId = revenueTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "5000", NameEn = "Cost of Goods Sold", NameAr = "تكلفة البضاعة المباعة", AccountTypeId = expenseTypeId, Level = 1, IsPostable = true, IsSystem = true },
+                new Account { Id = Guid.NewGuid(), Code = "6000", NameEn = "Operating Expenses", NameAr = "المصاريف التشغيلية", AccountTypeId = expenseTypeId, Level = 1, IsPostable = true, IsSystem = true });
+        }
+
+        if (!await context.FiscalYears.AnyAsync())
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            var fiscalYear = new FiscalYear
+            {
+                Id = Guid.NewGuid(),
+                Name = $"FY-{currentYear}",
+                StartDate = new DateTime(currentYear, 1, 1),
+                EndDate = new DateTime(currentYear, 12, 31),
+                IsClosed = false
+            };
+
+            context.FiscalYears.Add(fiscalYear);
+            for (var month = 1; month <= 12; month++)
+            {
+                context.FiscalPeriods.Add(new FiscalPeriod
+                {
+                    Id = Guid.NewGuid(),
+                    FiscalYearId = fiscalYear.Id,
+                    Name = $"{new DateTime(currentYear, month, 1):MMM yyyy}",
+                    StartDate = new DateTime(currentYear, month, 1),
+                    EndDate = new DateTime(currentYear, month, DateTime.DaysInMonth(currentYear, month)),
+                    PeriodNumber = month,
+                    IsClosed = false
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedTaxConfiguration(ApplicationDbContext context)
+    {
+        if (await context.TaxConfigurations.AnyAsync())
+        {
+            return;
+        }
+
+        var taxAccountId = await context.Accounts
+            .Where(x => x.Code == "2100")
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        context.TaxConfigurations.Add(new TaxConfiguration
+        {
+            Id = Guid.NewGuid(),
+            NameEn = "VAT 17%",
+            NameAr = "ضريبة القيمة المضافة 17%",
+            Rate = 17m,
+            IsDefault = true,
+            IsActive = true,
+            AccountId = taxAccountId == Guid.Empty ? null : taxAccountId
+        });
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedCrm(ApplicationDbContext context)
+    {
+        if (!await context.Customers.AnyAsync())
+        {
+            var retailCustomerTypeId = await context.LookupValues
+                .Where(x => x.LookupType.Key == "CustomerType" && x.Key == "Retail")
+                .Select(x => x.Id)
+                .FirstAsync();
+            var defaultPriceListId = await context.PriceLists.Where(x => x.IsDefault).Select(x => x.Id).FirstOrDefaultAsync();
+
+            context.Customers.AddRange(
+                new Customer
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "CUS-0001",
+                    NameEn = "Main Retail Customer",
+                    NameAr = "العميل الرئيسي",
+                    Email = "customer@maba.com",
+                    Phone = "+970000000001",
+                    CustomerTypeId = retailCustomerTypeId,
+                    CreditLimit = 5000m,
+                    CurrentBalance = 0,
+                    Currency = "ILS",
+                    IsActive = true,
+                    PriceListId = defaultPriceListId == Guid.Empty ? null : defaultPriceListId
+                });
+        }
+
+        if (!await context.Suppliers.AnyAsync())
+        {
+            var localSupplierTypeId = await context.LookupValues
+                .Where(x => x.LookupType.Key == "SupplierType" && x.Key == "Local")
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            context.Suppliers.AddRange(
+                new Supplier
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "SUP-0001",
+                    NameEn = "Main Local Supplier",
+                    NameAr = "المورد المحلي الرئيسي",
+                    Email = "supplier@maba.com",
+                    Phone = "+970000000002",
+                    SupplierTypeId = localSupplierTypeId,
+                    PaymentTermDays = 30,
+                    CurrentBalance = 0,
+                    Currency = "ILS",
+                    IsActive = true
+                });
         }
 
         await context.SaveChangesAsync();

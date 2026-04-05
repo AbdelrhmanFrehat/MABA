@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Maba.Domain.Catalog;
+using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
 namespace Maba.Infrastructure.Data.Configurations;
 
@@ -41,6 +42,12 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .HasMaxLength(3)
             .HasDefaultValue("ILS");
 
+        builder.Property(i => i.WholesalePrice)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Property(i => i.CostPrice)
+            .HasColumnType("decimal(18,2)");
+
         builder.Property(i => i.AverageRating)
             .HasColumnType("decimal(3,2)")
             .HasDefaultValue(0);
@@ -66,6 +73,16 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .HasForeignKey(i => i.CategoryId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(i => i.BaseUnitOfMeasure)
+            .WithMany()
+            .HasForeignKey(i => i.BaseUnitOfMeasureId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(i => i.DefaultTaxConfiguration)
+            .WithMany()
+            .HasForeignKey(i => i.DefaultTaxConfigurationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasMany(i => i.ItemTags)
             .WithOne(it => it.Item)
             .HasForeignKey(it => it.ItemId)
@@ -78,7 +95,22 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
 
         builder.HasOne(i => i.Inventory)
             .WithOne(inv => inv.Item)
-            .HasForeignKey<Inventory>(inv => inv.ItemId)
+            .HasForeignKey<CatalogInventory>(inv => inv.ItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(i => i.ItemUnits)
+            .WithOne(x => x.Item)
+            .HasForeignKey(x => x.ItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(i => i.SupplierItemPrices)
+            .WithOne(x => x.Item)
+            .HasForeignKey(x => x.ItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(i => i.PriceListItems)
+            .WithOne(x => x.Item)
+            .HasForeignKey(x => x.ItemId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

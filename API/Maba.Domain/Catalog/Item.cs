@@ -1,5 +1,8 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
 using Maba.Domain.Machines;
+using Maba.Domain.Pricing;
+using Maba.Domain.Tax;
 
 namespace Maba.Domain.Catalog;
 
@@ -17,6 +20,12 @@ public class Item : BaseEntity
     public decimal? Weight { get; set; } // in kg
     public string? Dimensions { get; set; } // JSON or string like "10x20x30"
     public decimal? TaxRate { get; set; }
+    public Guid? BaseUnitOfMeasureId { get; set; }
+    public decimal? WholesalePrice { get; set; }
+    public decimal? CostPrice { get; set; }
+    public bool IsTaxable { get; set; } = true;
+    public Guid? AccountId { get; set; }
+    public Guid? DefaultTaxConfigurationId { get; set; }
     public bool IsFeatured { get; set; } = false;
     public bool IsNew { get; set; } = false;
     public bool IsOnSale { get; set; } = false;
@@ -43,5 +52,10 @@ public class Item : BaseEntity
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     public Inventory? Inventory { get; set; }
     public ICollection<ItemMachineLink> ItemMachineLinks { get; set; } = new List<ItemMachineLink>();
+    public UnitOfMeasure? BaseUnitOfMeasure { get; set; }
+    public TaxConfiguration? DefaultTaxConfiguration { get; set; }
+    public ICollection<ItemUnit> ItemUnits { get; set; } = new List<ItemUnit>();
+    public ICollection<SupplierItemPrice> SupplierItemPrices { get; set; } = new List<SupplierItemPrice>();
+    public ICollection<PriceListItem> PriceListItems { get; set; } = new List<PriceListItem>();
 }
 

@@ -20,7 +20,15 @@ using Maba.Domain.HeroTicker;
 using Maba.Domain.Design;
 using Maba.Domain.DesignCad;
 using Maba.Domain.ControlCenter;
+using Maba.Domain.Lookups;
+using Maba.Domain.Crm;
+using Maba.Domain.Pricing;
+using Maba.Domain.Inventory;
+using Maba.Domain.Numbering;
+using Maba.Domain.Tax;
+using Maba.Domain.Accounting;
 using Maba.Infrastructure.Data.Configurations;
+using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
 namespace Maba.Infrastructure.Data;
 
@@ -52,12 +60,34 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Item> Items => Set<Item>();
     public DbSet<ItemStatus> ItemStatuses => Set<ItemStatus>();
     public DbSet<ItemTag> ItemTags => Set<ItemTag>();
-    public DbSet<Inventory> Inventories => Set<Inventory>();
+    public DbSet<CatalogInventory> Inventories => Set<CatalogInventory>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ItemSection> ItemSections => Set<ItemSection>();
     public DbSet<ItemSectionFeature> ItemSectionFeatures => Set<ItemSectionFeature>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
+    public DbSet<UnitConversion> UnitConversions => Set<UnitConversion>();
+    public DbSet<ItemUnit> ItemUnits => Set<ItemUnit>();
+    public DbSet<SupplierItemPrice> SupplierItemPrices => Set<SupplierItemPrice>();
+
+    // Lookups / CRM / Pricing / Inventory foundation
+    public DbSet<LookupType> LookupTypes => Set<LookupType>();
+    public DbSet<LookupValue> LookupValues => Set<LookupValue>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<PriceList> PriceLists => Set<PriceList>();
+    public DbSet<PriceListItem> PriceListItems => Set<PriceListItem>();
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
+    public DbSet<DocumentSequence> DocumentSequences => Set<DocumentSequence>();
+    public DbSet<TaxConfiguration> TaxConfigurations => Set<TaxConfiguration>();
+    public DbSet<AccountType> AccountTypes => Set<AccountType>();
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<FiscalYear> FiscalYears => Set<FiscalYear>();
+    public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
+    public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
 
     // Machines
     public DbSet<Machine> Machines => Set<Machine>();
