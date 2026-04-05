@@ -32,6 +32,14 @@ interface PurchaseOrderStatusOption {
     color: string;
 }
 
+interface PurchaseOrderTotals {
+    subTotal: number;
+    discountAmount: number;
+    discountPercent?: number;
+    taxAmount: number;
+    total: number;
+}
+
 @Component({
     selector: 'app-purchase-orders-list',
     standalone: true,
@@ -280,7 +288,7 @@ export class PurchaseOrdersListComponent implements OnInit {
     orderLines: DocLine[] = [];
     nextOrderNumberPreview = this.generateOrderNumber();
     private localOrders: PurchaseOrder[] = [];
-    private latestTotals = {
+    private latestTotals: PurchaseOrderTotals = {
         subTotal: 0,
         discountAmount: 0,
         discountPercent: undefined as number | undefined,
@@ -483,7 +491,7 @@ export class PurchaseOrdersListComponent implements OnInit {
         this.orderLines = [...lines];
     }
 
-    onTotalsChanged(totals: { subTotal: number; discountAmount: number; discountPercent?: number; taxAmount: number; total: number }): void {
+    onTotalsChanged(totals: PurchaseOrderTotals): void {
         this.latestTotals = totals;
     }
 

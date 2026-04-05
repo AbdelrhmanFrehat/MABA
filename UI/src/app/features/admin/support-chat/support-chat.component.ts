@@ -119,7 +119,7 @@ import { environment } from '../../../../environments/environment';
             </div>
             <div class="input-area">
               <input type="file" #fileInput class="file-input-hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" (change)="onFileSelected($event)">
-              <button type="button" class="attach-btn" (click)="fileInput.click()" [disabled]="sending || selectedConversation?.status === 1" [pTooltip]="'chat.attach' | translate">
+              <button type="button" class="attach-btn" (click)="fileInput.click()" [disabled]="sending || selectedConversation.status === 1" [pTooltip]="'chat.attach' | translate">
                 <i class="pi pi-paperclip"></i>
               </button>
               <input
@@ -127,12 +127,12 @@ import { environment } from '../../../../environments/environment';
                 [(ngModel)]="messageText"
                 [placeholder]="'chat.typeMessage' | translate"
                 (keyup.enter)="sendMessage()"
-                [disabled]="sending || selectedConversation?.status === 1" />
+                [disabled]="sending || selectedConversation.status === 1" />
               <span class="pending-attachment" *ngIf="pendingAttachment"><i class="pi pi-file"></i> {{ pendingAttachment.fileName }}</span>
               <button
                 pButton
                 icon="pi pi-send"
-                [disabled]="(!messageText.trim() && !pendingAttachment) || sending || selectedConversation?.status === 1"
+                [disabled]="(!messageText.trim() && !pendingAttachment) || sending || selectedConversation.status === 1"
                 (click)="sendMessage()">
               </button>
             </div>
