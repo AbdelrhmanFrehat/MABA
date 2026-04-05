@@ -77,3 +77,5 @@ The backend uses EF Core with SQL Server, MediatR/CQRS, FluentValidation, JWT be
 
 ### [2026-04-06]
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/PaymentVouchersController.cs` so the admin payment vouchers page can load `/api/v1/payment-vouchers` without returning `404` while the full backend payments module is still incomplete.
+- Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/AccountsController.cs` so the admin chart of accounts page can load `/api/v1/accounts/tree` without returning `404` while the full backend accounting module is still incomplete.
+- Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/PriceListsController.cs` so the admin price lists page can load `/api/v1/price-lists` without returning `404` while the full backend pricing module is still incomplete.
