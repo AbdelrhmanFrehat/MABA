@@ -91,6 +91,21 @@ export class AppMenu implements OnInit, OnDestroy {
                     ]
                 },
                 {
+                    label: this.translateService.instant('menu.erp'),
+                    items: [
+                        { label: this.translateService.instant('menu.lookups'), icon: 'pi pi-fw pi-list', routerLink: ['/admin/lookups'] },
+                        { label: this.translateService.instant('menu.crm'), icon: 'pi pi-fw pi-id-card', routerLink: ['/admin/crm/customers'] },
+                        { label: this.translateService.instant('menu.sales'), icon: 'pi pi-fw pi-shopping-bag', routerLink: ['/admin/sales/orders'] },
+                        { label: this.translateService.instant('menu.purchasing'), icon: 'pi pi-fw pi-truck', routerLink: ['/admin/purchasing/orders'] },
+                        { label: this.translateService.instant('menu.businessInventory'), icon: 'pi pi-fw pi-warehouse', routerLink: ['/admin/business-inventory/stock'] },
+                        { label: this.translateService.instant('menu.payments'), icon: 'pi pi-fw pi-wallet', routerLink: ['/admin/payments'] },
+                        { label: this.translateService.instant('menu.accounting'), icon: 'pi pi-fw pi-calculator', routerLink: ['/admin/accounting/chart-of-accounts'] },
+                        { label: this.translateService.instant('menu.pricing'), icon: 'pi pi-fw pi-percentage', routerLink: ['/admin/pricing/price-lists'] },
+                        { label: this.translateService.instant('menu.expenses'), icon: 'pi pi-fw pi-money-bill', routerLink: ['/admin/expenses'] },
+                        { label: this.translateService.instant('menu.erpReports'), icon: 'pi pi-fw pi-chart-line', routerLink: ['/admin/reports/sales'] }
+                    ]
+                },
+                {
                     label: this.translateService.instant('menu.projects'),
                     items: [
                         { label: this.translateService.instant('menu.projectsList'), icon: 'pi pi-fw pi-briefcase', routerLink: ['/admin/projects'] },

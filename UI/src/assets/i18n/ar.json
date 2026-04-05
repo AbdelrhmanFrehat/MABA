@@ -306,6 +306,16 @@
     "stockMovements": "حركات المخزون",
     "finance": "المالية",
     "financeDashboard": "لوحة المالية",
+    "erp": "نظام ERP",
+    "lookups": "المرجعيات",
+    "crm": "إدارة العلاقات",
+    "sales": "المبيعات",
+    "purchasing": "المشتريات",
+    "businessInventory": "مخزون الأعمال",
+    "payments": "المدفوعات",
+    "accounting": "المحاسبة",
+    "pricing": "التسعير",
+    "erpReports": "تقارير ERP",
     "paymentsDues": "المدفوعات والمستحقات",
     "expenses": "المصروفات",
     "analytics": "التحليلات",
@@ -2559,6 +2569,143 @@
     "cta": {
       "title": "مستعد للبناء معنا؟",
       "button": "ابدأ مشروعاً"
+    }
+  },
+  "admin": {
+    "common": {
+      "headerSection": "بيانات رئيسية",
+      "linesSection": "البنود",
+      "summarySection": "الملخص",
+      "document": "المستند",
+      "submitForApproval": "إرسال للموافقة",
+      "approve": "موافقة",
+      "confirm": "تأكيد",
+      "void": "إلغاء",
+      "issue": "إصدار",
+      "posted": "مُرحّل",
+      "moduleScaffolded": "تم تجهيز هذه الصفحة داخل لوحة الإدارة وهي جاهزة لاستكمال الربط مع الواجهة الخلفية.",
+      "documentFormComingSoon": "تم تجهيز هيكل النموذج ويمكن الآن استكمال الحقول النهائية حسب استجابات الـ API."
+    },
+    "lookups": {
+      "title": "القيم المرجعية",
+      "types": "أنواع القيم",
+      "createType": "نوع جديد",
+      "editType": "تعديل النوع",
+      "key": "المفتاح",
+      "nameEn": "الاسم بالإنجليزية",
+      "nameAr": "الاسم بالعربية",
+      "isSystem": "نظامي",
+      "manageValues": "إدارة القيم"
+    },
+    "crm": {
+      "customers": "العملاء",
+      "suppliers": "الموردون",
+      "customersList": "قائمة العملاء",
+      "createCustomer": "عميل جديد",
+      "editCustomer": "تعديل العميل",
+      "createSupplier": "مورد جديد",
+      "editSupplier": "تعديل المورد",
+      "code": "الرمز",
+      "nameEn": "الاسم بالإنجليزية",
+      "nameAr": "الاسم بالعربية",
+      "type": "النوع",
+      "balance": "الرصيد",
+      "creditLimit": "حد الائتمان",
+      "taxNumber": "الرقم الضريبي",
+      "paymentTermDays": "أيام السداد",
+      "contactInfo": "معلومات الاتصال",
+      "statement": "كشف الحساب",
+      "currency": "العملة",
+      "address": "العنوان",
+      "addressLine1": "العنوان 1",
+      "city": "المدينة",
+      "country": "الدولة",
+      "selectType": "اختر النوع"
+    },
+    "sales": {
+      "common": {
+        "number": "الرقم",
+        "customer": "العميل",
+        "convertToInvoice": "تحويل إلى فاتورة",
+        "recordPayment": "تسجيل دفعة"
+      },
+      "quotations": { "title": "عروض البيع", "subtitle": "إنشاء وإرسال وتحويل عروض الأسعار.", "new": "عرض بيع جديد" },
+      "orders": { "title": "أوامر البيع", "subtitle": "دورة أوامر البيع مع الموافقات.", "new": "أمر بيع جديد", "edit": "تعديل أمر البيع", "flowHint": "عرض سعر -> أمر بيع -> موافقة -> فاتورة -> دفعة", "expectedDeliveryDate": "تاريخ التسليم المتوقع" },
+      "invoices": { "title": "فواتير البيع", "subtitle": "إصدار الفواتير ومتابعة الأرصدة والمدفوعات.", "new": "فاتورة بيع جديدة", "edit": "تعديل فاتورة البيع", "formHint": "إدارة البنود والضرائب وإجمالي الذمم من شاشة واحدة.", "dueDate": "تاريخ الاستحقاق" },
+      "returns": { "title": "مرتجعات البيع", "subtitle": "إدارة المرتجعات المعتمدة وإرجاع المخزون.", "new": "مرتجع بيع جديد" }
+    },
+    "purchasing": {
+      "quotations": { "title": "عروض الشراء" },
+      "orders": { "title": "أوامر الشراء" },
+      "invoices": { "title": "فواتير الشراء" },
+      "returns": { "title": "مرتجعات الشراء" }
+    },
+    "payments": {
+      "title": "سندات الدفع",
+      "subtitle": "تسجيل الدفعات الواردة والصادرة مع التخصيص على الفواتير.",
+      "new": "سند دفع جديد",
+      "edit": "تعديل سند الدفع",
+      "formHint": "قم بتخصيص الدفعة على فواتير البيع أو الشراء من نفس الشاشة.",
+      "voucherNumber": "رقم السند",
+      "direction": "الاتجاه",
+      "method": "الطريقة",
+      "referenceNumber": "المرجع",
+      "bankName": "اسم البنك",
+      "allocations": "التخصيصات",
+      "plans": "خطط الدفع",
+      "installments": "الأقساط",
+      "remainingAmount": "المتبقي"
+    },
+    "inventory": {
+      "warehouses": "المستودعات",
+      "warehouse": "المستودع",
+      "defaultWarehouse": "افتراضي",
+      "stockOverview": "نظرة عامة على المخزون",
+      "movements": "حركات المخزون",
+      "movementType": "نوع الحركة",
+      "stockAdjustment": "تسوية المخزون",
+      "onHand": "المتاح فعلياً",
+      "reserved": "المحجوز",
+      "available": "المتاح",
+      "costPerUnit": "تكلفة الوحدة"
+    },
+    "accounting": {
+      "chartOfAccounts": "شجرة الحسابات",
+      "accountType": "نوع الحساب",
+      "journalEntries": "قيود اليومية",
+      "journalEntryType": "نوع القيد",
+      "newJournalEntry": "قيد يومية جديد",
+      "entryNumber": "رقم القيد",
+      "ledger": "دفتر الأستاذ",
+      "trialBalance": "ميزان المراجعة"
+    },
+    "pricing": {
+      "priceLists": "قوائم الأسعار",
+      "priceListItems": "بنود قائمة الأسعار",
+      "wholesaleRules": "قواعد الجملة",
+      "priority": "الأولوية",
+      "isDefault": "افتراضي"
+    },
+    "catalog": {
+      "unitsOfMeasure": "وحدات القياس",
+      "baseUnit": "الوحدة الأساسية"
+    },
+    "expenses": {
+      "title": "المصروفات",
+      "new": "مصروف جديد"
+    },
+    "tax": {
+      "title": "الضرائب",
+      "rate": "النسبة"
+    },
+    "reports": {
+      "sales": "تقرير المبيعات",
+      "purchases": "تقرير المشتريات",
+      "inventory": "تقرير المخزون",
+      "customerStatement": "كشف حساب العميل",
+      "supplierStatement": "كشف حساب المورد",
+      "profitOverview": "ملخص الربحية",
+      "trialBalance": "ميزان المراجعة"
     }
   },
   "cnc": {

@@ -9,6 +9,56 @@ export const adminRoutes: Routes = [
         canActivate: [authGuard]
     },
     {
+        path: 'lookups',
+        loadChildren: () => import('./lookups/lookups.routes').then(m => m.lookupsRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'crm',
+        loadChildren: () => import('./crm/crm.routes').then(m => m.crmRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'sales',
+        loadChildren: () => import('./sales/sales.routes').then(m => m.salesRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'purchasing',
+        loadChildren: () => import('./purchasing/purchasing.routes').then(m => m.purchasingRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'payments',
+        loadChildren: () => import('./payments/payments.routes').then(m => m.paymentsRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'business-inventory',
+        loadChildren: () => import('./biz-inventory/biz-inventory.routes').then(m => m.businessInventoryRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'accounting',
+        loadChildren: () => import('./accounting/accounting.routes').then(m => m.accountingRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'pricing',
+        loadChildren: () => import('./pricing/pricing.routes').then(m => m.pricingRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'expenses',
+        loadChildren: () => import('./expenses/expenses.routes').then(m => m.expensesRoutes),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'reports',
+        loadChildren: () => import('./reports/reports.routes').then(m => m.reportsRoutes),
+        canActivate: [authGuard]
+    },
+    {
         path: 'users',
         loadChildren: () => import('./users/users.routes').then(m => m.usersRoutes)
     },

@@ -352,6 +352,16 @@
     "stockMovements": "Stock Movements",
     "finance": "Finance",
     "financeDashboard": "Finance Dashboard",
+    "erp": "ERP",
+    "lookups": "Lookups",
+    "crm": "CRM",
+    "sales": "Sales",
+    "purchasing": "Purchasing",
+    "businessInventory": "Business Inventory",
+    "payments": "Payments",
+    "accounting": "Accounting",
+    "pricing": "Pricing",
+    "erpReports": "ERP Reports",
     "paymentsDues": "Payments & Dues",
     "expenses": "Expenses",
     "analytics": "Analytics",
@@ -3183,6 +3193,165 @@
     "cta": {
       "title": "Ready to build with us?",
       "button": "Start a Project"
+    }
+  },
+  "admin": {
+    "common": {
+      "headerSection": "Header Section",
+      "linesSection": "Lines",
+      "summarySection": "Summary",
+      "document": "Document",
+      "submitForApproval": "Submit for approval",
+      "approve": "Approve",
+      "confirm": "Confirm",
+      "void": "Void",
+      "issue": "Issue",
+      "posted": "Posted",
+      "moduleScaffolded": "This module page has been wired into the admin panel and is ready for backend integration refinement.",
+      "documentFormComingSoon": "This form shell is in place and ready for field-level refinement against the final API responses."
+    },
+    "lookups": {
+      "title": "Lookups",
+      "types": "Lookup Types",
+      "createType": "New Lookup Type",
+      "editType": "Edit Lookup Type",
+      "key": "Key",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "isSystem": "System",
+      "manageValues": "Manage Values"
+    },
+    "crm": {
+      "customers": "Customers",
+      "suppliers": "Suppliers",
+      "customersList": "Customers",
+      "createCustomer": "New Customer",
+      "editCustomer": "Edit Customer",
+      "createSupplier": "New Supplier",
+      "editSupplier": "Edit Supplier",
+      "code": "Code",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "type": "Type",
+      "balance": "Balance",
+      "creditLimit": "Credit Limit",
+      "taxNumber": "Tax Number",
+      "paymentTermDays": "Payment Terms",
+      "contactInfo": "Contact Information",
+      "statement": "Statement",
+      "currency": "Currency",
+      "address": "Address",
+      "addressLine1": "Address Line 1",
+      "city": "City",
+      "country": "Country",
+      "selectType": "Select type"
+    },
+    "sales": {
+      "common": {
+        "number": "Number",
+        "customer": "Customer",
+        "convertToInvoice": "Convert to invoice",
+        "recordPayment": "Record payment"
+      },
+      "quotations": {
+        "title": "Sales Quotations",
+        "subtitle": "Draft, send, and convert quotations.",
+        "new": "New Quotation"
+      },
+      "orders": {
+        "title": "Sales Orders",
+        "subtitle": "Approval-driven order workflow for commercial sales.",
+        "new": "New Sales Order",
+        "edit": "Edit Sales Order",
+        "flowHint": "Quotation -> Order -> Approval -> Invoice -> Payment",
+        "expectedDeliveryDate": "Expected Delivery Date"
+      },
+      "invoices": {
+        "title": "Sales Invoices",
+        "subtitle": "Issue invoices, monitor balances, and post payments.",
+        "new": "New Sales Invoice",
+        "edit": "Edit Sales Invoice",
+        "formHint": "Build invoice lines, taxes, and receivable totals from one screen.",
+        "dueDate": "Due Date"
+      },
+      "returns": {
+        "title": "Sales Returns",
+        "subtitle": "Manage approved returns and inventory restocking.",
+        "new": "New Sales Return"
+      }
+    },
+    "purchasing": {
+      "quotations": { "title": "Purchase Quotations" },
+      "orders": { "title": "Purchase Orders" },
+      "invoices": { "title": "Purchase Invoices" },
+      "returns": { "title": "Purchase Returns" }
+    },
+    "payments": {
+      "title": "Payment Vouchers",
+      "subtitle": "Capture inbound and outbound business payments with allocations.",
+      "new": "New Payment Voucher",
+      "edit": "Edit Payment Voucher",
+      "formHint": "Allocate payments against sales or purchase invoices from a single voucher.",
+      "voucherNumber": "Voucher Number",
+      "direction": "Direction",
+      "method": "Method",
+      "referenceNumber": "Reference Number",
+      "bankName": "Bank Name",
+      "allocations": "Allocations",
+      "plans": "Payment Plans",
+      "installments": "Installments",
+      "remainingAmount": "Remaining"
+    },
+    "inventory": {
+      "warehouses": "Warehouses",
+      "warehouse": "Warehouse",
+      "defaultWarehouse": "Default",
+      "stockOverview": "Stock Overview",
+      "movements": "Inventory Movements",
+      "movementType": "Movement Type",
+      "stockAdjustment": "Stock Adjustment",
+      "onHand": "On Hand",
+      "reserved": "Reserved",
+      "available": "Available",
+      "costPerUnit": "Cost Per Unit"
+    },
+    "accounting": {
+      "chartOfAccounts": "Chart of Accounts",
+      "accountType": "Account Type",
+      "journalEntries": "Journal Entries",
+      "journalEntryType": "Journal Entry Type",
+      "newJournalEntry": "New Journal Entry",
+      "entryNumber": "Entry Number",
+      "ledger": "Ledger View",
+      "trialBalance": "Trial Balance"
+    },
+    "pricing": {
+      "priceLists": "Price Lists",
+      "priceListItems": "Price List Items",
+      "wholesaleRules": "Wholesale Rules",
+      "priority": "Priority",
+      "isDefault": "Default"
+    },
+    "catalog": {
+      "unitsOfMeasure": "Units of Measure",
+      "baseUnit": "Base Unit"
+    },
+    "expenses": {
+      "title": "Expenses",
+      "new": "New Expense"
+    },
+    "tax": {
+      "title": "Tax Profiles",
+      "rate": "Rate"
+    },
+    "reports": {
+      "sales": "Sales Report",
+      "purchases": "Purchase Report",
+      "inventory": "Inventory Report",
+      "customerStatement": "Customer Statement",
+      "supplierStatement": "Supplier Statement",
+      "profitOverview": "Profit Overview",
+      "trialBalance": "Trial Balance"
     }
   },
   "cnc": {
