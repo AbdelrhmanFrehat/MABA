@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using Maba.Application.Features.BusinessInventory.Queries;
 using Maba.Application.Features.Catalog.Inventory.Commands;
 using Maba.Application.Features.Catalog.Inventory.Queries;
 
@@ -16,6 +17,13 @@ public class InventoryController : ControllerBase
     public InventoryController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet("stock")]
+    public async Task<ActionResult> GetStockOverview()
+    {
+        var result = await _mediator.Send(new GetStockOverviewQuery());
+        return Ok(result);
     }
 
     [HttpGet("item/{itemId}")]

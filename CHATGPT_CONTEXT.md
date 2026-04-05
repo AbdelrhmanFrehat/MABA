@@ -73,3 +73,7 @@ The backend uses EF Core with SQL Server, MediatR/CQRS, FluentValidation, JWT be
 - Added: Project overview, frontend architecture, backend architecture, core features, constraints, risks, active conventions, and important decisions.
 - Added: Rules for keeping this file updated incrementally on meaningful future changes.
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/SalesOrdersController.cs` so the admin sales orders page no longer fails with `404` while the full backend sales module is still incomplete.
+- Fixed: Added a compatibility stock overview endpoint at `API/Maba.Api/Controllers/InventoryController.cs` backed by `API/Maba.Application/Features/Inventory/Queries/StockOverviewQueries.cs` so the admin business inventory page can load `/api/v1/inventory/stock` without returning `404`.
+
+### [2026-04-06]
+- Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/PaymentVouchersController.cs` so the admin payment vouchers page can load `/api/v1/payment-vouchers` without returning `404` while the full backend payments module is still incomplete.
