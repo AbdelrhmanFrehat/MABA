@@ -286,8 +286,8 @@ export class PurchaseOrdersListComponent implements OnInit {
     selectedOrder: PurchaseOrder | null = null;
     editingOrder: PurchaseOrder | null = null;
     orderLines: DocLine[] = [];
-    nextOrderNumberPreview = this.generateOrderNumber();
     private localOrders: PurchaseOrder[] = [];
+    nextOrderNumberPreview = this.generateOrderNumber();
     private latestTotals: PurchaseOrderTotals = {
         subTotal: 0,
         discountAmount: 0,
