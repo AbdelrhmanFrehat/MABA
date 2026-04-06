@@ -1,25 +1,35 @@
 export interface ExpenseCategory {
-    id?: number;
-    nameAr: string;
+    id: string;
+    key: string;
     nameEn: string;
+    nameAr: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface Expense {
-    id?: number;
-    expenseCategoryId: number;
-    expenseCategoryNameAr?: string;
-    expenseCategoryNameEn?: string;
-    expenseDate: string;
+    id: string;
+    expenseCategoryId: string;
+    expenseCategoryKey: string;
+    descriptionEn?: string;
+    descriptionAr?: string;
     amount: number;
-    description: string;
+    currency: string;
+    spentAt: string;
+    receiptMediaId?: string;
+    enteredByUserId: string;
+    enteredByUserFullName: string;
+    createdAt: string;
+    updatedAt?: string;
 }
 
-export interface ExpenseCategoryListResponse {
-    items: ExpenseCategory[];
-    totalCount: number;
-}
-
-export interface ExpenseListResponse {
-    items: Expense[];
-    totalCount: number;
+export interface CreateExpenseRequest {
+    expenseCategoryId: string;
+    descriptionEn?: string;
+    descriptionAr?: string;
+    amount: number;
+    currency?: string;
+    spentAt: string;
+    receiptMediaId?: string;
+    enteredByUserId: string;
 }

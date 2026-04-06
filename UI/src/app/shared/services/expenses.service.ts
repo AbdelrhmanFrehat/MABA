@@ -1,12 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Expense, ExpenseCategory } from '../models';
-import { PaginationParams, PagedResponse } from '../models/api-response.model';
+import { Expense, ExpenseCategory, CreateExpenseRequest } from '../models/expense.model';
 
-export interface ExpenseQueryParams extends PaginationParams {
-    expenseCategoryId?: number;
+export interface ExpenseQueryParams {
+    expenseCategoryId?: string;
     fromDate?: string;
     toDate?: string;
 }
@@ -20,75 +19,29 @@ export class ExpensesService {
 
     constructor(private http: HttpClient) {}
 
-    // Expense Categories
-    getCategories(params?: PaginationParams): Observable<PagedResponse<ExpenseCategory>> {
+    getCategories(): Observable<ExpenseCategory[]> {
+        return this.http.get<ExpenseCategory[]>(this.categoriesUrl);
+    }
+
+    getExpenses(params?: ExpenseQueryParams): Observable<Expense[]> {
         let httpParams = new HttpParams();
-        
-        if (params) {
-            if (params.pageNumber) httpParams = httpParams.set('pageNumber', params.pageNumber.toString());
-            if (params.pageSize) httpParams = httpParams.set('pageSize', params.pageSize.toString());
-            if (params.search) httpParams = httpParams.set('search', params.search);
+
+        if (params?.expenseCategoryId) {
+            httpParams = httpParams.set('expenseCategoryId', params.expenseCategoryId);
         }
 
-        return this.http.get<PagedResponse<ExpenseCategory>>(this.categoriesUrl, { params: httpParams });
-    }
-
-    getCategoriesForDropdown(): Observable<ExpenseCategory[]> {
-        const params = new HttpParams()
-            .set('pageNumber', '1')
-            .set('pageSize', '1000');
-        
-        return this.http.get<PagedResponse<ExpenseCategory>>(this.categoriesUrl, { params }).pipe(
-            map(response => response.items)
-        );
-    }
-
-    getCategoryById(id: number): Observable<ExpenseCategory> {
-        return this.http.get<ExpenseCategory>(`${this.categoriesUrl}/${id}`);
-    }
-
-    createCategory(category: ExpenseCategory): Observable<number> {
-        return this.http.post<number>(this.categoriesUrl, category);
-    }
-
-    updateCategory(id: number, category: ExpenseCategory): Observable<void> {
-        return this.http.put<void>(`${this.categoriesUrl}/${id}`, category);
-    }
-
-    deleteCategory(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.categoriesUrl}/${id}`);
-    }
-
-    // Expenses
-    getExpenses(params?: ExpenseQueryParams): Observable<PagedResponse<Expense>> {
-        let httpParams = new HttpParams();
-        
-        if (params) {
-            if (params.pageNumber) httpParams = httpParams.set('pageNumber', params.pageNumber.toString());
-            if (params.pageSize) httpParams = httpParams.set('pageSize', params.pageSize.toString());
-            if (params.search) httpParams = httpParams.set('search', params.search);
-            if (params.expenseCategoryId) httpParams = httpParams.set('expenseCategoryId', params.expenseCategoryId.toString());
-            if (params.fromDate) httpParams = httpParams.set('fromDate', params.fromDate);
-            if (params.toDate) httpParams = httpParams.set('toDate', params.toDate);
+        if (params?.fromDate) {
+            httpParams = httpParams.set('fromDate', params.fromDate);
         }
 
-        return this.http.get<PagedResponse<Expense>>(this.expensesUrl, { params: httpParams });
+        if (params?.toDate) {
+            httpParams = httpParams.set('toDate', params.toDate);
+        }
+
+        return this.http.get<Expense[]>(this.expensesUrl, { params: httpParams });
     }
 
-    getExpenseById(id: number): Observable<Expense> {
-        return this.http.get<Expense>(`${this.expensesUrl}/${id}`);
-    }
-
-    createExpense(expense: Expense): Observable<number> {
-        return this.http.post<number>(this.expensesUrl, expense);
-    }
-
-    updateExpense(id: number, expense: Expense): Observable<void> {
-        return this.http.put<void>(`${this.expensesUrl}/${id}`, expense);
-    }
-
-    deleteExpense(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.expensesUrl}/${id}`);
+    createExpense(request: CreateExpenseRequest): Observable<Expense> {
+        return this.http.post<Expense>(this.expensesUrl, request);
     }
 }
-

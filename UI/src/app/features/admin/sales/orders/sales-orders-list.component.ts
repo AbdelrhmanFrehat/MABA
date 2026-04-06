@@ -51,16 +51,17 @@ export class SalesOrdersListComponent implements OnInit {
     columns: TableColumn[] = [
         { field: 'orderNumber', headerKey: 'admin.sales.common.number', sortable: true },
         { field: 'customerName', headerKey: 'admin.sales.common.customer', sortable: true },
+        { field: 'sourceLabel', header: 'Source', sortable: true },
         { field: 'orderDate', headerKey: 'common.date', type: 'date', sortable: true },
         { field: 'statusName', headerKey: 'common.status', type: 'custom' },
         { field: 'total', headerKey: 'common.total', type: 'currency', currencyCode: 'ILS', sortable: true }
     ];
 
     actions: TableAction[] = [
-        { icon: 'pi pi-pencil', tooltipKey: 'common.edit', action: 'edit' },
-        { icon: 'pi pi-check', tooltipKey: 'admin.common.submitForApproval', action: 'submit', severity: 'secondary' },
-        { icon: 'pi pi-verified', tooltipKey: 'admin.common.approve', action: 'approve', severity: 'success' },
-        { icon: 'pi pi-file', tooltipKey: 'admin.sales.common.convertToInvoice', action: 'invoice', severity: 'info' }
+        { icon: 'pi pi-pencil', tooltipKey: 'common.edit', action: 'edit', visible: row => !row.isStorefrontOrder },
+        { icon: 'pi pi-check', tooltipKey: 'admin.common.submitForApproval', action: 'submit', severity: 'secondary', visible: row => !row.isStorefrontOrder },
+        { icon: 'pi pi-verified', tooltipKey: 'admin.common.approve', action: 'approve', severity: 'success', visible: row => !row.isStorefrontOrder },
+        { icon: 'pi pi-file', tooltipKey: 'admin.sales.common.convertToInvoice', action: 'invoice', severity: 'info', visible: row => !row.isStorefrontOrder }
     ];
 
     private salesApi = inject(SalesApiService);

@@ -76,6 +76,8 @@ export interface SalesOrder {
     salesPersonName?: string;
     warehouseId?: string;
     createdByUserId: string;
+    isStorefrontOrder?: boolean;
+    sourceLabel?: string;
     lines: SalesOrderLine[];
     createdAt: string;
     updatedAt?: string;

@@ -76,6 +76,7 @@ The backend uses EF Core with SQL Server, MediatR/CQRS, FluentValidation, JWT be
 - Fixed: Added a compatibility stock overview endpoint at `API/Maba.Api/Controllers/InventoryController.cs` backed by `API/Maba.Application/Features/Inventory/Queries/StockOverviewQueries.cs` so the admin business inventory page can load `/api/v1/inventory/stock` without returning `404`.
 
 ### [2026-04-06]
+- Fixed: Merged the missing `admin.dashboard.*` translation keys into the active `admin` locale blocks in `UI/src/assets/i18n/en.json` and `UI/src/assets/i18n/ar.json` so the admin dashboard no longer shows raw translation keys.
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/PaymentVouchersController.cs` so the admin payment vouchers page can load `/api/v1/payment-vouchers` without returning `404` while the full backend payments module is still incomplete.
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/AccountsController.cs` so the admin chart of accounts page can load `/api/v1/accounts/tree` without returning `404` while the full backend accounting module is still incomplete.
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/PriceListsController.cs` so the admin price lists page can load `/api/v1/price-lists` without returning `404` while the full backend pricing module is still incomplete.
@@ -88,3 +89,10 @@ The backend uses EF Core with SQL Server, MediatR/CQRS, FluentValidation, JWT be
 - Added: Upgraded `UI/src/app/features/admin/pricing/price-lists.component.ts` from a thin placeholder into a working admin table with create/edit dialogs backed by `UI/src/app/features/admin/pricing/price-list-form.component.ts`.
 - Fixed: Guarded shared table CSV export in `UI/src/app/shared/components/data-table/data-table.ts` so clicking export with no rows no longer throws the PrimeNG `filter` runtime error.
 - Fixed: Reduced unnecessary `GET /api/v1/auth/me` requests by making `UI/src/app/features/public/layout/public-header.component.ts` refresh the current user only when a token exists and no user is already loaded in auth state.
+- Fixed: Updated the repo root `global.json` SDK pin from `9.0.309` to `10.0.103` to match the installed local SDK and restore C# Dev Kit project-system startup in VS Code.
+- Added: Replaced the scaffolded admin expenses screens with a working list page and a real new-expense form in `UI/src/app/features/admin/expenses/`, aligned to the existing backend `ExpensesController` and `ExpenseCategoriesController`.
+- Refactored: Updated `UI/src/app/shared/services/expenses.service.ts` and `UI/src/app/shared/models/expense.model.ts` from the older paged/number-based contract to the current GUID-based finance DTOs used by the backend.
+- Added: Implemented a lightweight backend `ReportsController` sales endpoint at `API/Maba.Api/Controllers/ReportsController.cs` based on existing storefront invoices and payments so the admin sales report can load real data.
+- Added: Replaced the scaffolded admin sales report screen with a working report page in `UI/src/app/features/admin/reports/sales-report.component.ts`, including date filters, summary totals, and a live invoice-level sales table.
+- Fixed: Replaced the temporary empty `API/Maba.Api/Controllers/SalesOrdersController.cs` response with a real fallback projection from existing storefront `Orders`, so purchases made on the website now appear in the admin sales orders list.
+- Updated: Marked storefront-origin sales rows in `UI/src/app/features/admin/sales/orders/sales-orders-list.component.ts` and hid ERP-only actions for those rows to avoid misleading edit/approval/invoice buttons on website orders.
