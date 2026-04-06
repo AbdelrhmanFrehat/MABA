@@ -1013,7 +1013,7 @@ export class PublicHeaderComponent implements OnInit {
             this.cartItemsCount = 0;
         }
         
-        if (this.authService.authenticated) {
+        if (this.authService.authenticated && this.authService.token && !this.authService.user) {
             this.authService.getCurrentUser().subscribe(() => {
                 this.setupUserMenu();
             });

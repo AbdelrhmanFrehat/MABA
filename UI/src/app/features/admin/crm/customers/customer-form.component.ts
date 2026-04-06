@@ -6,20 +6,23 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { CheckboxModule } from 'primeng/checkbox';
+import { SelectModule } from 'primeng/select';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CrmApiService } from '../../../../shared/services/crm-api.service';
+import { UsersService } from '../../../../shared/services/users.service';
 import { LookupDropdownComponent } from '../../../../shared/components/lookup-dropdown/lookup-dropdown';
 import { Customer } from '../../../../shared/models/crm.model';
+import { User } from '../../../../shared/models/auth.model';
 
 @Component({
     selector: 'app-customer-form',
     standalone: true,
     imports: [
         CommonModule, ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule,
-        CheckboxModule, MessageModule, ToastModule, TranslateModule, LookupDropdownComponent
+        CheckboxModule, MessageModule, ToastModule, TranslateModule, LookupDropdownComponent, SelectModule
     ],
     providers: [MessageService],
     template: `
@@ -40,6 +43,19 @@ import { Customer } from '../../../../shared/models/crm.model';
                 <div class="form-field">
                     <label>{{ 'admin.crm.type' | translate }} <span class="text-red-500">*</span></label>
                     <app-lookup-dropdown lookupTypeKey="customer_type" formControlName="customerTypeLookupId" [placeholder]="'admin.crm.selectType' | translate"></app-lookup-dropdown>
+                </div>
+                <div class="form-field">
+                    <label>Linked Website User</label>
+                    <p-select
+                        formControlName="userId"
+                        [options]="userOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        [filter]="true"
+                        [showClear]="true"
+                        placeholder="Select a website user"
+                        styleClass="w-full"
+                    />
                 </div>
                 <div class="form-field">
                     <label>{{ 'common.email' | translate }}</label>
@@ -97,9 +113,11 @@ export class CustomerFormComponent implements OnInit {
     isEditMode = false;
     saving = false;
     errorMessage = '';
+    userOptions: { label: string; value: string }[] = [];
 
     private fb = inject(FormBuilder);
     private crmApi = inject(CrmApiService);
+    private usersService = inject(UsersService);
     private messageService = inject(MessageService);
     private translateService = inject(TranslateService);
 
@@ -108,6 +126,7 @@ export class CustomerFormComponent implements OnInit {
             nameEn: ['', [Validators.required, Validators.maxLength(200)]],
             nameAr: ['', [Validators.required, Validators.maxLength(200)]],
             customerTypeLookupId: ['', Validators.required],
+            userId: [null as string | null],
             email: [''],
             phone: [''],
             taxNumber: [''],
@@ -121,10 +140,30 @@ export class CustomerFormComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.loadUsers();
+
         if (this.config.data?.customer) {
             this.isEditMode = true;
-            this.form.patchValue(this.config.data.customer);
+            const customer = this.config.data.customer as Customer & { customerTypeId?: string };
+            this.form.patchValue({
+                ...customer,
+                customerTypeLookupId: customer.customerTypeLookupId || customer.customerTypeId || ''
+            });
         }
+    }
+
+    private loadUsers() {
+        this.usersService.getAllUsersSimple({ isActive: true }).subscribe({
+            next: (users: User[]) => {
+                this.userOptions = users.map(user => ({
+                    value: user.id,
+                    label: user.email ? `${user.fullName} (${user.email})` : user.fullName
+                }));
+            },
+            error: () => {
+                this.userOptions = [];
+            }
+        });
     }
 
     onSubmit() {
@@ -132,10 +171,15 @@ export class CustomerFormComponent implements OnInit {
         this.saving = true;
         this.errorMessage = '';
         const val = this.form.value;
+        const request = {
+            ...val,
+            customerTypeId: val.customerTypeLookupId
+        };
+        delete request.customerTypeLookupId;
 
         const apiCall = this.isEditMode
-            ? this.crmApi.updateCustomer(this.config.data.customer.id, { ...val, isActive: this.config.data.customer.isActive ?? true })
-            : this.crmApi.createCustomer(val);
+            ? this.crmApi.updateCustomer(this.config.data.customer.id, { ...request, isActive: this.config.data.customer.isActive ?? true })
+            : this.crmApi.createCustomer(request);
 
         apiCall.subscribe({
             next: (result) => {

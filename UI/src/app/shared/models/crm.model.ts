@@ -75,6 +75,7 @@ export interface CreateCustomerRequest {
     nameEn: string;
     nameAr: string;
     customerTypeLookupId: string;
+    userId?: string;
     email?: string;
     phone?: string;
     taxNumber?: string;

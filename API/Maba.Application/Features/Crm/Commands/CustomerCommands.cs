@@ -14,6 +14,7 @@ public class CreateCustomerCommand : IRequest<CustomerDto>
     public string? Phone { get; set; }
     public string? Phone2 { get; set; }
     public Guid CustomerTypeId { get; set; }
+    public Guid? UserId { get; set; }
     public string? TaxNumber { get; set; }
     public decimal CreditLimit { get; set; }
     public string Currency { get; set; } = "ILS";
@@ -43,6 +44,7 @@ public class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerComman
             Phone = request.Phone,
             Phone2 = request.Phone2,
             CustomerTypeId = request.CustomerTypeId,
+            UserId = request.UserId,
             TaxNumber = request.TaxNumber,
             CreditLimit = request.CreditLimit,
             CurrentBalance = 0,
@@ -62,6 +64,7 @@ public class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerComman
             Email = entity.Email,
             Phone = entity.Phone,
             CustomerTypeId = entity.CustomerTypeId,
+            UserId = entity.UserId,
             CreditLimit = entity.CreditLimit,
             CurrentBalance = entity.CurrentBalance,
             Currency = entity.Currency,
@@ -79,6 +82,7 @@ public class UpdateCustomerCommand : IRequest<CustomerDto>
     public string? Phone { get; set; }
     public string? Phone2 { get; set; }
     public Guid CustomerTypeId { get; set; }
+    public Guid? UserId { get; set; }
     public decimal CreditLimit { get; set; }
     public bool IsActive { get; set; }
 }
@@ -103,6 +107,7 @@ public class UpdateCustomerCommandHandler : IRequestHandler<UpdateCustomerComman
         entity.Phone = request.Phone;
         entity.Phone2 = request.Phone2;
         entity.CustomerTypeId = request.CustomerTypeId;
+        entity.UserId = request.UserId;
         entity.CreditLimit = request.CreditLimit;
         entity.IsActive = request.IsActive;
 
@@ -117,6 +122,7 @@ public class UpdateCustomerCommandHandler : IRequestHandler<UpdateCustomerComman
             Email = entity.Email,
             Phone = entity.Phone,
             CustomerTypeId = entity.CustomerTypeId,
+            UserId = entity.UserId,
             CreditLimit = entity.CreditLimit,
             CurrentBalance = entity.CurrentBalance,
             Currency = entity.Currency,

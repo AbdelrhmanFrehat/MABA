@@ -1,14 +1,14 @@
 export interface PriceList {
     id: string;
-    code: string;
     nameEn: string;
     nameAr: string;
+    priceListTypeId: string;
+    priceListTypeName?: string;
     currency: string;
     isDefault: boolean;
     isActive: boolean;
-    effectiveFrom?: string;
-    effectiveTo?: string;
-    priority: number;
+    validFrom?: string;
+    validTo?: string;
     items?: PriceListItem[];
     createdAt: string;
     updatedAt?: string;
@@ -96,14 +96,14 @@ export interface UnitConversion {
 // --- Request DTOs ---
 
 export interface CreatePriceListRequest {
-    code: string;
     nameEn: string;
     nameAr: string;
+    priceListTypeId: string;
     currency?: string;
     isDefault?: boolean;
-    effectiveFrom?: string;
-    effectiveTo?: string;
-    priority?: number;
+    isActive?: boolean;
+    validFrom?: string;
+    validTo?: string;
 }
 
 export interface UpdatePriceListItemsRequest {

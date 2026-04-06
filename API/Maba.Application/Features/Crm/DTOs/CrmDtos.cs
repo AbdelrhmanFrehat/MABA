@@ -9,6 +9,7 @@ public class CustomerDto
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public Guid CustomerTypeId { get; set; }
+    public Guid? UserId { get; set; }
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
     public string Currency { get; set; } = string.Empty;

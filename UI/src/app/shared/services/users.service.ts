@@ -32,6 +32,16 @@ export class UsersService {
         return this.http.get<PagedResponse<User>>(this.usersUrl, { params: httpParams });
     }
 
+    getAllUsersSimple(params?: { isActive?: boolean }): Observable<User[]> {
+        let httpParams = new HttpParams();
+
+        if (params?.isActive !== undefined) {
+            httpParams = httpParams.set('isActive', params.isActive.toString());
+        }
+
+        return this.http.get<User[]>(this.usersUrl, { params: httpParams });
+    }
+
     getUserById(id: number): Observable<User> {
         return this.http.get<User>(`${this.usersUrl}/${id}`);
     }

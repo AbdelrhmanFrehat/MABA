@@ -265,6 +265,10 @@ export class DataTableComponent implements OnInit {
     }
 
     exportCSV() {
+        if (!this.table || !this.data?.length) {
+            return;
+        }
+
         this.table.exportCSV();
     }
 
