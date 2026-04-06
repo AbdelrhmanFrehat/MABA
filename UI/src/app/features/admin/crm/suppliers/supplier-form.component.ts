@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CrmApiService } from '../../../../shared/services/crm-api.service';
 import { LookupDropdownComponent } from '../../../../shared/components/lookup-dropdown/lookup-dropdown';
+import { Supplier } from '../../../../shared/models/crm.model';
 
 @Component({
     selector: 'app-supplier-form',
@@ -92,15 +93,28 @@ export class SupplierFormComponent implements OnInit {
     }
 
     ngOnInit() {
-        if (this.config.data?.supplier) { this.isEditMode = true; this.form.patchValue(this.config.data.supplier); }
+        if (this.config.data?.supplier) {
+            this.isEditMode = true;
+            const supplier = this.config.data.supplier as Supplier & { supplierTypeId?: string };
+            this.form.patchValue({
+                ...supplier,
+                supplierTypeLookupId: supplier.supplierTypeLookupId || supplier.supplierTypeId || ''
+            });
+        }
     }
 
     onSubmit() {
         if (this.form.invalid) return;
         this.saving = true; this.errorMessage = '';
+        const val = this.form.value;
+        const request = {
+            ...val,
+            supplierTypeId: val.supplierTypeLookupId || undefined
+        };
+        delete request.supplierTypeLookupId;
         const apiCall = this.isEditMode
-            ? this.crmApi.updateSupplier(this.config.data.supplier.id, { ...this.form.value, isActive: true })
-            : this.crmApi.createSupplier(this.form.value);
+            ? this.crmApi.updateSupplier(this.config.data.supplier.id, { ...request, isActive: this.config.data.supplier.isActive ?? true })
+            : this.crmApi.createSupplier(request);
         apiCall.subscribe({
             next: (result) => { this.ref.close(result); },
             error: (err) => { this.saving = false; this.errorMessage = err.error?.message || this.translateService.instant('messages.errorSavingItem'); }

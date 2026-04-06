@@ -25,9 +25,12 @@ public class SupplierDto
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public Guid? SupplierTypeId { get; set; }
+    public string? SupplierTypeName { get; set; }
+    public string? TaxNumber { get; set; }
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
     public string Currency { get; set; } = string.Empty;
     public int PaymentTermDays { get; set; }
+    public string? Notes { get; set; }
     public bool IsActive { get; set; }
 }

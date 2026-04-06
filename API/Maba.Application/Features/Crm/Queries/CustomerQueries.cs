@@ -105,10 +105,13 @@ public class GetSuppliersQueryHandler : IRequestHandler<GetSuppliersQuery, List<
                 Email = x.Email,
                 Phone = x.Phone,
                 SupplierTypeId = x.SupplierTypeId,
+                SupplierTypeName = x.SupplierType != null ? x.SupplierType.NameEn : null,
+                TaxNumber = x.TaxNumber,
                 CreditLimit = x.CreditLimit,
                 CurrentBalance = x.CurrentBalance,
                 Currency = x.Currency,
                 PaymentTermDays = x.PaymentTermDays,
+                Notes = x.Notes,
                 IsActive = x.IsActive
             })
             .ToListAsync(cancellationToken);
@@ -142,10 +145,13 @@ public class GetSupplierByIdQueryHandler : IRequestHandler<GetSupplierByIdQuery,
                 Email = x.Email,
                 Phone = x.Phone,
                 SupplierTypeId = x.SupplierTypeId,
+                SupplierTypeName = x.SupplierType != null ? x.SupplierType.NameEn : null,
+                TaxNumber = x.TaxNumber,
                 CreditLimit = x.CreditLimit,
                 CurrentBalance = x.CurrentBalance,
                 Currency = x.Currency,
                 PaymentTermDays = x.PaymentTermDays,
+                Notes = x.Notes,
                 IsActive = x.IsActive
             })
             .FirstOrDefaultAsync(cancellationToken);

@@ -76,6 +76,7 @@ The backend uses EF Core with SQL Server, MediatR/CQRS, FluentValidation, JWT be
 - Fixed: Added a compatibility stock overview endpoint at `API/Maba.Api/Controllers/InventoryController.cs` backed by `API/Maba.Application/Features/Inventory/Queries/StockOverviewQueries.cs` so the admin business inventory page can load `/api/v1/inventory/stock` without returning `404`.
 
 ### [2026-04-06]
+- Fixed: Aligned the CRM supplier form and backend supplier commands/DTOs so supplier creation and editing now use the real `SupplierTypeId` contract and persist basic fields such as `TaxNumber` and `Notes`, making supplier records usable for Purchase Orders testing.
 - Fixed: Changed the storefront sales-orders fallback in `API/Maba.Api/Controllers/SalesOrdersController.cs` to materialize orders first and map nested line DTOs in memory, resolving the EF Core translation error that caused `GET /api/v1/sales-orders` to return `400`.
 - Fixed: Corrected the storefront sales-orders fallback in `API/Maba.Api/Controllers/SalesOrdersController.cs` to use `Item.Sku` instead of the non-existent `Item.SKU`, resolving the backend publish failure.
 - Fixed: Merged the missing `admin.dashboard.*` translation keys into the active `admin` locale blocks in `UI/src/assets/i18n/en.json` and `UI/src/assets/i18n/ar.json` so the admin dashboard no longer shows raw translation keys.

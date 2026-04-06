@@ -139,9 +139,11 @@ public class CreateSupplierCommand : IRequest<SupplierDto>
     public string? Phone { get; set; }
     public string? Phone2 { get; set; }
     public Guid? SupplierTypeId { get; set; }
+    public string? TaxNumber { get; set; }
     public decimal CreditLimit { get; set; }
     public string Currency { get; set; } = "ILS";
     public int PaymentTermDays { get; set; } = 30;
+    public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -168,10 +170,12 @@ public class CreateSupplierCommandHandler : IRequestHandler<CreateSupplierComman
             Phone = request.Phone,
             Phone2 = request.Phone2,
             SupplierTypeId = request.SupplierTypeId,
+            TaxNumber = request.TaxNumber,
             CreditLimit = request.CreditLimit,
             CurrentBalance = 0,
             Currency = request.Currency,
             PaymentTermDays = request.PaymentTermDays,
+            Notes = request.Notes,
             IsActive = request.IsActive
         };
 
@@ -187,10 +191,12 @@ public class CreateSupplierCommandHandler : IRequestHandler<CreateSupplierComman
             Email = entity.Email,
             Phone = entity.Phone,
             SupplierTypeId = entity.SupplierTypeId,
+            TaxNumber = entity.TaxNumber,
             CreditLimit = entity.CreditLimit,
             CurrentBalance = entity.CurrentBalance,
             Currency = entity.Currency,
             PaymentTermDays = entity.PaymentTermDays,
+            Notes = entity.Notes,
             IsActive = entity.IsActive
         };
     }
@@ -205,8 +211,10 @@ public class UpdateSupplierCommand : IRequest<SupplierDto>
     public string? Phone { get; set; }
     public string? Phone2 { get; set; }
     public Guid? SupplierTypeId { get; set; }
+    public string? TaxNumber { get; set; }
     public decimal CreditLimit { get; set; }
     public int PaymentTermDays { get; set; }
+    public string? Notes { get; set; }
     public bool IsActive { get; set; }
 }
 
@@ -230,8 +238,10 @@ public class UpdateSupplierCommandHandler : IRequestHandler<UpdateSupplierComman
         entity.Phone = request.Phone;
         entity.Phone2 = request.Phone2;
         entity.SupplierTypeId = request.SupplierTypeId;
+        entity.TaxNumber = request.TaxNumber;
         entity.CreditLimit = request.CreditLimit;
         entity.PaymentTermDays = request.PaymentTermDays;
+        entity.Notes = request.Notes;
         entity.IsActive = request.IsActive;
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -245,10 +255,12 @@ public class UpdateSupplierCommandHandler : IRequestHandler<UpdateSupplierComman
             Email = entity.Email,
             Phone = entity.Phone,
             SupplierTypeId = entity.SupplierTypeId,
+            TaxNumber = entity.TaxNumber,
             CreditLimit = entity.CreditLimit,
             CurrentBalance = entity.CurrentBalance,
             Currency = entity.Currency,
             PaymentTermDays = entity.PaymentTermDays,
+            Notes = entity.Notes,
             IsActive = entity.IsActive
         };
     }

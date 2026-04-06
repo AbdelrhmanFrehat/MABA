@@ -40,6 +40,7 @@ export interface Supplier {
     code: string;
     nameEn: string;
     nameAr: string;
+    supplierTypeId?: string;
     supplierTypeLookupId?: string;
     supplierTypeName?: string;
     email?: string;
@@ -97,6 +98,7 @@ export interface UpdateCustomerRequest extends CreateCustomerRequest {
 export interface CreateSupplierRequest {
     nameEn: string;
     nameAr: string;
+    supplierTypeId?: string;
     supplierTypeLookupId?: string;
     email?: string;
     phone?: string;
