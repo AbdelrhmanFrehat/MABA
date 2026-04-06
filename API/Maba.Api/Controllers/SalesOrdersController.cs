@@ -21,13 +21,15 @@ public class SalesOrdersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SalesOrderDto>>> GetSalesOrders(CancellationToken cancellationToken)
     {
-        var orders = await _context.Set<Order>()
+        var orderEntities = await _context.Set<Order>()
             .Include(x => x.User)
             .Include(x => x.OrderStatus)
             .Include(x => x.OrderItems)
                 .ThenInclude(x => x.Item)
             .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new SalesOrderDto
+            .ToListAsync(cancellationToken);
+
+        var orders = orderEntities.Select(x => new SalesOrderDto
             {
                 Id = x.Id,
                 OrderNumber = x.OrderNumber,
@@ -55,8 +57,8 @@ public class SalesOrdersController : ControllerBase
                         SalesOrderId = x.Id,
                         LineNumber = index + 1,
                         ItemId = i.ItemId ?? Guid.Empty,
-                        ItemName = i.Item != null ? i.Item.NameEn : null,
-                        ItemSku = i.Item != null ? i.Item.Sku : null,
+                        ItemName = i.Item?.NameEn,
+                        ItemSku = i.Item?.Sku,
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice,
                         DiscountAmount = i.DiscountAmount,
@@ -69,7 +71,7 @@ public class SalesOrdersController : ControllerBase
                 CreatedAt = x.CreatedAt,
                 UpdatedAt = x.UpdatedAt
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return Ok(orders);
     }
