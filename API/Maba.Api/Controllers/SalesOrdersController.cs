@@ -56,7 +56,7 @@ public class SalesOrdersController : ControllerBase
                         LineNumber = index + 1,
                         ItemId = i.ItemId ?? Guid.Empty,
                         ItemName = i.Item != null ? i.Item.NameEn : null,
-                        ItemSku = i.Item != null ? i.Item.SKU : null,
+                        ItemSku = i.Item != null ? i.Item.Sku : null,
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice,
                         DiscountAmount = i.DiscountAmount,

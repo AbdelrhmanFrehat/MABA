@@ -76,6 +76,7 @@ The backend uses EF Core with SQL Server, MediatR/CQRS, FluentValidation, JWT be
 - Fixed: Added a compatibility stock overview endpoint at `API/Maba.Api/Controllers/InventoryController.cs` backed by `API/Maba.Application/Features/Inventory/Queries/StockOverviewQueries.cs` so the admin business inventory page can load `/api/v1/inventory/stock` without returning `404`.
 
 ### [2026-04-06]
+- Fixed: Corrected the storefront sales-orders fallback in `API/Maba.Api/Controllers/SalesOrdersController.cs` to use `Item.Sku` instead of the non-existent `Item.SKU`, resolving the backend publish failure.
 - Fixed: Merged the missing `admin.dashboard.*` translation keys into the active `admin` locale blocks in `UI/src/assets/i18n/en.json` and `UI/src/assets/i18n/ar.json` so the admin dashboard no longer shows raw translation keys.
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/PaymentVouchersController.cs` so the admin payment vouchers page can load `/api/v1/payment-vouchers` without returning `404` while the full backend payments module is still incomplete.
 - Fixed: Added a temporary compatibility endpoint at `API/Maba.Api/Controllers/AccountsController.cs` so the admin chart of accounts page can load `/api/v1/accounts/tree` without returning `404` while the full backend accounting module is still incomplete.
