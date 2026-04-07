@@ -2739,6 +2739,124 @@
       "moduleScaffolded": "تم تجهيز هذه الصفحة داخل لوحة الإدارة وهي جاهزة لاستكمال الربط مع الواجهة الخلفية.",
       "documentFormComingSoon": "تم تجهيز هيكل النموذج ويمكن الآن استكمال الحقول النهائية حسب استجابات الـ API."
     },
+    "serviceWorkflow": {
+      "progress": "تقدم سير العمل",
+      "nextStatus": "المرحلة التالية",
+      "manageWorkflow": "إدارة سير العمل",
+      "statusNew": "جديد",
+      "statusUnderReview": "قيد المراجعة",
+      "statusAwaitingCustomerConfirmation": "بانتظار تأكيد العميل",
+      "statusApproved": "موافق عليه",
+      "statusInProgress": "قيد التنفيذ",
+      "statusReadyForDelivery": "جاهز للتسليم",
+      "statusCompleted": "مكتمل",
+      "statusRejected": "مرفوض",
+      "statusCancelled": "ملغى"
+    },
+    "allRequests": {
+      "title": "جميع الطلبات",
+      "subtitle": "مركز عمليات موحد لإدارة طلبات الخدمات الهندسية والتصنيعية.",
+      "types": {
+        "all": "كل أنواع الطلبات",
+        "project": "طلب مشروع",
+        "print3d": "طلب طباعة ثلاثية الأبعاد",
+        "design": "طلب تصميم",
+        "designCad": "طلب CAD",
+        "laser": "طلب ليزر",
+        "cnc": "طلب CNC"
+      },
+      "summary": {
+        "total": "إجمالي النتائج"
+      },
+      "filters": {
+        "requestType": "نوع الطلب",
+        "status": "حالة سير العمل",
+        "createdFrom": "من تاريخ",
+        "createdTo": "إلى تاريخ",
+        "keyword": "كلمة مفتاحية",
+        "customer": "العميل",
+        "reference": "المرجع",
+        "keywordPlaceholder": "ابحث في العناوين أو الملاحظات أو تفاصيل الطلب",
+        "customerPlaceholder": "ابحث باسم العميل أو بريده أو هاتفه",
+        "referencePlaceholder": "ابحث برقم المرجع"
+      },
+      "table": {
+        "type": "النوع",
+        "reference": "المرجع",
+        "customer": "العميل",
+        "summary": "ملخص الطلب",
+        "status": "الحالة",
+        "createdAt": "تاريخ الإنشاء"
+      },
+      "sections": {
+        "shared": "الإدارة المشتركة",
+        "progress": "تقدم سير العمل",
+        "requestDetails": "تفاصيل الطلب",
+        "cadDetails": "تفاصيل CAD",
+        "print3dDetails": "تفاصيل الطباعة ثلاثية الأبعاد",
+        "laserDetails": "تفاصيل الليزر",
+        "cncDetails": "تفاصيل CNC",
+        "files": "الملفات والمرفقات"
+      },
+      "fields": {
+        "workflowStatus": "حالة سير العمل",
+        "customerName": "اسم العميل",
+        "customerEmail": "بريد العميل",
+        "customerPhone": "هاتف العميل",
+        "adminNotes": "ملاحظات الإدارة",
+        "internalNote": "ملاحظة داخلية",
+        "title": "العنوان",
+        "description": "الوصف",
+        "requestType": "نوع الطلب",
+        "category": "الفئة",
+        "budgetRange": "نطاق الميزانية",
+        "timeline": "الجدول الزمني",
+        "toleranceLevel": "مستوى التحمل",
+        "intendedUse": "الاستخدام المقصود",
+        "materialPreference": "تفضيل المادة",
+        "dimensionsNotes": "ملاحظات الأبعاد",
+        "quotedPrice": "السعر المسعّر",
+        "finalPrice": "السعر النهائي",
+        "targetProcess": "العملية المستهدفة",
+        "deadline": "الموعد النهائي",
+        "materialNotes": "ملاحظات المادة",
+        "toleranceNotes": "ملاحظات التحمل",
+        "whatNeedsChange": "ما الذي يحتاج تعديلاً",
+        "material": "المادة",
+        "profile": "الملف الجودي",
+        "estimatedPrice": "السعر التقديري",
+        "estimatedPrintTimeHours": "زمن الطباعة التقديري (ساعات)",
+        "estimatedFilamentGrams": "الخامة التقديرية (جم)",
+        "customerNotes": "ملاحظات العميل",
+        "operationMode": "نمط العملية",
+        "widthCm": "العرض (سم)",
+        "heightCm": "الارتفاع (سم)",
+        "serviceMode": "نمط الخدمة",
+        "operationType": "نوع العملية",
+        "quantity": "الكمية",
+        "widthMm": "العرض (مم)",
+        "heightMm": "الارتفاع (مم)",
+        "thicknessMm": "السُمك (مم)",
+        "depthMm": "العمق (مم)",
+        "projectDescription": "وصف المشروع",
+        "designNotes": "ملاحظات التصميم"
+      },
+      "actions": {
+        "manage": "إدارة الطلب",
+        "openOriginal": "فتح الوحدة الأصلية",
+        "downloadFile": "تنزيل الملف",
+        "openArtwork": "فتح المخطط"
+      },
+      "timeline": {
+        "pending": "مرحلة معلقة"
+      },
+      "messages": {
+        "loadFailed": "فشل تحميل الطلبات.",
+        "detailFailed": "فشل تحميل تفاصيل الطلب.",
+        "saved": "تم تحديث الطلب بنجاح.",
+        "saveFailed": "فشل حفظ تعديلات الطلب."
+      }
+    },
     "lookups": {
       "title": "القيم المرجعية",
       "types": "أنواع القيم",
