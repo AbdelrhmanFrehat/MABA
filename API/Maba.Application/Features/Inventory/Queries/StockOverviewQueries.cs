@@ -60,7 +60,7 @@ public class GetStockOverviewQueryHandler : IRequestHandler<GetStockOverviewQuer
                 QuantityOnOrder = x.QuantityOnOrder,
                 QuantityAvailable = x.QuantityOnHand - x.QuantityReserved,
                 ReorderLevel = x.ReorderLevel,
-                CostPerUnit = x.CostPerUnit ?? 0,
+                CostPerUnit = x.CostPerUnit ?? x.Item.CostPrice ?? x.Item.Price,
                 LastStockInAt = x.LastStockInAt,
                 LastStockOutAt = x.LastStockOutAt
             })

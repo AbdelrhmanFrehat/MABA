@@ -11,6 +11,7 @@ import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { CurrencySelectComponent } from '../../../../shared/components/currency-select/currency-select';
 import { CrmApiService } from '../../../../shared/services/crm-api.service';
 import { UsersService } from '../../../../shared/services/users.service';
 import { LookupDropdownComponent } from '../../../../shared/components/lookup-dropdown/lookup-dropdown';
@@ -22,7 +23,7 @@ import { User } from '../../../../shared/models/auth.model';
     standalone: true,
     imports: [
         CommonModule, ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule,
-        CheckboxModule, MessageModule, ToastModule, TranslateModule, LookupDropdownComponent, SelectModule
+        CheckboxModule, MessageModule, ToastModule, TranslateModule, LookupDropdownComponent, SelectModule, CurrencySelectComponent
     ],
     providers: [MessageService],
     template: `
@@ -75,7 +76,7 @@ import { User } from '../../../../shared/models/auth.model';
                 </div>
                 <div class="form-field">
                     <label>{{ 'admin.crm.currency' | translate }}</label>
-                    <input pInputText formControlName="currency" class="w-full" maxlength="3" />
+                    <app-currency-select formControlName="currency"></app-currency-select>
                 </div>
                 <div class="form-field form-field-full">
                     <label>{{ 'admin.crm.address' | translate }}</label>

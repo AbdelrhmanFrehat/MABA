@@ -12,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { CurrencySelectComponent } from '../../../../shared/components/currency-select/currency-select';
 import { ItemsApiService } from '../../../../shared/services/items-api.service';
 import { CatalogApiService } from '../../../../shared/services/catalog-api.service';
 import { Item, CreateItemRequest, UpdateItemRequest } from '../../../../shared/models/item.model';
@@ -38,7 +39,8 @@ interface ItemStatus {
         CheckboxModule,
         ToastModule,
         MessageModule,
-        TranslateModule
+        TranslateModule,
+        CurrencySelectComponent
     ],
     providers: [MessageService],
     template: `
@@ -141,15 +143,7 @@ interface ItemStatus {
                     <label for="currency">
                         {{ 'admin.items.currency' | translate }} <span class="text-red-500">*</span>
                     </label>
-                    <input 
-                        pInputText 
-                        id="currency" 
-                        formControlName="currency"
-                        class="w-full"
-                        maxlength="3"
-                        placeholder="USD"
-                        [class.ng-invalid]="itemForm.get('currency')?.invalid && itemForm.get('currency')?.touched"
-                    />
+                    <app-currency-select formControlName="currency"></app-currency-select>
                     @if (itemForm.get('currency')?.invalid && itemForm.get('currency')?.touched) {
                         <small class="p-error">{{ getErrorMessage('currency') }}</small>
                     }
@@ -424,7 +418,7 @@ export class ItemFormComponent implements OnInit {
             sku: ['', [Validators.required, Validators.maxLength(100)]],
             itemStatusId: ['', Validators.required],
             price: [0, [Validators.required, Validators.min(0)]],
-            currency: ['USD', [Validators.required, Validators.maxLength(3)]],
+            currency: ['USD', Validators.required],
             brandId: [''],
             categoryId: [''],
             tagIds: [[]],

@@ -10,6 +10,7 @@ import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TranslateModule } from '@ngx-translate/core';
+import { CurrencySelectComponent } from '../../../shared/components/currency-select/currency-select';
 import { LookupDropdownComponent } from '../../../shared/components/lookup-dropdown/lookup-dropdown';
 import { PricingApiService } from '../../../shared/services/pricing-api.service';
 import { CreatePriceListRequest, PriceList } from '../../../shared/models/pricing.model';
@@ -27,7 +28,8 @@ import { CreatePriceListRequest, PriceList } from '../../../shared/models/pricin
         MessageModule,
         ToastModule,
         TranslateModule,
-        LookupDropdownComponent
+        LookupDropdownComponent,
+        CurrencySelectComponent
     ],
     providers: [MessageService],
     template: `
@@ -60,7 +62,7 @@ import { CreatePriceListRequest, PriceList } from '../../../shared/models/pricin
 
                 <div class="form-field">
                     <label>{{ 'admin.crm.currency' | translate }}</label>
-                    <input pInputText formControlName="currency" class="w-full" maxlength="3" />
+                    <app-currency-select formControlName="currency"></app-currency-select>
                 </div>
 
                 <div class="form-field">
@@ -110,7 +112,7 @@ export class PriceListFormComponent implements OnInit {
         nameEn: ['', [Validators.required, Validators.maxLength(200)]],
         nameAr: ['', [Validators.required, Validators.maxLength(200)]],
         priceListTypeId: ['', Validators.required],
-        currency: ['ILS', [Validators.required, Validators.maxLength(3)]],
+        currency: ['ILS', Validators.required],
         validFrom: [null as Date | null],
         validTo: [null as Date | null],
         isDefault: [false],

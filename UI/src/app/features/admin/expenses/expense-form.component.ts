@@ -13,6 +13,7 @@ import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TranslateModule } from '@ngx-translate/core';
+import { CurrencySelectComponent } from '../../../shared/components/currency-select/currency-select';
 import { ExpensesService } from '../../../shared/services/expenses.service';
 import { ExpenseCategory } from '../../../shared/models/expense.model';
 import { AuthService } from '../../../shared/services/auth.service';
@@ -33,7 +34,8 @@ import { AuthService } from '../../../shared/services/auth.service';
         DatePickerModule,
         MessageModule,
         ToastModule,
-        TranslateModule
+        TranslateModule,
+        CurrencySelectComponent
     ],
     providers: [MessageService],
     styles: [`
@@ -83,7 +85,7 @@ import { AuthService } from '../../../shared/services/auth.service';
 
                         <div class="field">
                             <label class="font-medium">Currency</label>
-                            <input pInputText formControlName="currency" class="w-full" maxlength="3" />
+                            <app-currency-select formControlName="currency"></app-currency-select>
                         </div>
 
                         <div class="field">
