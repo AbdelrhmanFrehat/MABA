@@ -6,10 +6,12 @@ import {
     Project,
     ProjectsListResponse,
     ProjectRequest,
+    ProjectRequestActivity,
     ProjectCategory,
     ProjectStatus,
     ProjectRequestStatus,
     ProjectRequestType,
+    UpdateProjectRequestPayload,
     CreateProjectRequestPayload,
     CreateProjectPayload,
     UpdateProjectPayload
@@ -101,14 +103,22 @@ export class ProjectsApiService {
 
     getProjectRequests(params: {
         status?: ProjectRequestStatus;
+        workflowStatus?: string;
         requestType?: ProjectRequestType;
+        projectType?: string;
+        mainDomain?: string;
+        projectStage?: string;
         search?: string;
         skip?: number;
         take?: number;
     } = {}): Observable<ProjectRequest[]> {
         let httpParams = new HttpParams();
         if (params.status !== undefined) httpParams = httpParams.set('status', params.status.toString());
+        if (params.workflowStatus) httpParams = httpParams.set('workflowStatus', params.workflowStatus);
         if (params.requestType !== undefined) httpParams = httpParams.set('requestType', params.requestType.toString());
+        if (params.projectType) httpParams = httpParams.set('projectType', params.projectType);
+        if (params.mainDomain) httpParams = httpParams.set('mainDomain', params.mainDomain);
+        if (params.projectStage) httpParams = httpParams.set('projectStage', params.projectStage);
         if (params.search) httpParams = httpParams.set('search', params.search);
         if (params.skip !== undefined) httpParams = httpParams.set('skip', params.skip.toString());
         if (params.take !== undefined) httpParams = httpParams.set('take', params.take.toString());
@@ -116,7 +126,11 @@ export class ProjectsApiService {
         return this.http.get<ProjectRequest[]>(`${this.baseUrl}/admin/requests`, { params: httpParams });
     }
 
-    updateProjectRequest(id: string, payload: { status?: ProjectRequestStatus; adminNotes?: string }): Observable<void> {
+    updateProjectRequest(id: string, payload: UpdateProjectRequestPayload): Observable<void> {
         return this.http.put<void>(`${this.baseUrl}/admin/requests/${id}`, { id, ...payload });
+    }
+
+    getProjectRequestActivities(id: string): Observable<ProjectRequestActivity[]> {
+        return this.http.get<ProjectRequestActivity[]>(`${this.baseUrl}/admin/requests/${id}/activities`);
     }
 }

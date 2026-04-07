@@ -119,8 +119,8 @@ export class SalesReportComponent implements OnInit {
     totalOutstanding = 0;
 
     columns: TableColumn[] = [
-        { field: 'invoiceDate', header: 'Invoice Date', type: 'date', sortable: true },
-        { field: 'invoiceNumber', header: 'Invoice Number', sortable: true },
+        { field: 'invoiceDate', header: 'Date', type: 'date', sortable: true },
+        { field: 'invoiceNumber', header: 'Order / Invoice #', sortable: true },
         { field: 'customerNameEn', header: 'Customer', sortable: true },
         { field: 'totalAmount', header: 'Total', type: 'currency', currencyCode: 'ILS', sortable: true },
         { field: 'discountAmount', header: 'Discount', type: 'currency', currencyCode: 'ILS', sortable: true },

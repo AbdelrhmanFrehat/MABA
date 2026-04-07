@@ -102,7 +102,7 @@
                     </td>
                     <td>
                         <div class="customer-cell">
-                            <strong>{{ request.customerName || '—' }}</strong>
+                            <strong>{{ request.customerName || '-' }}</strong>
                             <small>{{ request.customerEmail }}</small>
                             <small>{{ request.customerPhone }}</small>
                         </div>
@@ -110,7 +110,7 @@
                     <td>
                         <div class="summary-cell">
                             <strong>{{ request.title }}</strong>
-                            <small>{{ request.summary || '—' }}</small>
+                            <small>{{ request.summary || '-' }}</small>
                         </div>
                     </td>
                     <td>
@@ -204,8 +204,35 @@
                         <input pInputText formControlName="requestTypeName" />
                     </div>
                     <div class="field" *ngIf="request.requestType === 'project'">
+                        <label>{{ 'admin.allRequests.fields.projectType' | translate }}</label>
+                        <p-select formControlName="projectType" [options]="projectTypeOptions" optionLabel="labelKey" optionValue="value">
+                            <ng-template let-option pTemplate="item">{{ option.labelKey | translate }}</ng-template>
+                            <ng-template let-option pTemplate="selectedItem">{{ option?.labelKey ? (option.labelKey | translate) : '' }}</ng-template>
+                        </p-select>
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project'">
+                        <label>{{ 'admin.allRequests.fields.mainDomain' | translate }}</label>
+                        <p-select formControlName="mainDomain" [options]="projectMainDomainOptions" optionLabel="labelKey" optionValue="value">
+                            <ng-template let-option pTemplate="item">{{ option.labelKey | translate }}</ng-template>
+                            <ng-template let-option pTemplate="selectedItem">{{ option?.labelKey ? (option.labelKey | translate) : '' }}</ng-template>
+                        </p-select>
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project'">
+                        <label>{{ 'admin.allRequests.fields.projectStage' | translate }}</label>
+                        <p-select formControlName="projectStage" [options]="projectStageOptions" optionLabel="labelKey" optionValue="value">
+                            <ng-template let-option pTemplate="item">{{ option.labelKey | translate }}</ng-template>
+                            <ng-template let-option pTemplate="selectedItem">{{ option?.labelKey ? (option.labelKey | translate) : '' }}</ng-template>
+                        </p-select>
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project'">
                         <label>{{ 'admin.allRequests.fields.category' | translate }}</label>
                         <input pInputText formControlName="category" />
+                    </div>
+                    <div class="field span-2" *ngIf="request.requestType === 'project'">
+                        <label>{{ 'admin.allRequests.fields.requiredCapabilities' | translate }}</label>
+                        <p-multiselect formControlName="requiredCapabilities" [options]="projectCapabilityOptions" optionLabel="labelKey" optionValue="value" display="chip" [showToggleAll]="false">
+                            <ng-template let-option pTemplate="item">{{ option.labelKey | translate }}</ng-template>
+                        </p-multiselect>
                     </div>
                     <div class="field" *ngIf="request.requestType === 'project' || request.requestType === 'design'">
                         <label>{{ 'admin.allRequests.fields.budgetRange' | translate }}</label>

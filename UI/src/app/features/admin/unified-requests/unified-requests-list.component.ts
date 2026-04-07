@@ -9,6 +9,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -24,6 +25,7 @@ import { getWorkflowOptions, ServiceWorkflowModule } from '../../../shared/utils
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
 import { CncApiService } from '../../../shared/services/cnc-api.service';
+import { ProjectRequestCapability, ProjectRequestMainDomain, ProjectRequestProjectType, ProjectRequestStage } from '../../../shared/models/project.model';
 
 @Component({
     selector: 'app-unified-requests-list',
@@ -38,6 +40,7 @@ import { CncApiService } from '../../../shared/services/cnc-api.service';
         DialogModule,
         InputNumberModule,
         InputTextModule,
+        MultiSelectModule,
         SelectModule,
         TableModule,
         TagModule,
@@ -83,6 +86,11 @@ export class UnifiedRequestsListComponent implements OnInit {
         { labelKey: 'admin.allRequests.types.laser', value: 'laser' },
         { labelKey: 'admin.allRequests.types.cnc', value: 'cnc' }
     ];
+
+    projectTypeOptions = Object.values(ProjectRequestProjectType).map(value => ({ value, labelKey: `projects.request.projectTypeOptions.${value}` }));
+    projectMainDomainOptions = Object.values(ProjectRequestMainDomain).map(value => ({ value, labelKey: `projects.request.mainDomainOptions.${value}` }));
+    projectStageOptions = Object.values(ProjectRequestStage).map(value => ({ value, labelKey: `projects.request.projectStageOptions.${value}` }));
+    projectCapabilityOptions = Object.values(ProjectRequestCapability).map(value => ({ value, labelKey: `projects.request.capabilityOptions.${value}` }));
 
     readonly filterForm = this.fb.group({
         requestType: this.fb.control<AllRequestType | null>(null),
@@ -136,6 +144,10 @@ export class UnifiedRequestsListComponent implements OnInit {
         pcbOperation: this.fb.control(''),
         designNotes: this.fb.control(''),
         requestTypeName: this.fb.control(''),
+        projectType: this.fb.control(''),
+        mainDomain: this.fb.control(''),
+        projectStage: this.fb.control(''),
+        requiredCapabilities: this.fb.control<string[]>([]),
         intendedUse: this.fb.control(''),
         materialPreference: this.fb.control(''),
         dimensionsNotes: this.fb.control(''),
@@ -320,6 +332,10 @@ export class UnifiedRequestsListComponent implements OnInit {
             pcbOperation: detail.pcbOperation ?? '',
             designNotes: detail.designNotes ?? '',
             requestTypeName: detail.requestTypeName ?? '',
+            projectType: detail.projectType ?? '',
+            mainDomain: detail.mainDomain ?? '',
+            projectStage: detail.projectStage ?? '',
+            requiredCapabilities: detail.requiredCapabilities ?? [],
             intendedUse: detail.intendedUse ?? '',
             materialPreference: detail.materialPreference ?? '',
             dimensionsNotes: detail.dimensionsNotes ?? '',
@@ -354,7 +370,19 @@ export class UnifiedRequestsListComponent implements OnInit {
 
         switch (requestType) {
             case 'project':
-                return { ...common, requestTypeName: raw.requestTypeName, description: raw.description, budgetRange: raw.budgetRange, timeline: raw.timeline, category: raw.category, projectId: raw.projectId };
+                return {
+                    ...common,
+                    requestTypeName: raw.requestTypeName,
+                    projectType: raw.projectType,
+                    mainDomain: raw.mainDomain,
+                    projectStage: raw.projectStage,
+                    requiredCapabilities: raw.requiredCapabilities ?? undefined,
+                    description: raw.description,
+                    budgetRange: raw.budgetRange,
+                    timeline: raw.timeline,
+                    category: raw.category,
+                    projectId: raw.projectId
+                };
             case 'print3d':
                 return { ...common, customerNotes: raw.customerNotes, estimatedPrice: raw.estimatedPrice, finalPrice: raw.finalPrice, materialId: raw.materialId, profileId: raw.profileId, estimatedPrintTimeHours: raw.estimatedPrintTimeHours, suggestedPrice: raw.suggestedPrice, estimatedFilamentGrams: raw.estimatedFilamentGrams };
             case 'design':

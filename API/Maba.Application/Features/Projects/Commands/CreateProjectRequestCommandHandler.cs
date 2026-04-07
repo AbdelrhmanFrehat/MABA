@@ -33,17 +33,34 @@ public class CreateProjectRequestCommandHandler : IRequestHandler<CreateProjectR
             Phone = request.Phone,
             RequestType = request.RequestType,
             ProjectId = request.ProjectId,
+            ProjectType = request.ProjectType,
+            MainDomain = request.MainDomain,
+            RequiredCapabilitiesJson = ProjectRequestSerialization.SerializeCapabilities(request.RequiredCapabilities),
             Category = request.Category,
             BudgetRange = request.BudgetRange,
             Timeline = request.Timeline,
+            ProjectStage = request.ProjectStage,
             Description = request.Description,
             AttachmentUrl = request.AttachmentUrl,
             AttachmentFileName = request.AttachmentFileName,
+            AttachmentsJson = ProjectRequestSerialization.SerializeAttachments(request.Attachments, request.AttachmentUrl, request.AttachmentFileName),
             Status = ProjectRequestStatus.New,
             CreatedAt = DateTime.UtcNow
         };
 
         _context.Set<ProjectRequest>().Add(projectRequest);
+
+        var creationActivity = new ProjectRequestActivity
+        {
+            Id = Guid.NewGuid(),
+            ProjectRequestId = projectRequest.Id,
+            ActionType = "Created",
+            Description = $"Request {referenceNumber} submitted by {projectRequest.FullName}",
+            CreatedBy = projectRequest.Email,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Set<ProjectRequestActivity>().Add(creationActivity);
+
         await _context.SaveChangesAsync(cancellationToken);
 
         try
@@ -73,13 +90,20 @@ public class CreateProjectRequestCommandHandler : IRequestHandler<CreateProjectR
             RequestType = projectRequest.RequestType,
             ProjectId = projectRequest.ProjectId,
             ProjectTitle = projectTitle,
+            ProjectType = projectRequest.ProjectType,
+            MainDomain = projectRequest.MainDomain,
+            RequiredCapabilities = ProjectRequestSerialization.DeserializeCapabilities(projectRequest),
             Category = projectRequest.Category,
             BudgetRange = projectRequest.BudgetRange,
             Timeline = projectRequest.Timeline,
             Description = projectRequest.Description,
+            ProjectDescription = projectRequest.Description,
+            ProjectStage = projectRequest.ProjectStage,
             AttachmentUrl = projectRequest.AttachmentUrl,
             AttachmentFileName = projectRequest.AttachmentFileName,
+            Attachments = ProjectRequestSerialization.DeserializeAttachments(projectRequest),
             Status = projectRequest.Status,
+            WorkflowStatus = projectRequest.WorkflowStatus,
             CreatedAt = projectRequest.CreatedAt
         };
     }

@@ -164,6 +164,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Projects
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectRequest> ProjectRequests => Set<ProjectRequest>();
+    public DbSet<ProjectRequestActivity> ProjectRequestActivities => Set<ProjectRequestActivity>();
 
     // CNC
     public DbSet<CncMaterial> CncMaterials => Set<CncMaterial>();

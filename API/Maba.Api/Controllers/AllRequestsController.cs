@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Common.ServiceRequests;
+using Maba.Application.Features.Projects;
 using Maba.Domain.Cnc;
 using Maba.Domain.Design;
 using Maba.Domain.DesignCad;
@@ -135,6 +136,11 @@ public class AllRequestsController : ControllerBase
                 entity.Timeline = dto.Timeline ?? entity.Timeline;
                 entity.Description = dto.Description ?? entity.Description;
                 entity.AdminNotes = MergeNotes(dto.AdminNotes, dto.InternalNote, entity.AdminNotes);
+                entity.ProjectType = dto.ProjectType ?? entity.ProjectType;
+                entity.MainDomain = dto.MainDomain ?? entity.MainDomain;
+                entity.ProjectStage = dto.ProjectStage ?? entity.ProjectStage;
+                if (dto.RequiredCapabilities != null)
+                    entity.RequiredCapabilitiesJson = ProjectRequestSerialization.SerializeCapabilities(dto.RequiredCapabilities);
                 if (Enum.TryParse<ProjectRequestType>(dto.RequestTypeName, true, out var requestTypeEnum))
                     entity.RequestType = requestTypeEnum;
                 if (Enum.TryParse<ProjectCategory>(dto.Category, true, out var categoryEnum))
@@ -329,11 +335,14 @@ public class AllRequestsController : ControllerBase
             CustomerName = x.FullName,
             CustomerEmail = x.Email,
             CustomerPhone = x.Phone,
-            Title = x.Project != null ? x.Project.TitleEn : (x.Category != null ? x.Category.ToString()! : "Project Request"),
+            Title = x.Project != null
+                ? x.Project.TitleEn
+                : (!string.IsNullOrWhiteSpace(x.MainDomain) ? x.MainDomain : (x.Category != null ? x.Category.ToString()! : "Project Request")),
             Summary = x.Description,
             WorkflowStatus = ServiceRequestWorkflowMapper.FromProject(x.Status).ToString(),
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
+            Priority = x.ProjectStage,
             OriginalModuleRoute = "/admin/project-requests"
         }).ToListAsync();
     }
@@ -491,6 +500,19 @@ public class AllRequestsController : ControllerBase
             ProjectId = entity.ProjectId?.ToString(),
             ProjectTitle = entity.Project?.TitleEn,
             Category = entity.Category?.ToString(),
+            ProjectType = entity.ProjectType,
+            MainDomain = entity.MainDomain,
+            ProjectStage = entity.ProjectStage,
+            RequiredCapabilities = ProjectRequestSerialization.DeserializeCapabilities(entity),
+            FileUrl = entity.AttachmentUrl,
+            FileName = entity.AttachmentFileName,
+            Attachments = ProjectRequestSerialization.DeserializeAttachments(entity)
+                .Select(a => new AdminServiceRequestAttachmentDto
+                {
+                    Id = a.Url,
+                    FileName = a.FileName,
+                    Url = a.Url
+                }).ToList(),
             History = BuildHistory(workflow, entity.CreatedAt, null, null, entity.UpdatedAt)
         };
     }

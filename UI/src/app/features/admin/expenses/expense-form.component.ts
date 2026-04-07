@@ -36,6 +36,13 @@ import { AuthService } from '../../../shared/services/auth.service';
         TranslateModule
     ],
     providers: [MessageService],
+    styles: [`
+        .expense-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+        .field { display: flex; flex-direction: column; gap: 0.4rem; }
+        .field-span2 { grid-column: span 2; }
+        .field-full { grid-column: 1 / -1; }
+        @media (max-width: 640px) { .expense-grid { grid-template-columns: 1fr; } .field-span2, .field-full { grid-column: 1; } }
+    `],
     template: `
         <p-toast />
 
@@ -53,47 +60,49 @@ import { AuthService } from '../../../shared/services/auth.service';
                     <p-message severity="error" [text]="errorMessage" styleClass="w-full mb-4" />
                 }
 
-                <form [formGroup]="form" (ngSubmit)="save()" class="grid formgrid">
-                    <div class="field col-12 md:col-6">
-                        <label class="block font-medium mb-2">Category <span class="text-red-500">*</span></label>
-                        <p-select
-                            formControlName="expenseCategoryId"
-                            [options]="categories"
-                            optionLabel="nameEn"
-                            optionValue="id"
-                            [filter]="true"
-                            filterBy="nameEn,nameAr,key"
-                            placeholder="Select category"
-                            styleClass="w-full"
-                        ></p-select>
+                <form [formGroup]="form" (ngSubmit)="save()">
+                    <div class="expense-grid">
+                        <div class="field">
+                            <label class="font-medium">Category <span class="text-red-500">*</span></label>
+                            <p-select
+                                formControlName="expenseCategoryId"
+                                [options]="categories"
+                                optionLabel="nameEn"
+                                optionValue="id"
+                                [filter]="true"
+                                filterBy="nameEn,nameAr,key"
+                                placeholder="Select category"
+                                styleClass="w-full"
+                            ></p-select>
+                        </div>
+
+                        <div class="field">
+                            <label class="font-medium">Date <span class="text-red-500">*</span></label>
+                            <p-datepicker formControlName="spentAt" appendTo="body" inputStyleClass="w-full" dateFormat="yy-mm-dd"></p-datepicker>
+                        </div>
+
+                        <div class="field">
+                            <label class="font-medium">Currency</label>
+                            <input pInputText formControlName="currency" class="w-full" maxlength="3" />
+                        </div>
+
+                        <div class="field">
+                            <label class="font-medium">Amount <span class="text-red-500">*</span></label>
+                            <p-inputNumber formControlName="amount" mode="decimal" [min]="0" [maxFractionDigits]="2" styleClass="w-full"></p-inputNumber>
+                        </div>
+
+                        <div class="field field-span2">
+                            <label class="font-medium">Description (English)</label>
+                            <input pInputText formControlName="descriptionEn" class="w-full" />
+                        </div>
+
+                        <div class="field field-full">
+                            <label class="font-medium">Description (Arabic)</label>
+                            <textarea pTextarea rows="3" class="w-full" formControlName="descriptionAr"></textarea>
+                        </div>
                     </div>
 
-                    <div class="field col-12 md:col-3">
-                        <label class="block font-medium mb-2">Date <span class="text-red-500">*</span></label>
-                        <p-datepicker formControlName="spentAt" appendTo="body" inputStyleClass="w-full" dateFormat="yy-mm-dd"></p-datepicker>
-                    </div>
-
-                    <div class="field col-12 md:col-3">
-                        <label class="block font-medium mb-2">Currency</label>
-                        <input pInputText formControlName="currency" class="w-full" maxlength="3" />
-                    </div>
-
-                    <div class="field col-12 md:col-4">
-                        <label class="block font-medium mb-2">Amount <span class="text-red-500">*</span></label>
-                        <p-inputNumber formControlName="amount" mode="decimal" [min]="0" [maxFractionDigits]="2" styleClass="w-full"></p-inputNumber>
-                    </div>
-
-                    <div class="field col-12 md:col-8">
-                        <label class="block font-medium mb-2">Description (English)</label>
-                        <input pInputText formControlName="descriptionEn" class="w-full" />
-                    </div>
-
-                    <div class="field col-12">
-                        <label class="block font-medium mb-2">Description (Arabic)</label>
-                        <textarea pTextarea rows="4" class="w-full" formControlName="descriptionAr"></textarea>
-                    </div>
-
-                    <div class="col-12 flex justify-end gap-2 mt-2">
+                    <div class="flex justify-end gap-2 mt-4">
                         <p-button [label]="'common.cancel' | translate" severity="secondary" [outlined]="true" routerLink="/admin/expenses" [disabled]="saving"></p-button>
                         <p-button [label]="'common.save' | translate" type="submit" [loading]="saving" [disabled]="form.invalid || saving"></p-button>
                     </div>

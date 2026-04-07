@@ -11,10 +11,15 @@ public class CreateProjectRequestCommand : IRequest<ProjectRequestDto>
     public string? Phone { get; set; }
     public ProjectRequestType RequestType { get; set; }
     public Guid? ProjectId { get; set; }
+    public string? ProjectType { get; set; }
+    public string? MainDomain { get; set; }
+    public List<string>? RequiredCapabilities { get; set; }
     public ProjectCategory? Category { get; set; }
     public string? BudgetRange { get; set; }
     public string? Timeline { get; set; }
+    public string? ProjectStage { get; set; }
     public string? Description { get; set; }
     public string? AttachmentUrl { get; set; }
     public string? AttachmentFileName { get; set; }
+    public List<ProjectRequestAttachmentDto>? Attachments { get; set; }
 }

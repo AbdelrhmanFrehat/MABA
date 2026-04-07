@@ -1,12 +1,12 @@
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
 import Aura from '@primeuix/themes/aura';
 import { definePreset } from '@primeuix/themes';
 import { providePrimeNG } from 'primeng/config';
-import { TranslateModule } from '@ngx-translate/core';
+import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { appRoutes } from './app.routes';
 import { authInterceptor } from './app/shared/services/auth.interceptor';
@@ -82,11 +82,7 @@ export const appConfig: ApplicationConfig = {
             /** Default 'self' leaves overlays inside routed views; they can be clipped or invisible. */
             overlayAppendTo: 'body'
         }),
-        importProvidersFrom(
-            TranslateModule.forRoot({
-                defaultLanguage: 'en'
-            })
-        ),
+        provideTranslateService({ defaultLanguage: 'en' }),
         provideTranslateHttpLoader({
             prefix: './assets/i18n/',
             suffix: '.json'

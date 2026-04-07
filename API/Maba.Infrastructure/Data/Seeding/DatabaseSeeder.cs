@@ -1832,7 +1832,7 @@ public static class DatabaseSeeder
                 HighlightsJson = "[\"Autonomous navigation\", \"AI-based defect detection\", \"3D mapping\", \"GPS-denied operation\"]",
                 GalleryJson = "[]",
                 IsFeatured = false,
-                IsActive = true,
+                IsActive = false,
                 SortOrder = 6,
                 CreatedAt = DateTime.UtcNow
             }

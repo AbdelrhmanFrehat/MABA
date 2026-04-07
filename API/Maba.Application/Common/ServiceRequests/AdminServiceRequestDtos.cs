@@ -99,6 +99,10 @@ public class AdminServiceRequestDetailDto : AdminServiceRequestListItemDto
     public string? ProjectId { get; set; }
     public string? ProjectTitle { get; set; }
     public string? Category { get; set; }
+    public string? ProjectType { get; set; }
+    public string? MainDomain { get; set; }
+    public string? ProjectStage { get; set; }
+    public List<string> RequiredCapabilities { get; set; } = new();
 
     public List<AdminServiceRequestHistoryItemDto> History { get; set; } = new();
     public List<AdminServiceRequestAttachmentDto> Attachments { get; set; } = new();
@@ -203,4 +207,8 @@ public class UpdateAdminServiceRequestDto
 
     public string? ProjectId { get; set; }
     public string? Category { get; set; }
+    public string? ProjectType { get; set; }
+    public string? MainDomain { get; set; }
+    public string? ProjectStage { get; set; }
+    public List<string>? RequiredCapabilities { get; set; }
 }

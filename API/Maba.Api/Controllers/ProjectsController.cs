@@ -84,10 +84,17 @@ public class ProjectsController : ControllerBase
                 Phone = request.Phone,
                 RequestType = request.RequestType,
                 ProjectId = request.ProjectId,
+                ProjectType = request.ProjectType,
+                MainDomain = request.MainDomain,
+                RequiredCapabilities = request.RequiredCapabilities,
                 Category = request.Category,
                 BudgetRange = request.BudgetRange,
                 Timeline = request.Timeline,
-                Description = request.Description
+                ProjectStage = request.ProjectStage,
+                Description = string.IsNullOrWhiteSpace(request.ProjectDescription) ? request.Description : request.ProjectDescription,
+                AttachmentUrl = request.AttachmentUrl,
+                AttachmentFileName = request.AttachmentFileName,
+                Attachments = request.Attachments
             });
 
             return Ok(new
@@ -99,7 +106,8 @@ public class ProjectsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { success = false, message = ex.Message });
+            var message = ex.InnerException?.Message ?? ex.Message;
+            return BadRequest(new { success = false, message });
         }
     }
 
@@ -255,7 +263,11 @@ public class ProjectsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<List<ProjectRequestDto>>> GetProjectRequests(
         [FromQuery] ProjectRequestStatus? status,
+        [FromQuery] string? workflowStatus,
         [FromQuery] ProjectRequestType? requestType,
+        [FromQuery] string? projectType,
+        [FromQuery] string? mainDomain,
+        [FromQuery] string? projectStage,
         [FromQuery] string? search,
         [FromQuery] int? skip,
         [FromQuery] int? take)
@@ -263,7 +275,11 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(new GetProjectRequestsQuery
         {
             Status = status,
+            WorkflowStatus = workflowStatus,
             RequestType = requestType,
+            ProjectType = projectType,
+            MainDomain = mainDomain,
+            ProjectStage = projectStage,
             SearchTerm = search,
             Skip = skip,
             Take = take
@@ -277,22 +293,57 @@ public class ProjectsController : ControllerBase
     public async Task<ActionResult> UpdateProjectRequest(Guid id, [FromBody] UpdateProjectRequestRfq request)
     {
         if (id != request.Id)
-        {
             return BadRequest(new { message = "ID mismatch" });
-        }
 
-        var success = await _mediator.Send(new UpdateProjectRequestCommand
+        try
         {
-            Id = id,
-            Status = request.Status,
-            AdminNotes = request.AdminNotes
-        });
+            var success = await _mediator.Send(new UpdateProjectRequestCommand
+            {
+                Id = id,
+                Status = request.Status,
+                WorkflowStatus = request.WorkflowStatus,
+                AdminNotes = request.AdminNotes,
+                FullName = request.FullName,
+                Email = request.Email,
+                Phone = request.Phone,
+                RequestType = request.RequestType,
+                ProjectId = request.ProjectId,
+                ProjectType = request.ProjectType,
+                MainDomain = request.MainDomain,
+                RequiredCapabilities = request.RequiredCapabilities,
+                Category = request.Category,
+                BudgetRange = request.BudgetRange,
+                Timeline = request.Timeline,
+                ProjectStage = request.ProjectStage,
+                Description = string.IsNullOrWhiteSpace(request.ProjectDescription) ? request.Description : request.ProjectDescription,
+                AttachmentUrl = request.AttachmentUrl,
+                AttachmentFileName = request.AttachmentFileName,
+                Attachments = request.Attachments,
+                AssignedToUserId = request.AssignedToUserId,
+                AssignedToName = request.AssignedToName,
+                Priority = request.Priority,
+                TechnicalFeasibility = request.TechnicalFeasibility,
+                EstimatedCost = request.EstimatedCost,
+                EstimatedTimeline = request.EstimatedTimeline,
+                ComplexityLevel = request.ComplexityLevel,
+                InternalNotes = request.InternalNotes,
+                UpdatedBy = request.UpdatedBy
+            });
 
-        if (!success)
-        {
-            return NotFound();
+            if (!success) return NotFound();
+            return NoContent();
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
 
-        return NoContent();
+    [HttpGet("admin/requests/{id:guid}/activities")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<ProjectRequestActivityDto>>> GetProjectRequestActivities(Guid id)
+    {
+        var result = await _mediator.Send(new GetProjectRequestActivitiesQuery { ProjectRequestId = id });
+        return Ok(result);
     }
 }

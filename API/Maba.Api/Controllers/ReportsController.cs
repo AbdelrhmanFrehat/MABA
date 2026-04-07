@@ -24,35 +24,35 @@ public class ReportsController : ControllerBase
         [FromQuery] DateTime? toDate,
         CancellationToken cancellationToken)
     {
-        var invoicesQuery = _context.Set<Invoice>()
-            .Include(x => x.Order)
-                .ThenInclude(x => x.User)
+        var ordersQuery = _context.Set<Order>()
+            .Include(x => x.User)
             .Include(x => x.Payments)
+            .Include(x => x.Invoices)
             .AsQueryable();
 
         if (fromDate.HasValue)
         {
             var from = fromDate.Value.Date;
-            invoicesQuery = invoicesQuery.Where(x => x.IssueDate >= from);
+            ordersQuery = ordersQuery.Where(x => x.CreatedAt >= from);
         }
 
         if (toDate.HasValue)
         {
             var to = toDate.Value.Date.AddDays(1).AddTicks(-1);
-            invoicesQuery = invoicesQuery.Where(x => x.IssueDate <= to);
+            ordersQuery = ordersQuery.Where(x => x.CreatedAt <= to);
         }
 
-        var rows = await invoicesQuery
-            .OrderByDescending(x => x.IssueDate)
+        var rows = await ordersQuery
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => new SalesReportRowDto
             {
-                InvoiceDate = x.IssueDate,
-                InvoiceNumber = x.InvoiceNumber,
-                CustomerNameEn = x.Order.User.FullName,
-                CustomerNameAr = x.Order.User.FullName,
+                InvoiceDate = x.CreatedAt,
+                InvoiceNumber = x.Invoices.OrderByDescending(i => i.IssueDate).Select(i => i.InvoiceNumber).FirstOrDefault() ?? x.OrderNumber,
+                CustomerNameEn = x.User.FullName ?? x.User.Email,
+                CustomerNameAr = x.User.FullName ?? x.User.Email,
                 TotalAmount = x.Total,
-                DiscountAmount = x.Order.DiscountAmount,
-                NetAmount = x.Total - x.Order.DiscountAmount,
+                DiscountAmount = x.DiscountAmount,
+                NetAmount = x.Total - x.DiscountAmount,
                 PaidAmount = x.Payments.Where(p => !p.IsRefunded).Sum(p => p.Amount),
                 RemainingAmount = x.Total - x.Payments.Where(p => !p.IsRefunded).Sum(p => p.Amount)
             })

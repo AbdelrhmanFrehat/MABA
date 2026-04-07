@@ -109,6 +109,10 @@ export interface AllRequestDetail extends AllRequestListItem {
     projectId?: string | null;
     projectTitle?: string | null;
     category?: string | null;
+    projectType?: string | null;
+    mainDomain?: string | null;
+    projectStage?: string | null;
+    requiredCapabilities: string[];
     history: AllRequestHistoryItem[];
     attachments: AllRequestAttachment[];
 }
@@ -204,4 +208,8 @@ export interface UpdateAllRequestPayload {
     canDeliverPhysicalPart?: boolean | null;
     projectId?: string | null;
     category?: string | null;
+    projectType?: string | null;
+    mainDomain?: string | null;
+    projectStage?: string | null;
+    requiredCapabilities?: string[];
 }
