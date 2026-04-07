@@ -15,6 +15,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { ImageModule } from 'primeng/image';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
@@ -48,6 +49,7 @@ import {
         TextareaModule,
         ImageModule,
         ProgressSpinnerModule,
+        TooltipModule,
         TranslateModule,
         ServiceRequestStatusBadgeComponent
     ],
@@ -142,14 +144,14 @@ import {
                                         [rounded]="true" 
                                         [text]="true"
                                         (onClick)="viewRequest(request)"
-                                        pTooltip="{{ 'admin.laserRequests.viewDetails' | translate }}">
+                                        [pTooltip]="'admin.laserRequests.viewDetails' | translate">
                                     </p-button>
                                     <p-button 
                                         icon="pi pi-pencil" 
                                         [rounded]="true" 
                                         [text]="true"
                                         (onClick)="editRequest(request)"
-                                        pTooltip="{{ 'admin.serviceWorkflow.manageWorkflow' | translate }}">
+                                        [pTooltip]="'admin.serviceWorkflow.manageWorkflow' | translate">
                                     </p-button>
                                 </div>
                             </td>

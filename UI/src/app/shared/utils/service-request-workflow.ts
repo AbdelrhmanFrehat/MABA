@@ -17,6 +17,7 @@ export type ServiceWorkflowStatus =
 export type ServiceWorkflowModule = 'project' | 'design' | 'designCad' | 'print3d' | 'laser' | 'cnc';
 
 type WorkflowOption = { value: ServiceWorkflowStatus; label: string };
+type WorkflowInput = ServiceWorkflowStatus | string | null | undefined;
 
 const WORKFLOW_BY_MODULE: Record<ServiceWorkflowModule, ServiceWorkflowStatus[]> = {
     project: ['New', 'UnderReview', 'AwaitingCustomerConfirmation', 'Approved', 'InProgress', 'Completed', 'Cancelled'],
@@ -86,7 +87,7 @@ export function getWorkflowSeverity(status: ServiceWorkflowStatus): 'success' | 
     }
 }
 
-export function normalizeDesignWorkflowStatus(status: string | null | undefined): ServiceWorkflowStatus {
+export function normalizeDesignWorkflowStatus(status: WorkflowInput): ServiceWorkflowStatus {
     if (isWorkflowStatus(status)) {
         return status;
     }
@@ -147,7 +148,7 @@ export function denormalizeDesignWorkflowStatus(status: ServiceWorkflowStatus): 
     }
 }
 
-export function normalizeDesignCadWorkflowStatus(status: string | null | undefined): ServiceWorkflowStatus {
+export function normalizeDesignCadWorkflowStatus(status: WorkflowInput): ServiceWorkflowStatus {
     if (isWorkflowStatus(status)) {
         return status;
     }
@@ -239,11 +240,13 @@ export function denormalizePrint3dWorkflowStatus(status: ServiceWorkflowStatus):
     }
 }
 
-export function normalizeLaserWorkflowStatus(status: LaserServiceRequestStatus | null | undefined): ServiceWorkflowStatus {
+export function normalizeLaserWorkflowStatus(status: LaserServiceRequestStatus | ServiceWorkflowStatus | null | undefined): ServiceWorkflowStatus {
     if (typeof status === 'string' && isWorkflowStatus(status)) {
         return status;
     }
     switch (status) {
+        case 'Pending':
+            return 'New';
         case 'UnderReview':
             return 'UnderReview';
         case 'Quoted':
@@ -285,11 +288,13 @@ export function denormalizeLaserWorkflowStatus(status: ServiceWorkflowStatus): L
     }
 }
 
-export function normalizeCncWorkflowStatus(status: CncServiceRequestStatus | null | undefined): ServiceWorkflowStatus {
+export function normalizeCncWorkflowStatus(status: CncServiceRequestStatus | ServiceWorkflowStatus | null | undefined): ServiceWorkflowStatus {
     if (typeof status === 'string' && isWorkflowStatus(status)) {
         return status;
     }
     switch (status) {
+        case CncServiceRequestStatus.Pending:
+            return 'New';
         case CncServiceRequestStatus.InReview:
             return 'UnderReview';
         case CncServiceRequestStatus.Quoted:
