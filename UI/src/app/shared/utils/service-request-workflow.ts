@@ -1,6 +1,5 @@
 import { TranslateService } from '@ngx-translate/core';
 import { CncServiceRequestStatus } from '../models/cnc.model';
-import { LaserServiceRequestStatus } from '../models/laser.model';
 import { Print3dRequestStatus } from '../models/printing.model';
 
 export type ServiceWorkflowStatus =
@@ -17,7 +16,7 @@ export type ServiceWorkflowStatus =
 export type ServiceWorkflowModule = 'project' | 'design' | 'designCad' | 'print3d' | 'laser' | 'cnc';
 
 type WorkflowOption = { value: ServiceWorkflowStatus; label: string };
-type WorkflowInput = ServiceWorkflowStatus | string | null | undefined;
+type WorkflowInput = string | null | undefined;
 
 const WORKFLOW_BY_MODULE: Record<ServiceWorkflowModule, ServiceWorkflowStatus[]> = {
     project: ['New', 'UnderReview', 'AwaitingCustomerConfirmation', 'Approved', 'InProgress', 'Completed', 'Cancelled'],
@@ -240,27 +239,27 @@ export function denormalizePrint3dWorkflowStatus(status: ServiceWorkflowStatus):
     }
 }
 
-export function normalizeLaserWorkflowStatus(status: LaserServiceRequestStatus | ServiceWorkflowStatus | null | undefined): ServiceWorkflowStatus {
-    if (typeof status === 'string' && isWorkflowStatus(status)) {
+export function normalizeLaserWorkflowStatus(status: string | null | undefined): ServiceWorkflowStatus {
+    if (!status) {
+        return 'New';
+    }
+    if (isWorkflowStatus(status)) {
         return status;
     }
-    switch (status) {
+
+    const normalized = status.trim();
+    switch (normalized) {
         case 'Pending':
             return 'New';
-        case 'UnderReview':
-            return 'UnderReview';
         case 'Quoted':
             return 'AwaitingCustomerConfirmation';
+        case 'UnderReview':
         case 'Approved':
-            return 'Approved';
         case 'InProgress':
-            return 'InProgress';
         case 'Completed':
-            return 'Completed';
         case 'Rejected':
-            return 'Rejected';
         case 'Cancelled':
-            return 'Cancelled';
+            return normalized;
         default:
             return 'New';
     }
@@ -288,10 +287,21 @@ export function denormalizeLaserWorkflowStatus(status: ServiceWorkflowStatus): L
     }
 }
 
-export function normalizeCncWorkflowStatus(status: CncServiceRequestStatus | ServiceWorkflowStatus | null | undefined): ServiceWorkflowStatus {
-    if (typeof status === 'string' && isWorkflowStatus(status)) {
-        return status;
+export function normalizeCncWorkflowStatus(status: string | number | null | undefined): ServiceWorkflowStatus {
+    if (status == null) {
+        return 'New';
     }
+
+    if (typeof status === 'string') {
+        const normalized = status.trim();
+        if (isWorkflowStatus(normalized)) {
+            return normalized;
+        }
+        if (normalized !== '' && !Number.isNaN(Number(normalized))) {
+            return normalizeCncWorkflowStatus(Number(normalized));
+        }
+    }
+
     switch (status) {
         case CncServiceRequestStatus.Pending:
             return 'New';
