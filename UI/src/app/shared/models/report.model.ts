@@ -58,6 +58,7 @@ export interface LowStockReportItem {
 
 export interface DashboardSummary {
     totalOrders: number;
+    totalRequests: number;
     totalRevenue: number;
     totalCustomers: number;
     active3DJobs: number;

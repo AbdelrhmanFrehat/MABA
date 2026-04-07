@@ -19,6 +19,7 @@ import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
+import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
 import {
     FilamentSpool,
     Print3dPricingSuggestionResponse,
@@ -26,6 +27,12 @@ import {
     Print3dRequestStatus
 } from '../../../shared/models/printing.model';
 import { environment } from '../../../../environments/environment';
+import {
+    ServiceWorkflowStatus,
+    denormalizePrint3dWorkflowStatus,
+    getWorkflowOptions,
+    normalizePrint3dWorkflowStatus
+} from '../../../shared/utils/service-request-workflow';
 
 @Component({
     selector: 'app-3d-requests-list',
@@ -46,7 +53,8 @@ import { environment } from '../../../../environments/environment';
         TextareaModule,
         ProgressSpinnerModule,
         TooltipModule,
-        TranslateModule
+        TranslateModule,
+        ServiceRequestStatusBadgeComponent
     ],
     providers: [MessageService],
     template: `
@@ -124,10 +132,7 @@ import { environment } from '../../../../environments/environment';
                                 </div>
                             </td>
                             <td>
-                                <p-tag 
-                                    [value]="request.status"
-                                    [severity]="getStatusSeverity(request.status)">
-                                </p-tag>
+                                <app-service-request-status-badge module="print3d" [status]="request.workflowStatus || request.status"></app-service-request-status-badge>
                             </td>
                             <td>{{ formatDate(request.createdAt) }}</td>
                             <td>
@@ -137,14 +142,14 @@ import { environment } from '../../../../environments/environment';
                                         [rounded]="true" 
                                         [text]="true"
                                         (onClick)="viewRequest(request)"
-                                        pTooltip="View Details">
+                                        pTooltip="{{ 'admin.3dRequests.viewDetails' | translate }}">
                                     </p-button>
                                     <p-button 
                                         icon="pi pi-pencil" 
                                         [rounded]="true" 
                                         [text]="true"
                                         (onClick)="editRequest(request)"
-                                        pTooltip="Update Status">
+                                        pTooltip="{{ 'admin.serviceWorkflow.manageWorkflow' | translate }}">
                                     </p-button>
                                 </div>
                             </td>
@@ -177,7 +182,7 @@ import { environment } from '../../../../environments/environment';
                     </div>
                     <div class="detail-item">
                         <label>{{ 'admin.3dRequests.status' | translate }}</label>
-                        <p-tag [value]="selectedRequest.status" [severity]="getStatusSeverity(selectedRequest.status)"></p-tag>
+                        <app-service-request-status-badge module="print3d" [status]="selectedRequest.workflowStatus || selectedRequest.status"></app-service-request-status-badge>
                     </div>
                     <div class="detail-item">
                         <label>{{ 'admin.3dRequests.material' | translate }}</label>
@@ -209,7 +214,7 @@ import { environment } from '../../../../environments/environment';
                                 </div>
                                 <p-button 
                                     icon="pi pi-download" 
-                                    [label]="'Download'"
+                                    [label]="'common.download' | translate"
                                     (onClick)="downloadFile(selectedRequest)"
                                     [outlined]="true"
                                     size="small">
@@ -662,27 +667,15 @@ export class ThreeDRequestsListComponent implements OnInit {
     pageSize = 10;
     totalRecords = 0;
 
-    selectedStatus: string = '';
-    statusOptions = [
-        { label: 'Pending', value: Print3dRequestStatus.Pending },
-        { label: 'Under Review', value: Print3dRequestStatus.UnderReview },
-        { label: 'Quoted', value: Print3dRequestStatus.Quoted },
-        { label: 'Approved', value: Print3dRequestStatus.Approved },
-        { label: 'Rejected', value: Print3dRequestStatus.Rejected },
-        { label: 'Queued', value: Print3dRequestStatus.Queued },
-        { label: 'Slicing', value: Print3dRequestStatus.Slicing },
-        { label: 'Printing', value: Print3dRequestStatus.Printing },
-        { label: 'Completed', value: Print3dRequestStatus.Completed },
-        { label: 'Failed', value: Print3dRequestStatus.Failed },
-        { label: 'Cancelled', value: Print3dRequestStatus.Cancelled }
-    ];
+    selectedStatus: ServiceWorkflowStatus | '' = '';
+    statusOptions: { value: ServiceWorkflowStatus; label: string }[] = [];
     allStatusOptions = this.statusOptions;
 
     showViewDialog = false;
     showEditDialog = false;
     selectedRequest: Print3dRequest | null = null;
 
-    editStatus: Print3dRequestStatus = Print3dRequestStatus.Pending;
+    editStatus: ServiceWorkflowStatus = 'New';
     editFinalPrice: number | null = null;
     editNotes = '';
     editEstimatedGrams: number | null = null;
@@ -817,8 +810,15 @@ export class ThreeDRequestsListComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.rebuildStatusOptions();
+        this.translateService.onLangChange.subscribe(() => this.rebuildStatusOptions());
         this.loadRequests();
         this.loadFilamentSpools();
+    }
+
+    rebuildStatusOptions() {
+        this.statusOptions = getWorkflowOptions('print3d', this.translateService);
+        this.allStatusOptions = this.statusOptions;
     }
 
     private loadFilamentSpools() {
@@ -846,7 +846,7 @@ export class ThreeDRequestsListComponent implements OnInit {
         };
 
         if (this.selectedStatus) {
-            params.status = this.selectedStatus;
+            params.status = denormalizePrint3dWorkflowStatus(this.selectedStatus);
         }
 
         this.printingApiService.getRequests(params).subscribe({
@@ -873,7 +873,7 @@ export class ThreeDRequestsListComponent implements OnInit {
 
     editRequest(request: Print3dRequest) {
         this.selectedRequest = request;
-        this.editStatus = request.status as Print3dRequestStatus;
+        this.editStatus = normalizePrint3dWorkflowStatus(request.workflowStatus || request.status);
         this.editFinalPrice = request.finalPrice || null;
         this.editNotes = request.adminNotes ?? '';
         this.editEstimatedGrams = request.estimatedFilamentGrams ?? null;
@@ -894,7 +894,7 @@ export class ThreeDRequestsListComponent implements OnInit {
         
         this.saving = true;
         this.printingApiService.updateRequestStatus(this.selectedRequest.id, {
-            status: this.editStatus,
+            status: denormalizePrint3dWorkflowStatus(this.editStatus),
             notes: this.editNotes || undefined,
             finalPrice: this.editFinalPrice || undefined,
             usedSpoolId: this.editUsedSpoolId ?? null,
@@ -966,20 +966,4 @@ export class ThreeDRequestsListComponent implements OnInit {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    getStatusSeverity(status: Print3dRequestStatus | string): "success" | "secondary" | "info" | "warn" | "danger" | "contrast" | null | undefined {
-        const severityMap: Record<string, "success" | "secondary" | "info" | "warn" | "danger" | "contrast"> = {
-            'Pending': 'warn',
-            'UnderReview': 'info',
-            'Quoted': 'info',
-            'Approved': 'info',
-            'Rejected': 'danger',
-            'Queued': 'info',
-            'Slicing': 'info',
-            'Printing': 'info',
-            'Completed': 'success',
-            'Failed': 'danger',
-            'Cancelled': 'secondary'
-        };
-        return severityMap[status] || 'secondary';
-    }
 }

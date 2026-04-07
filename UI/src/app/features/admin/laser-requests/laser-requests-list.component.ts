@@ -19,8 +19,15 @@ import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
+import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
 import { LaserServiceRequest, LaserServiceRequestStatus } from '../../../shared/models/laser.model';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import {
+    ServiceWorkflowStatus,
+    denormalizeLaserWorkflowStatus,
+    getWorkflowOptions,
+    normalizeLaserWorkflowStatus
+} from '../../../shared/utils/service-request-workflow';
 
 @Component({
     selector: 'app-laser-requests-list',
@@ -41,7 +48,8 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
         TextareaModule,
         ImageModule,
         ProgressSpinnerModule,
-        TranslateModule
+        TranslateModule,
+        ServiceRequestStatusBadgeComponent
     ],
     providers: [MessageService],
     template: `
@@ -124,10 +132,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                                 </div>
                             </td>
                             <td>
-                                <p-tag 
-                                    [value]="request.statusName"
-                                    [severity]="getStatusSeverity(request.status)">
-                                </p-tag>
+                                <app-service-request-status-badge module="laser" [status]="request.workflowStatus || request.status"></app-service-request-status-badge>
                             </td>
                             <td>{{ formatDate(request.createdAt) }}</td>
                             <td>
@@ -137,14 +142,14 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                                         [rounded]="true" 
                                         [text]="true"
                                         (onClick)="viewRequest(request)"
-                                        pTooltip="View Details">
+                                        pTooltip="{{ 'admin.laserRequests.viewDetails' | translate }}">
                                     </p-button>
                                     <p-button 
                                         icon="pi pi-pencil" 
                                         [rounded]="true" 
                                         [text]="true"
                                         (onClick)="editRequest(request)"
-                                        pTooltip="Update Status">
+                                        pTooltip="{{ 'admin.serviceWorkflow.manageWorkflow' | translate }}">
                                     </p-button>
                                 </div>
                             </td>
@@ -177,7 +182,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                     </div>
                     <div class="detail-item">
                         <label>{{ 'admin.laserRequests.status' | translate }}</label>
-                        <p-tag [value]="selectedRequest.statusName" [severity]="getStatusSeverity(selectedRequest.status)"></p-tag>
+                        <app-service-request-status-badge module="laser" [status]="selectedRequest.workflowStatus || selectedRequest.status"></app-service-request-status-badge>
                     </div>
                     <div class="detail-item">
                         <label>{{ 'admin.laserRequests.material' | translate }}</label>
@@ -370,35 +375,33 @@ export class LaserRequestsListComponent implements OnInit {
     loadingImage = false;
     imageError = false;
 
-    selectedStatus: LaserServiceRequestStatus | null = null;
-    statusOptions = [
-        { label: 'Pending', value: 'Pending' },
-        { label: 'Under Review', value: 'UnderReview' },
-        { label: 'Quoted', value: 'Quoted' },
-        { label: 'Approved', value: 'Approved' },
-        { label: 'In Progress', value: 'InProgress' },
-        { label: 'Completed', value: 'Completed' },
-        { label: 'Cancelled', value: 'Cancelled' },
-        { label: 'Rejected', value: 'Rejected' }
-    ];
+    selectedStatus: ServiceWorkflowStatus | null = null;
+    statusOptions: { value: ServiceWorkflowStatus; label: string }[] = [];
     allStatusOptions = this.statusOptions;
 
     showViewDialog = false;
     showEditDialog = false;
     selectedRequest: LaserServiceRequest | null = null;
 
-    editStatus: LaserServiceRequestStatus = 'Pending';
+    editStatus: ServiceWorkflowStatus = 'New';
     editQuotedPrice: number | null = null;
     editAdminNotes = '';
 
     ngOnInit() {
+        this.rebuildStatusOptions();
+        this.translate.onLangChange.subscribe(() => this.rebuildStatusOptions());
         this.loadRequests();
+    }
+
+    rebuildStatusOptions() {
+        this.statusOptions = getWorkflowOptions('laser', this.translate);
+        this.allStatusOptions = this.statusOptions;
     }
 
     loadRequests() {
         this.loading = true;
         this.laserApi.getServiceRequests({ 
-            status: this.selectedStatus || undefined 
+            status: this.selectedStatus ? denormalizeLaserWorkflowStatus(this.selectedStatus) : undefined 
         }).subscribe({
             next: (requests) => {
                 this.requests = requests;
@@ -419,20 +422,6 @@ export class LaserRequestsListComponent implements OnInit {
         return this.languageService.language === 'ar' && request.materialNameAr 
             ? request.materialNameAr 
             : request.materialNameEn;
-    }
-
-    getStatusSeverity(status: LaserServiceRequestStatus): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-        switch (status) {
-            case 'Pending': return 'warn';
-            case 'UnderReview': return 'info';
-            case 'Quoted': return 'info';
-            case 'Approved': return 'success';
-            case 'InProgress': return 'info';
-            case 'Completed': return 'success';
-            case 'Cancelled': return 'secondary';
-            case 'Rejected': return 'danger';
-            default: return 'secondary';
-        }
     }
 
     formatDate(dateStr: string): string {
@@ -473,7 +462,7 @@ export class LaserRequestsListComponent implements OnInit {
 
     editRequest(request: LaserServiceRequest) {
         this.selectedRequest = request;
-        this.editStatus = request.status;
+        this.editStatus = normalizeLaserWorkflowStatus(request.workflowStatus || request.status);
         this.editQuotedPrice = request.quotedPrice || null;
         this.editAdminNotes = request.adminNotes || '';
         this.showEditDialog = true;
@@ -484,7 +473,7 @@ export class LaserRequestsListComponent implements OnInit {
 
         this.saving = true;
         this.laserApi.updateServiceRequest(this.selectedRequest.id, {
-            status: this.editStatus,
+            status: denormalizeLaserWorkflowStatus(this.editStatus),
             quotedPrice: this.editQuotedPrice || undefined,
             adminNotes: this.editAdminNotes || undefined
         }).subscribe({

@@ -14,6 +14,13 @@ import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CncApiService } from '../../../shared/services/cnc-api.service';
 import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/models/cnc.model';
+import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
+import {
+    ServiceWorkflowStatus,
+    denormalizeCncWorkflowStatus,
+    getWorkflowOptions,
+    normalizeCncWorkflowStatus
+} from '../../../shared/utils/service-request-workflow';
 
 @Component({
     selector: 'app-cnc-request-detail',
@@ -30,7 +37,8 @@ import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/m
         InputNumberModule,
         ToastModule,
         ProgressSpinnerModule,
-        TranslateModule
+        TranslateModule,
+        ServiceRequestStatusBadgeComponent
     ],
     providers: [MessageService],
     template: `
@@ -58,7 +66,7 @@ import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/m
                             · {{ formatDate(r.createdAt) }}
                         </p>
                     </div>
-                    <p-tag [value]="statusLabel(r.status)" [severity]="statusSeverity(r.status)"></p-tag>
+                    <app-service-request-status-badge module="cnc" [status]="r.workflowStatus ?? r.status"></app-service-request-status-badge>
                 </div>
 
                 <div class="grid">
@@ -74,7 +82,7 @@ import { CncServiceRequestDto, CncServiceRequestStatus } from '../../../shared/m
                                     ></p-tag>
                                 </dd>
                                 <dt>{{ 'admin.cncRequests.status' | translate }}</dt>
-                                <dd>{{ statusLabel(r.status) }}</dd>
+                                <dd>{{ workflowStatusLabel(r.workflowStatus ?? r.status) }}</dd>
                                 <dt>{{ 'admin.cncRequests.date' | translate }}</dt>
                                 <dd>{{ formatDate(r.createdAt) }}</dd>
                                 <dt *ngIf="r.reviewedAt">{{ 'admin.cncRequests.reviewedAt' | translate }}</dt>
@@ -366,12 +374,12 @@ export class CncRequestDetailComponent implements OnInit {
     saving = false;
     downloading = false;
 
-    editStatus: CncServiceRequestStatus = CncServiceRequestStatus.Pending;
+    editStatus: ServiceWorkflowStatus = 'New';
     editAdminNotes = '';
     editEstimated: number | null = null;
     editFinal: number | null = null;
 
-    statusOptions: { label: string; value: CncServiceRequestStatus }[] = [];
+    statusOptions: { label: string; value: ServiceWorkflowStatus }[] = [];
 
     private route = inject(ActivatedRoute);
     private cncApi = inject(CncApiService);
@@ -390,20 +398,7 @@ export class CncRequestDetailComponent implements OnInit {
     }
 
     private rebuildStatusOptions() {
-        const keys: { k: string; v: CncServiceRequestStatus }[] = [
-            { k: 'admin.cncRequests.stPending', v: CncServiceRequestStatus.Pending },
-            { k: 'admin.cncRequests.stInReview', v: CncServiceRequestStatus.InReview },
-            { k: 'admin.cncRequests.stQuoted', v: CncServiceRequestStatus.Quoted },
-            { k: 'admin.cncRequests.stAccepted', v: CncServiceRequestStatus.Accepted },
-            { k: 'admin.cncRequests.stInProgress', v: CncServiceRequestStatus.InProgress },
-            { k: 'admin.cncRequests.stCompleted', v: CncServiceRequestStatus.Completed },
-            { k: 'admin.cncRequests.stCancelled', v: CncServiceRequestStatus.Cancelled },
-            { k: 'admin.cncRequests.stRejected', v: CncServiceRequestStatus.Rejected }
-        ];
-        this.statusOptions = keys.map((x) => ({
-            label: this.translate.instant(x.k),
-            value: x.v
-        }));
+        this.statusOptions = getWorkflowOptions('cnc', this.translate);
     }
 
     private load(id: string) {
@@ -411,7 +406,7 @@ export class CncRequestDetailComponent implements OnInit {
         this.cncApi.getAdminRequestById(id).subscribe({
             next: (r) => {
                 this.request = r;
-                this.editStatus = r.status;
+                this.editStatus = normalizeCncWorkflowStatus(r.workflowStatus ?? r.status);
                 this.editAdminNotes = r.adminNotes ?? '';
                 this.editEstimated = r.estimatedPrice ?? null;
                 this.editFinal = r.finalPrice ?? null;
@@ -441,7 +436,7 @@ export class CncRequestDetailComponent implements OnInit {
             estimatedPrice?: number;
             finalPrice?: number;
         } = {
-            status: this.editStatus,
+            status: denormalizeCncWorkflowStatus(this.editStatus),
             adminNotes: this.editAdminNotes
         };
         if (this.editEstimated != null) {
@@ -453,7 +448,7 @@ export class CncRequestDetailComponent implements OnInit {
         this.cncApi.updateAdminRequest(this.request.id, payload).subscribe({
             next: (r) => {
                 this.request = r;
-                this.editStatus = r.status;
+                this.editStatus = normalizeCncWorkflowStatus(r.workflowStatus ?? r.status);
                 this.editAdminNotes = r.adminNotes ?? '';
                 this.editEstimated = r.estimatedPrice ?? null;
                 this.editFinal = r.finalPrice ?? null;
@@ -586,39 +581,11 @@ export class CncRequestDetailComponent implements OnInit {
         return mode || '—';
     }
 
-    statusLabel(status: CncServiceRequestStatus): string {
-        const map: Record<number, string> = {
-            [CncServiceRequestStatus.Pending]: 'admin.cncRequests.stPending',
-            [CncServiceRequestStatus.InReview]: 'admin.cncRequests.stInReview',
-            [CncServiceRequestStatus.Quoted]: 'admin.cncRequests.stQuoted',
-            [CncServiceRequestStatus.Accepted]: 'admin.cncRequests.stAccepted',
-            [CncServiceRequestStatus.InProgress]: 'admin.cncRequests.stInProgress',
-            [CncServiceRequestStatus.Completed]: 'admin.cncRequests.stCompleted',
-            [CncServiceRequestStatus.Cancelled]: 'admin.cncRequests.stCancelled',
-            [CncServiceRequestStatus.Rejected]: 'admin.cncRequests.stRejected'
-        };
-        const k = map[status];
-        return k ? this.translate.instant(k) : String(status);
-    }
-
-    statusSeverity(
-        status: CncServiceRequestStatus
-    ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-        switch (status) {
-            case CncServiceRequestStatus.Completed:
-                return 'success';
-            case CncServiceRequestStatus.Cancelled:
-            case CncServiceRequestStatus.Rejected:
-                return 'danger';
-            case CncServiceRequestStatus.InProgress:
-            case CncServiceRequestStatus.Accepted:
-                return 'info';
-            case CncServiceRequestStatus.Quoted:
-            case CncServiceRequestStatus.InReview:
-                return 'warn';
-            default:
-                return 'secondary';
-        }
+    workflowStatusLabel(status: CncServiceRequestStatus | string): string {
+        const normalized = typeof status === 'string' && !/^\d+$/.test(status)
+            ? status as ServiceWorkflowStatus
+            : normalizeCncWorkflowStatus(typeof status === 'number' ? status : Number(status));
+        return this.translate.instant(`admin.serviceWorkflow.status${normalized}`);
     }
 
     formatDate(iso: string): string {

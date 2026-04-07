@@ -3,6 +3,7 @@ namespace Maba.Application.Features.Common.Dashboard.DTOs;
 public class DashboardSummaryDto
 {
     public int TotalOrders { get; set; }
+    public int TotalRequests { get; set; }
     public decimal TotalRevenue { get; set; }
     public int TotalCustomers { get; set; }
     public int Active3DJobs { get; set; }

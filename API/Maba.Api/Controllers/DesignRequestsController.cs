@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
+using Maba.Application.Common.ServiceRequests;
 using Maba.Domain.Design;
 using Maba.Domain.Users;
 using System.IO.Compression;
@@ -216,6 +217,7 @@ public class DesignRequestsController : ControllerBase
                 Title = r.Title,
                 Description = r.Description,
                 Status = r.Status.ToString(),
+                WorkflowStatus = ServiceRequestWorkflowMapper.FromDesign(r.Status).ToString(),
                 CustomerName = r.CustomerName ?? (r.User != null ? r.User.FullName : null),
                 CustomerEmail = r.CustomerEmail ?? (r.User != null ? r.User.Email : null),
                 CustomerPhone = r.CustomerPhone ?? r.User!.Phone,
@@ -435,6 +437,7 @@ public class DesignRequestsController : ControllerBase
             Timeline = r.Timeline,
             IpOwnershipConfirmed = r.IpOwnershipConfirmed,
             Status = r.Status.ToString(),
+            WorkflowStatus = ServiceRequestWorkflowMapper.FromDesign(r.Status).ToString(),
             CustomerName = r.CustomerName ?? r.User?.FullName,
             CustomerEmail = r.CustomerEmail ?? r.User?.Email,
             CustomerPhone = r.CustomerPhone ?? r.User?.Phone,
@@ -476,6 +479,7 @@ public class DesignRequestDto
     public string? Timeline { get; set; }
     public bool IpOwnershipConfirmed { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string WorkflowStatus { get; set; } = string.Empty;
     public string? CustomerName { get; set; }
     public string? CustomerEmail { get; set; }
     public string? CustomerPhone { get; set; }

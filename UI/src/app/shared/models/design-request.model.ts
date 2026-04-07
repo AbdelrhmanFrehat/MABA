@@ -59,6 +59,7 @@ export interface DesignServiceRequestDto {
     timeline?: string;
     ipOwnershipConfirmed?: boolean;
     status: DesignRequestStatus;
+    workflowStatus?: string;
     customerName?: string;
     customerEmail?: string;
     customerPhone?: string;
@@ -68,6 +69,9 @@ export interface DesignServiceRequestDto {
     deliveryNotes?: string;
     createdAt: string;
     updatedAt: string;
+    reviewedAt?: string;
+    quotedAt?: string;
+    deliveredAt?: string;
     attachments?: DesignServiceRequestAttachmentDto[];
 }
 

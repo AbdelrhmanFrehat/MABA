@@ -55,7 +55,10 @@ export interface DesignCadRequestDto {
     title: string;
     description?: string;
     status: string;
+    workflowStatus?: string;
     createdAt: string;
+    reviewedAt?: string;
+    completedAt?: string;
     attachmentCount?: number;
     attachments?: { id: string; fileName: string; fileSizeBytes: number; uploadedAt: string }[];
     [key: string]: unknown;

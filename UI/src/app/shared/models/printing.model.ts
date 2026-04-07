@@ -68,6 +68,7 @@ export interface Print3dRequest {
     id: string;
     referenceNumber: string;
     status: Print3dRequestStatus;
+    workflowStatus?: string;
     materialId?: string;
     materialName?: string;
     profileId?: string;

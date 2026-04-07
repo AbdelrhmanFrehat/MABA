@@ -87,7 +87,7 @@ export class AppMenu implements OnInit, OnDestroy {
                         { label: this.translateService.instant('menu.brands'), icon: 'pi pi-fw pi-bookmark', routerLink: ['/admin/brands'] },
                         { label: this.translateService.instant('menu.items'), icon: 'pi pi-fw pi-box', routerLink: ['/admin/items'] },
                         { label: this.translateService.instant('menu.inventory'), icon: 'pi pi-fw pi-warehouse', routerLink: ['/admin/inventory'] },
-                        { label: 'Storage Items', icon: 'pi pi-fw pi-database', routerLink: ['/admin/storage'] }
+                        { label: this.translateService.instant('menu.storageItems'), icon: 'pi pi-fw pi-database', routerLink: ['/admin/storage'] }
                     ]
                 },
                 {
@@ -174,7 +174,7 @@ export class AppMenu implements OnInit, OnDestroy {
                         { label: this.translateService.instant('menu.cmsManagement'), icon: 'pi pi-fw pi-file', routerLink: ['/admin/cms'] },
                         { label: this.translateService.instant('menu.heroTicker'), icon: 'pi pi-fw pi-images', routerLink: ['/admin/hero-ticker'] },
                         { label: this.translateService.instant('menu.pages'), icon: 'pi pi-fw pi-file-edit', routerLink: ['/admin/cms/pages'] },
-                        { label: 'Home Statistics', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/admin/home-stats'] }
+                        { label: this.translateService.instant('menu.homeStatistics'), icon: 'pi pi-fw pi-chart-bar', routerLink: ['/admin/home-stats'] }
                     ]
                 },
                 {

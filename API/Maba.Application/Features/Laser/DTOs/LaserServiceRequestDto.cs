@@ -1,4 +1,5 @@
 using Maba.Domain.Laser;
+using Maba.Application.Common.ServiceRequests;
 
 namespace Maba.Application.Features.Laser.DTOs;
 
@@ -28,6 +29,7 @@ public class LaserServiceRequestDto
     
     public LaserServiceRequestStatus Status { get; set; }
     public string StatusName => Status.ToString();
+    public string WorkflowStatus => ServiceRequestWorkflowMapper.FromLaser(Status).ToString();
     
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

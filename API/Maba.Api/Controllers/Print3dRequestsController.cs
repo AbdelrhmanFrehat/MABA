@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
+using Maba.Application.Common.ServiceRequests;
 using Maba.Domain.Printing;
 using Maba.Domain.Media;
 using Maba.Domain.Users;
@@ -59,6 +60,7 @@ public class Print3dRequestsController : ControllerBase
         Id = r.Id,
         ReferenceNumber = r.ReferenceNumber,
         Status = r.Status.ToString(),
+        WorkflowStatus = ServiceRequestWorkflowMapper.FromPrint3d(r.Status).ToString(),
         MaterialId = r.MaterialId,
         MaterialName = r.Material?.NameEn,
         ProfileId = r.ProfileId,
@@ -262,6 +264,7 @@ public class Print3dRequestsController : ControllerBase
             Id = request.Id,
             ReferenceNumber = request.ReferenceNumber,
             Status = request.Status.ToString(),
+            WorkflowStatus = ServiceRequestWorkflowMapper.FromPrint3d(request.Status).ToString(),
             MaterialId = request.MaterialId,
             MaterialName = material.NameEn,
             ProfileId = request.ProfileId,
@@ -676,6 +679,7 @@ public class Print3dRequestDto
     public Guid Id { get; set; }
     public string ReferenceNumber { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string WorkflowStatus { get; set; } = string.Empty;
     public Guid? MaterialId { get; set; }
     public string? MaterialName { get; set; }
     public Guid? ProfileId { get; set; }

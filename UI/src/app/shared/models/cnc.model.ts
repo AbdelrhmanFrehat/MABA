@@ -195,6 +195,7 @@ export interface CncServiceRequestDto {
     finalPrice?: number | null;
     status: CncServiceRequestStatus;
     statusName?: string;
+    workflowStatus?: string;
     createdAt: string;
     updatedAt?: string | null;
     reviewedAt?: string | null;

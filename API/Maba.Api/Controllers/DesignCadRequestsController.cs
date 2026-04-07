@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
+using Maba.Application.Common.ServiceRequests;
 using Maba.Domain.DesignCad;
 using Maba.Domain.Users;
 using System.Security.Claims;
@@ -251,6 +252,7 @@ public class DesignCadRequestsController : ControllerBase
                 Title = r.Title,
                 Description = r.Description,
                 Status = r.Status.ToString(),
+                WorkflowStatus = ServiceRequestWorkflowMapper.FromDesignCad(r.Status).ToString(),
                 CustomerName = r.CustomerName ?? (r.User != null ? r.User.FullName : null),
                 CustomerEmail = r.CustomerEmail ?? (r.User != null ? r.User.Email : null),
                 CreatedAt = r.CreatedAt,
@@ -392,6 +394,7 @@ public class DesignCadRequestsController : ControllerBase
             QuotedPrice = r.QuotedPrice,
             FinalPrice = r.FinalPrice,
             Status = r.Status.ToString(),
+            WorkflowStatus = ServiceRequestWorkflowMapper.FromDesignCad(r.Status).ToString(),
             ReviewedAt = r.ReviewedAt,
             CompletedAt = r.CompletedAt,
             CustomerName = r.CustomerName ?? (r.User != null ? r.User.FullName : null),
@@ -443,6 +446,7 @@ public class DesignCadRequestDto
     public decimal? QuotedPrice { get; set; }
     public decimal? FinalPrice { get; set; }
     public string Status { get; set; } = "";
+    public string WorkflowStatus { get; set; } = "";
     public DateTime? ReviewedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? CustomerName { get; set; }

@@ -122,6 +122,22 @@ import { takeUntil } from 'rxjs/operators';
                     </p-card>
                 </div>
                 <div class="kpi-card-wrapper">
+                    <p-card [styleClass]="'kpi-card kpi-card-info'" (click)="navigateToAllRequests()" class="cursor-pointer">
+                        <div class="kpi-content">
+                            <div class="kpi-icon-wrapper bg-blue-100">
+                                <i class="pi pi-inbox text-blue-700"></i>
+                            </div>
+                            <div class="kpi-text">
+                                <div class="kpi-label">{{ 'admin.dashboard.totalRequests' | translate }}</div>
+                                <div *ngIf="loadingSummary" class="kpi-skeleton">
+                                    <p-skeleton width="3rem" height="1.5rem" styleClass="mb-0"></p-skeleton>
+                                </div>
+                                <div *ngIf="!loadingSummary" class="kpi-value text-blue-700">{{ summary?.totalRequests || 0 }}</div>
+                            </div>
+                        </div>
+                    </p-card>
+                </div>
+                <div class="kpi-card-wrapper">
                     <p-card [styleClass]="'kpi-card kpi-card-primary'" class="cursor-pointer">
                         <div class="kpi-content">
                             <div class="kpi-icon-wrapper bg-primary-100">
@@ -1269,6 +1285,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     navigateToOrders() {
         this.router.navigate(['/admin/orders']);
+    }
+
+    navigateToAllRequests() {
+        this.router.navigate(['/admin/requests']);
     }
 
     navigateToUsers() {

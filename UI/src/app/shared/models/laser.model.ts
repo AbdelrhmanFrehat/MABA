@@ -66,6 +66,7 @@ export interface LaserServiceRequest {
     quotedPrice?: number;
     status: LaserServiceRequestStatus;
     statusName: string;
+    workflowStatus?: string;
     createdAt: string;
     updatedAt?: string;
     reviewedAt?: string;

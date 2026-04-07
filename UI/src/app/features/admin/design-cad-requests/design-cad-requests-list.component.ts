@@ -11,11 +11,20 @@ import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
+import { TextareaModule } from 'primeng/textarea';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DesignCadRequestService } from '../../../shared/services/design-cad-request.service';
 import { LanguageService } from '../../../shared/services/language.service';
+import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
 import type { DesignCadRequestDto } from '../../../shared/models/design-cad-request.model';
+import {
+    ServiceWorkflowStatus,
+    denormalizeDesignCadWorkflowStatus,
+    getWorkflowOptions,
+    getWorkflowTimeline,
+    normalizeDesignCadWorkflowStatus
+} from '../../../shared/utils/service-request-workflow';
 
 @Component({
     selector: 'app-design-cad-requests-list',
@@ -33,7 +42,9 @@ import type { DesignCadRequestDto } from '../../../shared/models/design-cad-requ
         DialogModule,
         ProgressSpinnerModule,
         TooltipModule,
-        TranslateModule
+        TextareaModule,
+        TranslateModule,
+        ServiceRequestStatusBadgeComponent
     ],
     providers: [MessageService],
     template: `
@@ -104,11 +115,12 @@ import type { DesignCadRequestDto } from '../../../shared/models/design-cad-requ
                             <td><span class="ref-number">{{ req.referenceNumber }}</span></td>
                             <td>{{ getTypeLabel(req.requestType) }}</td>
                             <td>{{ req.title }}</td>
-                            <td><p-tag [value]="req.status" [severity]="getStatusSeverity(req.status)"></p-tag></td>
+                            <td><app-service-request-status-badge module="designCad" [status]="req.workflowStatus || req.status"></app-service-request-status-badge></td>
                             <td>{{ formatDate(req.createdAt) }}</td>
                             <td>
                                 <div class="action-buttons">
                                     <p-button icon="pi pi-eye" [rounded]="true" [text]="true" (onClick)="viewRequest(req)" pTooltip="{{ 'admin.cadRequests.view' | translate }}"></p-button>
+                                    <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" (onClick)="editRequest(req)" pTooltip="{{ 'admin.serviceWorkflow.manageWorkflow' | translate }}"></p-button>
                                 </div>
                             </td>
                         </tr>
@@ -135,8 +147,18 @@ import type { DesignCadRequestDto } from '../../../shared/models/design-cad-requ
                     <div class="detail-grid">
                         <div class="detail-item"><label>{{ 'admin.cadRequests.reference' | translate }}</label><span class="ref-number">{{ selectedRequest.referenceNumber }}</span></div>
                         <div class="detail-item"><label>{{ 'admin.cadRequests.type' | translate }}</label><span>{{ getTypeLabel(selectedRequest.requestType) }}</span></div>
-                        <div class="detail-item"><label>{{ 'admin.cadRequests.status' | translate }}</label><p-tag [value]="selectedRequest.status" [severity]="getStatusSeverity(selectedRequest.status)"></p-tag></div>
-                        <div class="detail-item full-width"><label>{{ 'admin.cadRequests.requestTitle' | translate }}</label><span>{{ selectedRequest.title }}</span></div>
+                    <div class="detail-item"><label>{{ 'admin.cadRequests.status' | translate }}</label><app-service-request-status-badge module="designCad" [status]="selectedRequest.workflowStatus || selectedRequest.status"></app-service-request-status-badge></div>
+                    <div class="detail-item full-width"><label>{{ 'admin.cadRequests.requestTitle' | translate }}</label><span>{{ selectedRequest.title }}</span></div>
+                    <div class="detail-item full-width workflow-strip">
+                        <label>{{ 'admin.serviceWorkflow.progress' | translate }}</label>
+                        <div class="workflow-timeline">
+                            <div class="workflow-step" *ngFor="let step of buildTimeline(selectedRequest)">
+                                <span class="workflow-dot" [class.done]="step.done"></span>
+                                <span>{{ step.labelKey | translate }}</span>
+                                <small *ngIf="step.at">{{ formatDate(step.at) }}</small>
+                            </div>
+                        </div>
+                    </div>
                         <div class="detail-item full-width" *ngIf="selectedRequest.description"><label>{{ 'designCad.new.description' | translate }}</label><p class="notes-text">{{ selectedRequest.description }}</p></div>
                         <div class="detail-item"><label>{{ 'admin.cadRequests.created' | translate }}</label><span>{{ formatDate(selectedRequest.createdAt) }}</span></div>
                         <div class="detail-item full-width" *ngIf="(selectedRequest.attachments?.length ?? 0) > 0">
@@ -152,8 +174,31 @@ import type { DesignCadRequestDto } from '../../../shared/models/design-cad-requ
                             </div>
                         </div>
                     </div>
+            </div>
+        </p-dialog>
+
+        <p-dialog
+            [(visible)]="showEditDialog"
+            [modal]="true"
+            [style]="{ width: '480px', maxWidth: '95vw' }"
+            [header]="'admin.serviceWorkflow.manageWorkflow' | translate"
+            [draggable]="false"
+            [resizable]="false">
+            <div class="edit-content" *ngIf="selectedRequest">
+                <div class="form-field">
+                    <label>{{ 'admin.serviceWorkflow.nextStatus' | translate }}</label>
+                    <p-select [(ngModel)]="editStatus" [options]="statusOptions" optionLabel="label" optionValue="value" styleClass="w-full"></p-select>
                 </div>
-            </p-dialog>
+                <div class="form-field">
+                    <label>{{ 'admin.designRequests.adminNotes' | translate }}</label>
+                    <textarea pTextarea [(ngModel)]="editNotes" rows="4" class="w-full" [placeholder]="'admin.designRequests.adminNotesPlaceholder' | translate"></textarea>
+                </div>
+            </div>
+            <ng-template pTemplate="footer">
+                <p-button [label]="'common.cancel' | translate" (onClick)="showEditDialog = false" [outlined]="true"></p-button>
+                <p-button [label]="'common.save' | translate" (onClick)="saveRequest()" [loading]="saving"></p-button>
+            </ng-template>
+        </p-dialog>
         </div>
     `,
     styles: [`
@@ -177,10 +222,19 @@ import type { DesignCadRequestDto } from '../../../shared/models/design-cad-requ
         .detail-item.full-width { grid-column: span 2; }
         .detail-item label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .notes-text { margin: 0; color: #475569; line-height: 1.5; white-space: pre-wrap; }
+        .workflow-strip { padding-top: 0.25rem; border-top: 1px solid #e2e8f0; }
+        .workflow-timeline { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; }
+        .workflow-step { display: inline-flex; align-items: center; gap: 0.45rem; color: #475569; }
+        .workflow-step small { color: #94a3b8; }
+        .workflow-dot { width: 0.6rem; height: 0.6rem; border-radius: 999px; background: #cbd5e1; }
+        .workflow-dot.done { background: #0f766e; }
         .attachment-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .attachment-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; background: #f8fafc; border-radius: 8px; }
         .attachment-row .att-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .attachment-row .att-size { font-size: 0.8rem; color: #64748b; }
+        .edit-content { padding: 0.5rem 0; }
+        .form-field { margin-bottom: 1rem; }
+        .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
         .w-full { width: 100%; }
     `]
 })
@@ -198,27 +252,27 @@ export class DesignCadRequestsListComponent implements OnInit {
     selectedStatus = '';
     searchTerm = '';
 
-    statusOptions: { value: string; label: string }[] = [
-        { value: 'New', label: 'New' },
-        { value: 'UnderReview', label: 'Under Review' },
-        { value: 'Quoted', label: 'Quoted' },
-        { value: 'Approved', label: 'Approved' },
-        { value: 'InProgress', label: 'In Progress' },
-        { value: 'Delivered', label: 'Delivered' },
-        { value: 'Closed', label: 'Closed' },
-        { value: 'Rejected', label: 'Rejected' },
-        { value: 'Cancelled', label: 'Cancelled' }
-    ];
+    statusOptions: { value: ServiceWorkflowStatus; label: string }[] = [];
 
     showViewDialog = false;
+    showEditDialog = false;
     selectedRequest: DesignCadRequestDto | null = null;
+    editStatus: ServiceWorkflowStatus = 'New';
+    editNotes = '';
+    saving = false;
 
     get viewDialogTitle(): string {
         return this.translate.instant('admin.cadRequests.viewDetails');
     }
 
     ngOnInit() {
+        this.rebuildStatusOptions();
+        this.translate.onLangChange.subscribe(() => this.rebuildStatusOptions());
         this.loadRequests();
+    }
+
+    rebuildStatusOptions() {
+        this.statusOptions = getWorkflowOptions('designCad', this.translate);
     }
 
     loadRequests() {
@@ -226,7 +280,7 @@ export class DesignCadRequestsListComponent implements OnInit {
         this.designCadService.getList({
             page: this.currentPage,
             pageSize: this.pageSize,
-            status: this.selectedStatus || undefined,
+            status: this.selectedStatus ? denormalizeDesignCadWorkflowStatus(this.selectedStatus as ServiceWorkflowStatus) : undefined,
             search: this.searchTerm?.trim() || undefined
         }).subscribe({
             next: (res) => {
@@ -264,6 +318,34 @@ export class DesignCadRequestsListComponent implements OnInit {
         }
     }
 
+    editRequest(req: DesignCadRequestDto) {
+        this.selectedRequest = req;
+        this.editStatus = normalizeDesignCadWorkflowStatus(req.workflowStatus || req.status);
+        this.editNotes = '';
+        this.showEditDialog = true;
+    }
+
+    saveRequest() {
+        if (!this.selectedRequest) return;
+        this.saving = true;
+        this.designCadService.updateStatus(this.selectedRequest.id, {
+            status: denormalizeDesignCadWorkflowStatus(this.editStatus),
+            notes: this.editNotes || undefined
+        }).subscribe({
+            next: (updated) => {
+                this.saving = false;
+                this.showEditDialog = false;
+                this.selectedRequest = updated;
+                this.loadRequests();
+                this.messageService.add({ severity: 'success', summary: this.translate.instant('messages.success'), detail: this.translate.instant('messages.updated') });
+            },
+            error: () => {
+                this.saving = false;
+                this.messageService.add({ severity: 'error', summary: this.translate.instant('messages.error'), detail: this.translate.instant('messages.saveError') });
+            }
+        });
+    }
+
     formatDate(dateStr: string): string {
         if (!dateStr) return '-';
         return new Date(dateStr).toLocaleDateString(this.languageService.language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -277,7 +359,7 @@ export class DesignCadRequestsListComponent implements OnInit {
     }
 
     getTypeLabel(type: string): string {
-        const labels: Record<string, string> = {
+        const labelsEn: Record<string, string> = {
             IdeaOnly: 'Idea Only',
             ExistingFiles: 'Existing CAD Files',
             ReverseEngineering: 'Reverse Engineering',
@@ -285,21 +367,23 @@ export class DesignCadRequestsListComponent implements OnInit {
             ModifyProduct: 'Modify Product',
             MechanicalAssembly: 'Mechanical Assembly'
         };
-        return labels[type] ?? type;
+        const labelsAr: Record<string, string> = {
+            IdeaOnly: 'فكرة فقط',
+            ExistingFiles: 'ملفات CAD جاهزة',
+            ReverseEngineering: 'هندسة عكسية',
+            PhysicalItem: 'قطعة فعلية',
+            ModifyProduct: 'تعديل منتج',
+            MechanicalAssembly: 'تجميع ميكانيكي'
+        };
+        return (this.languageService.language === 'ar' ? labelsAr : labelsEn)[type] ?? type;
     }
 
-    getStatusSeverity(status: string): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' {
-        const map: Record<string, 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast'> = {
-            New: 'warn',
-            UnderReview: 'info',
-            Quoted: 'info',
-            Approved: 'info',
-            InProgress: 'info',
-            Delivered: 'success',
-            Closed: 'secondary',
-            Rejected: 'danger',
-            Cancelled: 'secondary'
-        };
-        return map[status] ?? 'secondary';
+    buildTimeline(req: DesignCadRequestDto) {
+        return getWorkflowTimeline(normalizeDesignCadWorkflowStatus(req.workflowStatus || req.status), {
+            createdAt: req.createdAt,
+            reviewedAt: req.reviewedAt,
+            approvedAt: undefined,
+            completedAt: req.completedAt
+        });
     }
 }

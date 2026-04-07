@@ -7,6 +7,11 @@ using Maba.Domain.Orders;
 using Maba.Domain.Catalog;
 using Maba.Domain.Printing;
 using Maba.Domain.Users;
+using Maba.Domain.Design;
+using Maba.Domain.DesignCad;
+using Maba.Domain.Laser;
+using Maba.Domain.Cnc;
+using Maba.Domain.Projects;
 
 namespace Maba.Application.Features.Common.Dashboard.Handlers;
 
@@ -38,6 +43,14 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
             .Where(o => o.Payments.Sum(p => p.Amount) >= o.Total)
             .SumAsync(o => o.Total, cancellationToken);
 
+        var totalRequests =
+            await _context.Set<ProjectRequest>().Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate).CountAsync(cancellationToken) +
+            await _context.Set<Print3dServiceRequest>().Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate).CountAsync(cancellationToken) +
+            await _context.Set<DesignServiceRequest>().Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate).CountAsync(cancellationToken) +
+            await _context.Set<DesignCadServiceRequest>().Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate).CountAsync(cancellationToken) +
+            await _context.Set<LaserServiceRequest>().Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate).CountAsync(cancellationToken) +
+            await _context.Set<CncServiceRequest>().Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate).CountAsync(cancellationToken);
+
         // Total Customers — users registered in the selected range (aligns with date filter)
         var totalCustomers = await _context.Set<User>()
             .Where(u => u.CreatedAt >= fromDate && u.CreatedAt <= toDate)
@@ -62,6 +75,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
         return new DashboardSummaryDto
         {
             TotalOrders = totalOrders,
+            TotalRequests = totalRequests,
             TotalRevenue = totalRevenue,
             TotalCustomers = totalCustomers,
             Active3DJobs = active3DJobs,

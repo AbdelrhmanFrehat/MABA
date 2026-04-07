@@ -211,6 +211,7 @@
     "description": "Description",
     "notes": "Notes",
     "date": "Date",
+    "createdAt": "Created At",
     "fromDate": "From Date",
     "toDate": "To Date",
     "amount": "Amount",
@@ -339,6 +340,7 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "inventory": "Inventory",
+    "storageItems": "Storage Items",
     "itemsStock": "Items & Stock",
     "categoriesUnits": "Categories & Units",
     "warehouses": "Warehouses",
@@ -406,6 +408,7 @@
     "cmsManagement": "CMS Management",
     "pages": "Pages",
     "heroTicker": "Hero Ticker",
+    "homeStatistics": "Home Statistics",
     "contact": "Contact",
     "chat": "Chat",
     "myAccount": "My Account",
@@ -1443,10 +1446,10 @@
       "adminNotes": "Admin notes",
       "quotedPrice": "Quoted price",
       "finalPrice": "Final price",
-      "deliveryNotes": "Delivery notes",
+      "deliveryNotes": "Completion notes",
       "attachments": "Attachments",
       "adminNotesPlaceholder": "Internal notes...",
-      "deliveryNotesPlaceholder": "Notes for customer on delivery..."
+      "deliveryNotesPlaceholder": "Notes shared with the customer when the job is completed..."
     },
     "cadRequests": {
       "title": "CAD Requests",
@@ -1633,6 +1636,20 @@
       "adminNotes": "Admin Notes",
       "needsEngineering": "Needs Eng. Prep",
       "engineeringReady": "Engineering Ready"
+    },
+    "serviceWorkflow": {
+      "progress": "Workflow Progress",
+      "nextStatus": "Next Workflow Stage",
+      "manageWorkflow": "Manage Workflow",
+      "statusNew": "New",
+      "statusUnderReview": "Under Review",
+      "statusAwaitingCustomerConfirmation": "Awaiting Customer Confirmation",
+      "statusApproved": "Approved",
+      "statusInProgress": "In Progress",
+      "statusReadyForDelivery": "Ready for Delivery",
+      "statusCompleted": "Completed",
+      "statusRejected": "Rejected",
+      "statusCancelled": "Cancelled"
     },
     "cncSettings": {
       "title": "CNC Settings",
@@ -1989,6 +2006,110 @@
       "status": "Status",
       "date": "Date",
       "noRequests": "No requests found"
+    },
+    "allRequests": {
+      "title": "All Requests",
+      "subtitle": "Central operations hub for engineering and manufacturing service requests.",
+      "types": {
+        "all": "All Request Types",
+        "project": "Project Request",
+        "print3d": "3D Print Request",
+        "design": "Design Request",
+        "designCad": "CAD Request",
+        "laser": "Laser Request",
+        "cnc": "CNC Request"
+      },
+      "summary": {
+        "total": "Filtered Total"
+      },
+      "filters": {
+        "requestType": "Request Type",
+        "status": "Workflow Status",
+        "createdFrom": "Created From",
+        "createdTo": "Created To",
+        "keyword": "Keyword",
+        "customer": "Customer",
+        "reference": "Reference",
+        "keywordPlaceholder": "Search title, notes, or request details",
+        "customerPlaceholder": "Search customer name, email, or phone",
+        "referencePlaceholder": "Search by reference number"
+      },
+      "table": {
+        "type": "Type",
+        "reference": "Reference",
+        "customer": "Customer",
+        "summary": "Request Summary",
+        "status": "Status",
+        "createdAt": "Created"
+      },
+      "sections": {
+        "shared": "Shared Management",
+        "progress": "Workflow Progress",
+        "requestDetails": "Request Details",
+        "cadDetails": "CAD Details",
+        "print3dDetails": "3D Printing Details",
+        "laserDetails": "Laser Details",
+        "cncDetails": "CNC Details",
+        "files": "Files and Attachments"
+      },
+      "fields": {
+        "workflowStatus": "Workflow Status",
+        "customerName": "Customer Name",
+        "customerEmail": "Customer Email",
+        "customerPhone": "Customer Phone",
+        "adminNotes": "Admin Notes",
+        "internalNote": "Internal Note",
+        "title": "Title",
+        "description": "Description",
+        "requestType": "Request Type",
+        "category": "Category",
+        "budgetRange": "Budget Range",
+        "timeline": "Timeline",
+        "toleranceLevel": "Tolerance Level",
+        "intendedUse": "Intended Use",
+        "materialPreference": "Material Preference",
+        "dimensionsNotes": "Dimensions Notes",
+        "quotedPrice": "Quoted Price",
+        "finalPrice": "Final Price",
+        "targetProcess": "Target Process",
+        "deadline": "Deadline",
+        "materialNotes": "Material Notes",
+        "toleranceNotes": "Tolerance Notes",
+        "whatNeedsChange": "What Needs Change",
+        "material": "Material",
+        "profile": "Quality Profile",
+        "estimatedPrice": "Estimated Price",
+        "estimatedPrintTimeHours": "Estimated Print Time (Hours)",
+        "estimatedFilamentGrams": "Estimated Filament (g)",
+        "customerNotes": "Customer Notes",
+        "operationMode": "Operation Mode",
+        "widthCm": "Width (cm)",
+        "heightCm": "Height (cm)",
+        "serviceMode": "Service Mode",
+        "operationType": "Operation Type",
+        "quantity": "Quantity",
+        "widthMm": "Width (mm)",
+        "heightMm": "Height (mm)",
+        "thicknessMm": "Thickness (mm)",
+        "depthMm": "Depth (mm)",
+        "projectDescription": "Project Description",
+        "designNotes": "Design Notes"
+      },
+      "actions": {
+        "manage": "Manage Request",
+        "openOriginal": "Open Original Module",
+        "downloadFile": "Download File",
+        "openArtwork": "Open Artwork"
+      },
+      "timeline": {
+        "pending": "Pending"
+      },
+      "messages": {
+        "loadFailed": "Failed to load requests.",
+        "detailFailed": "Failed to load request details.",
+        "saved": "Request updated successfully.",
+        "saveFailed": "Failed to save request changes."
+      }
     }
   },
   "footer": {
@@ -3281,6 +3402,52 @@
       "city": "City",
       "country": "Country",
       "selectType": "Select type"
+    },
+    "users": {
+      "title": "Users",
+      "list": "Users List",
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone",
+      "isActive": "Active",
+      "emailConfirmed": "Email Confirmed",
+      "roles": "Roles",
+      "resendVerification": "Resend Verification",
+      "verificationSent": "Verification email sent.",
+      "verificationSendError": "Failed to send verification email.",
+      "editUser": "Edit User",
+      "editUserDescription": "Update user profile details and role assignments.",
+      "createUserDescription": "Create a new user account and assign roles.",
+      "fullNamePlaceholder": "Enter full name",
+      "emailPlaceholder": "Enter email address",
+      "emailReadOnly": "Email cannot be changed from this screen.",
+      "phonePlaceholder": "Enter phone number",
+      "selectRoles": "Select roles",
+      "rolesHelp": "Choose one or more roles for this user.",
+      "rolesUpdateError": "Failed to update user roles."
+    },
+    "roles": {
+      "title": "Roles",
+      "list": "Roles List",
+      "createRole": "New Role",
+      "editRole": "Edit Role",
+      "name": "Role Name",
+      "description": "Description",
+      "permissions": "Permissions",
+      "permissionsCount": "Permissions Count",
+      "namePlaceholder": "Enter role name",
+      "descriptionPlaceholder": "Enter role description",
+      "selectPermissions": "Select permissions"
+    },
+    "tags": {
+      "title": "Tags",
+      "list": "Tags List",
+      "createTag": "New Tag",
+      "editTag": "Edit Tag",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "slug": "Slug",
+      "isActive": "Active"
     },
     "sales": {
       "common": {

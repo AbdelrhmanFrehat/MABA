@@ -18,24 +18,19 @@ import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DesignRequestService } from '../../../shared/services/design-request.service';
 import { LanguageService } from '../../../shared/services/language.service';
+import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
 import {
     DesignServiceRequestDto,
-    DesignRequestStatus,
     DesignRequestType,
     DESIGN_REQUEST_TYPES
 } from '../../../shared/models/design-request.model';
-
-const DESIGN_STATUS_OPTIONS: { value: DesignRequestStatus; label: string }[] = [
-    { value: 'New', label: 'New' },
-    { value: 'UnderReview', label: 'Under Review' },
-    { value: 'Quoted', label: 'Quoted' },
-    { value: 'Approved', label: 'Approved' },
-    { value: 'InProgress', label: 'In Progress' },
-    { value: 'Delivered', label: 'Delivered' },
-    { value: 'Closed', label: 'Closed' },
-    { value: 'Rejected', label: 'Rejected' },
-    { value: 'Cancelled', label: 'Cancelled' }
-];
+import {
+    ServiceWorkflowStatus,
+    denormalizeDesignWorkflowStatus,
+    getWorkflowOptions,
+    getWorkflowTimeline,
+    normalizeDesignWorkflowStatus
+} from '../../../shared/utils/service-request-workflow';
 
 @Component({
     selector: 'app-design-requests-list',
@@ -55,7 +50,8 @@ const DESIGN_STATUS_OPTIONS: { value: DesignRequestStatus; label: string }[] = [
         TextareaModule,
         ProgressSpinnerModule,
         TooltipModule,
-        TranslateModule
+        TranslateModule,
+        ServiceRequestStatusBadgeComponent
     ],
     providers: [MessageService],
     template: `
@@ -145,7 +141,7 @@ const DESIGN_STATUS_OPTIONS: { value: DesignRequestStatus; label: string }[] = [
                                     <span *ngIf="!req.customerName && !req.customerEmail">-</span>
                                 </div>
                             </td>
-                            <td><p-tag [value]="req.status" [severity]="getStatusSeverity(req.status)"></p-tag></td>
+                            <td><app-service-request-status-badge module="design" [status]="req.workflowStatus || req.status"></app-service-request-status-badge></td>
                             <td>{{ formatDate(req.createdAt) }}</td>
                             <td>
                                 <div class="action-buttons">
@@ -180,8 +176,18 @@ const DESIGN_STATUS_OPTIONS: { value: DesignRequestStatus; label: string }[] = [
                 <div class="detail-grid">
                     <div class="detail-item"><label>{{ 'admin.designRequests.reference' | translate }}</label><span class="ref-number">{{ selectedRequest.referenceNumber }}</span></div>
                     <div class="detail-item"><label>{{ 'admin.designRequests.type' | translate }}</label><span>{{ getTypeLabel(selectedRequest.requestType) }}</span></div>
-                    <div class="detail-item"><label>{{ 'admin.designRequests.status' | translate }}</label><p-tag [value]="selectedRequest.status" [severity]="getStatusSeverity(selectedRequest.status)"></p-tag></div>
+                    <div class="detail-item"><label>{{ 'admin.designRequests.status' | translate }}</label><app-service-request-status-badge module="design" [status]="selectedRequest.workflowStatus || selectedRequest.status"></app-service-request-status-badge></div>
                     <div class="detail-item"><label>{{ 'design.wizard.titleLabel' | translate }}</label><span>{{ selectedRequest.title }}</span></div>
+                    <div class="detail-item full-width workflow-strip">
+                        <label>{{ 'admin.serviceWorkflow.progress' | translate }}</label>
+                        <div class="workflow-timeline">
+                            <div class="workflow-step" *ngFor="let step of buildTimeline(selectedRequest)">
+                                <span class="workflow-dot" [class.done]="step.done"></span>
+                                <span>{{ step.labelKey | translate }}</span>
+                                <small *ngIf="step.at">{{ formatDate(step.at) }}</small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="detail-item full-width" *ngIf="selectedRequest.description"><label>{{ 'design.wizard.descriptionLabel' | translate }}</label><p class="notes-text">{{ selectedRequest.description }}</p></div>
                     <div class="detail-item full-width" *ngIf="selectedRequest.customerName || selectedRequest.customerEmail">
                         <label>{{ 'admin.designRequests.customer' | translate }}</label>
@@ -226,7 +232,7 @@ const DESIGN_STATUS_OPTIONS: { value: DesignRequestStatus; label: string }[] = [
             [resizable]="false">
             <div class="edit-content" *ngIf="selectedRequest">
                 <div class="form-field">
-                    <label>{{ 'admin.designRequests.status' | translate }}</label>
+                    <label>{{ 'admin.serviceWorkflow.nextStatus' | translate }}</label>
                     <p-select [(ngModel)]="editStatus" [options]="statusOptions" optionLabel="label" optionValue="value" styleClass="w-full"></p-select>
                 </div>
                 <div class="form-field">
@@ -275,6 +281,12 @@ const DESIGN_STATUS_OPTIONS: { value: DesignRequestStatus; label: string }[] = [
         .detail-item.full-width { grid-column: span 2; }
         .detail-item label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .notes-text { margin: 0; color: #475569; line-height: 1.5; white-space: pre-wrap; }
+        .workflow-strip { padding-top: 0.25rem; border-top: 1px solid #e2e8f0; }
+        .workflow-timeline { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; }
+        .workflow-step { display: inline-flex; align-items: center; gap: 0.45rem; color: #475569; }
+        .workflow-step small { color: #94a3b8; }
+        .workflow-dot { width: 0.6rem; height: 0.6rem; border-radius: 999px; background: #cbd5e1; }
+        .workflow-dot.done { background: #0f766e; }
         .customer-details { display: flex; flex-direction: column; gap: 0.25rem; }
         .customer-details span { display: flex; align-items: center; gap: 0.5rem; }
         .price { font-weight: 600; color: #667eea; }
@@ -307,14 +319,14 @@ export class DesignRequestsListComponent implements OnInit {
     selectedType = '';
     searchTerm = '';
 
-    statusOptions = DESIGN_STATUS_OPTIONS;
-    typeOptions = DESIGN_REQUEST_TYPES.map(t => ({ value: t, label: getTypeLabelStatic(t) }));
+    statusOptions: { value: ServiceWorkflowStatus; label: string }[] = [];
+    typeOptions = DESIGN_REQUEST_TYPES.map(t => ({ value: t, label: getTypeLabelStatic(t, 'en') }));
 
     showViewDialog = false;
     showEditDialog = false;
     selectedRequest: DesignServiceRequestDto | null = null;
 
-    editStatus = 'New';
+    editStatus: ServiceWorkflowStatus = 'New';
     editQuotedPrice: number | null = null;
     editFinalPrice: number | null = null;
     editAdminNotes = '';
@@ -328,7 +340,24 @@ export class DesignRequestsListComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.rebuildStatusOptions();
+        this.rebuildTypeOptions();
+        this.translate.onLangChange.subscribe(() => {
+            this.rebuildStatusOptions();
+            this.rebuildTypeOptions();
+        });
         this.loadRequests();
+    }
+
+    rebuildStatusOptions() {
+        this.statusOptions = getWorkflowOptions('design', this.translate);
+    }
+
+    rebuildTypeOptions() {
+        this.typeOptions = DESIGN_REQUEST_TYPES.map((t) => ({
+            value: t,
+            label: getTypeLabelStatic(t, this.languageService.language)
+        }));
     }
 
     loadRequests() {
@@ -336,7 +365,7 @@ export class DesignRequestsListComponent implements OnInit {
         this.designService.getMyRequests({
             page: this.currentPage,
             pageSize: this.pageSize,
-            status: this.selectedStatus || undefined,
+            status: this.selectedStatus ? denormalizeDesignWorkflowStatus(this.selectedStatus as ServiceWorkflowStatus) : undefined,
             requestType: this.selectedType || undefined,
             search: this.searchTerm?.trim() || undefined
         }).subscribe({
@@ -377,7 +406,7 @@ export class DesignRequestsListComponent implements OnInit {
 
     editRequest(req: DesignServiceRequestDto) {
         this.selectedRequest = req;
-        this.editStatus = req.status;
+        this.editStatus = normalizeDesignWorkflowStatus(req.workflowStatus || req.status);
         this.editQuotedPrice = req.quotedPrice ?? null;
         this.editFinalPrice = req.finalPrice ?? null;
         this.editAdminNotes = req.adminNotes ?? '';
@@ -388,7 +417,7 @@ export class DesignRequestsListComponent implements OnInit {
     saveRequest() {
         if (!this.selectedRequest) return;
         this.saving = true;
-        this.designService.updateStatus(this.selectedRequest.id, { status: this.editStatus }).subscribe({
+        this.designService.updateStatus(this.selectedRequest.id, { status: denormalizeDesignWorkflowStatus(this.editStatus) }).subscribe({
             next: () => {
                 this.designService.updateAdmin(this.selectedRequest!.id, {
                     adminNotes: this.editAdminNotes || undefined,
@@ -458,33 +487,35 @@ export class DesignRequestsListComponent implements OnInit {
     }
 
     getTypeLabel(type: string): string {
-        return getTypeLabelStatic(type);
+        return getTypeLabelStatic(type, this.languageService.language);
     }
 
-    getStatusSeverity(status: string): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' {
-        const map: Record<string, 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast'> = {
-            New: 'warn',
-            UnderReview: 'info',
-            Quoted: 'info',
-            Approved: 'info',
-            InProgress: 'info',
-            Delivered: 'success',
-            Closed: 'secondary',
-            Rejected: 'danger',
-            Cancelled: 'secondary'
-        };
-        return map[status] ?? 'secondary';
+    buildTimeline(req: DesignServiceRequestDto) {
+        return getWorkflowTimeline(normalizeDesignWorkflowStatus(req.workflowStatus || req.status), {
+            createdAt: req.createdAt,
+            reviewedAt: req.reviewedAt,
+            approvedAt: req.quotedAt,
+            completedAt: req.deliveredAt
+        });
     }
 }
 
-function getTypeLabelStatic(type: string): string {
-    const labels: Record<string, string> = {
+function getTypeLabelStatic(type: string, lang: string): string {
+    const labelsEn: Record<string, string> = {
         IdeaOnly: 'Idea Only',
-        BrokenDesign: 'Idea + Broken Design',
+        BrokenDesign: 'Broken Design',
         PhysicalObject: 'Physical Object',
         ExistingCAD: 'Existing CAD',
         TechnicalDrawings: 'Technical Drawings',
-        ImproveExistingProduct: 'Improve Existing'
+        ImproveExistingProduct: 'Improve Existing Product'
     };
-    return labels[type] ?? type;
+    const labelsAr: Record<string, string> = {
+        IdeaOnly: 'فكرة فقط',
+        BrokenDesign: 'تصميم معطل',
+        PhysicalObject: 'منتج فعلي',
+        ExistingCAD: 'ملف CAD موجود',
+        TechnicalDrawings: 'رسومات فنية',
+        ImproveExistingProduct: 'تطوير منتج قائم'
+    };
+    return (lang === 'ar' ? labelsAr : labelsEn)[type] ?? type;
 }

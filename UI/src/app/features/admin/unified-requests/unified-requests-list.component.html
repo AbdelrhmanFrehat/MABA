@@ -1,0 +1,316 @@
+<p-toast></p-toast>
+
+<div class="all-requests-page">
+    <div class="page-header">
+        <div>
+            <h1>{{ 'admin.allRequests.title' | translate }}</h1>
+            <p>{{ 'admin.allRequests.subtitle' | translate }}</p>
+        </div>
+        <p-button icon="pi pi-refresh" [label]="'common.refresh' | translate" [outlined]="true" (onClick)="loadRequests()"></p-button>
+    </div>
+
+    <div class="summary-grid">
+        <p-card class="summary-card">
+            <span class="summary-label">{{ 'admin.allRequests.summary.total' | translate }}</span>
+            <strong class="summary-value">{{ totalCount() }}</strong>
+        </p-card>
+        <p-card class="summary-card" *ngFor="let item of typeCounts()">
+            <span class="summary-label">{{ translatedTypeLabel(item.requestType) }}</span>
+            <strong class="summary-value">{{ item.count }}</strong>
+        </p-card>
+    </div>
+
+    <p-card styleClass="filter-card">
+        <form [formGroup]="filterForm" class="filter-grid">
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.requestType' | translate }}</label>
+                <p-select
+                    formControlName="requestType"
+                    [options]="typeOptions"
+                    optionValue="value"
+                    [optionLabel]="'labelKey'"
+                    [filter]="false">
+                    <ng-template let-option pTemplate="item">
+                        {{ option.labelKey | translate }}
+                    </ng-template>
+                    <ng-template let-option pTemplate="selectedItem">
+                        {{ option?.labelKey ? (option.labelKey | translate) : ('admin.allRequests.types.all' | translate) }}
+                    </ng-template>
+                </p-select>
+            </div>
+
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.status' | translate }}</label>
+                <p-select formControlName="workflowStatus" [options]="workflowOptions" optionLabel="label" optionValue="value"></p-select>
+            </div>
+
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.createdFrom' | translate }}</label>
+                <p-datepicker formControlName="createdFrom" appendTo="body" dateFormat="yy-mm-dd"></p-datepicker>
+            </div>
+
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.createdTo' | translate }}</label>
+                <p-datepicker formControlName="createdTo" appendTo="body" dateFormat="yy-mm-dd"></p-datepicker>
+            </div>
+
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.keyword' | translate }}</label>
+                <input pInputText formControlName="keyword" [placeholder]="'admin.allRequests.filters.keywordPlaceholder' | translate" />
+            </div>
+
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.customer' | translate }}</label>
+                <input pInputText formControlName="customer" [placeholder]="'admin.allRequests.filters.customerPlaceholder' | translate" />
+            </div>
+
+            <div class="field">
+                <label>{{ 'admin.allRequests.filters.reference' | translate }}</label>
+                <input pInputText formControlName="reference" [placeholder]="'admin.allRequests.filters.referencePlaceholder' | translate" />
+            </div>
+
+            <div class="filter-actions">
+                <p-button icon="pi pi-search" [label]="'common.search' | translate" (onClick)="applyFilters()"></p-button>
+                <p-button [label]="'common.reset' | translate" [outlined]="true" (onClick)="resetFilters()"></p-button>
+            </div>
+        </form>
+    </p-card>
+
+    <p-card styleClass="table-card">
+        <p-table [value]="requests()" [loading]="loading()" [rows]="20" [paginator]="true" [totalRecords]="totalCount()" [lazy]="true" (onPage)="loadRequests(($event.first! / $event.rows!) + 1)">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>{{ 'admin.allRequests.table.type' | translate }}</th>
+                    <th>{{ 'admin.allRequests.table.reference' | translate }}</th>
+                    <th>{{ 'admin.allRequests.table.customer' | translate }}</th>
+                    <th>{{ 'admin.allRequests.table.summary' | translate }}</th>
+                    <th>{{ 'admin.allRequests.table.status' | translate }}</th>
+                    <th>{{ 'admin.allRequests.table.createdAt' | translate }}</th>
+                    <th>{{ 'common.actions' | translate }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-request>
+                <tr>
+                    <td>
+                        <p-tag [value]="translatedTypeLabel(request.requestType)" severity="secondary"></p-tag>
+                    </td>
+                    <td>
+                        <div class="reference-cell">
+                            <strong>{{ request.referenceNumber }}</strong>
+                            <small>{{ request.legacyStatus }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="customer-cell">
+                            <strong>{{ request.customerName || '—' }}</strong>
+                            <small>{{ request.customerEmail }}</small>
+                            <small>{{ request.customerPhone }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="summary-cell">
+                            <strong>{{ request.title }}</strong>
+                            <small>{{ request.summary || '—' }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <app-service-request-status-badge [module]="request.requestType === 'project' ? 'project' : request.requestType" [status]="request.workflowStatus"></app-service-request-status-badge>
+                    </td>
+                    <td>{{ request.createdAt | date:'medium' }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <p-button icon="pi pi-pen-to-square" [text]="true" (onClick)="openManage(request)" [pTooltip]="'admin.allRequests.actions.manage' | translate"></p-button>
+                            <p-button icon="pi pi-external-link" [text]="true" (onClick)="openOriginalModule(request)" [pTooltip]="'admin.allRequests.actions.openOriginal' | translate"></p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-card>
+</div>
+
+<p-dialog [visible]="dialogVisible()" [modal]="true" [style]="{ width: '72rem', maxWidth: '95vw' }" [dismissableMask]="true" (onHide)="closeDialog()">
+    <ng-template pTemplate="header">
+        <div class="dialog-header" *ngIf="selectedRequest() as request">
+            <div>
+                <div class="dialog-title-row">
+                    <h3>{{ request.referenceNumber }}</h3>
+                    <p-tag [value]="translatedTypeLabel(request.requestType)" severity="secondary"></p-tag>
+                </div>
+                <p>{{ request.title }}</p>
+            </div>
+            <app-service-request-status-badge [module]="request.requestType === 'project' ? 'project' : request.requestType" [status]="request.workflowStatus"></app-service-request-status-badge>
+        </div>
+    </ng-template>
+
+    <form [formGroup]="editForm" class="manage-form" *ngIf="selectedRequest() as request">
+        <div class="manage-grid">
+            <section class="section">
+                <h4>{{ 'admin.allRequests.sections.shared' | translate }}</h4>
+                <div class="section-grid">
+                    <div class="field">
+                        <label>{{ 'admin.allRequests.fields.workflowStatus' | translate }}</label>
+                        <p-select formControlName="workflowStatus" [options]="workflowOptions" optionLabel="label" optionValue="value"></p-select>
+                    </div>
+                    <div class="field">
+                        <label>{{ 'admin.allRequests.fields.customerName' | translate }}</label>
+                        <input pInputText formControlName="customerName" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'admin.allRequests.fields.customerEmail' | translate }}</label>
+                        <input pInputText formControlName="customerEmail" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'admin.allRequests.fields.customerPhone' | translate }}</label>
+                        <input pInputText formControlName="customerPhone" />
+                    </div>
+                    <div class="field span-2">
+                        <label>{{ 'admin.allRequests.fields.adminNotes' | translate }}</label>
+                        <textarea pTextarea rows="3" formControlName="adminNotes"></textarea>
+                    </div>
+                    <div class="field span-2">
+                        <label>{{ 'admin.allRequests.fields.internalNote' | translate }}</label>
+                        <textarea pTextarea rows="2" formControlName="internalNote"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h4>{{ 'admin.allRequests.sections.progress' | translate }}</h4>
+                <div class="history-list">
+                    <div class="history-item" *ngFor="let item of request.history">
+                        <span class="history-dot" [class.done]="item.reached"></span>
+                        <div>
+                            <strong>{{ ('admin.serviceWorkflow.status' + item.status) | translate }}</strong>
+                            <small>{{ item.timestamp ? (item.timestamp | date:'medium') : ('admin.allRequests.timeline.pending' | translate) }}</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" *ngIf="request.requestType === 'design' || request.requestType === 'designCad' || request.requestType === 'project'">
+                <h4>{{ 'admin.allRequests.sections.requestDetails' | translate }}</h4>
+                <div class="section-grid">
+                    <div class="field span-2" *ngIf="request.requestType !== 'project'">
+                        <label>{{ 'admin.allRequests.fields.title' | translate }}</label>
+                        <input pInputText formControlName="title" />
+                    </div>
+                    <div class="field span-2">
+                        <label>{{ 'admin.allRequests.fields.description' | translate }}</label>
+                        <textarea pTextarea rows="4" formControlName="description"></textarea>
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project'">
+                        <label>{{ 'admin.allRequests.fields.requestType' | translate }}</label>
+                        <input pInputText formControlName="requestTypeName" />
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project'">
+                        <label>{{ 'admin.allRequests.fields.category' | translate }}</label>
+                        <input pInputText formControlName="category" />
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project' || request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.budgetRange' | translate }}</label>
+                        <input pInputText formControlName="budgetRange" />
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'project' || request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.timeline' | translate }}</label>
+                        <input pInputText formControlName="timeline" />
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.toleranceLevel' | translate }}</label>
+                        <input pInputText formControlName="toleranceLevel" />
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.intendedUse' | translate }}</label>
+                        <input pInputText formControlName="intendedUse" />
+                    </div>
+                    <div class="field span-2" *ngIf="request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.materialPreference' | translate }}</label>
+                        <input pInputText formControlName="materialPreference" />
+                    </div>
+                    <div class="field span-2" *ngIf="request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.dimensionsNotes' | translate }}</label>
+                        <textarea pTextarea rows="3" formControlName="dimensionsNotes"></textarea>
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.quotedPrice' | translate }}</label>
+                        <p-inputnumber formControlName="quotedPrice" mode="decimal"></p-inputnumber>
+                    </div>
+                    <div class="field" *ngIf="request.requestType === 'design'">
+                        <label>{{ 'admin.allRequests.fields.finalPrice' | translate }}</label>
+                        <p-inputnumber formControlName="finalPrice" mode="decimal"></p-inputnumber>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" *ngIf="request.requestType === 'designCad'">
+                <h4>{{ 'admin.allRequests.sections.cadDetails' | translate }}</h4>
+                <div class="section-grid">
+                    <div class="field"><label>{{ 'admin.allRequests.fields.targetProcess' | translate }}</label><input pInputText formControlName="targetProcess" /></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.deadline' | translate }}</label><input pInputText formControlName="deadline" /></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.materialNotes' | translate }}</label><textarea pTextarea rows="2" formControlName="materialNotes"></textarea></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.dimensionsNotes' | translate }}</label><textarea pTextarea rows="2" formControlName="dimensionsNotes"></textarea></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.toleranceNotes' | translate }}</label><textarea pTextarea rows="2" formControlName="toleranceNotes"></textarea></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.whatNeedsChange' | translate }}</label><textarea pTextarea rows="2" formControlName="whatNeedsChange"></textarea></div>
+                </div>
+            </section>
+
+            <section class="section" *ngIf="request.requestType === 'print3d'">
+                <h4>{{ 'admin.allRequests.sections.print3dDetails' | translate }}</h4>
+                <div class="section-grid">
+                    <div class="field"><label>{{ 'admin.allRequests.fields.material' | translate }}</label><p-select formControlName="materialId" [options]="materials3d()" optionLabel="label" optionValue="value"></p-select></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.profile' | translate }}</label><p-select formControlName="profileId" [options]="profiles3d()" optionLabel="label" optionValue="value"></p-select></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.estimatedPrice' | translate }}</label><p-inputnumber formControlName="estimatedPrice" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.finalPrice' | translate }}</label><p-inputnumber formControlName="finalPrice" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.estimatedPrintTimeHours' | translate }}</label><p-inputnumber formControlName="estimatedPrintTimeHours" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.estimatedFilamentGrams' | translate }}</label><p-inputnumber formControlName="estimatedFilamentGrams" mode="decimal"></p-inputnumber></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.customerNotes' | translate }}</label><textarea pTextarea rows="3" formControlName="customerNotes"></textarea></div>
+                </div>
+            </section>
+
+            <section class="section" *ngIf="request.requestType === 'laser'">
+                <h4>{{ 'admin.allRequests.sections.laserDetails' | translate }}</h4>
+                <div class="section-grid">
+                    <div class="field"><label>{{ 'admin.allRequests.fields.material' | translate }}</label><p-select formControlName="materialId" [options]="laserMaterials()" optionLabel="label" optionValue="value"></p-select></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.operationMode' | translate }}</label><input pInputText formControlName="operationMode" /></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.widthCm' | translate }}</label><p-inputnumber formControlName="widthCm" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.heightCm' | translate }}</label><p-inputnumber formControlName="heightCm" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.quotedPrice' | translate }}</label><p-inputnumber formControlName="quotedPrice" mode="decimal"></p-inputnumber></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.customerNotes' | translate }}</label><textarea pTextarea rows="3" formControlName="customerNotes"></textarea></div>
+                </div>
+            </section>
+
+            <section class="section" *ngIf="request.requestType === 'cnc'">
+                <h4>{{ 'admin.allRequests.sections.cncDetails' | translate }}</h4>
+                <div class="section-grid">
+                    <div class="field"><label>{{ 'admin.allRequests.fields.serviceMode' | translate }}</label><input pInputText formControlName="serviceMode" /></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.material' | translate }}</label><p-select formControlName="materialId" [options]="cncMaterials()" optionLabel="label" optionValue="value"></p-select></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.operationType' | translate }}</label><input pInputText formControlName="operationType" /></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.quantity' | translate }}</label><p-inputnumber formControlName="quantity"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.widthMm' | translate }}</label><p-inputnumber formControlName="widthMm" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.heightMm' | translate }}</label><p-inputnumber formControlName="heightMm" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.thicknessMm' | translate }}</label><p-inputnumber formControlName="thicknessMm" mode="decimal"></p-inputnumber></div>
+                    <div class="field"><label>{{ 'admin.allRequests.fields.depthMm' | translate }}</label><p-inputnumber formControlName="depthMm" mode="decimal"></p-inputnumber></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.projectDescription' | translate }}</label><textarea pTextarea rows="3" formControlName="projectDescription"></textarea></div>
+                    <div class="field span-2"><label>{{ 'admin.allRequests.fields.designNotes' | translate }}</label><textarea pTextarea rows="3" formControlName="designNotes"></textarea></div>
+                </div>
+            </section>
+
+            <section class="section" *ngIf="request.attachments?.length || request.downloadUrl || request.imageUrl">
+                <h4>{{ 'admin.allRequests.sections.files' | translate }}</h4>
+                <div class="attachment-list" *ngIf="request.attachments?.length">
+                    <a class="attachment-link" *ngFor="let attachment of request.attachments" [href]="attachment.url || '#'" target="_blank" rel="noreferrer">
+                        {{ attachment.fileName }}
+                    </a>
+                </div>
+                <a class="attachment-link" *ngIf="request.downloadUrl" [href]="request.downloadUrl" target="_blank" rel="noreferrer">{{ 'admin.allRequests.actions.downloadFile' | translate }}</a>
+                <a class="attachment-link" *ngIf="request.imageUrl" [href]="request.imageUrl" target="_blank" rel="noreferrer">{{ 'admin.allRequests.actions.openArtwork' | translate }}</a>
+            </section>
+        </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+        <p-button [label]="'common.close' | translate" [text]="true" (onClick)="closeDialog()"></p-button>
+        <p-button [label]="'admin.allRequests.actions.openOriginal' | translate" [outlined]="true" (onClick)="selectedRequest() && openOriginalModule(selectedRequest()!)"></p-button>
+        <p-button [label]="'common.save' | translate" (onClick)="save()" [loading]="saving()"></p-button>
+    </ng-template>
+</p-dialog>

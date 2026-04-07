@@ -1,4 +1,5 @@
 using Maba.Domain.Cnc;
+using Maba.Application.Common.ServiceRequests;
 
 namespace Maba.Application.Features.Cnc.DTOs;
 
@@ -44,6 +45,7 @@ public class CncServiceRequestDto
     
     public CncServiceRequestStatus Status { get; set; }
     public string StatusName => Status.ToString();
+    public string WorkflowStatus => ServiceRequestWorkflowMapper.FromCnc(Status).ToString();
     
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
