@@ -1,5 +1,6 @@
 import { TranslateService } from '@ngx-translate/core';
 import { CncServiceRequestStatus } from '../models/cnc.model';
+import { LaserServiceRequestStatus } from '../models/laser.model';
 import { Print3dRequestStatus } from '../models/printing.model';
 
 export type ServiceWorkflowStatus =
