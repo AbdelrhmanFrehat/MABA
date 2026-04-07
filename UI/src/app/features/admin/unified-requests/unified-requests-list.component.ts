@@ -252,6 +252,12 @@ export class UnifiedRequestsListComponent implements OnInit {
         this.editForm.reset();
     }
 
+    onDialogVisibilityChange(visible: boolean): void {
+        if (!visible) {
+            this.closeDialog();
+        }
+    }
+
     translatedTypeLabel(type: string): string {
         return this.translate.instant(`admin.allRequests.types.${type}`);
     }

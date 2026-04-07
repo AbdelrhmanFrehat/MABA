@@ -129,7 +129,7 @@
     </p-card>
 </div>
 
-<p-dialog [visible]="dialogVisible()" [modal]="true" [style]="{ width: '72rem', maxWidth: '95vw' }" [dismissableMask]="true" (onHide)="closeDialog()">
+<p-dialog [visible]="dialogVisible()" (visibleChange)="onDialogVisibilityChange($event)" [modal]="true" [style]="{ width: '72rem', maxWidth: '95vw' }" [dismissableMask]="true" (onHide)="closeDialog()">
     <ng-template pTemplate="header">
         <div class="dialog-header" *ngIf="selectedRequest() as request">
             <div>
