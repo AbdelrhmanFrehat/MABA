@@ -27,6 +27,7 @@ using Maba.Domain.Inventory;
 using Maba.Domain.Numbering;
 using Maba.Domain.Tax;
 using Maba.Domain.Accounting;
+using Maba.Domain.CommercialReturns;
 using Maba.Infrastructure.Data.Configurations;
 using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
@@ -88,6 +89,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
     public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
+    public DbSet<SalesReturn> SalesReturns => Set<SalesReturn>();
+    public DbSet<SalesReturnLine> SalesReturnLines => Set<SalesReturnLine>();
+    public DbSet<PurchaseReturn> PurchaseReturns => Set<PurchaseReturn>();
+    public DbSet<PurchaseReturnLine> PurchaseReturnLines => Set<PurchaseReturnLine>();
 
     // Machines
     public DbSet<Machine> Machines => Set<Machine>();

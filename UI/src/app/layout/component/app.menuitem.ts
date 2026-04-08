@@ -66,8 +66,7 @@ import { LayoutService } from '../service/layout.service';
             ),
             transition('collapsed <=> expanded', animate('400ms cubic-bezier(0.86, 0, 0.07, 1)'))
         ])
-    ],
-    providers: [LayoutService]
+    ]
 })
 export class AppMenuitem {
     @Input() item!: MenuItem;
@@ -106,27 +105,47 @@ export class AppMenuitem {
             this.active = false;
         });
 
-        this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((params) => {
-            if (this.item.routerLink) {
-                this.updateActiveStateFromRoute();
-            }
+        this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+            this.updateActiveStateFromRoute();
         });
     }
 
     ngOnInit() {
         this.key = this.parentKey ? this.parentKey + '-' + this.index : String(this.index);
 
-        if (this.item.routerLink) {
-            this.updateActiveStateFromRoute();
-        }
+        this.updateActiveStateFromRoute();
     }
 
     updateActiveStateFromRoute() {
-        let activeRoute = this.router.isActive(this.item.routerLink[0], { paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' });
+        const activeRoute = this.isItemRouteActive(this.item) || this.hasActiveChild(this.item);
+        this.active = activeRoute;
 
         if (activeRoute) {
             this.layoutService.onMenuStateChange({ key: this.key, routeEvent: true });
         }
+    }
+
+    private hasActiveChild(item: MenuItem): boolean {
+        return !!item.items?.some((child) => this.isItemRouteActive(child) || this.hasActiveChild(child));
+    }
+
+    private isItemRouteActive(item: MenuItem): boolean {
+        if (!item.routerLink) {
+            return false;
+        }
+
+        const commands = Array.isArray(item.routerLink) ? item.routerLink : [item.routerLink];
+        const urlTree = this.router.createUrlTree(commands, {
+            queryParams: item.queryParams,
+            fragment: item.fragment
+        });
+
+        return this.router.isActive(urlTree, {
+            paths: 'exact',
+            queryParams: 'ignored',
+            matrixParams: 'ignored',
+            fragment: 'ignored'
+        });
     }
 
     itemClick(event: Event) {
