@@ -232,7 +232,7 @@
     "previous": "Previous",
     "first": "First",
     "last": "Last",
-    "showing": "Showing {first} to {last} of {total}",
+    "showing": "Showing {first} to {last} of {totalRecords}",
     "rowsPerPage": "Rows per page",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
@@ -768,7 +768,7 @@
     "inStock": "In Stock",
     "lowStock": "Low Stock",
     "outOfStock": "Out of Stock",
-    "showingItems": "Showing {first} to {last} of {total} items"
+    "showingItems": "Showing {first} to {last} of {totalRecords} items"
   },
   "lookups": {
     "categoriesTabTitle": "Categories",
@@ -812,7 +812,7 @@
     "enterEmail": "Enter email",
     "enterAddress": "Enter address",
     "enterNotes": "Enter notes...",
-    "showingSuppliers": "Showing {first} to {last} of {total} suppliers"
+    "showingSuppliers": "Showing {first} to {last} of {totalRecords} suppliers"
   },
   "customers": {
     "title": "Customers",
@@ -824,7 +824,7 @@
     "viewStatement": "View Statement",
     "statementFor": "Statement for {name}",
     "noCustomersFound": "No customers found",
-    "showingCustomers": "Showing {first} to {last} of {total} customers"
+    "showingCustomers": "Showing {first} to {last} of {totalRecords} customers"
   },
   "purchases": {
     "title": "Purchase Invoices",
@@ -854,7 +854,7 @@
     "remaining": "Remaining",
     "noItemsAdded": "No items added yet. Click \"Add Item\" to begin.",
     "noInvoicesFound": "No invoices found",
-    "showingInvoices": "Showing {first} to {last} of {total} invoices",
+    "showingInvoices": "Showing {first} to {last} of {totalRecords} invoices",
     "status": {
       "draft": "Draft",
       "confirmed": "Confirmed",
@@ -872,7 +872,7 @@
     "allCustomers": "All Customers",
     "selectCustomer": "Select Customer",
     "noInvoicesFound": "No invoices found",
-    "showingInvoices": "Showing {first} to {last} of {total} invoices"
+    "showingInvoices": "Showing {first} to {last} of {totalRecords} invoices"
   },
   "adjustments": {
     "title": "Inventory Adjustments",
@@ -1163,7 +1163,18 @@
       "yearRange": "Year Range",
       "partsCount": "Parts Count",
       "yearFromPlaceholder": "e.g. 2020",
-      "yearToPlaceholder": "e.g. 2024"
+      "yearToPlaceholder": "e.g. 2024",
+      "totalMachines": "Total Machines",
+      "totalParts": "Total Parts",
+      "manufacturers": "Manufacturers",
+      "parts": "Parts",
+      "searchPlaceholder": "Search machines...",
+      "allManufacturers": "All Manufacturers",
+      "allModels": "All Models",
+      "allYears": "All Years",
+      "allPartsCounts": "All",
+      "tableView": "Table View",
+      "cardView": "Card View"
     },
     "itemMachineLinks": {
       "title": "Item-Machine Links",
@@ -1799,7 +1810,18 @@
       "item": "Item",
       "currentStock": "Current Stock",
       "newQuantity": "New Quantity",
-      "reorderLevel": "Reorder Level"
+      "reorderLevel": "Reorder Level",
+      "warehouses": "Warehouses",
+      "warehouse": "Warehouse",
+      "defaultWarehouse": "Default",
+      "stockOverview": "Stock Overview",
+      "movements": "Inventory Movements",
+      "movementType": "Movement Type",
+      "stockAdjustment": "Stock Adjustment",
+      "onHand": "On Hand",
+      "reserved": "Reserved",
+      "available": "Available",
+      "costPerUnit": "Cost Per Unit"
     },
     "machineParts": {
       "title": "Machine Parts",
@@ -2208,6 +2230,147 @@
         "saved": "Request updated successfully.",
         "saveFailed": "Failed to save request changes."
       }
+    },
+    "common": {
+      "headerSection": "Header Section",
+      "linesSection": "Lines",
+      "summarySection": "Summary",
+      "document": "Document",
+      "submitForApproval": "Submit for approval",
+      "approve": "Approve",
+      "confirm": "Confirm",
+      "void": "Void",
+      "issue": "Issue",
+      "posted": "Posted",
+      "moduleScaffolded": "This module page has been wired into the admin panel and is ready for backend integration refinement.",
+      "documentFormComingSoon": "This form shell is in place and ready for field-level refinement against the final API responses."
+    },
+    "lookups": {
+      "title": "Lookups",
+      "types": "Lookup Types",
+      "createType": "New Lookup Type",
+      "editType": "Edit Lookup Type",
+      "key": "Key",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "isSystem": "System",
+      "manageValues": "Manage Values"
+    },
+    "crm": {
+      "customers": "Customers",
+      "suppliers": "Suppliers",
+      "customersList": "Customers",
+      "createCustomer": "New Customer",
+      "editCustomer": "Edit Customer",
+      "createSupplier": "New Supplier",
+      "editSupplier": "Edit Supplier",
+      "code": "Code",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "type": "Type",
+      "balance": "Balance",
+      "creditLimit": "Credit Limit",
+      "taxNumber": "Tax Number",
+      "paymentTermDays": "Payment Terms",
+      "contactInfo": "Contact Information",
+      "statement": "Statement",
+      "currency": "Currency",
+      "address": "Address",
+      "addressLine1": "Address Line 1",
+      "city": "City",
+      "country": "Country",
+      "selectType": "Select type",
+      "selectTypeAr": "اختر النوع"
+    },
+    "sales": {
+      "common": {
+        "number": "Number",
+        "customer": "Customer",
+        "convertToInvoice": "Convert to invoice",
+        "recordPayment": "Record payment"
+      },
+      "quotations": {
+        "title": "Sales Quotations",
+        "subtitle": "Draft, send, and convert quotations.",
+        "new": "New Quotation"
+      },
+      "orders": {
+        "title": "Sales Orders",
+        "subtitle": "Approval-driven order workflow for commercial sales.",
+        "new": "New Sales Order",
+        "edit": "Edit Sales Order",
+        "flowHint": "Quotation -> Order -> Approval -> Invoice -> Payment",
+        "expectedDeliveryDate": "Expected Delivery Date"
+      },
+      "invoices": {
+        "title": "Sales Invoices",
+        "subtitle": "Issue invoices, monitor balances, and post payments.",
+        "new": "New Sales Invoice",
+        "edit": "Edit Sales Invoice",
+        "formHint": "Build invoice lines, taxes, and receivable totals from one screen.",
+        "dueDate": "Due Date"
+      },
+      "returns": {
+        "title": "Sales Returns",
+        "subtitle": "Manage approved returns and inventory restocking.",
+        "new": "New Sales Return"
+      }
+    },
+    "purchasing": {
+      "quotations": { "title": "Purchase Quotations" },
+      "orders": { "title": "Purchase Orders" },
+      "invoices": { "title": "Purchase Invoices" },
+      "returns": { "title": "Purchase Returns" }
+    },
+    "payments": {
+      "title": "Payment Vouchers",
+      "subtitle": "Capture inbound and outbound business payments with allocations.",
+      "new": "New Payment Voucher",
+      "edit": "Edit Payment Voucher",
+      "formHint": "Allocate payments against sales or purchase invoices from a single voucher.",
+      "voucherNumber": "Voucher Number",
+      "direction": "Direction",
+      "method": "Method",
+      "referenceNumber": "Reference Number",
+      "bankName": "Bank Name",
+      "allocations": "Allocations",
+      "plans": "Payment Plans",
+      "installments": "Installments",
+      "remainingAmount": "Remaining"
+    },
+    "accounting": {
+      "chartOfAccounts": "Chart of Accounts",
+      "accountType": "Account Type",
+      "journalEntries": "Journal Entries",
+      "journalEntryType": "Journal Entry Type",
+      "newJournalEntry": "New Journal Entry",
+      "entryNumber": "Entry Number",
+      "ledger": "Ledger View",
+      "trialBalance": "Trial Balance"
+    },
+    "pricing": {
+      "priceLists": "Price Lists",
+      "priceListItems": "Price List Items",
+      "wholesaleRules": "Wholesale Rules",
+      "priority": "Priority",
+      "isDefault": "Default"
+    },
+    "catalog": {
+      "unitsOfMeasure": "Units of Measure",
+      "baseUnit": "Base Unit"
+    },
+    "tax": {
+      "title": "Tax Profiles",
+      "rate": "Rate"
+    },
+    "reports": {
+      "sales": "Sales Report",
+      "purchases": "Purchase Report",
+      "inventory": "Inventory Report",
+      "customerStatement": "Customer Statement",
+      "supplierStatement": "Supplier Statement",
+      "profitOverview": "Profit Overview",
+      "trialBalance": "Trial Balance"
     }
   },
   "footer": {
@@ -3476,406 +3639,6 @@
     "cta": {
       "title": "Ready to build with us?",
       "button": "Start a Project"
-    }
-  },
-  "admin": {
-    "dashboard": {
-      "title": "Dashboard",
-      "welcome": "Welcome to the admin dashboard",
-      "refresh": "Refresh Data",
-      "dateRange": "Date Range",
-      "selectDateRange": "Select Date Range",
-      "fromDate": "From Date",
-      "toDate": "To Date",
-      "today": "Today",
-      "last7days": "Last 7 Days",
-      "last30days": "Last 30 Days",
-      "last90days": "Last 90 Days",
-      "thisMonth": "This Month",
-      "lastMonth": "Last Month",
-      "thisYear": "This Year",
-      "custom": "Custom Range",
-      "totalOrders": "Total Orders",
-      "totalRevenue": "Total Revenue",
-      "totalCustomers": "Total Customers",
-      "active3DJobs": "Active 3D Jobs",
-      "lowStockItems": "Low Stock Items",
-      "pendingReviews": "Pending Reviews",
-      "salesOverTime": "Sales Over Time",
-      "ordersByStatus": "Orders by Status",
-      "quickActions": "Quick Actions",
-      "manageProjects": "Manage Projects",
-      "manageCatalog": "Manage Catalog",
-      "createItem": "Create Item",
-      "viewLowStock": "View Low Stock",
-      "viewPendingOrders": "View Pending Orders",
-      "viewPendingReviews": "View Pending Reviews",
-      "recentOrders": "Recent Orders",
-      "viewAllOrders": "View All Orders",
-      "recent3DRequests": "Recent 3D Requests",
-      "viewAll3DRequests": "View All 3D Requests"
-    },
-    "common": {
-      "headerSection": "Header Section",
-      "linesSection": "Lines",
-      "summarySection": "Summary",
-      "document": "Document",
-      "submitForApproval": "Submit for approval",
-      "approve": "Approve",
-      "confirm": "Confirm",
-      "void": "Void",
-      "issue": "Issue",
-      "posted": "Posted",
-      "moduleScaffolded": "This module page has been wired into the admin panel and is ready for backend integration refinement.",
-      "documentFormComingSoon": "This form shell is in place and ready for field-level refinement against the final API responses."
-    },
-    "serviceWorkflow": {
-      "progress": "Workflow Progress",
-      "nextStatus": "Next Workflow Stage",
-      "manageWorkflow": "Manage Workflow",
-      "statusNew": "New",
-      "statusUnderReview": "Under Review",
-      "statusAwaitingCustomerConfirmation": "Awaiting Customer Confirmation",
-      "statusApproved": "Approved",
-      "statusInProgress": "In Progress",
-      "statusReadyForDelivery": "Ready for Delivery",
-      "statusCompleted": "Completed",
-      "statusRejected": "Rejected",
-      "statusCancelled": "Cancelled"
-    },
-    "projectRequests": {
-      "title": "Project Requests",
-      "subtitle": "Manage engineering project requests from one operational view.",
-      "filterByStatus": "Filter by status",
-      "filterByProjectType": "Filter by project type",
-      "filterByMainDomain": "Filter by main domain",
-      "filterByProjectStage": "Filter by project stage",
-      "allProjectTypes": "All project types",
-      "allMainDomains": "All main domains",
-      "allProjectStages": "All project stages",
-      "searchPlaceholder": "Search by reference, customer, or domain",
-      "loadFailed": "Failed to load project requests.",
-      "updateFailed": "Failed to update project request.",
-      "reference": "Reference",
-      "customer": "Customer",
-      "projectType": "Project Type",
-      "mainDomain": "Main Domain",
-      "requiredCapabilities": "Capabilities",
-      "projectStage": "Project Stage",
-      "budget": "Budget / Timeline",
-      "status": "Status",
-      "date": "Date",
-      "requestDetails": "Project Request Details",
-      "contactSection": "Customer Contact",
-      "requestSection": "Project Scope",
-      "email": "Email",
-      "phone": "Phone",
-      "linkedProject": "Linked Project",
-      "timeline": "Timeline",
-      "description": "Project Description",
-      "attachments": "Attachments",
-      "adminNotes": "Admin Notes",
-      "notesPlaceholder": "Add internal notes for engineering follow-up...",
-      "statusUpdated": "Project request updated successfully.",
-      "viewDetails": "View details",
-      "noRequests": "No project requests found"
-    },
-    "allRequests": {
-      "title": "All Requests",
-      "subtitle": "Central operations hub for engineering and manufacturing service requests.",
-      "types": {
-        "all": "All Request Types",
-        "project": "Project Request",
-        "print3d": "3D Print Request",
-        "design": "Design Request",
-        "designCad": "CAD Request",
-        "laser": "Laser Request",
-        "cnc": "CNC Request"
-      },
-      "summary": {
-        "total": "Filtered Total"
-      },
-      "filters": {
-        "requestType": "Request Type",
-        "status": "Workflow Status",
-        "createdFrom": "Created From",
-        "createdTo": "Created To",
-        "keyword": "Keyword",
-        "customer": "Customer",
-        "reference": "Reference",
-        "keywordPlaceholder": "Search title, notes, or request details",
-        "customerPlaceholder": "Search customer name, email, or phone",
-        "referencePlaceholder": "Search by reference number"
-      },
-      "table": {
-        "type": "Type",
-        "reference": "Reference",
-        "customer": "Customer",
-        "summary": "Request Summary",
-        "status": "Status",
-        "createdAt": "Created"
-      },
-      "sections": {
-        "shared": "Shared Management",
-        "progress": "Workflow Progress",
-        "requestDetails": "Request Details",
-        "cadDetails": "CAD Details",
-        "print3dDetails": "3D Printing Details",
-        "laserDetails": "Laser Details",
-        "cncDetails": "CNC Details",
-        "files": "Files and Attachments"
-      },
-      "fields": {
-        "workflowStatus": "Workflow Status",
-        "customerName": "Customer Name",
-        "customerEmail": "Customer Email",
-        "customerPhone": "Customer Phone",
-        "adminNotes": "Admin Notes",
-        "internalNote": "Internal Note",
-        "title": "Title",
-        "description": "Description",
-        "requestType": "Request Type",
-        "projectType": "Project Type",
-        "mainDomain": "Main Domain",
-        "requiredCapabilities": "Required Capabilities",
-        "projectStage": "Project Stage",
-        "category": "Category",
-        "budgetRange": "Budget Range",
-        "timeline": "Timeline",
-        "toleranceLevel": "Tolerance Level",
-        "intendedUse": "Intended Use",
-        "materialPreference": "Material Preference",
-        "dimensionsNotes": "Dimensions Notes",
-        "quotedPrice": "Quoted Price",
-        "finalPrice": "Final Price",
-        "targetProcess": "Target Process",
-        "deadline": "Deadline",
-        "materialNotes": "Material Notes",
-        "toleranceNotes": "Tolerance Notes",
-        "whatNeedsChange": "What Needs Change",
-        "material": "Material",
-        "profile": "Profile",
-        "estimatedPrice": "Estimated Price",
-        "estimatedPrintTimeHours": "Estimated Print Time (Hours)",
-        "estimatedFilamentGrams": "Estimated Filament (g)",
-        "customerNotes": "Customer Notes",
-        "operationMode": "Operation Mode",
-        "widthCm": "Width (cm)",
-        "heightCm": "Height (cm)",
-        "serviceMode": "Service Mode",
-        "operationType": "Operation Type",
-        "quantity": "Quantity",
-        "widthMm": "Width (mm)",
-        "heightMm": "Height (mm)",
-        "thicknessMm": "Thickness (mm)",
-        "depthMm": "Depth (mm)",
-        "projectDescription": "Project Description",
-        "designNotes": "Design Notes"
-      },
-      "actions": {
-        "manage": "Manage Request",
-        "openOriginal": "Open Original Module",
-        "downloadFile": "Download File",
-        "openArtwork": "Open Artwork"
-      },
-      "timeline": {
-        "pending": "Pending stage"
-      },
-      "messages": {
-        "loadFailed": "Failed to load requests.",
-        "detailFailed": "Failed to load request details.",
-        "saved": "Request updated successfully.",
-        "saveFailed": "Failed to save request changes."
-      }
-    },
-    "lookups": {
-      "title": "Lookups",
-      "types": "Lookup Types",
-      "createType": "New Lookup Type",
-      "editType": "Edit Lookup Type",
-      "key": "Key",
-      "nameEn": "Name (English)",
-      "nameAr": "Name (Arabic)",
-      "isSystem": "System",
-      "manageValues": "Manage Values"
-    },
-    "crm": {
-      "customers": "Customers",
-      "suppliers": "Suppliers",
-      "customersList": "Customers",
-      "createCustomer": "New Customer",
-      "editCustomer": "Edit Customer",
-      "createSupplier": "New Supplier",
-      "editSupplier": "Edit Supplier",
-      "code": "Code",
-      "nameEn": "Name (English)",
-      "nameAr": "Name (Arabic)",
-      "type": "Type",
-      "balance": "Balance",
-      "creditLimit": "Credit Limit",
-      "taxNumber": "Tax Number",
-      "paymentTermDays": "Payment Terms",
-      "contactInfo": "Contact Information",
-      "statement": "Statement",
-      "currency": "Currency",
-      "address": "Address",
-      "addressLine1": "Address Line 1",
-      "city": "City",
-      "country": "Country",
-      "selectType": "Select type"
-    },
-    "users": {
-      "title": "Users",
-      "list": "Users List",
-      "fullName": "Full Name",
-      "email": "Email",
-      "phone": "Phone",
-      "isActive": "Active",
-      "emailConfirmed": "Email Confirmed",
-      "roles": "Roles",
-      "resendVerification": "Resend Verification",
-      "verificationSent": "Verification email sent.",
-      "verificationSendError": "Failed to send verification email.",
-      "editUser": "Edit User",
-      "editUserDescription": "Update user profile details and role assignments.",
-      "createUserDescription": "Create a new user account and assign roles.",
-      "fullNamePlaceholder": "Enter full name",
-      "emailPlaceholder": "Enter email address",
-      "emailReadOnly": "Email cannot be changed from this screen.",
-      "phonePlaceholder": "Enter phone number",
-      "selectRoles": "Select roles",
-      "rolesHelp": "Choose one or more roles for this user.",
-      "rolesUpdateError": "Failed to update user roles."
-    },
-    "roles": {
-      "title": "Roles",
-      "list": "Roles List",
-      "createRole": "New Role",
-      "editRole": "Edit Role",
-      "name": "Role Name",
-      "description": "Description",
-      "permissions": "Permissions",
-      "permissionsCount": "Permissions Count",
-      "namePlaceholder": "Enter role name",
-      "descriptionPlaceholder": "Enter role description",
-      "selectPermissions": "Select permissions"
-    },
-    "tags": {
-      "title": "Tags",
-      "list": "Tags List",
-      "createTag": "New Tag",
-      "editTag": "Edit Tag",
-      "nameEn": "Name (English)",
-      "nameAr": "Name (Arabic)",
-      "slug": "Slug",
-      "isActive": "Active"
-    },
-    "sales": {
-      "common": {
-        "number": "Number",
-        "customer": "Customer",
-        "convertToInvoice": "Convert to invoice",
-        "recordPayment": "Record payment"
-      },
-      "quotations": {
-        "title": "Sales Quotations",
-        "subtitle": "Draft, send, and convert quotations.",
-        "new": "New Quotation"
-      },
-      "orders": {
-        "title": "Sales Orders",
-        "subtitle": "Approval-driven order workflow for commercial sales.",
-        "new": "New Sales Order",
-        "edit": "Edit Sales Order",
-        "flowHint": "Quotation -> Order -> Approval -> Invoice -> Payment",
-        "expectedDeliveryDate": "Expected Delivery Date"
-      },
-      "invoices": {
-        "title": "Sales Invoices",
-        "subtitle": "Issue invoices, monitor balances, and post payments.",
-        "new": "New Sales Invoice",
-        "edit": "Edit Sales Invoice",
-        "formHint": "Build invoice lines, taxes, and receivable totals from one screen.",
-        "dueDate": "Due Date"
-      },
-      "returns": {
-        "title": "Sales Returns",
-        "subtitle": "Manage approved returns and inventory restocking.",
-        "new": "New Sales Return"
-      }
-    },
-    "purchasing": {
-      "quotations": { "title": "Purchase Quotations" },
-      "orders": { "title": "Purchase Orders" },
-      "invoices": { "title": "Purchase Invoices" },
-      "returns": { "title": "Purchase Returns" }
-    },
-    "payments": {
-      "title": "Payment Vouchers",
-      "subtitle": "Capture inbound and outbound business payments with allocations.",
-      "new": "New Payment Voucher",
-      "edit": "Edit Payment Voucher",
-      "formHint": "Allocate payments against sales or purchase invoices from a single voucher.",
-      "voucherNumber": "Voucher Number",
-      "direction": "Direction",
-      "method": "Method",
-      "referenceNumber": "Reference Number",
-      "bankName": "Bank Name",
-      "allocations": "Allocations",
-      "plans": "Payment Plans",
-      "installments": "Installments",
-      "remainingAmount": "Remaining"
-    },
-    "inventory": {
-      "warehouses": "Warehouses",
-      "warehouse": "Warehouse",
-      "defaultWarehouse": "Default",
-      "stockOverview": "Stock Overview",
-      "movements": "Inventory Movements",
-      "movementType": "Movement Type",
-      "stockAdjustment": "Stock Adjustment",
-      "onHand": "On Hand",
-      "reserved": "Reserved",
-      "available": "Available",
-      "costPerUnit": "Cost Per Unit"
-    },
-    "accounting": {
-      "chartOfAccounts": "Chart of Accounts",
-      "accountType": "Account Type",
-      "journalEntries": "Journal Entries",
-      "journalEntryType": "Journal Entry Type",
-      "newJournalEntry": "New Journal Entry",
-      "entryNumber": "Entry Number",
-      "ledger": "Ledger View",
-      "trialBalance": "Trial Balance"
-    },
-    "pricing": {
-      "priceLists": "Price Lists",
-      "priceListItems": "Price List Items",
-      "wholesaleRules": "Wholesale Rules",
-      "priority": "Priority",
-      "isDefault": "Default"
-    },
-    "catalog": {
-      "unitsOfMeasure": "Units of Measure",
-      "baseUnit": "Base Unit"
-    },
-    "expenses": {
-      "title": "Expenses",
-      "new": "New Expense"
-    },
-    "tax": {
-      "title": "Tax Profiles",
-      "rate": "Rate"
-    },
-    "reports": {
-      "sales": "Sales Report",
-      "purchases": "Purchase Report",
-      "inventory": "Inventory Report",
-      "customerStatement": "Customer Statement",
-      "supplierStatement": "Supplier Statement",
-      "profitOverview": "Profit Overview",
-      "trialBalance": "Trial Balance"
     }
   },
   "cnc": {
