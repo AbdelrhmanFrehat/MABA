@@ -90,6 +90,9 @@ public class ProjectRequest : BaseEntity
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
 
+    /// <summary>FK to the first/primary quotation created from this request.</summary>
+    public Guid? LinkedQuotationId { get; set; }
+
     // Legacy status (preserved for backward compat)
     public ProjectRequestStatus Status { get; set; } = ProjectRequestStatus.New;
 

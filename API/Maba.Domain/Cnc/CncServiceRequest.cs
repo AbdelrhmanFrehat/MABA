@@ -54,6 +54,9 @@ public class CncServiceRequest : BaseEntity
     public User? User { get; set; }
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
+
+    /// <summary>FK to the first/primary quotation created from this request.</summary>
+    public Guid? LinkedQuotationId { get; set; }
     
     public string? AdminNotes { get; set; }
     public decimal? EstimatedPrice { get; set; }

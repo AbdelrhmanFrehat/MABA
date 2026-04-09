@@ -1,4 +1,6 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
+using Maba.Domain.Sales;
 using Maba.Domain.Users;
 
 namespace Maba.Domain.Orders;
@@ -9,6 +11,24 @@ public class Order : BaseEntity
     public bool IsStorefrontOrder { get; set; } = true;
     public Guid UserId { get; set; }
     public Guid OrderStatusId { get; set; }
+
+    // ── Commercial pipeline linkage ──────────────────────────────────────────
+    /// <summary>ERP Customer — populated for service-originated orders.</summary>
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+
+    /// <summary>Quotation this order was converted from (if any).</summary>
+    public Guid? SourceQuotationId { get; set; }
+    public Quotation? SourceQuotation { get; set; }
+
+    /// <summary>Originating service request ID (set when converted from a request/quotation).</summary>
+    public Guid? SourceRequestId { get; set; }
+
+    /// <summary>'project' | 'cnc' | 'laser' | 'print3d' | 'design' | 'designCad'</summary>
+    public string? SourceRequestType { get; set; }
+
+    /// <summary>Cached reference number for display.</summary>
+    public string? SourceRequestReference { get; set; }
     public decimal SubTotal { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal ShippingCost { get; set; }

@@ -13,6 +13,9 @@ public class Print3dServiceRequest : BaseEntity
     public User? User { get; set; }
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
+
+    /// <summary>FK to the first/primary quotation created from this request.</summary>
+    public Guid? LinkedQuotationId { get; set; }
     
     public Guid MaterialId { get; set; }
     public Material Material { get; set; } = null!;

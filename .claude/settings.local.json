@@ -7,7 +7,13 @@
       "Bash(xargs grep:*)",
       "Bash(dotnet ef:*)",
       "Bash(dotnet tool:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(sed -n '2697,2785p' /tmp/old_snapshot.cs)",
+      "Bash(sed -n '4385,4455p' /tmp/old_snapshot.cs)",
+      "Bash(grep -v \"//\")",
+      "Bash(grep -l \"Customers\\\\|Customer\\\\b\" /c/Users/PC/Desktop/maba/API/Maba.Infrastructure/Migrations/*.cs)",
+      "Bash(grep -l \"CreateTable.*Customers\\\\b\\\\|\\\\\"Customers\\\\\"\" /c/Users/PC/Desktop/maba/API/Maba.Infrastructure/Migrations/*.cs)",
+      "Bash(grep -r \"class.*Controller\" /c/Users/PC/Desktop/maba/API/Maba.Api/Controllers/*.cs)"
     ]
   }
 }

@@ -71,6 +71,9 @@ public class LaserServiceRequest : BaseEntity
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
 
+    /// <summary>FK to the first/primary quotation created from this request.</summary>
+    public Guid? LinkedQuotationId { get; set; }
+
     public LaserServiceRequestStatus Status { get; set; } = LaserServiceRequestStatus.Pending;
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
 using Maba.Domain.Users;
 
 namespace Maba.Domain.DesignCad;
@@ -9,6 +10,12 @@ public class DesignCadServiceRequest : BaseEntity
 
     public Guid? UserId { get; set; }
     public User? User { get; set; }
+
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+
+    /// <summary>FK to the first/primary quotation created from this request.</summary>
+    public Guid? LinkedQuotationId { get; set; }
 
     public DesignCadRequestType RequestType { get; set; }
     public string Title { get; set; } = string.Empty;
