@@ -28,6 +28,7 @@ using Maba.Domain.Numbering;
 using Maba.Domain.Tax;
 using Maba.Domain.Accounting;
 using Maba.Domain.CommercialReturns;
+using Maba.Domain.Sales;
 using Maba.Infrastructure.Data.Configurations;
 using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
@@ -128,6 +129,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PaymentPlan> PaymentPlans => Set<PaymentPlan>();
     public DbSet<Installment> Installments => Set<Installment>();
     public DbSet<InstallmentStatus> InstallmentStatuses => Set<InstallmentStatus>();
+
+    // Sales / Quotations
+    public DbSet<Quotation> Quotations => Set<Quotation>();
+    public DbSet<QuotationItem> QuotationItems => Set<QuotationItem>();
 
     // Finance
     public DbSet<Expense> Expenses => Set<Expense>();

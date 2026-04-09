@@ -28,6 +28,18 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .WithMany(s => s.Orders)
             .HasForeignKey(o => o.OrderStatusId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(o => o.Customer)
+            .WithMany()
+            .HasForeignKey(o => o.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // One-to-one: Order ← Quotation
+        // Order is the dependent side (holds the FK SourceQuotationId)
+        builder.HasOne(o => o.SourceQuotation)
+            .WithOne(q => q.ConvertedToOrder)
+            .HasForeignKey<Order>(o => o.SourceQuotationId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
