@@ -163,9 +163,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// When enabled (e.g. Production appsettings or env Database__ApplyMigrationsOnStartup), apply EF migrations
-// on startup so deployed API schema matches the code (prevents 500s from missing columns/tables).
-var applyMigrationsOnStartup = builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", true);
+// Apply EF migrations on startup only when explicitly enabled. In production this should
+// normally be handled as a deployment step so a migration failure does not take down the API.
+var applyMigrationsOnStartup = builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", app.Environment.IsDevelopment());
 if (applyMigrationsOnStartup)
 {
     using var migrationScope = app.Services.CreateScope();
