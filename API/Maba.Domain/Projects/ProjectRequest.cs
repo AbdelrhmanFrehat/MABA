@@ -1,4 +1,6 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
+using Maba.Domain.Users;
 
 namespace Maba.Domain.Projects;
 
@@ -82,6 +84,11 @@ public class ProjectRequest : BaseEntity
     public string? AttachmentUrl { get; set; }
     public string? AttachmentFileName { get; set; }
     public string? AttachmentsJson { get; set; }
+
+    public Guid? UserId { get; set; }
+    public User? User { get; set; }
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
 
     // Legacy status (preserved for backward compat)
     public ProjectRequestStatus Status { get; set; } = ProjectRequestStatus.New;

@@ -22,4 +22,7 @@ public class CreateProjectRequestCommand : IRequest<ProjectRequestDto>
     public string? AttachmentUrl { get; set; }
     public string? AttachmentFileName { get; set; }
     public List<ProjectRequestAttachmentDto>? Attachments { get; set; }
+
+    /// <summary>Authenticated website user ID, if available.</summary>
+    public Guid? UserId { get; set; }
 }

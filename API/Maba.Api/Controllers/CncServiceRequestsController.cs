@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using System.Security.Claims;
 using Maba.Application.Features.Cnc.DTOs;
 using Maba.Application.Features.Cnc.Requests.Commands;
 using Maba.Application.Features.Cnc.Requests.Queries;
@@ -112,6 +113,69 @@ public class CncServiceRequestsController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Submit a new CNC service request (public — file upload optional).
+    /// </summary>
+    [HttpPost]
+    [AllowAnonymous]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<CreateCncServiceRequestResultDto>> SubmitRequest(
+        [FromForm] CreateCncServiceRequestCommand command,
+        IFormFile? file)
+    {
+        // Extract optional userId from JWT (works even on anonymous endpoints when a token is present)
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedUserId))
+        {
+            command.UserId = parsedUserId;
+        }
+
+        // Handle optional file upload
+        if (file is { Length: > 0 })
+        {
+            var allowedExtensions = new[] { ".zip", ".dxf", ".svg", ".pdf", ".jpg", ".jpeg", ".png", ".gbr", ".gtl", ".gbl" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest($"Invalid file type. Allowed: {string.Join(", ", allowedExtensions)}");
+            }
+
+            const long maxFileSize = 50 * 1024 * 1024;
+            if (file.Length > maxFileSize)
+            {
+                return BadRequest("File size exceeds the maximum allowed size of 50 MB.");
+            }
+
+            var uploadsFolder = Path.Combine(_environment.ContentRootPath, "uploads", "cnc-requests");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            command.FilePath = $"/uploads/cnc-requests/{uniqueFileName}";
+            command.FileName = file.FileName;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while processing your request.");
+        }
     }
 
     private static string GetMimeType(string filePath)

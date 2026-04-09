@@ -1,4 +1,6 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
+using Maba.Domain.Users;
 
 namespace Maba.Domain.Cnc;
 
@@ -47,6 +49,11 @@ public class CncServiceRequest : BaseEntity
     public string CustomerEmail { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }
     public string? ProjectDescription { get; set; }
+
+    public Guid? UserId { get; set; }
+    public User? User { get; set; }
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
     
     public string? AdminNotes { get; set; }
     public decimal? EstimatedPrice { get; set; }

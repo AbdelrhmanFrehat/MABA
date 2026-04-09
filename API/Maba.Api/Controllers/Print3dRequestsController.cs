@@ -21,6 +21,7 @@ public class Print3dRequestsController : ControllerBase
     private readonly IFileStorageService _fileStorageService;
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly ICustomerResolverService _customerResolver;
     private readonly IConfiguration _configuration;
     private readonly ILogger<Print3dRequestsController> _logger;
     private readonly IPricingService _pricingService;
@@ -30,6 +31,7 @@ public class Print3dRequestsController : ControllerBase
         IFileStorageService fileStorageService,
         IApplicationDbContext context,
         IEmailService emailService,
+        ICustomerResolverService customerResolver,
         IConfiguration configuration,
         ILogger<Print3dRequestsController> logger,
         IPricingService pricingService)
@@ -38,6 +40,7 @@ public class Print3dRequestsController : ControllerBase
         _fileStorageService = fileStorageService;
         _context = context;
         _emailService = emailService;
+        _customerResolver = customerResolver;
         _configuration = configuration;
         _logger = logger;
         _pricingService = pricingService;
@@ -219,12 +222,21 @@ public class Print3dRequestsController : ControllerBase
             _context.Set<DesignFile>().Add(designFile);
         }
 
+        // Resolve (or create) the CRM customer record for this submission
+        var customerId = await _customerResolver.ResolveAsync(
+            userId,
+            user?.FullName ?? "Website Customer",
+            user?.Email,
+            user?.Phone,
+            CancellationToken.None);
+
         // Create the Print3dServiceRequest
         var request = new Print3dServiceRequest
         {
             Id = Guid.NewGuid(),
             ReferenceNumber = referenceNumber,
             UserId = userId,
+            CustomerId = customerId,
             MaterialId = materialGuid,
             MaterialColorId = materialColorGuid,
             ProfileId = profileGuid,

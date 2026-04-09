@@ -11,12 +11,18 @@ public class CreateLaserServiceRequestCommandHandler : IRequestHandler<CreateLas
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly ICustomerResolverService _customerResolver;
     private readonly ILogger<CreateLaserServiceRequestCommandHandler> _logger;
 
-    public CreateLaserServiceRequestCommandHandler(IApplicationDbContext context, IEmailService emailService, ILogger<CreateLaserServiceRequestCommandHandler> logger)
+    public CreateLaserServiceRequestCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        ICustomerResolverService customerResolver,
+        ILogger<CreateLaserServiceRequestCommandHandler> logger)
     {
         _context = context;
         _emailService = emailService;
+        _customerResolver = customerResolver;
         _logger = logger;
     }
 
@@ -55,6 +61,13 @@ public class CreateLaserServiceRequestCommandHandler : IRequestHandler<CreateLas
             throw new ArgumentException($"Height must be between 0 and {maxDimension} cm.");
         }
 
+        var customerId = await _customerResolver.ResolveAsync(
+            request.UserId,
+            request.CustomerName ?? string.Empty,
+            request.CustomerEmail,
+            request.CustomerPhone,
+            cancellationToken);
+
         var referenceNumber = await GenerateReferenceNumberAsync(cancellationToken);
 
         var serviceRequest = new LaserServiceRequest
@@ -71,6 +84,8 @@ public class CreateLaserServiceRequestCommandHandler : IRequestHandler<CreateLas
             CustomerEmail = request.CustomerEmail?.Trim(),
             CustomerPhone = request.CustomerPhone?.Trim(),
             CustomerNotes = request.CustomerNotes?.Trim(),
+            UserId = request.UserId,
+            CustomerId = customerId,
             Status = LaserServiceRequestStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Maba.Application.Features.Projects.Commands;
 using Maba.Application.Features.Projects.DTOs;
 using Maba.Application.Features.Projects.Queries;
@@ -77,6 +78,14 @@ public class ProjectsController : ControllerBase
     {
         try
         {
+            // Extract optional userId from JWT (populated even on anonymous endpoints when token is present)
+            Guid? userId = null;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+
             var result = await _mediator.Send(new CreateProjectRequestCommand
             {
                 FullName = request.FullName,
@@ -94,7 +103,8 @@ public class ProjectsController : ControllerBase
                 Description = string.IsNullOrWhiteSpace(request.ProjectDescription) ? request.Description : request.ProjectDescription,
                 AttachmentUrl = request.AttachmentUrl,
                 AttachmentFileName = request.AttachmentFileName,
-                Attachments = request.Attachments
+                Attachments = request.Attachments,
+                UserId = userId
             });
 
             return Ok(new

@@ -11,12 +11,18 @@ public class CreateCncServiceRequestCommandHandler : IRequestHandler<CreateCncSe
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly ICustomerResolverService _customerResolver;
     private readonly ILogger<CreateCncServiceRequestCommandHandler> _logger;
 
-    public CreateCncServiceRequestCommandHandler(IApplicationDbContext context, IEmailService emailService, ILogger<CreateCncServiceRequestCommandHandler> logger)
+    public CreateCncServiceRequestCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        ICustomerResolverService customerResolver,
+        ILogger<CreateCncServiceRequestCommandHandler> logger)
     {
         _context = context;
         _emailService = emailService;
+        _customerResolver = customerResolver;
         _logger = logger;
     }
 
@@ -56,6 +62,13 @@ public class CreateCncServiceRequestCommandHandler : IRequestHandler<CreateCncSe
             }
         }
 
+        var customerId = await _customerResolver.ResolveAsync(
+            request.UserId,
+            request.CustomerName,
+            request.CustomerEmail,
+            request.CustomerPhone,
+            cancellationToken);
+
         var referenceNumber = await GenerateReferenceNumberAsync(cancellationToken);
 
         var serviceRequest = new CncServiceRequest
@@ -83,6 +96,8 @@ public class CreateCncServiceRequestCommandHandler : IRequestHandler<CreateCncSe
             CustomerEmail = request.CustomerEmail,
             CustomerPhone = request.CustomerPhone,
             ProjectDescription = request.ProjectDescription,
+            UserId = request.UserId,
+            CustomerId = customerId,
             Status = CncServiceRequestStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };

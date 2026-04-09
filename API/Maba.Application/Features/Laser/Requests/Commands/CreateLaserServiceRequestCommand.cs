@@ -18,4 +18,7 @@ public class CreateLaserServiceRequestCommand : IRequest<CreateLaserServiceReque
     public string? CustomerEmail { get; set; }
     public string? CustomerPhone { get; set; }
     public string? CustomerNotes { get; set; }
+
+    /// <summary>Authenticated website user ID, if available.</summary>
+    public Guid? UserId { get; set; }
 }

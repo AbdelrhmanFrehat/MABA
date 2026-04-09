@@ -1,4 +1,6 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
+using Maba.Domain.Users;
 
 namespace Maba.Domain.Laser;
 
@@ -64,8 +66,13 @@ public class LaserServiceRequest : BaseEntity
     /// </summary>
     public decimal? QuotedPrice { get; set; }
     
+    public Guid? UserId { get; set; }
+    public User? User { get; set; }
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+
     public LaserServiceRequestStatus Status { get; set; } = LaserServiceRequestStatus.Pending;
-    
+
     /// <summary>
     /// When the request was reviewed
     /// </summary>

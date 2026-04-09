@@ -1,4 +1,5 @@
 using Maba.Domain.Common;
+using Maba.Domain.Crm;
 using Maba.Domain.Users;
 using Maba.Domain.Media;
 
@@ -10,6 +11,8 @@ public class Print3dServiceRequest : BaseEntity
     
     public Guid? UserId { get; set; }
     public User? User { get; set; }
+    public Guid? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
     
     public Guid MaterialId { get; set; }
     public Material Material { get; set; } = null!;

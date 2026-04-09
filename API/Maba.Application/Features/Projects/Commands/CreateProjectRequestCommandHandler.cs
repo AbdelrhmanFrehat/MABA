@@ -11,17 +11,30 @@ public class CreateProjectRequestCommandHandler : IRequestHandler<CreateProjectR
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly ICustomerResolverService _customerResolver;
     private readonly ILogger<CreateProjectRequestCommandHandler> _logger;
 
-    public CreateProjectRequestCommandHandler(IApplicationDbContext context, IEmailService emailService, ILogger<CreateProjectRequestCommandHandler> logger)
+    public CreateProjectRequestCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        ICustomerResolverService customerResolver,
+        ILogger<CreateProjectRequestCommandHandler> logger)
     {
         _context = context;
         _emailService = emailService;
+        _customerResolver = customerResolver;
         _logger = logger;
     }
 
     public async Task<ProjectRequestDto> Handle(CreateProjectRequestCommand request, CancellationToken cancellationToken)
     {
+        var customerId = await _customerResolver.ResolveAsync(
+            request.UserId,
+            request.FullName,
+            request.Email,
+            request.Phone,
+            cancellationToken);
+
         var referenceNumber = await GenerateReferenceNumber(cancellationToken);
 
         var projectRequest = new ProjectRequest
@@ -44,6 +57,8 @@ public class CreateProjectRequestCommandHandler : IRequestHandler<CreateProjectR
             AttachmentUrl = request.AttachmentUrl,
             AttachmentFileName = request.AttachmentFileName,
             AttachmentsJson = ProjectRequestSerialization.SerializeAttachments(request.Attachments, request.AttachmentUrl, request.AttachmentFileName),
+            UserId = request.UserId,
+            CustomerId = customerId,
             Status = ProjectRequestStatus.New,
             CreatedAt = DateTime.UtcNow
         };

@@ -3,7 +3,11 @@
     "allow": [
       "Bash(grep -l \"sales-orders\" /c/Users/PC/Desktop/maba/API/Maba.Api/Controllers/*.cs)",
       "Bash(awk 'NR>=1082 && NR<=2212' \"c:/Users/PC/Desktop/maba/UI/src/assets/i18n/en.json\")",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(xargs grep:*)",
+      "Bash(dotnet ef:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet build:*)"
     ]
   }
 }

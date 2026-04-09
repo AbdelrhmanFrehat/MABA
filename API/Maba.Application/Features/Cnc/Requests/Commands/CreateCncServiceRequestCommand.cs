@@ -33,4 +33,7 @@ public class CreateCncServiceRequestCommand : IRequest<CreateCncServiceRequestRe
     public string CustomerEmail { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }
     public string? ProjectDescription { get; set; }
+
+    /// <summary>Authenticated website user ID, if available.</summary>
+    public Guid? UserId { get; set; }
 }

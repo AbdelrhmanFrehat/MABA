@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using System.Security.Claims;
 using Maba.Application.Features.Laser.Requests.Commands;
 using Maba.Application.Features.Laser.Requests.Queries;
 using Maba.Application.Features.Laser.DTOs;
@@ -79,6 +80,14 @@ public class LaserServiceRequestsController : ControllerBase
 
             var relativePath = $"/uploads/laser-requests/{uniqueFileName}";
 
+            // Extract optional userId from JWT (works even on anonymous endpoints when a token is present)
+            Guid? userId = null;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+
             var command = new CreateLaserServiceRequestCommand
             {
                 MaterialId = materialId,
@@ -90,7 +99,8 @@ public class LaserServiceRequestsController : ControllerBase
                 CustomerName = customerName,
                 CustomerEmail = customerEmail,
                 CustomerPhone = customerPhone,
-                CustomerNotes = customerNotes
+                CustomerNotes = customerNotes,
+                UserId = userId
             };
 
             var result = await _mediator.Send(command);
