@@ -84,15 +84,15 @@ export class RequestCommercialPanelComponent implements OnInit {
         this.salesApi.getCommercialDraft(this.requestType, this.requestId).subscribe({
             next: data => {
                 this.draft.set(data);
-                this.items = data.suggestedItems.map(i => ({
+                this.items = data.defaultItems.map(i => ({
                     description: i.description,
                     quantity: i.quantity,
                     unit: i.unit,
                     unitPrice: i.unitPrice,
-                    discountPercent: i.discountPercent,
-                    taxPercent: i.taxPercent
+                    discountPercent: 0,
+                    taxPercent: 17
                 }));
-                this.notes = data.suggestedNotes ?? '';
+                this.notes = data.notes ?? '';
                 this.validUntil = null;
                 this.showCreateDialog.set(true);
             }
@@ -153,8 +153,11 @@ export class RequestCommercialPanelComponent implements OnInit {
 
     get canCreateQuotation(): boolean {
         const l = this.links();
-        if (!l) return true;
-        // Allow creation if no active (non-rejected/non-expired) quotation exists
-        return !l.quotations.some(q => q.status !== 'Rejected' && q.status !== 'Expired');
+        if (!l) return false;
+        return l.canCreateQuotation;
+    }
+
+    get blockedReason(): string | null | undefined {
+        return this.links()?.blockedReason;
     }
 }

@@ -181,18 +181,22 @@ export interface PaymentAllocationDto {
 
 export interface CommercialDocLink {
     id: string;
-    number: string;
+    documentNumber: string;
     status: string;
     statusColor?: string;
     total: number;
     currency: string;
-    date: string;
+    createdAt: string;
 }
 
 export interface RequestCommercialLinks {
     requestId: string;
     requestType: string;
-    requestReference: string;
+    referenceNumber: string;
+    customerId?: string | null;
+    customerName?: string | null;
+    canCreateQuotation: boolean;
+    blockedReason?: string | null;
     quotations: CommercialDocLink[];
     orders: CommercialDocLink[];
     invoices: CommercialDocLink[];
@@ -203,18 +207,21 @@ export interface QuotationItemDraft {
     quantity: number;
     unit: string;
     unitPrice: number;
-    discountPercent: number;
-    taxPercent: number;
 }
 
 export interface RequestCommercialDraft {
-    requestType: string;
-    requestId: string;
-    requestReference: string;
     customerId?: string | null;
     customerName?: string | null;
-    suggestedNotes?: string | null;
-    suggestedItems: QuotationItemDraft[];
+    customerEmail?: string | null;
+    notes: string;
+    internalNotes?: string | null;
+    canCreateQuotation: boolean;
+    blockedReason?: string | null;
+    hasExistingQuotation: boolean;
+    existingQuotationId?: string | null;
+    existingQuotationNumber?: string | null;
+    existingQuotationStatus?: string | null;
+    defaultItems: QuotationItemDraft[];
 }
 
 export interface CreateQuotationFromRequestRequest {

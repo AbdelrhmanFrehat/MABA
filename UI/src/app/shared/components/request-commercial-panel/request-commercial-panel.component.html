@@ -4,14 +4,15 @@
     <ng-template pTemplate="header">
         <div class="flex align-items-center justify-content-between px-3 pt-3">
             <span class="font-semibold text-lg">{{ 'erp.sales.commercialPipeline.title' | translate }}</span>
-            @if (canCreateQuotation) {
-                <p-button
-                    [label]="'erp.sales.commercialPipeline.createQuotation' | translate"
-                    icon="pi pi-plus"
-                    size="small"
-                    (onClick)="openCreateDialog()">
-                </p-button>
-            }
+            <p-button
+                [label]="'erp.sales.commercialPipeline.createQuotation' | translate"
+                icon="pi pi-plus"
+                size="small"
+                [disabled]="!canCreateQuotation"
+                [pTooltip]="blockedReason || ''"
+                [tooltipDisabled]="canCreateQuotation"
+                (onClick)="openCreateDialog()">
+            </p-button>
         </div>
     </ng-template>
 
@@ -33,7 +34,7 @@
                 @for (q of l.quotations; track q.id) {
                     <div class="flex align-items-center justify-content-between surface-50 border-round p-2 mb-2">
                         <div class="flex align-items-center gap-2">
-                            <span class="font-medium">{{ q.number }}</span>
+                            <span class="font-medium">{{ q.documentNumber }}</span>
                             <p-tag [value]="q.status" [style]="{ 'background-color': q.statusColor, color: '#fff' }"></p-tag>
                         </div>
                         <div class="flex align-items-center gap-2">
@@ -59,7 +60,7 @@
                 @for (o of l.orders; track o.id) {
                     <div class="flex align-items-center justify-content-between surface-50 border-round p-2 mb-2">
                         <div class="flex align-items-center gap-2">
-                            <span class="font-medium">{{ o.number }}</span>
+                            <span class="font-medium">{{ o.documentNumber }}</span>
                             <p-tag [value]="o.status" [style]="{ 'background-color': o.statusColor, color: '#fff' }"></p-tag>
                         </div>
                         <div class="flex align-items-center gap-2">
@@ -85,7 +86,7 @@
                 @for (inv of l.invoices; track inv.id) {
                     <div class="flex align-items-center justify-content-between surface-50 border-round p-2 mb-2">
                         <div class="flex align-items-center gap-2">
-                            <span class="font-medium">{{ inv.number }}</span>
+                            <span class="font-medium">{{ inv.documentNumber }}</span>
                             <p-tag [value]="inv.status" [style]="{ 'background-color': inv.statusColor, color: '#fff' }"></p-tag>
                         </div>
                         <div class="flex align-items-center gap-2">
