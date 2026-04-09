@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Sales.Quotations;
 using Maba.Domain.Cnc;
@@ -348,8 +349,8 @@ public class SalesQuotationsController : ControllerBase
             Id = Guid.NewGuid(),
             OrderId = order.Id,
             ItemId = null,
-            Description = qi.Description,
-            Quantity = qi.Quantity,
+            MetaJson = SerializeOrderItemMeta(qi.Description, qi.Unit, qi.Notes),
+            Quantity = Math.Max(1, (int)Math.Ceiling(qi.Quantity)),
             UnitPrice = qi.UnitPrice,
             DiscountAmount = qi.DiscountAmount,
             TaxAmount = qi.TaxAmount,
@@ -703,7 +704,7 @@ public class SalesQuotationsController : ControllerBase
             SalesOrderId = o.Id,
             LineNumber = idx + 1,
             ItemId = i.ItemId ?? Guid.Empty,
-            ItemName = i.Description,
+            ItemName = i.Item?.NameEn ?? ExtractOrderItemDisplayName(i.MetaJson),
             Quantity = i.Quantity,
             UnitPrice = i.UnitPrice,
             DiscountAmount = i.DiscountAmount,
@@ -723,6 +724,43 @@ public class SalesQuotationsController : ControllerBase
         QuotationStatus.Converted => "#8b5cf6",
         _ => "#64748b"
     };
+
+    private static string? SerializeOrderItemMeta(string? description, string? unit, string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(description) && string.IsNullOrWhiteSpace(unit) && string.IsNullOrWhiteSpace(notes))
+            return null;
+
+        return JsonSerializer.Serialize(new
+        {
+            description,
+            unit,
+            notes
+        });
+    }
+
+    private static string ExtractOrderItemDisplayName(string? metaJson)
+    {
+        if (string.IsNullOrWhiteSpace(metaJson))
+            return "Service Line";
+
+        try
+        {
+            using var doc = JsonDocument.Parse(metaJson);
+            if (doc.RootElement.TryGetProperty("description", out var description) &&
+                description.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(description.GetString()))
+            {
+                return description.GetString()!;
+            }
+        }
+        catch
+        {
+            if (!string.IsNullOrWhiteSpace(metaJson))
+                return metaJson;
+        }
+
+        return "Service Line";
+    }
 
     private Guid? GetCurrentUserId()
     {
