@@ -1,0 +1,194 @@
+<p-toast></p-toast>
+
+<p-card styleClass="mb-3">
+    <ng-template pTemplate="header">
+        <div class="flex align-items-center justify-content-between px-3 pt-3">
+            <span class="font-semibold text-lg">{{ 'erp.sales.commercialPipeline.title' | translate }}</span>
+            @if (canCreateQuotation) {
+                <p-button
+                    [label]="'erp.sales.commercialPipeline.createQuotation' | translate"
+                    icon="pi pi-plus"
+                    size="small"
+                    (onClick)="openCreateDialog()">
+                </p-button>
+            }
+        </div>
+    </ng-template>
+
+    @if (loading()) {
+        <div class="flex justify-content-center p-4">
+            <i class="pi pi-spin pi-spinner text-2xl text-primary"></i>
+        </div>
+    } @else if (!hasLinkedDocuments) {
+        <p class="text-color-secondary text-sm p-3 m-0">
+            {{ 'erp.sales.commercialPipeline.noLinkedDocuments' | translate }}
+        </p>
+    } @else {
+        @let l = links();
+        @if (l && l.quotations.length > 0) {
+            <div class="mb-3 px-3">
+                <div class="text-sm font-semibold text-color-secondary mb-2">
+                    {{ 'erp.sales.commercialPipeline.linkedQuotation' | translate }}
+                </div>
+                @for (q of l.quotations; track q.id) {
+                    <div class="flex align-items-center justify-content-between surface-50 border-round p-2 mb-2">
+                        <div class="flex align-items-center gap-2">
+                            <span class="font-medium">{{ q.number }}</span>
+                            <p-tag [value]="q.status" [style]="{ 'background-color': q.statusColor, color: '#fff' }"></p-tag>
+                        </div>
+                        <div class="flex align-items-center gap-2">
+                            <span class="text-sm text-color-secondary">{{ q.total | number:'1.2-2' }} {{ q.currency }}</span>
+                            <p-button
+                                icon="pi pi-external-link"
+                                size="small"
+                                [text]="true"
+                                [pTooltip]="'erp.sales.commercialPipeline.openQuotation' | translate"
+                                (onClick)="navigateToQuotation(q.id)">
+                            </p-button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (l && l.orders.length > 0) {
+            <div class="mb-3 px-3">
+                <div class="text-sm font-semibold text-color-secondary mb-2">
+                    {{ 'erp.sales.commercialPipeline.linkedOrder' | translate }}
+                </div>
+                @for (o of l.orders; track o.id) {
+                    <div class="flex align-items-center justify-content-between surface-50 border-round p-2 mb-2">
+                        <div class="flex align-items-center gap-2">
+                            <span class="font-medium">{{ o.number }}</span>
+                            <p-tag [value]="o.status" [style]="{ 'background-color': o.statusColor, color: '#fff' }"></p-tag>
+                        </div>
+                        <div class="flex align-items-center gap-2">
+                            <span class="text-sm text-color-secondary">{{ o.total | number:'1.2-2' }} {{ o.currency }}</span>
+                            <p-button
+                                icon="pi pi-external-link"
+                                size="small"
+                                [text]="true"
+                                [pTooltip]="'erp.sales.commercialPipeline.openOrder' | translate"
+                                (onClick)="navigateToOrder(o.id)">
+                            </p-button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (l && l.invoices.length > 0) {
+            <div class="mb-3 px-3">
+                <div class="text-sm font-semibold text-color-secondary mb-2">
+                    {{ 'erp.sales.commercialPipeline.linkedInvoice' | translate }}
+                </div>
+                @for (inv of l.invoices; track inv.id) {
+                    <div class="flex align-items-center justify-content-between surface-50 border-round p-2 mb-2">
+                        <div class="flex align-items-center gap-2">
+                            <span class="font-medium">{{ inv.number }}</span>
+                            <p-tag [value]="inv.status" [style]="{ 'background-color': inv.statusColor, color: '#fff' }"></p-tag>
+                        </div>
+                        <div class="flex align-items-center gap-2">
+                            <span class="text-sm text-color-secondary">{{ inv.total | number:'1.2-2' }} {{ inv.currency }}</span>
+                            <p-button
+                                icon="pi pi-external-link"
+                                size="small"
+                                [text]="true"
+                                [pTooltip]="'erp.sales.commercialPipeline.openInvoice' | translate"
+                                (onClick)="navigateToInvoice(inv.id)">
+                            </p-button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</p-card>
+
+<!-- Create Quotation Dialog -->
+<p-dialog
+    [header]="'erp.sales.commercialPipeline.createQuotation' | translate"
+    [visible]="showCreateDialog()"
+    (visibleChange)="showCreateDialog.set($event)"
+    [modal]="true"
+    [style]="{ width: '700px' }"
+    [closable]="!creating()">
+
+    <div class="flex flex-column gap-3">
+        <div class="flex gap-3">
+            <div class="flex-1">
+                <label class="block text-sm font-medium mb-1">{{ 'erp.sales.commercialPipeline.validUntil' | translate }}</label>
+                <p-datepicker [(ngModel)]="validUntil" [showIcon]="true" styleClass="w-full"></p-datepicker>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">{{ 'common.notes' | translate }}</label>
+            <textarea pTextarea [(ngModel)]="notes" rows="3" class="w-full"></textarea>
+        </div>
+
+        <div>
+            <div class="flex align-items-center justify-content-between mb-2">
+                <span class="font-semibold">{{ 'erp.sales.commercialPipeline.items' | translate }}</span>
+                <p-button
+                    [label]="'erp.sales.commercialPipeline.addItem' | translate"
+                    icon="pi pi-plus"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="addItem()">
+                </p-button>
+            </div>
+
+            @for (item of items; track $index) {
+                <div class="surface-50 border-round p-2 mb-2">
+                    <div class="flex gap-2 align-items-start">
+                        <div class="flex-1">
+                            <input pInputText [(ngModel)]="item.description"
+                                [placeholder]="'erp.sales.commercialPipeline.description' | translate"
+                                class="w-full mb-1" />
+                            <div class="flex gap-2">
+                                <p-inputNumber [(ngModel)]="item.quantity" [min]="0.001" [minFractionDigits]="0" [maxFractionDigits]="3"
+                                    [placeholder]="'erp.sales.commercialPipeline.qty' | translate"
+                                    styleClass="w-full">
+                                </p-inputNumber>
+                                <input pInputText [(ngModel)]="item.unit"
+                                    [placeholder]="'erp.sales.commercialPipeline.unit' | translate"
+                                    style="width: 80px" />
+                                <p-inputNumber [(ngModel)]="item.unitPrice" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2"
+                                    [placeholder]="'erp.sales.commercialPipeline.unitPrice' | translate"
+                                    styleClass="flex-1">
+                                </p-inputNumber>
+                                <p-inputNumber [(ngModel)]="item.discountPercent" [min]="0" [max]="100"
+                                    [placeholder]="'erp.sales.commercialPipeline.discount' | translate"
+                                    style="width: 90px">
+                                </p-inputNumber>
+                                <p-inputNumber [(ngModel)]="item.taxPercent" [min]="0" [max]="100"
+                                    [placeholder]="'erp.sales.commercialPipeline.tax' | translate"
+                                    style="width: 90px">
+                                </p-inputNumber>
+                            </div>
+                        </div>
+                        <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (onClick)="removeItem($index)"></p-button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [text]="true"
+            [disabled]="creating()"
+            (onClick)="showCreateDialog.set(false)">
+        </p-button>
+        <p-button
+            [label]="'erp.sales.commercialPipeline.createQuotation' | translate"
+            icon="pi pi-check"
+            [loading]="creating()"
+            [disabled]="items.length === 0"
+            (onClick)="submitCreate()">
+        </p-button>
+    </ng-template>
+</p-dialog>

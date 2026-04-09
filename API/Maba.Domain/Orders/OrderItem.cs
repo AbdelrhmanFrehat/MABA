@@ -7,6 +7,8 @@ public class OrderItem : BaseEntity
 {
     public Guid OrderId { get; set; }
     public Guid? ItemId { get; set; }
+    /// <summary>Free-text description for service lines (no catalog item).</summary>
+    public string? Description { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal DiscountAmount { get; set; }

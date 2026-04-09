@@ -21,6 +21,7 @@ import { forkJoin, of } from 'rxjs';
 import { AllRequestsService } from '../../../shared/services/all-requests.service';
 import { AllRequestDetail, AllRequestListItem, AllRequestType, AllRequestWorkflowStatus, AllRequestsFilters, UpdateAllRequestPayload } from '../../../shared/models/all-requests.model';
 import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
+import { RequestCommercialPanelComponent } from '../../../shared/components/request-commercial-panel/request-commercial-panel.component';
 import { getWorkflowOptions, ServiceWorkflowModule } from '../../../shared/utils/service-request-workflow';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
@@ -47,7 +48,8 @@ import { ProjectRequestCapability, ProjectRequestMainDomain, ProjectRequestProje
         TextareaModule,
         ToastModule,
         TooltipModule,
-        ServiceRequestStatusBadgeComponent
+        ServiceRequestStatusBadgeComponent,
+        RequestCommercialPanelComponent
     ],
     providers: [MessageService],
     templateUrl: './unified-requests-list.component.html',

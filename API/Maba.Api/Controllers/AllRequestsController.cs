@@ -343,7 +343,9 @@ public class AllRequestsController : ControllerBase
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
             Priority = x.ProjectStage,
-            OriginalModuleRoute = "/admin/project-requests"
+            OriginalModuleRoute = "/admin/project-requests",
+            CustomerId = x.CustomerId,
+            LinkedQuotationId = x.LinkedQuotationId
         }).ToListAsync();
     }
 
@@ -368,7 +370,9 @@ public class AllRequestsController : ControllerBase
             WorkflowStatus = ServiceRequestWorkflowMapper.FromPrint3d(x.Status).ToString(),
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
-            OriginalModuleRoute = "/admin/3d-requests"
+            OriginalModuleRoute = "/admin/3d-requests",
+            CustomerId = x.CustomerId,
+            LinkedQuotationId = x.LinkedQuotationId
         }).ToListAsync();
     }
 
@@ -393,7 +397,9 @@ public class AllRequestsController : ControllerBase
             WorkflowStatus = ServiceRequestWorkflowMapper.FromDesign(x.Status).ToString(),
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
-            OriginalModuleRoute = "/admin/design-requests"
+            OriginalModuleRoute = "/admin/design-requests",
+            CustomerId = x.CustomerId,
+            LinkedQuotationId = x.LinkedQuotationId
         }).ToListAsync();
     }
 
@@ -418,7 +424,9 @@ public class AllRequestsController : ControllerBase
             WorkflowStatus = ServiceRequestWorkflowMapper.FromDesignCad(x.Status).ToString(),
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
-            OriginalModuleRoute = "/admin/cad-requests"
+            OriginalModuleRoute = "/admin/cad-requests",
+            CustomerId = x.CustomerId,
+            LinkedQuotationId = x.LinkedQuotationId
         }).ToListAsync();
     }
 
@@ -443,7 +451,9 @@ public class AllRequestsController : ControllerBase
             WorkflowStatus = ServiceRequestWorkflowMapper.FromLaser(x.Status).ToString(),
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
-            OriginalModuleRoute = "/admin/laser-requests"
+            OriginalModuleRoute = "/admin/laser-requests",
+            CustomerId = x.CustomerId,
+            LinkedQuotationId = x.LinkedQuotationId
         }).ToListAsync();
     }
 
@@ -468,7 +478,9 @@ public class AllRequestsController : ControllerBase
             WorkflowStatus = ServiceRequestWorkflowMapper.FromCnc(x.Status).ToString(),
             LegacyStatus = x.Status.ToString(),
             CreatedAt = x.CreatedAt,
-            OriginalModuleRoute = $"/admin/cnc-requests/{x.Id}"
+            OriginalModuleRoute = $"/admin/cnc-requests/{x.Id}",
+            CustomerId = x.CustomerId,
+            LinkedQuotationId = x.LinkedQuotationId
         }).ToListAsync();
     }
 
@@ -513,7 +525,9 @@ public class AllRequestsController : ControllerBase
                     FileName = a.FileName,
                     Url = a.Url
                 }).ToList(),
-            History = BuildHistory(workflow, entity.CreatedAt, null, null, entity.UpdatedAt)
+            History = BuildHistory(workflow, entity.CreatedAt, null, null, entity.UpdatedAt),
+            CustomerId = entity.CustomerId,
+            LinkedQuotationId = entity.LinkedQuotationId
         };
     }
 
@@ -564,7 +578,9 @@ public class AllRequestsController : ControllerBase
             EstimatedFilamentGrams = entity.EstimatedFilamentGrams,
             UsedSpoolId = entity.UsedSpoolId?.ToString(),
             UsedSpoolName = entity.UsedSpool == null ? null : $"{entity.UsedSpool.Material?.NameEn} - {entity.UsedSpool.Name}",
-            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, entity.ApprovedAt, entity.CompletedAt)
+            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, entity.ApprovedAt, entity.CompletedAt),
+            CustomerId = entity.CustomerId,
+            LinkedQuotationId = entity.LinkedQuotationId
         };
     }
 
@@ -612,7 +628,9 @@ public class AllRequestsController : ControllerBase
                 FileSizeBytes = a.FileSizeBytes,
                 UploadedAt = a.UploadedAt
             }).ToList(),
-            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, entity.QuotedAt, entity.DeliveredAt)
+            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, entity.QuotedAt, entity.DeliveredAt),
+            CustomerId = entity.CustomerId,
+            LinkedQuotationId = entity.LinkedQuotationId
         };
     }
 
@@ -665,7 +683,9 @@ public class AllRequestsController : ControllerBase
                 FileSizeBytes = a.FileSizeBytes,
                 UploadedAt = a.UploadedAt
             }).ToList(),
-            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, null, entity.CompletedAt)
+            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, null, entity.CompletedAt),
+            CustomerId = entity.CustomerId,
+            LinkedQuotationId = entity.LinkedQuotationId
         };
     }
 
@@ -700,7 +720,9 @@ public class AllRequestsController : ControllerBase
             WidthCm = entity.WidthCm,
             HeightCm = entity.HeightCm,
             ImageUrl = $"/api/v1/laser/requests/{entity.Id}/image",
-            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, null, entity.CompletedAt)
+            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, null, entity.CompletedAt),
+            CustomerId = entity.CustomerId,
+            LinkedQuotationId = entity.LinkedQuotationId
         };
     }
 
@@ -748,7 +770,9 @@ public class AllRequestsController : ControllerBase
             PcbOperation = entity.PcbOperation,
             FileName = entity.FileName,
             DownloadUrl = string.IsNullOrWhiteSpace(entity.FileName) ? null : $"/api/v1/cnc/requests/{entity.Id}/file",
-            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, null, entity.CompletedAt)
+            History = BuildHistory(workflow, entity.CreatedAt, entity.ReviewedAt, null, entity.CompletedAt),
+            CustomerId = entity.CustomerId,
+            LinkedQuotationId = entity.LinkedQuotationId
         };
     }
 

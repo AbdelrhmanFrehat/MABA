@@ -15,6 +15,9 @@ public class AdminServiceRequestListItemDto
     public string? Priority { get; set; }
     public DateTime CreatedAt { get; set; }
     public string OriginalModuleRoute { get; set; } = string.Empty;
+    // Commercial pipeline
+    public Guid? CustomerId { get; set; }
+    public Guid? LinkedQuotationId { get; set; }
 }
 
 public class AdminServiceRequestHistoryItemDto

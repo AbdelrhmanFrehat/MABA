@@ -6,7 +6,8 @@ import {
     SalesQuotation, SalesOrder, SalesInvoice, SalesReturn,
     CreateSalesQuotationRequest, CreateSalesOrderRequest,
     CreateSalesInvoiceRequest, ConvertToInvoiceRequest,
-    CreateSalesReturnRequest
+    CreateSalesReturnRequest,
+    RequestCommercialLinks, RequestCommercialDraft, CreateQuotationFromRequestRequest
 } from '../models/sales.model';
 
 @Injectable({ providedIn: 'root' })
@@ -37,8 +38,28 @@ export class SalesApiService {
         return this.http.post<void>(`${this.baseUrl}/sales-quotations/${id}/send`, {});
     }
 
+    acceptSalesQuotation(id: string): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/sales-quotations/${id}/accept`, {});
+    }
+
+    rejectSalesQuotation(id: string): Observable<void> {
+        return this.http.post<void>(`${this.baseUrl}/sales-quotations/${id}/reject`, {});
+    }
+
     convertQuotationToOrder(id: string): Observable<SalesOrder> {
         return this.http.post<SalesOrder>(`${this.baseUrl}/sales-quotations/${id}/convert-to-order`, {});
+    }
+
+    createQuotationFromRequest(request: CreateQuotationFromRequestRequest): Observable<SalesQuotation> {
+        return this.http.post<SalesQuotation>(`${this.baseUrl}/sales-quotations/from-request`, request);
+    }
+
+    getCommercialLinks(requestType: string, requestId: string): Observable<RequestCommercialLinks> {
+        return this.http.get<RequestCommercialLinks>(`${this.baseUrl}/sales-quotations/commercial-links/${requestType}/${requestId}`);
+    }
+
+    getCommercialDraft(requestType: string, requestId: string): Observable<RequestCommercialDraft> {
+        return this.http.get<RequestCommercialDraft>(`${this.baseUrl}/sales-quotations/commercial-draft/${requestType}/${requestId}`);
     }
 
     // --- Sales Orders ---

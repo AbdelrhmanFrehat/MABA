@@ -2292,7 +2292,17 @@
       "quotations": {
         "title": "Sales Quotations",
         "subtitle": "Draft, send, and convert quotations.",
-        "new": "New Quotation"
+        "new": "New Quotation",
+        "newFromRequest": "Create Quotation",
+        "openQuotation": "Open Quotation",
+        "statuses": {
+          "Draft": "Draft",
+          "Sent": "Sent",
+          "Accepted": "Accepted",
+          "Rejected": "Rejected",
+          "Expired": "Expired",
+          "Converted": "Converted"
+        }
       },
       "orders": {
         "title": "Sales Orders",
@@ -2300,7 +2310,8 @@
         "new": "New Sales Order",
         "edit": "Edit Sales Order",
         "flowHint": "Quotation -> Order -> Approval -> Invoice -> Payment",
-        "expectedDeliveryDate": "Expected Delivery Date"
+        "expectedDeliveryDate": "Expected Delivery Date",
+        "openOrder": "Open Order"
       },
       "invoices": {
         "title": "Sales Invoices",
@@ -2314,6 +2325,31 @@
         "title": "Sales Returns",
         "subtitle": "Manage approved returns and inventory restocking.",
         "new": "New Sales Return"
+      },
+      "commercialPipeline": {
+        "title": "Commercial Pipeline",
+        "createQuotation": "Create Quotation",
+        "openQuotation": "Open Linked Quotation",
+        "openOrder": "Open Linked Order",
+        "openInvoice": "Open Linked Invoice",
+        "noLinkedDocuments": "No linked commercial documents yet.",
+        "linkedQuotation": "Linked Quotation",
+        "linkedOrder": "Linked Order",
+        "linkedInvoice": "Linked Invoice",
+        "sourceRequest": "Source Request",
+        "convertToOrder": "Convert to Order",
+        "validUntil": "Valid Until",
+        "items": "Line Items",
+        "addItem": "Add Item",
+        "description": "Description",
+        "qty": "Qty",
+        "unit": "Unit",
+        "unitPrice": "Unit Price",
+        "discount": "Discount %",
+        "tax": "Tax %",
+        "createSuccess": "Quotation created successfully.",
+        "createError": "Failed to create quotation. Please try again.",
+        "duplicateWarning": "An active quotation already exists for this request."
       }
     },
     "purchasing": {

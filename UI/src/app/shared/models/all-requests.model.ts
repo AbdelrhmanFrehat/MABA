@@ -25,6 +25,9 @@ export interface AllRequestListItem {
     priority?: string | null;
     createdAt: string;
     originalModuleRoute: string;
+    // Commercial pipeline
+    customerId?: string | null;
+    linkedQuotationId?: string | null;
 }
 
 export interface AllRequestHistoryItem {

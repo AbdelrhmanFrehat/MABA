@@ -39,6 +39,12 @@ export interface SalesQuotation {
     salesPersonName?: string;
     warehouseId?: string;
     createdByUserId: string;
+    // Commercial pipeline
+    sourceRequestId?: string | null;
+    sourceRequestType?: string | null;
+    sourceRequestReference?: string | null;
+    convertedToOrderId?: string | null;
+    convertedToOrderNumber?: string | null;
     lines: SalesQuotationLine[];
     createdAt: string;
     updatedAt?: string;
@@ -58,6 +64,10 @@ export interface SalesOrder {
     statusColor?: string;
     sourceQuotationId?: string;
     sourceQuotationNumber?: string;
+    // Commercial pipeline
+    sourceRequestId?: string | null;
+    sourceRequestType?: string | null;
+    sourceRequestReference?: string | null;
     orderDate: string;
     expectedDeliveryDate?: string;
     currency: string;
@@ -165,6 +175,67 @@ export interface PaymentAllocationDto {
     paymentVoucherNumber?: string;
     allocatedAmount: number;
     paymentDate?: string;
+}
+
+// --- Commercial Pipeline DTOs ---
+
+export interface CommercialDocLink {
+    id: string;
+    number: string;
+    status: string;
+    statusColor?: string;
+    total: number;
+    currency: string;
+    date: string;
+}
+
+export interface RequestCommercialLinks {
+    requestId: string;
+    requestType: string;
+    requestReference: string;
+    quotations: CommercialDocLink[];
+    orders: CommercialDocLink[];
+    invoices: CommercialDocLink[];
+}
+
+export interface QuotationItemDraft {
+    description: string;
+    quantity: number;
+    unit: string;
+    unitPrice: number;
+    discountPercent: number;
+    taxPercent: number;
+}
+
+export interface RequestCommercialDraft {
+    requestType: string;
+    requestId: string;
+    requestReference: string;
+    customerId?: string | null;
+    customerName?: string | null;
+    suggestedNotes?: string | null;
+    suggestedItems: QuotationItemDraft[];
+}
+
+export interface CreateQuotationFromRequestRequest {
+    requestType: string;
+    requestId: string;
+    validUntil?: string | null;
+    currency?: string;
+    notes?: string | null;
+    internalNotes?: string | null;
+    termsAndConditions?: string | null;
+    items: QuotationItemRequest[];
+}
+
+export interface QuotationItemRequest {
+    description: string;
+    quantity: number;
+    unit?: string;
+    unitPrice: number;
+    discountPercent?: number;
+    taxPercent?: number;
+    notes?: string | null;
 }
 
 // --- Request DTOs ---

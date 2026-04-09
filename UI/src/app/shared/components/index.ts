@@ -6,4 +6,5 @@ export * from './empty-state/empty-state.component';
 export * from './loading-skeleton/loading-skeleton.component';
 export * from './media-picker/media-picker.component';
 export * from './breadcrumbs/breadcrumbs.component';
+export * from './request-commercial-panel/request-commercial-panel.component';
 

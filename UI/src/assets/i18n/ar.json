@@ -3101,10 +3101,11 @@
         "convertToInvoice": "تحويل إلى فاتورة",
         "recordPayment": "تسجيل دفعة"
       },
-      "quotations": { "title": "عروض البيع", "subtitle": "إنشاء وإرسال وتحويل عروض الأسعار.", "new": "عرض بيع جديد" },
-      "orders": { "title": "أوامر البيع", "subtitle": "دورة أوامر البيع مع الموافقات.", "new": "أمر بيع جديد", "edit": "تعديل أمر البيع", "flowHint": "عرض سعر -> أمر بيع -> موافقة -> فاتورة -> دفعة", "expectedDeliveryDate": "تاريخ التسليم المتوقع" },
+      "quotations": { "title": "عروض البيع", "subtitle": "إنشاء وإرسال وتحويل عروض الأسعار.", "new": "عرض بيع جديد", "newFromRequest": "إنشاء عرض سعر", "openQuotation": "فتح عرض السعر", "statuses": { "Draft": "مسودة", "Sent": "مُرسَل", "Accepted": "مقبول", "Rejected": "مرفوض", "Expired": "منتهي الصلاحية", "Converted": "محوَّل" } },
+      "orders": { "title": "أوامر البيع", "subtitle": "دورة أوامر البيع مع الموافقات.", "new": "أمر بيع جديد", "edit": "تعديل أمر البيع", "flowHint": "عرض سعر -> أمر بيع -> موافقة -> فاتورة -> دفعة", "expectedDeliveryDate": "تاريخ التسليم المتوقع", "openOrder": "فتح أمر البيع" },
       "invoices": { "title": "فواتير البيع", "subtitle": "إصدار الفواتير ومتابعة الأرصدة والمدفوعات.", "new": "فاتورة بيع جديدة", "edit": "تعديل فاتورة البيع", "formHint": "إدارة البنود والضرائب وإجمالي الذمم من شاشة واحدة.", "dueDate": "تاريخ الاستحقاق" },
-      "returns": { "title": "مرتجعات البيع", "subtitle": "إدارة المرتجعات المعتمدة وإرجاع المخزون.", "new": "مرتجع بيع جديد" }
+      "returns": { "title": "مرتجعات البيع", "subtitle": "إدارة المرتجعات المعتمدة وإرجاع المخزون.", "new": "مرتجع بيع جديد" },
+      "commercialPipeline": { "title": "المسار التجاري", "createQuotation": "إنشاء عرض سعر", "openQuotation": "فتح عرض السعر المرتبط", "openOrder": "فتح أمر البيع المرتبط", "openInvoice": "فتح الفاتورة المرتبطة", "noLinkedDocuments": "لا توجد مستندات تجارية مرتبطة بعد.", "linkedQuotation": "عرض السعر المرتبط", "linkedOrder": "أمر البيع المرتبط", "linkedInvoice": "الفاتورة المرتبطة", "sourceRequest": "الطلب المصدر", "convertToOrder": "تحويل إلى أمر بيع", "validUntil": "صالح حتى", "items": "بنود الطلب", "addItem": "إضافة بند", "description": "الوصف", "qty": "الكمية", "unit": "الوحدة", "unitPrice": "سعر الوحدة", "discount": "خصم %", "tax": "ضريبة %", "createSuccess": "تم إنشاء عرض السعر بنجاح.", "createError": "فشل إنشاء عرض السعر. الرجاء المحاولة مرة أخرى.", "duplicateWarning": "يوجد بالفعل عرض سعر نشط لهذا الطلب." }
     },
     "purchasing": {
       "quotations": { "title": "عروض الشراء" },

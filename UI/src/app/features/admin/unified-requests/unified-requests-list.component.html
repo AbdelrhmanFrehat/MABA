@@ -332,6 +332,14 @@
                 <a class="attachment-link" *ngIf="request.downloadUrl" [href]="request.downloadUrl" target="_blank" rel="noreferrer">{{ 'admin.allRequests.actions.downloadFile' | translate }}</a>
                 <a class="attachment-link" *ngIf="request.imageUrl" [href]="request.imageUrl" target="_blank" rel="noreferrer">{{ 'admin.allRequests.actions.openArtwork' | translate }}</a>
             </section>
+
+            <section class="section span-2">
+                <app-request-commercial-panel
+                    [requestType]="request.requestType"
+                    [requestId]="request.id"
+                    [linkedQuotationId]="request.linkedQuotationId">
+                </app-request-commercial-panel>
+            </section>
         </div>
     </form>
 
