@@ -1,47 +1,27 @@
-name: Deploy MABA
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HOW THIS WORKS
-# Build jobs run on GitHub-hosted runners (ubuntu-latest).
-# The deploy job runs on a self-hosted runner installed ON the production server.
-# The runner makes outbound HTTPS connections to GitHub — no inbound SSH needed.
-#
-# ONE-TIME SERVER SETUP (run these once on the server as user "abd"):
-#
-#   1. Install the runner:
-#      mkdir -p ~/actions-runner && cd ~/actions-runner
-#      curl -sL https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64-$(curl -s https://api.github.com/repos/actions/runner/releases/latest | grep tag_name | cut -d'"' -f4 | cut -c2-).tar.gz | tar xz
-#      ./config.sh --url https://github.com/YOUR_ORG/MABA --token YOUR_TOKEN --labels maba-prod --unattended
-#      sudo ./svc.sh install && sudo ./svc.sh start
-#
-#   2. Allow passwordless sudo for service management only:
-#      echo "abd ALL=(ALL) NOPASSWD: /bin/systemctl daemon-reload, /bin/systemctl enable maba-backend.service maba-frontend.service, /bin/systemctl restart maba-backend.service, /bin/systemctl restart maba-frontend.service, /bin/systemctl is-active maba-backend.service, /bin/systemctl is-active maba-frontend.service, /usr/bin/tee /etc/systemd/system/maba-backend.service, /usr/bin/tee /etc/systemd/system/maba-frontend.service, /usr/bin/apt-get install -y jq, /usr/bin/npm install -g serve" | sudo tee /etc/sudoers.d/maba-deploy
-#
-#   3. Install prerequisites:
-#      sudo apt-get install -y jq
-#      sudo npm install -g serve
-#
-# REQUIRED GITHUB SECRETS:
-#   DB_CONNECTION_STRING  — full SQL Server connection string for production
-# ─────────────────────────────────────────────────────────────────────────────
+name: Deploy MABA to Linux Server
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main  # أو master حسب فرعك
+  workflow_dispatch:  # للتنفيذ اليدوي
 
 env:
-  DEPLOY_ROOT: /home/abd/WebSites/MABA
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+  SERVER_PORT: ${{ secrets.SERVER_PORT || 22 }}
+  DEPLOY_PATH: /home/abd/WebSites/MABA
 
 jobs:
-  # ── 1. Build Angular frontend ───────────────────────────────────────────────
-  build-frontend:
-    name: Build Frontend
+  deploy-frontend:
+    name: Deploy Frontend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -51,33 +31,119 @@ jobs:
         working-directory: ./UI
         run: npm ci
 
-      - name: Build
+      - name: Build frontend
         working-directory: ./UI
         run: npm run build -- --configuration production
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create directories on server
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          name: frontend-dist
-          path: UI/dist/maba-ng/
-          retention-days: 1
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            mkdir -p /home/abd/WebSites/MABA/maba-ng
+            mkdir -p /home/abd/WebSites/MABA/publish
+            mkdir -p /home/abd/WebSites/MABA/logs
+            mkdir -p /home/abd/WebSites/MABA/backups
 
-  # ── 2. Build .NET backend ───────────────────────────────────────────────────
-  build-backend:
-    name: Build Backend
+      - name: Backup existing frontend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            if [ -d /home/abd/WebSites/MABA/maba-ng ]; then
+              BACKUP_DIR="/home/abd/WebSites/MABA/backups/frontend-$(date +%Y%m%d-%H%M%S)"
+              mkdir -p "$BACKUP_DIR"
+              cp -r /home/abd/WebSites/MABA/maba-ng/* "$BACKUP_DIR/" 2>/dev/null || true
+              echo "Backup created at: $BACKUP_DIR"
+            fi
+
+      - name: Deploy frontend to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "UI/dist/maba-ng/**"
+          target: "/home/abd/WebSites/MABA/maba-ng"
+          strip_components: 3  # UI/dist/maba-ng -> maba-ng
+          rm: true
+          overwrite: true
+
+      - name: Setup frontend service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            # Install serve globally if not installed
+            if ! command -v serve &> /dev/null; then
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' npm install -g serve
+            fi
+            
+            # Open ports in firewall
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' ufw allow 9087/tcp comment 'MABA Frontend' 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' ufw allow 9090/tcp comment 'MABA Backend' 2>/dev/null || true
+            
+            # Stop old service if exists
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl stop maba-frontend.service 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl unmask maba-frontend.service 2>/dev/null || true
+            
+            # Create systemd service file
+            SERVE_PATH=$(which serve || echo /usr/bin/serve)
+            cat > /tmp/maba-frontend.service << EOFSERVICE
+            [Unit]
+            Description=MABA Frontend Service
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=abd
+            WorkingDirectory=/home/abd/WebSites/MABA/maba-ng/browser
+            Environment=NODE_ENV=production
+            Environment=PORT=9087
+            ExecStart=${SERVE_PATH} -s . -l tcp://0.0.0.0:9087 --single
+            Restart=always
+            RestartSec=10
+            StandardOutput=journal
+            StandardError=journal
+
+            [Install]
+            WantedBy=multi-user.target
+            EOFSERVICE
+            
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' cp /tmp/maba-frontend.service /etc/systemd/system/maba-frontend.service
+            rm -f /tmp/maba-frontend.service
+            
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl daemon-reload
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl enable maba-frontend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl restart maba-frontend.service || echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl start maba-frontend.service
+
+  deploy-backend:
+    name: Deploy Backend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '8.0.x'
 
-      - name: Restore
+      - name: Restore dependencies
         working-directory: ./API
         run: dotnet restore --runtime linux-x64
 
-      - name: Publish
+      - name: Publish backend for Linux
         working-directory: ./API/Maba.Api
         run: |
           dotnet publish \
@@ -86,153 +152,130 @@ jobs:
             --self-contained false \
             --output ./publish-linux
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Backup existing backend
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          name: backend-publish
-          path: API/Maba.Api/publish-linux/
-          retention-days: 1
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            if [ -d /home/abd/WebSites/MABA/publish ]; then
+              BACKUP_DIR="/home/abd/WebSites/MABA/backups/backend-$(date +%Y%m%d-%H%M%S)"
+              mkdir -p "$BACKUP_DIR"
+              cp -r /home/abd/WebSites/MABA/publish/* "$BACKUP_DIR/" 2>/dev/null || true
+              echo "Backup created at: $BACKUP_DIR"
+            fi
 
-  # ── 3. Deploy — runs directly ON the server, no SSH needed ─────────────────
-  deploy:
-    name: Deploy to Production
-    needs: [build-frontend, build-backend]
-    runs-on: [self-hosted, maba-prod]
-
-    steps:
-      - name: Prepare directories
-        run: |
-          mkdir -p ${{ env.DEPLOY_ROOT }}/maba-ng
-          mkdir -p ${{ env.DEPLOY_ROOT }}/publish
-          mkdir -p ${{ env.DEPLOY_ROOT }}/logs
-          mkdir -p ${{ env.DEPLOY_ROOT }}/backups
-          mkdir -p /tmp/maba-deploy
-
-      # ── Frontend ─────────────────────────────────────────────────────────────
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
+      - name: Deploy backend to server
+        uses: appleboy/scp-action@v0.1.7
         with:
-          name: frontend-dist
-          path: /tmp/maba-deploy/frontend
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "API/Maba.Api/publish-linux/**"
+          target: "/home/abd/WebSites/MABA/publish"
+          strip_components: 3  # API/Maba.Api/publish-linux -> publish
+          rm: false
+          overwrite: true
 
-      - name: Deploy frontend
-        run: |
-          BACKUP=${{ env.DEPLOY_ROOT }}/backups/frontend-$(date +%Y%m%d-%H%M%S)
-          mkdir -p "$BACKUP"
-          [ "$(ls -A ${{ env.DEPLOY_ROOT }}/maba-ng 2>/dev/null)" ] && \
-            cp -r ${{ env.DEPLOY_ROOT }}/maba-ng/* "$BACKUP/" 2>/dev/null || true
-          rm -rf ${{ env.DEPLOY_ROOT }}/maba-ng/*
-          cp -r /tmp/maba-deploy/frontend/* ${{ env.DEPLOY_ROOT }}/maba-ng/
-          rm -rf /tmp/maba-deploy/frontend
-          echo "Frontend deployed — backup at $BACKUP"
-
-      # ── Backend ──────────────────────────────────────────────────────────────
-      - name: Download backend artifact
-        uses: actions/download-artifact@v4
+      - name: Setup backend service
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          name: backend-publish
-          path: /tmp/maba-deploy/backend
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd /home/abd/WebSites/MABA/publish
+            
+            # Ensure appsettings.json exists
+            if [ ! -f appsettings.json ]; then
+              if [ -f appsettings.Production.json ]; then
+                cp appsettings.Production.json appsettings.json
+              elif [ -f appsettings.example.json ]; then
+                cp appsettings.example.json appsettings.json
+              else
+                echo "⚠️  Warning: appsettings.json not found!"
+              fi
+            fi
 
-      - name: Deploy backend
-        run: |
-          BACKUP=${{ env.DEPLOY_ROOT }}/backups/backend-$(date +%Y%m%d-%H%M%S)
-          mkdir -p "$BACKUP"
-          [ "$(ls -A ${{ env.DEPLOY_ROOT }}/publish 2>/dev/null)" ] && \
-            cp -r ${{ env.DEPLOY_ROOT }}/publish/* "$BACKUP/" 2>/dev/null || true
-          cp -r /tmp/maba-deploy/backend/* ${{ env.DEPLOY_ROOT }}/publish/
-          rm -rf /tmp/maba-deploy/backend
-          mkdir -p ${{ env.DEPLOY_ROOT }}/publish/wwwroot
-          mkdir -p ${{ env.DEPLOY_ROOT }}/publish/logs
-          chmod -x ${{ env.DEPLOY_ROOT }}/publish/*.dll 2>/dev/null || true
-          echo "Backend deployed — backup at $BACKUP"
+            # Ensure jq is installed for safe JSON editing
+            if ! command -v jq &> /dev/null; then
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' apt-get update -y
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' apt-get install -y jq
+            fi
 
-      - name: Patch production connection string
-        run: |
-          cd ${{ env.DEPLOY_ROOT }}/publish
-          # Ensure jq is available
-          command -v jq || sudo apt-get install -y jq
-          # Patch appsettings.Production.json (overrides appsettings.json at runtime)
-          jq --arg conn "${{ secrets.DB_CONNECTION_STRING }}" \
-            '.ConnectionStrings.DefaultConnection = $conn' \
-            appsettings.Production.json > appsettings.tmp \
-            && mv appsettings.tmp appsettings.Production.json
-          echo "Connection string updated"
+            # Force the desired DefaultConnection on the server
+            jq '.ConnectionStrings.DefaultConnection = "Server=localhost,1433;Database=MabaDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;"' \
+              appsettings.json > appsettings.tmp && mv appsettings.tmp appsettings.json
+            
+            # Ensure wwwroot directory exists
+            mkdir -p wwwroot
+            mkdir -p logs
+            
+            # Set proper permissions
+            chmod +x Maba.Api.dll 2>/dev/null || true
+            chown -R abd:abd /home/abd/WebSites/MABA/publish
+            
+            # Stop old service if exists
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl stop maba-backend.service 2>/dev/null || true
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl unmask maba-backend.service 2>/dev/null || true
+            
+            # Create systemd service file
+            DOTNET_PATH=$(which dotnet || echo /usr/bin/dotnet)
+            cat > /tmp/maba-backend.service << EOFSERVICE
+            [Unit]
+            Description=MABA Backend API Service
+            After=network.target
 
-      # ── Systemd service files (idempotent) ───────────────────────────────────
-      - name: Write backend service file
-        run: |
-          DOTNET=$(which dotnet)
-          sudo tee /etc/systemd/system/maba-backend.service > /dev/null << EOF
-          [Unit]
-          Description=MABA Backend API
-          After=network.target
+            [Service]
+            Type=simple
+            User=abd
+            Group=abd
+            WorkingDirectory=/home/abd/WebSites/MABA/publish
+            Environment=ASPNETCORE_ENVIRONMENT=Production
+            Environment=ASPNETCORE_URLS=http://0.0.0.0:9090
+            Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+            ExecStart=${DOTNET_PATH} Maba.Api.dll --urls=http://0.0.0.0:9090
+            Restart=always
+            RestartSec=10
+            StandardOutput=journal
+            StandardError=journal
 
-          [Service]
-          Type=simple
-          User=abd
-          Group=abd
-          WorkingDirectory=${{ env.DEPLOY_ROOT }}/publish
-          Environment=ASPNETCORE_ENVIRONMENT=Production
-          Environment=ASPNETCORE_URLS=http://0.0.0.0:9090
-          Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
-          ExecStart=${DOTNET} ${{ env.DEPLOY_ROOT }}/publish/Maba.Api.dll
-          Restart=always
-          RestartSec=10
-          StandardOutput=journal
-          StandardError=journal
+            [Install]
+            WantedBy=multi-user.target
+            EOFSERVICE
+            
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' cp /tmp/maba-backend.service /etc/systemd/system/maba-backend.service
+            rm -f /tmp/maba-backend.service
+            
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl daemon-reload
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl enable maba-backend.service
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl restart maba-backend.service || echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl start maba-backend.service
 
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-
-      - name: Write frontend service file
-        run: |
-          SERVE=$(which serve || echo /usr/local/bin/serve)
-          # Install serve if missing
-          command -v serve || sudo npm install -g serve
-          sudo tee /etc/systemd/system/maba-frontend.service > /dev/null << EOF
-          [Unit]
-          Description=MABA Frontend
-          After=network.target
-
-          [Service]
-          Type=simple
-          User=abd
-          WorkingDirectory=${{ env.DEPLOY_ROOT }}/maba-ng/browser
-          Environment=NODE_ENV=production
-          ExecStart=${SERVE} -s . -l tcp://0.0.0.0:9087 --single
-          Restart=always
-          RestartSec=10
-          StandardOutput=journal
-          StandardError=journal
-
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-
-      - name: Reload & restart services
-        run: |
-          sudo systemctl daemon-reload
-          sudo systemctl enable maba-backend.service maba-frontend.service
-          sudo systemctl restart maba-backend.service
-          sudo systemctl restart maba-frontend.service
-
-      # ── Health check ─────────────────────────────────────────────────────────
       - name: Health check
-        run: |
-          echo "Waiting 15s for services to initialise..."
-          sleep 15
-
-          sudo systemctl is-active --quiet maba-backend.service  && echo "✅ Backend service active"  || echo "❌ Backend service NOT active"
-          sudo systemctl is-active --quiet maba-frontend.service && echo "✅ Frontend service active" || echo "❌ Frontend service NOT active"
-
-          curl -sf http://localhost:9090/api/health > /dev/null \
-            && echo "✅ Backend HTTP OK" \
-            || echo "⚠️  Backend HTTP not responding on :9090 (may still be migrating)"
-
-          curl -sf http://localhost:9087 > /dev/null \
-            && echo "✅ Frontend HTTP OK" \
-            || echo "⚠️  Frontend HTTP not responding on :9087"
-
-          echo "─────────────────────────────"
-          echo "Deployment complete: $(date)"
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            echo "Waiting for services to start..."
+            sleep 10
+            
+            echo "Checking backend service status..."
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl status maba-backend.service --no-pager || true
+            
+            echo "Checking frontend service status..."
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl status maba-frontend.service --no-pager || true
+            
+            echo "Testing backend endpoint..."
+            curl -f http://localhost:9090/swagger/index.html || curl -f http://localhost:9090/api/health || curl -f http://localhost:9090 || echo "⚠️  Backend health check failed"
+            
+            echo "Testing frontend endpoint..."
+            curl -f http://localhost:9087 || echo "⚠️  Frontend health check failed"
+            
+            echo "✅ Deployment completed!"
