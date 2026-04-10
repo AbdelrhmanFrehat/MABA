@@ -418,7 +418,7 @@ export class ItemFormComponent implements OnInit {
             sku: ['', [Validators.required, Validators.maxLength(100)]],
             itemStatusId: ['', Validators.required],
             price: [0, [Validators.required, Validators.min(0)]],
-            currency: ['USD', Validators.required],
+            currency: ['ILS', Validators.required],
             brandId: [''],
             categoryId: [''],
             tagIds: [[]],

@@ -1172,8 +1172,8 @@ export class OrderDetailComponent implements OnInit {
     }
 
     formatCurrency(value: number): string {
-        const currency = this.order?.currency || 'USD';
-        return new Intl.NumberFormat('en-US', {
+        const currency = this.order?.currency || 'ILS';
+        return new Intl.NumberFormat('he-IL', {
             style: 'currency',
             currency: currency
         }).format(value || 0);

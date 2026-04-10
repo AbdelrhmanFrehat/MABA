@@ -8,7 +8,7 @@ public class Income : BaseEntity
     public Guid IncomeSourceId { get; set; }
     public string? RefId { get; set; }
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "ILS";
     public DateTime ReceivedAt { get; set; }
     public Guid EnteredByUserId { get; set; }
     

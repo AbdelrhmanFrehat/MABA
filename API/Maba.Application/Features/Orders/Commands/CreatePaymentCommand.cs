@@ -9,7 +9,7 @@ public class CreatePaymentCommand : IRequest<PaymentDto>
     public Guid? InvoiceId { get; set; }
     public Guid PaymentMethodId { get; set; }
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "ILS";
     public string? RefNo { get; set; }
 }
 

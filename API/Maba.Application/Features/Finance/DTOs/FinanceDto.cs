@@ -7,7 +7,7 @@ public class IncomeDto
     public string IncomeSourceKey { get; set; } = string.Empty;
     public string? RefId { get; set; }
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "ILS";
     public DateTime ReceivedAt { get; set; }
     public Guid EnteredByUserId { get; set; }
     public string EnteredByUserFullName { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ public class ExpenseDto
     public string? DescriptionEn { get; set; }
     public string? DescriptionAr { get; set; }
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "ILS";
     public DateTime SpentAt { get; set; }
     public Guid? ReceiptMediaId { get; set; }
     public Guid EnteredByUserId { get; set; }

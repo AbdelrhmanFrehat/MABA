@@ -13,7 +13,7 @@ public class UpdateItemCommand : IRequest<ItemDto>
     public string? GeneralDescriptionAr { get; set; }
     public Guid ItemStatusId { get; set; }
     public decimal Price { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "ILS";
     public Guid? BrandId { get; set; }
     public Guid? CategoryId { get; set; }
     public List<Guid> TagIds { get; set; } = new();

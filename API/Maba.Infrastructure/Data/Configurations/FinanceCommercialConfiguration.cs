@@ -13,7 +13,7 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
 
         builder.Property(x => x.Currency)
             .HasMaxLength(3)
-            .HasDefaultValue("USD");
+            .HasDefaultValue("ILS");
 
         builder.HasOne(x => x.EnteredByUser)
             .WithMany()

@@ -1180,7 +1180,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
                     ticks: {
                         color: textColorSecondary,
                         callback: function(value: any) {
-                            return '$' + value.toLocaleString();
+                            return '₪' + value.toLocaleString();
                         }
                     },
                     grid: {
@@ -1260,10 +1260,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         };
     }
 
-    formatCurrency(value: number): string {
-        return new Intl.NumberFormat('en-US', {
+    formatCurrency(value: number, currency = 'ILS'): string {
+        return new Intl.NumberFormat('he-IL', {
             style: 'currency',
-            currency: 'USD'
+            currency: currency
         }).format(value);
     }
 

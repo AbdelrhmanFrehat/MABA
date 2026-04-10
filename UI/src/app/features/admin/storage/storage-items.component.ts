@@ -417,7 +417,7 @@ export class StorageItemsComponent implements OnInit {
             sku: `${this.storageSkuPrefix}${nowCode}`,
             itemStatusId: draftStatusId,
             price: 0,
-            currency: 'USD',
+            currency: 'ILS',
             initialQuantity: Number(this.createModel.quantity ?? 0),
             reorderLevel: 0
         }).subscribe({
@@ -539,7 +539,7 @@ export class StorageItemsComponent implements OnInit {
             sku: row.item.sku,
             itemStatusId: row.item.itemStatusId,
             price: Number(this.publishModel.price || 0),
-            currency: row.item.currency || 'USD',
+            currency: row.item.currency || 'ILS',
             brandId: row.item.brandId || undefined,
             categoryId: this.publishModel.categoryId || undefined,
             tagIds: row.item.tagIds || [],
