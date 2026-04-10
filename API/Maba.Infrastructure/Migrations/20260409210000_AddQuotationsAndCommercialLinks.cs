@@ -1,10 +1,13 @@
+using Maba.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Maba.Infrastructure.Migrations
 {
-    /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260409210000_AddQuotationsAndCommercialLinks")]
     public partial class AddQuotationsAndCommercialLinks : Migration
     {
         /// <inheritdoc />

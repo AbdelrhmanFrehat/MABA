@@ -1,4 +1,6 @@
 using System;
+using Maba.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -9,6 +11,8 @@ namespace Maba.Infrastructure.Migrations
     /// Adds CustomerId and UserId to all service request tables so that website
     /// user submissions automatically create (or reuse) a CRM Customer record.
     /// </summary>
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260409000000_AddCustomerIdToServiceRequests")]
     public partial class AddCustomerIdToServiceRequests : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
