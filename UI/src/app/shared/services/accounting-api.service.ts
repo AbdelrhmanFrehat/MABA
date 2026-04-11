@@ -37,14 +37,15 @@ export class AccountingApiService {
         return this.http.put<Account>(`${this.baseUrl}/accounts/${id}`, request);
     }
 
-    getAccountLedger(accountId: string, params?: Record<string, any>): Observable<AccountLedgerEntry[]> {
-        return this.http.get<AccountLedgerEntry[]>(`${this.baseUrl}/accounts/${accountId}/ledger`, { params: this.buildParams(params) });
+    getAccountLedger(accountId: string, params?: Record<string, any>): Observable<any> {
+        const p = { ...(params ?? {}), accountId };
+        return this.http.get<any>(`${this.baseUrl}/reports/ledger`, { params: this.buildParams(p) });
     }
 
     // --- Journal Entries ---
 
-    getJournalEntries(params?: Record<string, any>): Observable<JournalEntry[]> {
-        return this.http.get<JournalEntry[]>(`${this.baseUrl}/journal-entries`, { params: this.buildParams(params) });
+    getJournalEntries(params?: Record<string, any>): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/journal-entries`, { params: this.buildParams(params) });
     }
 
     getJournalEntryById(id: string): Observable<JournalEntry> {
@@ -79,8 +80,8 @@ export class AccountingApiService {
 
     // --- Reports ---
 
-    getTrialBalance(params?: Record<string, any>): Observable<TrialBalanceRow[]> {
-        return this.http.get<TrialBalanceRow[]>(`${this.baseUrl}/reports/trial-balance`, { params: this.buildParams(params) });
+    getTrialBalance(params?: Record<string, any>): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/reports/trial-balance`, { params: this.buildParams(params) });
     }
 
     getIncomeStatement(params?: Record<string, any>): Observable<any> {

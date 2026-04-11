@@ -16,12 +16,16 @@ import { JournalEntry } from '../../../shared/models/accounting.model';
 export class JournalEntriesListComponent implements OnInit {
     rows: JournalEntry[] = [];
     columns: TableColumn[] = [
-        { field: 'entryNumber', headerKey: 'admin.accounting.entryNumber' },
-        { field: 'entryDate', headerKey: 'common.date', type: 'date' },
-        { field: 'journalEntryTypeName', headerKey: 'admin.accounting.journalEntryType' },
+        { field: 'entryNumber', headerKey: 'admin.accounting.entryNumber', sortable: true },
+        { field: 'entryDate', headerKey: 'common.date', type: 'date', sortable: true },
+        { field: 'fiscalPeriodName', headerKey: 'admin.accounting.journalEntryType' },
+        { field: 'sourceDocumentType', headerKey: 'common.type', sortable: true },
+        { field: 'sourceDocumentNumber', headerKey: 'admin.sales.common.number', sortable: true },
         { field: 'description', headerKey: 'common.description' },
-        { field: 'isPosted', headerKey: 'admin.common.posted', type: 'boolean' }
+        { field: 'totalDebit', headerKey: 'common.debit', type: 'currency', currencyCode: 'ILS' },
+        { field: 'totalCredit', headerKey: 'common.credit', type: 'currency', currencyCode: 'ILS' },
+        { field: 'isPosted', headerKey: 'admin.accounting.posted', type: 'boolean' }
     ];
     private api = inject(AccountingApiService);
-    ngOnInit(): void { this.api.getJournalEntries().subscribe(x => this.rows = x); }
+    ngOnInit(): void { this.api.getJournalEntries().subscribe(x => this.rows = x?.items ?? []); }
 }

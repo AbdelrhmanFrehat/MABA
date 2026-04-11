@@ -3150,7 +3150,12 @@
       "newJournalEntry": "قيد يومية جديد",
       "entryNumber": "رقم القيد",
       "ledger": "دفتر الأستاذ",
-      "trialBalance": "ميزان المراجعة"
+      "trialBalance": "ميزان المراجعة",
+      "postToAccounting": "ترحيل للمحاسبة",
+      "posted": "مرحّل",
+      "unposted": "غير مرحّل",
+      "postSuccess": "تم ترحيل الفاتورة للمحاسبة بنجاح",
+      "alreadyPosted": "هذه الفاتورة مرحّلة مسبقاً"
     },
     "pricing": {
       "priceLists": "قوائم الأسعار",

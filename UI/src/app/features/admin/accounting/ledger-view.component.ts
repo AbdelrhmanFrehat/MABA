@@ -69,14 +69,14 @@ export class LedgerViewComponent implements OnInit {
     totalCredit = 0;
 
     columns: TableColumn[] = [
-        { field: 'date', header: 'Date', type: 'date', sortable: true },
+        { field: 'entryDate', header: 'Date', type: 'date', sortable: true },
         { field: 'entryNumber', header: 'Entry #', sortable: true },
         { field: 'description', header: 'Description', sortable: true },
         { field: 'sourceDocumentType', header: 'Source Type', sortable: true },
         { field: 'sourceDocumentNumber', header: 'Source #', sortable: true },
         { field: 'debit', header: 'Debit', type: 'currency', currencyCode: 'ILS', sortable: true },
         { field: 'credit', header: 'Credit', type: 'currency', currencyCode: 'ILS', sortable: true },
-        { field: 'balance', header: 'Balance', type: 'currency', currencyCode: 'ILS', sortable: true }
+        { field: 'runningBalance', header: 'Balance', type: 'currency', currencyCode: 'ILS', sortable: true }
     ];
 
     private api = inject(AccountingApiService);
@@ -115,10 +115,10 @@ export class LedgerViewComponent implements OnInit {
 
         this.loading = true;
         this.api.getAccountLedger(this.selectedAccountId).subscribe({
-            next: rows => {
-                this.rows = rows ?? [];
-                this.totalDebit = this.rows.reduce((sum, row) => sum + (row.debit || 0), 0);
-                this.totalCredit = this.rows.reduce((sum, row) => sum + (row.credit || 0), 0);
+            next: result => {
+                this.rows = result?.lines ?? [];
+                this.totalDebit = this.rows.reduce((sum, row: any) => sum + (row.debit || 0), 0);
+                this.totalCredit = this.rows.reduce((sum, row: any) => sum + (row.credit || 0), 0);
                 this.loading = false;
             },
             error: () => {

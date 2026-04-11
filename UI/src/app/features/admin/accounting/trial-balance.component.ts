@@ -14,13 +14,13 @@ import { TrialBalanceRow } from '../../../shared/models/accounting.model';
 export class TrialBalanceComponent implements OnInit {
     rows: TrialBalanceRow[] = [];
     columns: TableColumn[] = [
-        { field: 'accountNumber', headerKey: 'common.code' },
-        { field: 'accountName', headerKey: 'common.name' },
-        { field: 'accountType', headerKey: 'admin.accounting.accountType' },
-        { field: 'debit', headerKey: 'common.debit', type: 'currency', currencyCode: 'ILS' },
-        { field: 'credit', headerKey: 'common.credit', type: 'currency', currencyCode: 'ILS' },
-        { field: 'balance', headerKey: 'common.balance', type: 'currency', currencyCode: 'ILS' }
+        { field: 'accountCode', headerKey: 'common.code', sortable: true },
+        { field: 'accountNameEn', headerKey: 'common.name', sortable: true },
+        { field: 'accountTypeName', headerKey: 'admin.accounting.accountType' },
+        { field: 'totalDebit', headerKey: 'common.debit', type: 'currency', currencyCode: 'ILS' },
+        { field: 'totalCredit', headerKey: 'common.credit', type: 'currency', currencyCode: 'ILS' },
+        { field: 'netBalance', headerKey: 'common.balance', type: 'currency', currencyCode: 'ILS' }
     ];
     private api = inject(AccountingApiService);
-    ngOnInit(): void { this.api.getTrialBalance().subscribe(x => this.rows = x); }
+    ngOnInit(): void { this.api.getTrialBalance().subscribe(x => this.rows = x?.rows ?? []); }
 }

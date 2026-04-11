@@ -122,6 +122,10 @@ export class SalesApiService {
         return this.http.post<void>(`${this.baseUrl}/sales-invoices/${id}/cancel`, {});
     }
 
+    postSalesInvoice(id: string): Observable<any> {
+        return this.http.post<any>(`${this.baseUrl}/sales-invoices/${id}/post`, {});
+    }
+
     // --- Sales Returns ---
 
     getSalesReturns(params?: Record<string, any>): Observable<SalesReturn[]> {

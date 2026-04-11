@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Maba.Application.Common.Interfaces;
 using Maba.Domain.Catalog;
 using Maba.Domain.CommercialReturns;
@@ -14,10 +15,17 @@ namespace Maba.Api.Controllers;
 public class SalesReturnsController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAccountingPostingService _posting;
+    private readonly ILogger<SalesReturnsController> _logger;
 
-    public SalesReturnsController(IApplicationDbContext context)
+    public SalesReturnsController(
+        IApplicationDbContext context,
+        IAccountingPostingService posting,
+        ILogger<SalesReturnsController> logger)
     {
         _context = context;
+        _posting = posting;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -165,6 +173,18 @@ public class SalesReturnsController : ControllerBase
         entity.StatusColor = "#10b981";
         entity.IsPosted = true;
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Post accounting reversal: DR Revenue / CR AR
+        var userId = GetCurrentUserId();
+        try
+        {
+            await _posting.PostSalesReturnAsync(entity.Id, userId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Accounting posting failed for sales return {ReturnId}. Return still completed.", entity.Id);
+        }
+
         return NoContent();
     }
 

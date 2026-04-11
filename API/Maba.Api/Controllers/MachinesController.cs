@@ -5,6 +5,7 @@ using Maba.Application.Features.Machines.Commands;
 using Maba.Application.Features.Machines.DTOs;
 using Maba.Application.Features.Machines.Queries;
 using Maba.Application.Common.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Maba.Api.Controllers;
 
@@ -59,11 +60,55 @@ public class MachinesController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// GET /api/v1/machines/parts — paginated list of all machine parts (optionally filtered by machineId or search).
+    /// This route must be declared before GET {id}/parts to avoid ASP.NET route ambiguity.
+    /// </summary>
+    [HttpGet("parts")]
+    public async Task<ActionResult<GetAllMachinePartsResult>> GetAllMachineParts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] Guid? machineId = null,
+        [FromQuery] string? search = null)
+    {
+        var query = new GetAllMachinePartsQuery
+        {
+            Page = page,
+            PageSize = pageSize,
+            MachineId = machineId,
+            Search = search
+        };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpGet("parts/{id:guid}")]
+    public async Task<ActionResult<MachinePartDto>> GetMachinePartById(Guid id)
+    {
+        var result = await _mediator.Send(new GetMachinePartByIdQuery { Id = id });
+        return Ok(result);
+    }
+
     [HttpPost("parts")]
     public async Task<ActionResult<MachinePartDto>> CreateMachinePart([FromBody] CreateMachinePartCommand command)
     {
         var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    [HttpPut("parts/{id:guid}")]
+    public async Task<ActionResult<MachinePartDto>> UpdateMachinePart(Guid id, [FromBody] UpdateMachinePartCommand command)
+    {
+        command.Id = id;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    [HttpDelete("parts/{id:guid}")]
+    public async Task<ActionResult> DeleteMachinePart(Guid id)
+    {
+        await _mediator.Send(new DeleteMachinePartCommand { Id = id });
+        return NoContent();
     }
 
     [HttpPost("links")]

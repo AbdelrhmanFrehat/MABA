@@ -38,6 +38,11 @@ import { SalesInvoice } from '../../../../shared/models/sales.model';
                     @if (column.field === 'statusName') {
                         <app-status-badge lookupTypeKey="sales_invoice_status" [valueId]="row.statusLookupId" [label]="row.statusName" [color]="row.statusColor"></app-status-badge>
                     }
+                    @if (column.field === 'isPostedLabel') {
+                        <span [class]="row.isPosted ? 'text-green-600 font-semibold' : 'text-orange-500'">
+                            {{ row.isPosted ? ('admin.accounting.posted' | translate) : ('admin.accounting.unposted' | translate) }}
+                        </span>
+                    }
                 </ng-template>
             </app-data-table>
         </div>
@@ -53,13 +58,15 @@ export class SalesInvoicesListComponent implements OnInit {
         { field: 'invoiceDate', headerKey: 'common.date', type: 'date', sortable: true },
         { field: 'statusName', headerKey: 'common.status', type: 'custom' },
         { field: 'total', headerKey: 'common.total', type: 'currency', currencyCode: 'ILS', sortable: true },
-        { field: 'amountDue', headerKey: 'admin.payments.remainingAmount', type: 'currency', currencyCode: 'ILS', sortable: true }
+        { field: 'amountDue', headerKey: 'admin.payments.remainingAmount', type: 'currency', currencyCode: 'ILS', sortable: true },
+        { field: 'isPostedLabel', headerKey: 'admin.accounting.posted', type: 'custom' }
     ];
 
     actions: TableAction[] = [
         { icon: 'pi pi-pencil', tooltipKey: 'common.edit', action: 'edit' },
         { icon: 'pi pi-send', tooltipKey: 'admin.common.issue', action: 'issue', severity: 'success' },
-        { icon: 'pi pi-wallet', tooltipKey: 'admin.sales.common.recordPayment', action: 'payment', severity: 'info' }
+        { icon: 'pi pi-wallet', tooltipKey: 'admin.sales.common.recordPayment', action: 'payment', severity: 'info' },
+        { icon: 'pi pi-book', tooltipKey: 'admin.accounting.postToAccounting', action: 'post', severity: 'warn' }
     ];
 
     private salesApi = inject(SalesApiService);
@@ -93,6 +100,24 @@ export class SalesInvoicesListComponent implements OnInit {
 
         if (event.action === 'payment') {
             this.router.navigate(['/admin/payments/new'], { queryParams: { salesInvoiceId: event.data.id } });
+            return;
+        }
+
+        if (event.action === 'post') {
+            if (event.data.isPosted) {
+                this.messageService.add({ severity: 'info', summary: this.translateService.instant('messages.info'), detail: this.translateService.instant('admin.accounting.alreadyPosted') });
+                return;
+            }
+            this.salesApi.postSalesInvoice(event.data.id).subscribe({
+                next: (result) => {
+                    this.messageService.add({ severity: 'success', summary: this.translateService.instant('messages.success'), detail: result?.journalEntryNumber ? `JE: ${result.journalEntryNumber}` : this.translateService.instant('admin.accounting.postSuccess') });
+                    this.loadInvoices();
+                },
+                error: (err) => {
+                    const detail = err?.error?.error ?? this.translateService.instant('messages.saveError');
+                    this.messageService.add({ severity: 'error', summary: this.translateService.instant('messages.error'), detail });
+                }
+            });
             return;
         }
 

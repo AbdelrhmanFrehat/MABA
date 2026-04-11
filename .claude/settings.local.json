@@ -13,7 +13,8 @@
       "Bash(grep -v \"//\")",
       "Bash(grep -l \"Customers\\\\|Customer\\\\b\" /c/Users/PC/Desktop/maba/API/Maba.Infrastructure/Migrations/*.cs)",
       "Bash(grep -l \"CreateTable.*Customers\\\\b\\\\|\\\\\"Customers\\\\\"\" /c/Users/PC/Desktop/maba/API/Maba.Infrastructure/Migrations/*.cs)",
-      "Bash(grep -r \"class.*Controller\" /c/Users/PC/Desktop/maba/API/Maba.Api/Controllers/*.cs)"
+      "Bash(grep -r \"class.*Controller\" /c/Users/PC/Desktop/maba/API/Maba.Api/Controllers/*.cs)",
+      "Bash(npx ng:*)"
     ]
   }
 }

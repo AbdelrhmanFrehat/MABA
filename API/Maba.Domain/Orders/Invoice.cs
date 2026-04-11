@@ -12,7 +12,13 @@ public class Invoice : BaseEntity
     public string Currency { get; set; } = "ILS";
     public Guid InvoiceStatusId { get; set; }
     public string? PdfUrl { get; set; }
-    
+
+    // Accounting posting state
+    public bool IsPosted { get; set; } = false;
+    public DateTime? PostedAt { get; set; }
+    public Guid? PostedByUserId { get; set; }
+    public Guid? JournalEntryId { get; set; }
+
     // Navigation properties
     public Order Order { get; set; } = null!;
     public InvoiceStatus InvoiceStatus { get; set; } = null!;

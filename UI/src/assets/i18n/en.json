@@ -2382,7 +2382,12 @@
       "newJournalEntry": "New Journal Entry",
       "entryNumber": "Entry Number",
       "ledger": "Ledger View",
-      "trialBalance": "Trial Balance"
+      "trialBalance": "Trial Balance",
+      "postToAccounting": "Post to Accounting",
+      "posted": "Posted",
+      "unposted": "Unposted",
+      "postSuccess": "Invoice posted to accounting successfully",
+      "alreadyPosted": "This invoice has already been posted to accounting"
     },
     "pricing": {
       "priceLists": "Price Lists",

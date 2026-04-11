@@ -9257,3 +9257,86 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410194132_FixDefaultCurrencyToILS'
+)
+BEGIN
+    DECLARE @var56 sysname;
+    SELECT @var56 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Expenses]') AND [c].[name] = N'Currency');
+    IF @var56 IS NOT NULL EXEC(N'ALTER TABLE [Expenses] DROP CONSTRAINT [' + @var56 + '];');
+    ALTER TABLE [Expenses] ADD DEFAULT N'ILS' FOR [Currency];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410194132_FixDefaultCurrencyToILS'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260410194132_FixDefaultCurrencyToILS', N'8.0.11');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410200148_AddInvoicePostingFields'
+)
+BEGIN
+    ALTER TABLE [Invoices] ADD [IsPosted] bit NOT NULL DEFAULT CAST(0 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410200148_AddInvoicePostingFields'
+)
+BEGIN
+    ALTER TABLE [Invoices] ADD [JournalEntryId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410200148_AddInvoicePostingFields'
+)
+BEGIN
+    ALTER TABLE [Invoices] ADD [PostedAt] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410200148_AddInvoicePostingFields'
+)
+BEGIN
+    ALTER TABLE [Invoices] ADD [PostedByUserId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260410200148_AddInvoicePostingFields'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260410200148_AddInvoicePostingFields', N'8.0.11');
+END;
+GO
+
+COMMIT;
+GO
+

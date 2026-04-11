@@ -24,6 +24,7 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IDocumentNumberService, Services.DocumentNumberService>();
         services.AddScoped<ICustomerResolverService, Services.CustomerResolverService>();
+        services.AddScoped<IAccountingPostingService, Services.AccountingPostingService>();
 
         // Register file storage service
         services.AddScoped<Maba.Application.Common.Interfaces.IFileStorageService, Services.LocalFileStorageService>();
