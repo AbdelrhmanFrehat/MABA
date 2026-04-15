@@ -84,6 +84,22 @@ public class MockEmailService : IEmailService
         return Task.CompletedTask;
     }
 
+    public Task SendRequestStatusUpdateAsync(
+        string? toEmail,
+        string? customerName,
+        string referenceNumber,
+        string requestTypeLabel,
+        string newStatus,
+        string? viewRequestUrl,
+        string? rejectionReason = null,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug(
+            "Mock email: would send status update ({Status}) to {Email} for {ReferenceNumber} ({RequestType})",
+            newStatus, toEmail ?? "(none)", referenceNumber, requestTypeLabel);
+        return Task.CompletedTask;
+    }
+
     public Task SendRequestCancelledAsync(
         string? toEmail,
         string? customerName,

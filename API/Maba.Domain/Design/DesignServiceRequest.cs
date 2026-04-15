@@ -35,6 +35,7 @@ public class DesignServiceRequest : BaseEntity
     public string? CustomerPhone { get; set; }
 
     public string? AdminNotes { get; set; }
+    public string? RejectionReason { get; set; }
     public decimal? QuotedPrice { get; set; }
     public decimal? FinalPrice { get; set; }
     public string? DeliveryNotes { get; set; }

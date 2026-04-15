@@ -189,9 +189,19 @@ import {
                     <label>{{ 'admin.serviceWorkflow.nextStatus' | translate }}</label>
                     <p-select [(ngModel)]="editStatus" [options]="statusOptions" optionLabel="label" optionValue="value" styleClass="w-full"></p-select>
                 </div>
+                <div class="form-field" *ngIf="editStatus === 'Rejected'">
+                    <label class="rejection-label">{{ 'admin.requests.rejectionReason' | translate }} <span class="required-star">*</span></label>
+                    <textarea pTextarea [(ngModel)]="editRejectionReason" rows="4" class="w-full"
+                        [placeholder]="'admin.requests.rejectionReasonPlaceholder' | translate"></textarea>
+                    <small class="hint-text">{{ 'admin.requests.rejectionReasonHint' | translate }}</small>
+                </div>
                 <div class="form-field">
                     <label>{{ 'admin.designRequests.adminNotes' | translate }}</label>
                     <textarea pTextarea [(ngModel)]="editNotes" rows="4" class="w-full" [placeholder]="'admin.designRequests.adminNotesPlaceholder' | translate"></textarea>
+                </div>
+                <div class="notification-note" *ngIf="editStatus !== (selectedRequest?.workflowStatus || selectedRequest?.status)">
+                    <i class="pi pi-envelope"></i>
+                    <span>{{ 'admin.requests.customerWillBeNotified' | translate }}</span>
                 </div>
             </div>
             <ng-template pTemplate="footer">
@@ -235,6 +245,10 @@ import {
         .edit-content { padding: 0.5rem 0; }
         .form-field { margin-bottom: 1rem; }
         .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .rejection-label { color: #dc2626 !important; }
+        .required-star { color: #dc2626; margin-left: 2px; }
+        .hint-text { color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.25rem; }
+        .notification-note { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #eff6ff; border-radius: 6px; color: #1e40af; font-size: 0.8rem; margin-top: 0.5rem; }
         .w-full { width: 100%; }
     `]
 })
@@ -259,6 +273,7 @@ export class DesignCadRequestsListComponent implements OnInit {
     selectedRequest: DesignCadRequestDto | null = null;
     editStatus: ServiceWorkflowStatus = 'New';
     editNotes = '';
+    editRejectionReason = '';
     saving = false;
 
     get viewDialogTitle(): string {
@@ -322,15 +337,21 @@ export class DesignCadRequestsListComponent implements OnInit {
         this.selectedRequest = req;
         this.editStatus = normalizeDesignCadWorkflowStatus(req.workflowStatus || req.status);
         this.editNotes = '';
+        this.editRejectionReason = '';
         this.showEditDialog = true;
     }
 
     saveRequest() {
         if (!this.selectedRequest) return;
+        if (this.editStatus === 'Rejected' && !this.editRejectionReason.trim()) {
+            this.messageService.add({ severity: 'warn', summary: this.translate.instant('messages.validationError'), detail: this.translate.instant('admin.requests.rejectionReasonRequired') });
+            return;
+        }
         this.saving = true;
         this.designCadService.updateStatus(this.selectedRequest.id, {
             status: denormalizeDesignCadWorkflowStatus(this.editStatus),
-            notes: this.editNotes || undefined
+            notes: this.editNotes || undefined,
+            rejectionReason: this.editStatus === 'Rejected' ? this.editRejectionReason.trim() : undefined
         }).subscribe({
             next: (updated) => {
                 this.saving = false;

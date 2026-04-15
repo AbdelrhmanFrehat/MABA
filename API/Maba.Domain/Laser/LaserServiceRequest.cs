@@ -60,7 +60,8 @@ public class LaserServiceRequest : BaseEntity
     /// Admin notes (internal)
     /// </summary>
     public string? AdminNotes { get; set; }
-    
+    public string? RejectionReason { get; set; }
+
     /// <summary>
     /// Quoted price (set by admin)
     /// </summary>

@@ -251,6 +251,15 @@ import {
                     <label>{{ 'admin.designRequests.deliveryNotes' | translate }}</label>
                     <textarea pTextarea [(ngModel)]="editDeliveryNotes" rows="2" class="w-full" [placeholder]="'admin.designRequests.deliveryNotesPlaceholder' | translate"></textarea>
                 </div>
+                <div class="form-field rejection-reason-block" *ngIf="editStatus === 'Rejected'">
+                    <label class="rejection-label">{{ 'admin.requests.rejectionReason' | translate }} <span class="required-star">*</span></label>
+                    <textarea pTextarea [(ngModel)]="editRejectionReason" rows="3" class="w-full" [placeholder]="'admin.requests.rejectionReasonPlaceholder' | translate"></textarea>
+                    <small class="rejection-hint">{{ 'admin.requests.rejectionReasonHint' | translate }}</small>
+                </div>
+                <div class="notification-note" *ngIf="selectedRequest && editStatus !== (selectedRequest.workflowStatus || selectedRequest.status)">
+                    <i class="pi pi-envelope"></i>
+                    <span>{{ 'admin.requests.customerWillBeNotified' | translate }}</span>
+                </div>
             </div>
             <ng-template pTemplate="footer">
                 <p-button [label]="'common.cancel' | translate" (onClick)="showEditDialog = false" [outlined]="true"></p-button>
@@ -299,6 +308,11 @@ import {
         .edit-content { padding: 0.5rem 0; }
         .form-field { margin-bottom: 1rem; }
         .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .rejection-reason-block { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1rem; }
+        .rejection-label { color: #b91c1c !important; }
+        .required-star { color: #ef4444; margin-left: 2px; }
+        .rejection-hint { color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block; }
+        .notification-note { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.5rem 0.75rem; margin-top: 0.5rem; }
         .w-full { width: 100%; }
     `]
 })
@@ -331,6 +345,7 @@ export class DesignRequestsListComponent implements OnInit {
     editFinalPrice: number | null = null;
     editAdminNotes = '';
     editDeliveryNotes = '';
+    editRejectionReason = '';
 
     get viewDialogTitle(): string {
         return this.translate.instant('admin.designRequests.viewDetails');
@@ -411,13 +426,27 @@ export class DesignRequestsListComponent implements OnInit {
         this.editFinalPrice = req.finalPrice ?? null;
         this.editAdminNotes = req.adminNotes ?? '';
         this.editDeliveryNotes = req.deliveryNotes ?? '';
+        this.editRejectionReason = '';
         this.showEditDialog = true;
     }
 
     saveRequest() {
         if (!this.selectedRequest) return;
+
+        if (this.editStatus === 'Rejected' && !this.editRejectionReason?.trim()) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translate.instant('messages.validationError'),
+                detail: this.translate.instant('admin.requests.rejectionReasonRequired')
+            });
+            return;
+        }
+
         this.saving = true;
-        this.designService.updateStatus(this.selectedRequest.id, { status: denormalizeDesignWorkflowStatus(this.editStatus) }).subscribe({
+        this.designService.updateStatus(this.selectedRequest.id, {
+            status: denormalizeDesignWorkflowStatus(this.editStatus),
+            ...(this.editStatus === 'Rejected' && { rejectionReason: this.editRejectionReason })
+        }).subscribe({
             next: () => {
                 this.designService.updateAdmin(this.selectedRequest!.id, {
                     adminNotes: this.editAdminNotes || undefined,

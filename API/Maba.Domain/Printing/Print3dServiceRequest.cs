@@ -68,6 +68,11 @@ public class Print3dServiceRequest : BaseEntity
     /// Admin notes (internal)
     /// </summary>
     public string? AdminNotes { get; set; }
+
+    /// <summary>
+    /// Customer-facing reason when request is rejected (required when Status = Rejected).
+    /// </summary>
+    public string? RejectionReason { get; set; }
     
     /// <summary>
     /// Estimated price (calculated or set by admin)

@@ -253,6 +253,7 @@
   "messages": {
     "success": "Success",
     "error": "Error",
+    "validationError": "Validation Error",
     "loadError": "Could not load data. Please try again.",
     "saveError": "Could not save data. Please try again.",
     "deleteError": "Could not delete data. Please try again.",
@@ -2412,6 +2413,13 @@
       "supplierStatement": "Supplier Statement",
       "profitOverview": "Profit Overview",
       "trialBalance": "Trial Balance"
+    },
+    "requests": {
+      "rejectionReason": "Rejection Reason",
+      "rejectionReasonPlaceholder": "Please provide a clear, professional reason for this rejection...",
+      "rejectionReasonHint": "This message will be sent directly to the customer.",
+      "rejectionReasonRequired": "A rejection reason is required when rejecting a request.",
+      "customerWillBeNotified": "Customer will be notified by email."
     }
   },
   "footer": {

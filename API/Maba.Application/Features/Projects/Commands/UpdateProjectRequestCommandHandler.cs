@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
 using Maba.Domain.Projects;
 
@@ -8,10 +9,17 @@ namespace Maba.Application.Features.Projects.Commands;
 public class UpdateProjectRequestCommandHandler : IRequestHandler<UpdateProjectRequestCommand, bool>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public UpdateProjectRequestCommandHandler(IApplicationDbContext context)
+    public UpdateProjectRequestCommandHandler(
+        IApplicationDbContext context,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<bool> Handle(UpdateProjectRequestCommand request, CancellationToken cancellationToken)
@@ -20,6 +28,13 @@ public class UpdateProjectRequestCommandHandler : IRequestHandler<UpdateProjectR
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
         if (projectRequest == null) return false;
+
+        if (!string.IsNullOrWhiteSpace(request.WorkflowStatus) &&
+            request.WorkflowStatus == ProjectRequestWorkflowStatus.Rejected &&
+            string.IsNullOrWhiteSpace(request.RejectionReason))
+        {
+            throw new InvalidOperationException("A rejection reason is required when rejecting a request.");
+        }
 
         var activities = new List<ProjectRequestActivity>();
         var previousWorkflowStatus = projectRequest.WorkflowStatus;
@@ -100,6 +115,9 @@ public class UpdateProjectRequestCommandHandler : IRequestHandler<UpdateProjectR
         if (request.AdminNotes != null)
             projectRequest.AdminNotes = request.AdminNotes;
 
+        if (!string.IsNullOrWhiteSpace(request.RejectionReason))
+            projectRequest.RejectionReason = request.RejectionReason.Trim();
+
         // --- Assignment ---
         var previousAssignee = projectRequest.AssignedToName;
 
@@ -164,6 +182,27 @@ public class UpdateProjectRequestCommandHandler : IRequestHandler<UpdateProjectR
             _context.Set<ProjectRequestActivity>().AddRange(activities);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Send customer email on meaningful workflow status changes
+        var customerEmail = string.IsNullOrWhiteSpace(projectRequest.Email)
+            ? null : projectRequest.Email;
+        if (!string.IsNullOrWhiteSpace(request.WorkflowStatus) &&
+            request.WorkflowStatus != previousWorkflowStatus &&
+            !string.IsNullOrWhiteSpace(customerEmail))
+        {
+            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl = $"{baseUrl}/account/requests?requestId={projectRequest.Id}&type=project";
+            await _emailService.SendRequestStatusUpdateAsync(
+                customerEmail,
+                projectRequest.FullName,
+                projectRequest.ReferenceNumber ?? projectRequest.Id.ToString(),
+                "Project Request",
+                request.WorkflowStatus,
+                viewUrl,
+                request.RejectionReason,
+                cancellationToken);
+        }
+
         return true;
     }
 

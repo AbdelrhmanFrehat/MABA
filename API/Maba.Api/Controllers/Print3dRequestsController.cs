@@ -444,6 +444,13 @@ public class Print3dRequestsController : ControllerBase
             return BadRequest("Invalid status");
         }
 
+        // Validate rejection reason
+        if (newStatus == Print3dServiceRequestStatus.Rejected &&
+            string.IsNullOrWhiteSpace(dto.RejectionReason))
+        {
+            return BadRequest("A rejection reason is required when rejecting a request.");
+        }
+
         var previousStatus = request.Status;
         request.Status = newStatus;
         request.UpdatedAt = DateTime.UtcNow;
@@ -465,6 +472,11 @@ public class Print3dRequestsController : ControllerBase
         if (!string.IsNullOrEmpty(dto.Notes))
         {
             request.AdminNotes = dto.Notes;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.RejectionReason))
+        {
+            request.RejectionReason = dto.RejectionReason.Trim();
         }
 
         if (dto.FinalPrice.HasValue)
@@ -530,21 +542,26 @@ public class Print3dRequestsController : ControllerBase
 
         await _context.SaveChangesAsync(CancellationToken.None);
 
-        if (newStatus == Print3dServiceRequestStatus.Cancelled &&
-            previousStatus != Print3dServiceRequestStatus.Cancelled)
+        if (newStatus != previousStatus)
         {
-            var toEmail = request.CustomerEmail ?? request.User?.Email;
-            var custName = request.CustomerName ?? request.User?.FullName;
-            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
-            var viewUrl = $"{baseUrl}/account/requests?requestId={request.Id}&type=print3d";
-            await _emailService.SendRequestCancelledAsync(
-                toEmail,
-                custName,
-                request.ReferenceNumber,
-                "3D print request",
-                viewUrl,
-                dto.Notes,
-                CancellationToken.None);
+            var toEmail  = request.CustomerEmail ?? request.User?.Email;
+            var custName = request.CustomerName  ?? request.User?.FullName;
+            var baseUrl  = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl  = $"{baseUrl}/account/requests?requestId={request.Id}&type=print3d";
+
+            if (newStatus == Print3dServiceRequestStatus.Cancelled)
+            {
+                await _emailService.SendRequestCancelledAsync(
+                    toEmail, custName, request.ReferenceNumber,
+                    "3D Print Request", viewUrl, dto.Notes, CancellationToken.None);
+            }
+            else
+            {
+                await _emailService.SendRequestStatusUpdateAsync(
+                    toEmail, custName, request.ReferenceNumber,
+                    "3D Print Request", newStatus.ToString(), viewUrl,
+                    dto.RejectionReason, CancellationToken.None);
+            }
         }
 
         var refreshed = await _context.Set<Print3dServiceRequest>()
@@ -734,6 +751,7 @@ public class UpdatePrint3dRequestStatusDto
 {
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public string? RejectionReason { get; set; }
     public decimal? FinalPrice { get; set; }
     public Guid? UsedSpoolId { get; set; }
     public int? EstimatedFilamentGrams { get; set; }

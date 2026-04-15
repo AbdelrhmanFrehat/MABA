@@ -476,22 +476,39 @@ import {
 
                 <div class="form-field">
                     <label>{{ 'admin.3dRequests.adminNotes' | translate }}</label>
-                    <textarea 
+                    <textarea
                         pTextarea
                         [(ngModel)]="editNotes"
                         rows="3"
                         class="w-full">
                     </textarea>
                 </div>
+
+                <div class="form-field rejection-reason-block" *ngIf="editStatus === 'Rejected'">
+                    <label class="rejection-label">{{ 'admin.requests.rejectionReason' | translate }} <span class="required-star">*</span></label>
+                    <textarea
+                        pTextarea
+                        [(ngModel)]="editRejectionReason"
+                        rows="3"
+                        class="w-full"
+                        [placeholder]="'admin.requests.rejectionReasonPlaceholder' | translate">
+                    </textarea>
+                    <small class="rejection-hint">{{ 'admin.requests.rejectionReasonHint' | translate }}</small>
+                </div>
+
+                <div class="notification-note" *ngIf="editStatus !== selectedRequest.workflowStatus && editStatus !== selectedRequest.status">
+                    <i class="pi pi-envelope"></i>
+                    <span>{{ 'admin.requests.customerWillBeNotified' | translate }}</span>
+                </div>
             </div>
             <ng-template pTemplate="footer">
-                <p-button 
-                    [label]="'common.cancel' | translate" 
+                <p-button
+                    [label]="'common.cancel' | translate"
                     (onClick)="showEditDialog = false"
                     [outlined]="true">
                 </p-button>
-                <p-button 
-                    [label]="'common.save' | translate" 
+                <p-button
+                    [label]="'common.save' | translate"
                     (onClick)="saveRequest()"
                     [loading]="saving">
                 </p-button>
@@ -597,6 +614,11 @@ import {
         .edit-content { padding: 0.5rem 0; }
         .form-field { margin-bottom: 1rem; }
         .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
+        .rejection-reason-block { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1rem; }
+        .rejection-label { color: #b91c1c !important; }
+        .required-star { color: #ef4444; margin-left: 2px; }
+        .rejection-hint { color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block; }
+        .notification-note { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.5rem 0.75rem; margin-top: 0.75rem; }
         .edit-section-card {
             margin-bottom: 1rem;
             padding: 0.75rem 1rem;
@@ -678,6 +700,7 @@ export class ThreeDRequestsListComponent implements OnInit {
     editStatus: ServiceWorkflowStatus = 'New';
     editFinalPrice: number | null = null;
     editNotes = '';
+    editRejectionReason = '';
     editEstimatedGrams: number | null = null;
     /** Selected spool id, or undefined when cleared */
     editUsedSpoolId?: string | null;
@@ -876,6 +899,7 @@ export class ThreeDRequestsListComponent implements OnInit {
         this.editStatus = normalizePrint3dWorkflowStatus(request.workflowStatus || request.status);
         this.editFinalPrice = request.finalPrice || null;
         this.editNotes = request.adminNotes ?? '';
+        this.editRejectionReason = '';
         this.editEstimatedGrams = request.estimatedFilamentGrams ?? null;
         this.editUsedSpoolId = request.usedSpoolId ?? undefined;
         this.editPrintTimeHours = request.estimatedPrintTimeHours ?? null;
@@ -891,11 +915,21 @@ export class ThreeDRequestsListComponent implements OnInit {
 
     saveRequest() {
         if (!this.selectedRequest) return;
-        
+
+        if (this.editStatus === 'Rejected' && !this.editRejectionReason?.trim()) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translateService.instant('messages.validationError'),
+                detail: this.translateService.instant('admin.requests.rejectionReasonRequired')
+            });
+            return;
+        }
+
         this.saving = true;
         this.printingApiService.updateRequestStatus(this.selectedRequest.id, {
             status: denormalizePrint3dWorkflowStatus(this.editStatus),
             notes: this.editNotes || undefined,
+            rejectionReason: this.editStatus === 'Rejected' ? this.editRejectionReason : undefined,
             finalPrice: this.editFinalPrice || undefined,
             usedSpoolId: this.editUsedSpoolId ?? null,
             estimatedFilamentGrams: this.editEstimatedGrams ?? null,

@@ -252,6 +252,7 @@
   "messages": {
     "success": "تمت العملية بنجاح",
     "error": "حدث خطأ",
+    "validationError": "خطأ في التحقق",
     "saveSuccess": "تم الحفظ بنجاح",
     "deleteSuccess": "تم الحذف بنجاح",
     "updateSuccess": "تم التحديث بنجاح",
@@ -3184,6 +3185,13 @@
       "supplierStatement": "كشف حساب المورد",
       "profitOverview": "ملخص الربحية",
       "trialBalance": "ميزان المراجعة"
+    },
+    "requests": {
+      "rejectionReason": "سبب الرفض",
+      "rejectionReasonPlaceholder": "يرجى تقديم سبب واضح ومهني لرفض هذا الطلب...",
+      "rejectionReasonHint": "سيتم إرسال هذه الرسالة مباشرة إلى العميل.",
+      "rejectionReasonRequired": "سبب الرفض مطلوب عند رفض الطلب.",
+      "customerWillBeNotified": "سيتم إشعار العميل عبر البريد الإلكتروني."
     }
   },
   "cnc": {

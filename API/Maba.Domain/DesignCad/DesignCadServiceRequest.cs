@@ -38,6 +38,7 @@ public class DesignCadServiceRequest : BaseEntity
 
     public string? CustomerNotes { get; set; }
     public string? AdminNotes { get; set; }
+    public string? RejectionReason { get; set; }
     public decimal? QuotedPrice { get; set; }
     public decimal? FinalPrice { get; set; }
 

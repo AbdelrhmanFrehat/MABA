@@ -58,4 +58,21 @@ public interface IEmailService
         string? viewRequestUrl,
         string? reasonOrNote,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a workflow status update email for any service request type.
+    /// Covers all meaningful transitions: under review, approved, rejected, in progress, completed, etc.
+    /// No-op when <paramref name="toEmail"/> is null or empty. Never throws.
+    /// </summary>
+    /// <param name="newStatus">Normalised status key (e.g. "UnderReview", "Rejected", "Completed").</param>
+    /// <param name="rejectionReason">Required when newStatus is "Rejected"; included in email body.</param>
+    Task SendRequestStatusUpdateAsync(
+        string? toEmail,
+        string? customerName,
+        string referenceNumber,
+        string requestTypeLabel,
+        string newStatus,
+        string? viewRequestUrl,
+        string? rejectionReason = null,
+        CancellationToken cancellationToken = default);
 }

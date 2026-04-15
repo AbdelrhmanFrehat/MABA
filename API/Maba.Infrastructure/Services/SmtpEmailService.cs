@@ -199,6 +199,165 @@ public class SmtpEmailService : IEmailService
         }
     }
 
+    public async Task SendRequestStatusUpdateAsync(
+        string? toEmail,
+        string? customerName,
+        string referenceNumber,
+        string requestTypeLabel,
+        string newStatus,
+        string? viewRequestUrl,
+        string? rejectionReason = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                _logger.LogDebug(
+                    "No customer email; skipping status update email for {ReferenceNumber} ({Status})",
+                    referenceNumber, newStatus);
+                return;
+            }
+
+            var displayName  = string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName.Trim();
+            var safeRef      = WebUtility.HtmlEncode(referenceNumber);
+            var safeType     = WebUtility.HtmlEncode(requestTypeLabel);
+            var safeDispName = WebUtility.HtmlEncode(displayName);
+            var fallbackBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
+            var actionUrl    = !string.IsNullOrWhiteSpace(viewRequestUrl) ? viewRequestUrl.Trim() : fallbackBase;
+
+            var (subject, headline, bodyMessage, secondaryText) =
+                BuildStatusContent(newStatus, safeDispName, safeRef, safeType, rejectionReason);
+
+            var html = BuildEmailTemplate(
+                title: headline,
+                message: bodyMessage,
+                actionText: "View Request",
+                actionUrl: actionUrl,
+                secondaryText: secondaryText);
+
+            await SendAsync(toEmail, subject, html, cancellationToken);
+            _logger.LogInformation(
+                "Status update email ({Status}) sent to {Email} for {ReferenceNumber}",
+                newStatus, toEmail, referenceNumber);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to send status update email for {ReferenceNumber} ({Status})",
+                referenceNumber, newStatus);
+        }
+    }
+
+    private static (string subject, string headline, string body, string secondary)
+        BuildStatusContent(string status, string name, string refNum, string requestType, string? rejectionReason)
+    {
+        var safeReason = string.IsNullOrWhiteSpace(rejectionReason)
+            ? string.Empty
+            : WebUtility.HtmlEncode(rejectionReason.Trim());
+
+        return status.ToLowerInvariant() switch
+        {
+            "underreview" or "inreview" or "technicalreview" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Your Request Is Under Review",
+                $"Hi {name}, your <strong>{requestType}</strong> request <strong>{refNum}</strong> is now under review by our engineering team.<br/><br/>We will assess your request and get back to you as soon as possible.",
+                "No action is required from you at this time. We will notify you of any updates."
+            ),
+
+            "waitingforinfo" =>
+            (
+                $"Action Needed for Your MABA Request — {refNum}",
+                "We Need More Information",
+                $"Hi {name}, our team has reviewed your <strong>{requestType}</strong> request <strong>{refNum}</strong> and requires additional information before we can proceed.<br/><br/>Please log in to your account or contact us to provide the required details.",
+                "Providing the requested information promptly will help us process your request faster."
+            ),
+
+            "quotationpreparation" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Quotation Being Prepared",
+                $"Hi {name}, our team is currently preparing a detailed quotation for your <strong>{requestType}</strong> request <strong>{refNum}</strong>.<br/><br/>You will receive a follow-up notification once the quotation is ready for your review.",
+                "No action is required from you at this time."
+            ),
+
+            "quoted" or "quotesent" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Your Quotation Is Ready",
+                $"Hi {name}, we have prepared a quotation for your <strong>{requestType}</strong> request <strong>{refNum}</strong>.<br/><br/>Please log in to your account to review the quotation and let us know how you would like to proceed.",
+                "Your quotation will remain valid for a limited time. Please respond at your earliest convenience."
+            ),
+
+            "approved" or "accepted" =>
+            (
+                $"Your MABA Request Has Been Approved — {refNum}",
+                "Request Approved",
+                $"Hi {name}, your <strong>{requestType}</strong> request <strong>{refNum}</strong> has been approved.<br/><br/>Our team is preparing to begin work. You will receive further updates as your request progresses.",
+                "If you have any questions, please do not hesitate to contact us."
+            ),
+
+            "queued" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Your Request Is Queued",
+                $"Hi {name}, your <strong>{requestType}</strong> request <strong>{refNum}</strong> has been queued for processing.<br/><br/>Our team will begin work on it shortly.",
+                "You will receive a notification once work begins."
+            ),
+
+            "slicing" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Preparing Your Print",
+                $"Hi {name}, your <strong>{requestType}</strong> request <strong>{refNum}</strong> is currently being prepared for printing (slicing stage).<br/><br/>Printing will begin shortly.",
+                "You will receive a notification once printing starts."
+            ),
+
+            "inprogress" or "inexecution" or "printing" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Your Request Is In Progress",
+                $"Hi {name}, your <strong>{requestType}</strong> request <strong>{refNum}</strong> is now actively being processed by our engineering team.<br/><br/>We will notify you once it is complete.",
+                "No action is required from you at this time."
+            ),
+
+            "completed" or "delivered" or "closed" =>
+            (
+                $"Your MABA Request Has Been Completed — {refNum}",
+                "Request Completed",
+                $"Hi {name}, your <strong>{requestType}</strong> request <strong>{refNum}</strong> has been completed.<br/><br/>Thank you for choosing MABA Solutions. We look forward to working with you again.",
+                "If you have any feedback or follow-up questions, please contact us."
+            ),
+
+            "rejected" =>
+            (
+                $"Your MABA Request Has Been Rejected — {refNum}",
+                "Request Not Approved",
+                string.IsNullOrWhiteSpace(safeReason)
+                    ? $"Hi {name}, after careful review, we were unable to approve your <strong>{requestType}</strong> request <strong>{refNum}</strong>.<br/><br/>We apologise for the inconvenience. Please contact us for more details or to discuss alternatives."
+                    : $"Hi {name}, after careful review, we were unable to approve your <strong>{requestType}</strong> request <strong>{refNum}</strong>.<br/><br/><strong>Reason:</strong><br/>{safeReason}<br/><br/>We apologise for the inconvenience. If you have questions or would like to discuss alternatives, please contact us.",
+                "You are welcome to submit a revised request or contact our team for further assistance."
+            ),
+
+            "failed" =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Request Could Not Be Completed",
+                $"Hi {name}, unfortunately your <strong>{requestType}</strong> request <strong>{refNum}</strong> could not be completed at this time.<br/><br/>Our team will be in touch to discuss next steps.",
+                "Please contact us if you have any questions or wish to reschedule."
+            ),
+
+            _ =>
+            (
+                $"MABA Request Update — {refNum}",
+                "Request Status Updated",
+                $"Hi {name}, the status of your <strong>{requestType}</strong> request <strong>{refNum}</strong> has been updated to <strong>{WebUtility.HtmlEncode(status)}</strong>.",
+                "Log in to your account to view full details."
+            )
+        };
+    }
+
     private async Task SendCustomerConfirmationAsync(
         string toEmail,
         string? customerName,

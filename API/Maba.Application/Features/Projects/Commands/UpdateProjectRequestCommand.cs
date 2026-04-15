@@ -36,5 +36,6 @@ public class UpdateProjectRequestCommand : IRequest<bool>
     public string? EstimatedTimeline { get; set; }
     public string? ComplexityLevel { get; set; }
     public string? InternalNotes { get; set; }
+    public string? RejectionReason { get; set; }
     public string? UpdatedBy { get; set; }
 }

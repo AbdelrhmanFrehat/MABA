@@ -306,32 +306,40 @@ public class DesignCadRequestsController : ControllerBase
         if (!Enum.TryParse<DesignCadRequestStatus>(dto.Status, true, out var statusEnum))
             return BadRequest("Invalid status.");
 
+        if (statusEnum == DesignCadRequestStatus.Rejected &&
+            string.IsNullOrWhiteSpace(dto.RejectionReason))
+            return BadRequest("A rejection reason is required when rejecting a request.");
+
         var previousStatus = request.Status;
         request.Status = statusEnum;
+
         if (statusEnum == DesignCadRequestStatus.UnderReview)
             request.ReviewedAt = DateTime.UtcNow;
         if (statusEnum == DesignCadRequestStatus.Completed)
             request.CompletedAt = DateTime.UtcNow;
         if (!string.IsNullOrWhiteSpace(dto.Notes))
             request.AdminNotes = (request.AdminNotes ?? "") + "\n" + dto.Notes.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.RejectionReason))
+            request.RejectionReason = dto.RejectionReason.Trim();
 
         await _context.SaveChangesAsync(CancellationToken.None);
 
-        if (statusEnum == DesignCadRequestStatus.Cancelled &&
-            previousStatus != DesignCadRequestStatus.Cancelled)
+        if (statusEnum != previousStatus)
         {
-            var toEmail = request.CustomerEmail ?? request.User?.Email;
-            var custName = request.CustomerName ?? request.User?.FullName;
-            var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
-            var viewUrl = $"{baseUrl}/account";
-            await _emailService.SendRequestCancelledAsync(
-                toEmail,
-                custName,
-                request.ReferenceNumber,
-                "Design & CAD request",
-                viewUrl,
-                dto.Notes,
-                CancellationToken.None);
+            var toEmail  = request.CustomerEmail ?? request.User?.Email;
+            var custName = request.CustomerName  ?? request.User?.FullName;
+            var baseUrl  = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
+            var viewUrl  = $"{baseUrl}/account";
+
+            if (statusEnum == DesignCadRequestStatus.Cancelled)
+                await _emailService.SendRequestCancelledAsync(
+                    toEmail, custName, request.ReferenceNumber,
+                    "Design & CAD Request", viewUrl, dto.Notes, CancellationToken.None);
+            else
+                await _emailService.SendRequestStatusUpdateAsync(
+                    toEmail, custName, request.ReferenceNumber,
+                    "Design & CAD Request", statusEnum.ToString(), viewUrl,
+                    dto.RejectionReason, CancellationToken.None);
         }
 
         return Ok(MapToDto(request));
@@ -477,4 +485,5 @@ public class UpdateDesignCadStatusDto
 {
     public string Status { get; set; } = "";
     public string? Notes { get; set; }
+    public string? RejectionReason { get; set; }
 }

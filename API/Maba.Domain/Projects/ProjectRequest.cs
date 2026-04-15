@@ -100,6 +100,7 @@ public class ProjectRequest : BaseEntity
     public string WorkflowStatus { get; set; } = ProjectRequestWorkflowStatus.New;
 
     public string? AdminNotes { get; set; }
+    public string? RejectionReason { get; set; }
 
     // Assignment
     public string? AssignedToUserId { get; set; }

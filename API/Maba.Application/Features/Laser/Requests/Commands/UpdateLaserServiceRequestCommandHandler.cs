@@ -34,6 +34,13 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
             return null;
         }
 
+        if (request.Status.HasValue &&
+            request.Status.Value == LaserServiceRequestStatus.Rejected &&
+            string.IsNullOrWhiteSpace(request.RejectionReason))
+        {
+            throw new InvalidOperationException("A rejection reason is required when rejecting a request.");
+        }
+
         var previousStatus = serviceRequest.Status;
 
         if (request.Status.HasValue)
@@ -47,41 +54,38 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
             }
 
             if (request.Status.Value == LaserServiceRequestStatus.Completed)
-            {
                 serviceRequest.CompletedAt = DateTime.UtcNow;
-            }
         }
 
         if (request.AdminNotes != null)
-        {
             serviceRequest.AdminNotes = request.AdminNotes.Trim();
-        }
+
+        if (!string.IsNullOrWhiteSpace(request.RejectionReason))
+            serviceRequest.RejectionReason = request.RejectionReason.Trim();
 
         if (request.QuotedPrice.HasValue)
-        {
             serviceRequest.QuotedPrice = request.QuotedPrice.Value;
-        }
 
         serviceRequest.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        if (request.Status.HasValue
-            && request.Status.Value == LaserServiceRequestStatus.Cancelled
-            && previousStatus != LaserServiceRequestStatus.Cancelled)
+        if (request.Status.HasValue && request.Status.Value != previousStatus)
         {
-            var toEmail = serviceRequest.CustomerEmail;
-            var custName = serviceRequest.CustomerName;
             var baseUrl = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
             var viewUrl = $"{baseUrl}/account/requests?requestId={serviceRequest.Id}&type=laser";
-            await _emailService.SendRequestCancelledAsync(
-                toEmail,
-                custName,
-                serviceRequest.ReferenceNumber,
-                "Laser service request",
-                viewUrl,
-                request.AdminNotes,
-                cancellationToken);
+
+            if (request.Status.Value == LaserServiceRequestStatus.Cancelled)
+                await _emailService.SendRequestCancelledAsync(
+                    serviceRequest.CustomerEmail, serviceRequest.CustomerName,
+                    serviceRequest.ReferenceNumber, "Laser Request",
+                    viewUrl, request.AdminNotes, cancellationToken);
+            else
+                await _emailService.SendRequestStatusUpdateAsync(
+                    serviceRequest.CustomerEmail, serviceRequest.CustomerName,
+                    serviceRequest.ReferenceNumber, "Laser Request",
+                    request.Status.Value.ToString(), viewUrl,
+                    request.RejectionReason, cancellationToken);
         }
 
         return new LaserServiceRequestDto

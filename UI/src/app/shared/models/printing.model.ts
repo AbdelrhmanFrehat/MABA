@@ -247,6 +247,7 @@ export interface UpdatePrint3dRequestStatusRequest {
     estimatedFilamentGrams?: number | null;
     estimatedPrintTimeHours?: number | null;
     suggestedPrice?: number | null;
+    rejectionReason?: string;
 }
 
 /** POST .../3d-requests/{id}/pricing-suggestion — does not persist. */

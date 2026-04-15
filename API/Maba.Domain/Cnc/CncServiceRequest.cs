@@ -59,6 +59,7 @@ public class CncServiceRequest : BaseEntity
     public Guid? LinkedQuotationId { get; set; }
     
     public string? AdminNotes { get; set; }
+    public string? RejectionReason { get; set; }
     public decimal? EstimatedPrice { get; set; }
     public decimal? FinalPrice { get; set; }
     

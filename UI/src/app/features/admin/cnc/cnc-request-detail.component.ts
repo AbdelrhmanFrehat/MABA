@@ -230,6 +230,21 @@ import {
                                         class="w-full"
                                     ></textarea>
                                 </div>
+                                <div class="field full rejection-reason-block" *ngIf="editStatus === 'Rejected'">
+                                    <label class="rejection-label">{{ 'admin.requests.rejectionReason' | translate }} <span class="required-star">*</span></label>
+                                    <textarea
+                                        pTextarea
+                                        [(ngModel)]="editRejectionReason"
+                                        rows="3"
+                                        class="w-full"
+                                        [placeholder]="'admin.requests.rejectionReasonPlaceholder' | translate"
+                                    ></textarea>
+                                    <small class="rejection-hint">{{ 'admin.requests.rejectionReasonHint' | translate }}</small>
+                                </div>
+                                <div class="notification-note" *ngIf="request && editStatus !== (request.workflowStatus ?? request.status)">
+                                    <i class="pi pi-envelope"></i>
+                                    <span>{{ 'admin.requests.customerWillBeNotified' | translate }}</span>
+                                </div>
                                 <div class="actions">
                                     <p-button
                                         [label]="'common.save' | translate"
@@ -361,6 +376,11 @@ import {
                 display: flex;
                 justify-content: flex-end;
             }
+            .rejection-reason-block { grid-column: 1 / -1; background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1rem; }
+            .rejection-label { color: #b91c1c !important; font-weight: 600; }
+            .required-star { color: #ef4444; margin-left: 2px; }
+            .rejection-hint { color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block; }
+            .notification-note { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.5rem 0.75rem; }
             .empty {
                 text-align: center;
                 padding: 3rem;
@@ -376,6 +396,7 @@ export class CncRequestDetailComponent implements OnInit {
 
     editStatus: ServiceWorkflowStatus = 'New';
     editAdminNotes = '';
+    editRejectionReason = '';
     editEstimated: number | null = null;
     editFinal: number | null = null;
 
@@ -408,6 +429,7 @@ export class CncRequestDetailComponent implements OnInit {
                 this.request = r;
                 this.editStatus = normalizeCncWorkflowStatus(r.workflowStatus ?? r.status);
                 this.editAdminNotes = r.adminNotes ?? '';
+                this.editRejectionReason = '';
                 this.editEstimated = r.estimatedPrice ?? null;
                 this.editFinal = r.finalPrice ?? null;
                 this.loading = false;
@@ -426,30 +448,40 @@ export class CncRequestDetailComponent implements OnInit {
     }
 
     save() {
-        if (!this.request) {
+        if (!this.request) return;
+
+        if (this.editStatus === 'Rejected' && !this.editRejectionReason?.trim()) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translate.instant('messages.validationError'),
+                detail: this.translate.instant('admin.requests.rejectionReasonRequired')
+            });
             return;
         }
+
         this.saving = true;
         const payload: {
             status: CncServiceRequestStatus;
             adminNotes: string;
+            rejectionReason?: string;
             estimatedPrice?: number;
             finalPrice?: number;
         } = {
             status: denormalizeCncWorkflowStatus(this.editStatus),
             adminNotes: this.editAdminNotes
         };
-        if (this.editEstimated != null) {
+        if (this.editStatus === 'Rejected')
+            payload.rejectionReason = this.editRejectionReason;
+        if (this.editEstimated != null)
             payload.estimatedPrice = this.editEstimated;
-        }
-        if (this.editFinal != null) {
+        if (this.editFinal != null)
             payload.finalPrice = this.editFinal;
-        }
         this.cncApi.updateAdminRequest(this.request.id, payload).subscribe({
             next: (r) => {
                 this.request = r;
                 this.editStatus = normalizeCncWorkflowStatus(r.workflowStatus ?? r.status);
                 this.editAdminNotes = r.adminNotes ?? '';
+                this.editRejectionReason = '';
                 this.editEstimated = r.estimatedPrice ?? null;
                 this.editFinal = r.finalPrice ?? null;
                 this.saving = false;
