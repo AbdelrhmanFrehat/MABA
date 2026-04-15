@@ -1,9 +1,12 @@
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Maba.Application.Common.ControlCenterJobs;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Features.Laser.DTOs;
 using Maba.Domain.Laser;
+using Maba.Domain.ControlCenter;
 
 namespace Maba.Application.Features.Laser.Requests.Commands;
 
@@ -12,15 +15,18 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly IControlCenterJobBridgeService _jobBridgeService;
 
     public UpdateLaserServiceRequestCommandHandler(
         IApplicationDbContext context,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IControlCenterJobBridgeService jobBridgeService)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
+        _jobBridgeService = jobBridgeService;
     }
 
     public async Task<LaserServiceRequestDto?> Handle(UpdateLaserServiceRequestCommand request, CancellationToken cancellationToken)
@@ -67,6 +73,7 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
             serviceRequest.QuotedPrice = request.QuotedPrice.Value;
 
         serviceRequest.UpdatedAt = DateTime.UtcNow;
+        await SyncControlCenterJobAsync(serviceRequest, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -110,5 +117,52 @@ public class UpdateLaserServiceRequestCommandHandler : IRequestHandler<UpdateLas
             ReviewedAt = serviceRequest.ReviewedAt,
             CompletedAt = serviceRequest.CompletedAt
         };
+    }
+
+    private async Task SyncControlCenterJobAsync(LaserServiceRequest serviceRequest, CancellationToken cancellationToken)
+    {
+        var (jobStatus, createIfMissing) = serviceRequest.Status switch
+        {
+            LaserServiceRequestStatus.Approved => (CcJobStatus.Ready, true),
+            LaserServiceRequestStatus.InProgress => (CcJobStatus.InProgress, true),
+            LaserServiceRequestStatus.Completed => (CcJobStatus.Completed, true),
+            LaserServiceRequestStatus.Cancelled or LaserServiceRequestStatus.Rejected => (CcJobStatus.Cancelled, false),
+            _ => (CcJobStatus.Pending, false)
+        };
+
+        await _jobBridgeService.EnsureJobAsync(new ControlCenterJobBridgeDefinition
+        {
+            SourceType = "LASER_REQUEST",
+            SourceId = serviceRequest.Id,
+            SourceReference = serviceRequest.ReferenceNumber,
+            Title = serviceRequest.OperationMode == "cut"
+                ? "Laser cutting job"
+                : "Laser engraving job",
+            Description = serviceRequest.CustomerNotes ?? serviceRequest.AdminNotes,
+            CustomerName = serviceRequest.CustomerName,
+            MachineType = "LASER",
+            Status = jobStatus,
+            Attachments = string.IsNullOrWhiteSpace(serviceRequest.ImageFileName)
+                ? Array.Empty<ControlCenterJobFileReference>()
+                : new[]
+                {
+                    new ControlCenterJobFileReference
+                    {
+                        FileName = serviceRequest.ImageFileName,
+                        FilePath = serviceRequest.ImagePath,
+                        Kind = "artwork"
+                    }
+                },
+            PayloadJson = JsonSerializer.Serialize(new
+            {
+                serviceRequest.OperationMode,
+                Material = serviceRequest.Material?.NameEn,
+                serviceRequest.WidthCm,
+                serviceRequest.HeightCm,
+                serviceRequest.QuotedPrice,
+                serviceRequest.CustomerNotes
+            }),
+            CreateIfMissing = createIfMissing
+        }, cancellationToken);
     }
 }

@@ -5,13 +5,8 @@ import { ModuleGuard } from "./components/ModuleGuard";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ModulesPage } from "./pages/ModulesPage";
 import { DevicesPage } from "./pages/DevicesPage";
-
-const JobsPage = () => (
-  <div>
-    <h1 style={{ marginTop: 0 }}>Jobs</h1>
-    <p>Job management will appear here.</p>
-  </div>
-);
+import { JobsPage } from "./pages/JobsPage";
+import { JobDetailsPage } from "./pages/JobDetailsPage";
 
 const SettingsPage = () => (
   <div>
@@ -79,6 +74,7 @@ export const AppShell: React.FC = () => {
             <Route path="/modules/maba-scara/*" element={<ScaraModuleRoute />} />
             <Route path="/devices" element={<DevicesPage />} />
             <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/:jobId" element={<JobDetailsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </section>

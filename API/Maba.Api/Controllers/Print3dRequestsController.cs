@@ -1,10 +1,13 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Maba.Application.Common.ControlCenterJobs;
 using Maba.Application.Common.Interfaces;
 using Maba.Application.Common.ServiceRequests;
+using Maba.Domain.ControlCenter;
 using Maba.Domain.Printing;
 using Maba.Domain.Media;
 using Maba.Domain.Users;
@@ -25,6 +28,7 @@ public class Print3dRequestsController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly ILogger<Print3dRequestsController> _logger;
     private readonly IPricingService _pricingService;
+    private readonly IControlCenterJobBridgeService _jobBridgeService;
 
     public Print3dRequestsController(
         IMediator mediator,
@@ -34,7 +38,8 @@ public class Print3dRequestsController : ControllerBase
         ICustomerResolverService customerResolver,
         IConfiguration configuration,
         ILogger<Print3dRequestsController> logger,
-        IPricingService pricingService)
+        IPricingService pricingService,
+        IControlCenterJobBridgeService jobBridgeService)
     {
         _mediator = mediator;
         _fileStorageService = fileStorageService;
@@ -44,6 +49,7 @@ public class Print3dRequestsController : ControllerBase
         _configuration = configuration;
         _logger = logger;
         _pricingService = pricingService;
+        _jobBridgeService = jobBridgeService;
     }
 
     private static string? FormatUsedSpoolLabel(FilamentSpool? spool)
@@ -540,6 +546,8 @@ public class Print3dRequestsController : ControllerBase
                 spool.RemainingWeightGrams);
         }
 
+        await SyncControlCenterJobAsync(request, cancellationToken);
+
         await _context.SaveChangesAsync(CancellationToken.None);
 
         if (newStatus != previousStatus)
@@ -699,6 +707,56 @@ public class Print3dRequestsController : ControllerBase
             DefaultProfitMargin = defaultProfitMargin,
             DefaultMinimumPrice = defaultMinimumPrice
         });
+    }
+
+    private async Task SyncControlCenterJobAsync(Print3dServiceRequest request, CancellationToken cancellationToken)
+    {
+        var (jobStatus, createIfMissing) = request.Status switch
+        {
+            Print3dServiceRequestStatus.Approved or Print3dServiceRequestStatus.Queued => (CcJobStatus.Ready, true),
+            Print3dServiceRequestStatus.Slicing or Print3dServiceRequestStatus.Printing => (CcJobStatus.InProgress, true),
+            Print3dServiceRequestStatus.Completed => (CcJobStatus.Completed, true),
+            Print3dServiceRequestStatus.Failed => (CcJobStatus.Failed, true),
+            Print3dServiceRequestStatus.Cancelled or Print3dServiceRequestStatus.Rejected => (CcJobStatus.Cancelled, false),
+            _ => (CcJobStatus.Pending, false)
+        };
+
+        await _jobBridgeService.EnsureJobAsync(new ControlCenterJobBridgeDefinition
+        {
+            SourceType = "PRINT_REQUEST",
+            SourceId = request.Id,
+            SourceReference = request.ReferenceNumber,
+            Title = "3D print production job",
+            Description = request.CustomerNotes ?? request.AdminNotes,
+            CustomerName = request.CustomerName ?? request.User?.FullName,
+            MachineType = "PRINTER_3D",
+            Status = jobStatus,
+            Priority = request.Profile?.NameEn,
+            Attachments = string.IsNullOrWhiteSpace(request.FileName)
+                ? Array.Empty<ControlCenterJobFileReference>()
+                : new[]
+                {
+                    new ControlCenterJobFileReference
+                    {
+                        FileName = request.FileName,
+                        FilePath = request.FilePath,
+                        Kind = "model"
+                    }
+                },
+            PayloadJson = JsonSerializer.Serialize(new
+            {
+                Material = request.Material?.NameEn,
+                Profile = request.Profile?.NameEn,
+                request.MaterialColorId,
+                request.EstimatedFilamentGrams,
+                request.EstimatedPrintTimeHours,
+                request.SuggestedPrice,
+                request.FinalPrice,
+                request.FileSizeBytes,
+                request.CustomerNotes
+            }),
+            CreateIfMissing = createIfMissing
+        }, cancellationToken);
     }
 }
 
