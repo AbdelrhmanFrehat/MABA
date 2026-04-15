@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Maba.Application.Common.Interfaces;
 using Maba.Domain.Crm;
 using Maba.Domain.Lookups;
+using Maba.Domain.Numbering;
 using Maba.Infrastructure.Data;
 
 namespace Maba.Infrastructure.Services;
@@ -73,10 +74,22 @@ public class CustomerResolverService : ICustomerResolverService
 
         var safeName = string.IsNullOrWhiteSpace(name) ? "Website Customer" : name.Trim();
 
+        string customerCode;
+        try
+        {
+            customerCode = await _documentNumberService.GenerateNextAsync("Customer", cancellationToken);
+        }
+        catch (KeyNotFoundException)
+        {
+            // Sequence not seeded yet — generate a fallback code and seed on the fly
+            _logger.LogWarning("Customer document sequence not found. Seeding it now.");
+            customerCode = await SeedCustomerSequenceAndGenerateAsync(cancellationToken);
+        }
+
         var newCustomer = new Customer
         {
             Id = Guid.NewGuid(),
-            Code = await _documentNumberService.GenerateNextAsync("Customer", cancellationToken),
+            Code = customerCode,
             NameEn = safeName,
             NameAr = safeName,
             Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
@@ -134,6 +147,30 @@ public class CustomerResolverService : ICustomerResolverService
         _context.Set<LookupValue>().Add(value);
         await _context.SaveChangesAsync(cancellationToken);
         return value.Id;
+    }
+
+    private async Task<string> SeedCustomerSequenceAndGenerateAsync(CancellationToken cancellationToken)
+    {
+        var existingCount = await _context.Set<Customer>().CountAsync(cancellationToken);
+        var nextNumber = existingCount + 1;
+        var currentYear = DateTime.UtcNow.Year;
+
+        var sequence = new DocumentSequence
+        {
+            Id = Guid.NewGuid(),
+            DocumentType = "Customer",
+            Prefix = "CUST",
+            Separator = "-",
+            IncludeYear = true,
+            CurrentYear = currentYear,
+            LastNumber = nextNumber,
+            PadLength = 4,
+            IsActive = true
+        };
+        _context.Set<DocumentSequence>().Add(sequence);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return $"CUST-{currentYear}-{nextNumber.ToString().PadLeft(4, '0')}";
     }
 
     private async Task<Guid> ResolveCustomerTypeIdAsync(CancellationToken cancellationToken)

@@ -2410,17 +2410,36 @@ public static class DatabaseSeeder
                 });
         }
 
-        if (!await context.DocumentSequences.AnyAsync())
+        // Upsert each sequence individually so new types are added without wiping existing ones
+        var year = DateTime.UtcNow.Year;
+        var requiredSequences = new[]
         {
-            var year = DateTime.UtcNow.Year;
-            context.DocumentSequences.AddRange(
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "Customer", Prefix = "CUS", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "Supplier", Prefix = "SUP", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "SalesQuotation", Prefix = "SQ", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "SalesOrder", Prefix = "SO", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "SalesInvoice", Prefix = "SI", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "PurchaseOrder", Prefix = "PO", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true },
-                new DocumentSequence { Id = Guid.NewGuid(), DocumentType = "JournalEntry", Prefix = "JE", CurrentYear = year, LastNumber = 0, PadLength = 4, IsActive = true });
+            ("Customer",     "CUST", "CRM customer codes"),
+            ("Supplier",     "SUPL", "CRM supplier codes"),
+            ("Quotation",    "QT",   "Sales quotations — must match GenerateNextAsync(\"Quotation\")"),
+            ("Order",        "SO",   "Sales orders — must match GenerateNextAsync(\"Order\")"),
+            ("SalesInvoice", "SI",   "Sales invoice numbers"),
+            ("PurchaseOrder","PO",   "Purchase orders"),
+            ("JournalEntry", "JE",   "Accounting journal entries")
+        };
+        var existingTypes = await context.DocumentSequences.Select(x => x.DocumentType).ToListAsync();
+        foreach (var (docType, prefix, _) in requiredSequences)
+        {
+            if (!existingTypes.Contains(docType))
+            {
+                context.DocumentSequences.Add(new DocumentSequence
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentType = docType,
+                    Prefix = prefix,
+                    Separator = "-",
+                    IncludeYear = true,
+                    CurrentYear = year,
+                    LastNumber = 0,
+                    PadLength = 4,
+                    IsActive = true
+                });
+            }
         }
 
         await context.SaveChangesAsync();
