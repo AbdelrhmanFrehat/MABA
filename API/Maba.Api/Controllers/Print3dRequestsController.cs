@@ -432,7 +432,7 @@ public class Print3dRequestsController : ControllerBase
     /// </summary>
     [HttpPut("{id}/status")]
     [Authorize(Roles = "Admin,Manager")]
-    public async Task<ActionResult<Print3dRequestDto>> UpdateRequestStatus(Guid id, [FromBody] UpdatePrint3dRequestStatusDto dto)
+    public async Task<ActionResult<Print3dRequestDto>> UpdateRequestStatus(Guid id, [FromBody] UpdatePrint3dRequestStatusDto dto, CancellationToken cancellationToken)
     {
         var request = await _context.Set<Print3dServiceRequest>()
             .Include(r => r.Material)
@@ -503,7 +503,7 @@ public class Print3dRequestsController : ControllerBase
             if (dto.UsedSpoolId.HasValue)
             {
                 var spoolExists = await _context.Set<FilamentSpool>()
-                    .AnyAsync(s => s.Id == dto.UsedSpoolId.Value, CancellationToken.None);
+                    .AnyAsync(s => s.Id == dto.UsedSpoolId.Value, cancellationToken);
                 if (!spoolExists)
                 {
                     return BadRequest("Filament spool not found.");
@@ -523,7 +523,7 @@ public class Print3dRequestsController : ControllerBase
         {
             var spool = await _context.Set<FilamentSpool>()
                 .Include(s => s.Material)
-                .FirstOrDefaultAsync(s => s.Id == request.UsedSpoolId!.Value, CancellationToken.None);
+                .FirstOrDefaultAsync(s => s.Id == request.UsedSpoolId!.Value, cancellationToken);
             if (spool == null)
             {
                 return BadRequest("Filament spool not found.");
@@ -548,7 +548,7 @@ public class Print3dRequestsController : ControllerBase
 
         await SyncControlCenterJobAsync(request, cancellationToken);
 
-        await _context.SaveChangesAsync(CancellationToken.None);
+        await _context.SaveChangesAsync(cancellationToken);
 
         if (newStatus != previousStatus)
         {
@@ -568,7 +568,7 @@ public class Print3dRequestsController : ControllerBase
                 await _emailService.SendRequestStatusUpdateAsync(
                     toEmail, custName, request.ReferenceNumber,
                     "3D Print Request", newStatus.ToString(), viewUrl,
-                    dto.RejectionReason, CancellationToken.None);
+                    dto.RejectionReason, cancellationToken);
             }
         }
 
@@ -579,7 +579,7 @@ public class Print3dRequestsController : ControllerBase
             .Include(r => r.User)
             .Include(r => r.UsedSpool!)
                 .ThenInclude(s => s.Material)
-            .FirstAsync(r => r.Id == id, CancellationToken.None);
+            .FirstAsync(r => r.Id == id, cancellationToken);
 
         return Ok(MapToDto(refreshed));
     }

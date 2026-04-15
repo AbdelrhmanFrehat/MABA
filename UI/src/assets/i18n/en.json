@@ -3956,5 +3956,44 @@
       "note": "We will review your request and contact you with a quotation.",
       "close": "Close"
     }
+  },
+  "downloads": {
+    "section": {
+      "title": "Downloads",
+      "subtitle": "Technical documents and files",
+      "download": "Download",
+      "downloadFile": "Download file"
+    },
+    "manager": {
+      "title": "Downloadable Files",
+      "subtitle": "Manage files customers can download",
+      "dropOrClick": "Drop file here or click to upload",
+      "allowedTypes": "PDF, Word, ZIP, images and more • Max 50 MB",
+      "fileTitle": "File Title",
+      "fileTitlePlaceholder": "e.g. Technical Datasheet Rev 2",
+      "category": "Category",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional short description for this file...",
+      "sortOrder": "Sort Order",
+      "upload": "Upload File",
+      "noFiles": "No files uploaded yet.",
+      "hidden": "Hidden",
+      "activate": "Show",
+      "deactivate": "Hide",
+      "uploadSuccess": "File uploaded successfully.",
+      "deleteSuccess": "File deleted.",
+      "confirmDelete": "Delete {{title}}?"
+    },
+    "categories": {
+      "datasheet": "Datasheet",
+      "userManual": "User Manual",
+      "technicalDocument": "Technical Document",
+      "brochure": "Brochure",
+      "certificate": "Certificate",
+      "installationGuide": "Installation Guide",
+      "firmware": "Firmware",
+      "download": "Download",
+      "other": "Other"
+    }
   }
 }

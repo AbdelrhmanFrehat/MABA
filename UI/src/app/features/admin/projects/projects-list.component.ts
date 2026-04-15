@@ -14,6 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProjectsApiService } from '../../../shared/services/projects-api.service';
 import { ProjectListItem, ProjectCategory, ProjectStatus } from '../../../shared/models/project.model';
 import { LanguageService } from '../../../shared/services/language.service';
+import { DownloadableFilesManagerComponent } from '../../../shared/components/downloadable-files-manager/downloadable-files-manager.component';
 
 @Component({
     selector: 'app-admin-projects-list',
@@ -21,7 +22,8 @@ import { LanguageService } from '../../../shared/services/language.service';
     imports: [
         CommonModule, RouterModule, FormsModule, TranslateModule,
         ButtonModule, TableModule, TagModule, InputTextModule,
-        ToastModule, DialogModule, ConfirmDialogModule
+        ToastModule, DialogModule, ConfirmDialogModule,
+        DownloadableFilesManagerComponent
     ],
     providers: [MessageService, ConfirmationService],
     template: `
@@ -174,6 +176,15 @@ import { LanguageService } from '../../../shared/services/language.service';
                         {{ 'admin.projects.active' | translate }}
                     </label>
                 </div>
+
+                @if (editingProject) {
+                    <div class="downloads-divider">
+                        <app-downloadable-files-manager
+                            entityType="Project"
+                            [entityId]="editingProject.id">
+                        </app-downloadable-files-manager>
+                    </div>
+                }
             </div>
             <ng-template pTemplate="footer">
                 <p-button [label]="'common.cancel' | translate" [text]="true" (onClick)="dialogVisible = false"></p-button>
@@ -197,6 +208,7 @@ import { LanguageService } from '../../../shared/services/language.service';
         .checkbox-grid { display: flex; gap: 2rem; }
         .checkbox-field { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
         textarea { resize: vertical; min-height: 60px; }
+        .downloads-divider { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid #e2e8f0; }
     `]
 })
 export class AdminProjectsListComponent implements OnInit {

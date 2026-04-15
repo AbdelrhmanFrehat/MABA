@@ -11,13 +11,15 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { LanguageService } from '../../../shared/services/language.service';
 import { ProjectsApiService } from '../../../shared/services/projects-api.service';
 import { Project, ProjectCategory, ProjectStatus } from '../../../shared/models/project.model';
+import { DownloadableFilesSectionComponent } from '../../../shared/components/downloadable-files-section/downloadable-files-section.component';
 
 @Component({
     selector: 'app-project-detail',
     standalone: true,
     imports: [
         CommonModule, RouterModule, TranslateModule,
-        ButtonModule, TagModule, ChipModule, GalleriaModule, ProgressSpinnerModule
+        ButtonModule, TagModule, ChipModule, GalleriaModule, ProgressSpinnerModule,
+        DownloadableFilesSectionComponent
     ],
     template: `
         <div class="project-detail-page" [dir]="languageService.direction">
@@ -104,6 +106,11 @@ import { Project, ProjectCategory, ProjectStatus } from '../../../shared/models/
                                         </p-galleria>
                                     </section>
                                 }
+                                <!-- Downloadable Files Section -->
+                                <app-downloadable-files-section
+                                    entityType="Project"
+                                    [entityId]="project()!.id">
+                                </app-downloadable-files-section>
                             </div>
 
                             <!-- Sidebar -->

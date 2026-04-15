@@ -15,6 +15,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ItemsApiService } from '../../../shared/services/items-api.service';
+import { DownloadableFilesSectionComponent } from '../../../shared/components/downloadable-files-section/downloadable-files-section.component';
 import { ReviewsApiService } from '../../../shared/services/reviews-api.service';
 import { CartService } from '../../../shared/services/cart.service';
 import { WishlistApiService } from '../../../shared/services/wishlist-api.service';
@@ -43,7 +44,8 @@ import { MediaAsset } from '../../../shared/models/media.model';
         TextareaModule,
         TooltipModule,
         ToastModule,
-        TranslateModule
+        TranslateModule,
+        DownloadableFilesSectionComponent
     ],
     providers: [MessageService],
     template: `
@@ -315,6 +317,16 @@ import { MediaAsset } from '../../../shared/models/media.model';
                             </div>
                         </div>
                 </div>
+
+                <!-- Downloadable Files Section -->
+                @if (itemDetail) {
+                    <div class="item-downloads-wrapper">
+                        <app-downloadable-files-section
+                            entityType="Item"
+                            [entityId]="itemDetail.item.id">
+                        </app-downloadable-files-section>
+                    </div>
+                }
 
                 <!-- Related Products -->
                     <div class="related-section" *ngIf="relatedItems.length > 0">

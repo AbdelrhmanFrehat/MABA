@@ -13,6 +13,7 @@ import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CurrencySelectComponent } from '../../../../shared/components/currency-select/currency-select';
+import { DownloadableFilesManagerComponent } from '../../../../shared/components/downloadable-files-manager/downloadable-files-manager.component';
 import { ItemsApiService } from '../../../../shared/services/items-api.service';
 import { CatalogApiService } from '../../../../shared/services/catalog-api.service';
 import { Item, CreateItemRequest, UpdateItemRequest } from '../../../../shared/models/item.model';
@@ -40,7 +41,8 @@ interface ItemStatus {
         ToastModule,
         MessageModule,
         TranslateModule,
-        CurrencySelectComponent
+        CurrencySelectComponent,
+        DownloadableFilesManagerComponent
     ],
     providers: [MessageService],
     template: `
@@ -292,15 +294,15 @@ interface ItemStatus {
             </div>
 
             <div class="form-actions">
-                <p-button 
-                    [label]="'common.cancel' | translate" 
+                <p-button
+                    [label]="'common.cancel' | translate"
                     [outlined]="true"
                     (click)="ref.close(false)"
                     [disabled]="saving"
                     styleClass="w-full md:w-auto"
                 ></p-button>
-                <p-button 
-                    [label]="'common.save' | translate" 
+                <p-button
+                    [label]="'common.save' | translate"
                     type="submit"
                     [loading]="saving"
                     [disabled]="itemForm.invalid || saving"
@@ -308,6 +310,15 @@ interface ItemStatus {
                 ></p-button>
             </div>
         </form>
+
+        @if (isEditMode && itemId) {
+            <div class="downloads-section-wrapper">
+                <app-downloadable-files-manager
+                    entityType="Item"
+                    [entityId]="itemId">
+                </app-downloadable-files-manager>
+            </div>
+        }
     `,
     styles: [`
         .form-grid {
@@ -373,6 +384,8 @@ interface ItemStatus {
             gap: 0.5rem;
             margin-top: 1.5rem;
         }
+
+        .downloads-section-wrapper { margin-top: 1.5rem; }
 
         /* Mobile optimizations */
         @media (max-width: 575px) {

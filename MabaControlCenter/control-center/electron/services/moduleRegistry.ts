@@ -1,6 +1,21 @@
 import path from "path";
 import { EventEmitter } from "events";
-import type { ModuleManifest, ModuleRegistration } from "@maba/shared";
+
+type ModuleManifest = {
+  id: string;
+  name: string;
+  icon?: string;
+  version: string;
+  minCoreVersion: string;
+  routes: Array<{ id: string; path: string; label: string }>;
+  deviceTypes: string[];
+  capabilities: string[];
+};
+
+type ModuleRegistration = {
+  manifest: ModuleManifest;
+  createRootComponent: () => Promise<unknown>;
+};
 
 type ModuleRecord = {
   id: string;
@@ -17,7 +32,7 @@ export class ModuleRegistry extends EventEmitter {
     );
     if (dexterModule && dexterModule.registerModule) {
       const registration = dexterModule.registerModule({
-        log: (message, meta) => {
+        log: (message: string, meta?: Record<string, unknown>) => {
           // placeholder logging
           console.log("[dexter]", message, meta);
         }

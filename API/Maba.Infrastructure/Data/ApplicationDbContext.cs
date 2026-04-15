@@ -30,6 +30,7 @@ using Maba.Domain.Accounting;
 using Maba.Domain.CommercialReturns;
 using Maba.Domain.Sales;
 using Maba.Domain.Assets;
+using Maba.Domain.Downloads;
 using Maba.Infrastructure.Data.Configurations;
 using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
@@ -202,6 +203,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    // Downloadable Files (polymorphic — Item, Project, Machine, Software, etc.)
+    public DbSet<DownloadableFile> DownloadableFiles => Set<DownloadableFile>();
 
     // Control Center
     public DbSet<ControlCenterInstance> ControlCenterInstances => Set<ControlCenterInstance>();

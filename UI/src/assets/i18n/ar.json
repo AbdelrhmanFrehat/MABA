@@ -3475,5 +3475,44 @@
     "step4Desc": "تصنيع CNC الدقيق",
     "step5": "الجودة والتسليم",
     "step5Desc": "فحص الجودة والتسليم"
+  },
+  "downloads": {
+    "section": {
+      "title": "التنزيلات",
+      "subtitle": "المستندات والملفات التقنية",
+      "download": "تحميل",
+      "downloadFile": "تحميل الملف"
+    },
+    "manager": {
+      "title": "الملفات القابلة للتحميل",
+      "subtitle": "إدارة الملفات التي يمكن للعملاء تحميلها",
+      "dropOrClick": "اسحب الملف هنا أو انقر للرفع",
+      "allowedTypes": "PDF، Word، ZIP، صور والمزيد • الحد الأقصى 50 ميجابايت",
+      "fileTitle": "عنوان الملف",
+      "fileTitlePlaceholder": "مثال: ورقة البيانات التقنية الإصدار 2",
+      "category": "الفئة",
+      "description": "الوصف",
+      "descriptionPlaceholder": "وصف اختياري مختصر لهذا الملف...",
+      "sortOrder": "ترتيب العرض",
+      "upload": "رفع الملف",
+      "noFiles": "لم يتم رفع ملفات بعد.",
+      "hidden": "مخفي",
+      "activate": "إظهار",
+      "deactivate": "إخفاء",
+      "uploadSuccess": "تم رفع الملف بنجاح.",
+      "deleteSuccess": "تم حذف الملف.",
+      "confirmDelete": "حذف {{title}}؟"
+    },
+    "categories": {
+      "datasheet": "ورقة البيانات",
+      "userManual": "دليل المستخدم",
+      "technicalDocument": "وثيقة تقنية",
+      "brochure": "كتيب",
+      "certificate": "شهادة",
+      "installationGuide": "دليل التركيب",
+      "firmware": "البرامج الثابتة",
+      "download": "تحميل",
+      "other": "أخرى"
+    }
   }
 }

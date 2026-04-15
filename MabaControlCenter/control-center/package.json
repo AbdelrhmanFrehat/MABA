@@ -5,9 +5,10 @@
   "main": "dist/electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm:dev:renderer\" \"npm:dev:electron\"",
-    "dev:renderer": "vite",
-    "dev:electron": "wait-on tcp:5173 && electron .",
-    "build": "vite build && tsc -p tsconfig.electron.json",
+    "dev:renderer": "vite --config vite.config.mjs --configLoader native",
+    "dev:electron": "npm run build:electron && wait-on tcp:5173 && electron .",
+    "build": "vite build --config vite.config.mjs --configLoader native && npm run build:electron",
+    "build:electron": "tsc -p tsconfig.electron.json",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest"
