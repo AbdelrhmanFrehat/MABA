@@ -116,6 +116,7 @@ public class WishlistController : ControllerBase
     // GET /api/v1/wishlist/items/{itemId}/check
     // ─────────────────────────────────────────────
     [HttpGet("items/{itemId:guid}/check")]
+    [AllowAnonymous]
     public async Task<ActionResult<bool>> CheckItem(Guid itemId, CancellationToken ct)
     {
         var userId = GetCurrentUserId();

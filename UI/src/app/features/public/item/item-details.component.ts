@@ -1429,17 +1429,19 @@ export class ItemDetailsComponent implements OnInit {
 
     checkWishlist(itemId: string) {
         this.wishlistApiService.isInWishlist(itemId).subscribe({
-            next: (inWishlist) => {
-                this.isInWishlist = inWishlist;
-            }
+            next: (inWishlist) => { this.isInWishlist = inWishlist; },
+            error: () => { this.isInWishlist = false; }
         });
     }
 
     checkAuth() {
+        if (!this.authService.token) {
+            this.isLoggedIn = false;
+            return;
+        }
         this.authService.getCurrentUser().subscribe({
-            next: (user) => {
-                this.isLoggedIn = !!user;
-            }
+            next: (user) => { this.isLoggedIn = !!user; },
+            error: () => { this.isLoggedIn = false; }
         });
     }
 
