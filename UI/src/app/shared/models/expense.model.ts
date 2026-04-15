@@ -19,6 +19,12 @@ export interface Expense {
     receiptMediaId?: string;
     enteredByUserId: string;
     enteredByUserFullName: string;
+    paidByUserId?: string;
+    paidByUserFullName?: string;
+    paymentMethodId?: string;
+    paymentMethodKey?: string;
+    paymentMethodNameEn?: string;
+    paymentMethodNameAr?: string;
     createdAt: string;
     updatedAt?: string;
 }
@@ -32,4 +38,6 @@ export interface CreateExpenseRequest {
     spentAt: string;
     receiptMediaId?: string;
     enteredByUserId: string;
+    paidByUserId?: string;
+    paymentMethodId?: string;
 }

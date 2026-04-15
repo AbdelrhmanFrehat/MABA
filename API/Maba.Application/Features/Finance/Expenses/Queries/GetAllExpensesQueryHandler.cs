@@ -21,6 +21,8 @@ public class GetAllExpensesQueryHandler : IRequestHandler<GetAllExpensesQuery, L
         var query = _context.Set<Expense>()
             .Include(e => e.ExpenseCategory)
             .Include(e => e.EnteredByUser)
+            .Include(e => e.PaidByUser)
+            .Include(e => e.PaymentMethod)
             .AsQueryable();
 
         if (request.ExpenseCategoryId.HasValue)
@@ -53,6 +55,12 @@ public class GetAllExpensesQueryHandler : IRequestHandler<GetAllExpensesQuery, L
             ReceiptMediaId = e.ReceiptMediaId,
             EnteredByUserId = e.EnteredByUserId,
             EnteredByUserFullName = e.EnteredByUser.FullName,
+            PaidByUserId = e.PaidByUserId,
+            PaidByUserFullName = e.PaidByUser != null ? e.PaidByUser.FullName : null,
+            PaymentMethodId = e.PaymentMethodId,
+            PaymentMethodKey = e.PaymentMethod != null ? e.PaymentMethod.Key : null,
+            PaymentMethodNameEn = e.PaymentMethod != null ? e.PaymentMethod.NameEn : null,
+            PaymentMethodNameAr = e.PaymentMethod != null ? e.PaymentMethod.NameAr : null,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt
         }).ToList();

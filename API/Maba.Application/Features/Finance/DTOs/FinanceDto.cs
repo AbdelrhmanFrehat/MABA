@@ -28,6 +28,12 @@ public class ExpenseDto
     public Guid? ReceiptMediaId { get; set; }
     public Guid EnteredByUserId { get; set; }
     public string EnteredByUserFullName { get; set; } = string.Empty;
+    public Guid? PaidByUserId { get; set; }
+    public string? PaidByUserFullName { get; set; }
+    public Guid? PaymentMethodId { get; set; }
+    public string? PaymentMethodKey { get; set; }
+    public string? PaymentMethodNameEn { get; set; }
+    public string? PaymentMethodNameAr { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

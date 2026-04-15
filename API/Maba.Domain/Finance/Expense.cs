@@ -3,6 +3,7 @@ using Maba.Domain.Accounting;
 using Maba.Domain.Crm;
 using Maba.Domain.Lookups;
 using Maba.Domain.Media;
+using Maba.Domain.Orders;
 using Maba.Domain.Users;
 
 namespace Maba.Domain.Finance;
@@ -17,6 +18,8 @@ public class Expense : BaseEntity
     public DateTime SpentAt { get; set; }
     public Guid? ReceiptMediaId { get; set; }
     public Guid EnteredByUserId { get; set; }
+    public Guid? PaidByUserId { get; set; }
+    public Guid? PaymentMethodId { get; set; }
     public Guid? ApprovalStatusId { get; set; }
     public Guid? ApprovedByUserId { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -29,6 +32,8 @@ public class Expense : BaseEntity
     public ExpenseCategory ExpenseCategory { get; set; } = null!;
     public MediaAsset? ReceiptMedia { get; set; }
     public User EnteredByUser { get; set; } = null!;
+    public User? PaidByUser { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
     public LookupValue? ApprovalStatus { get; set; }
     public User? ApprovedByUser { get; set; }
     public JournalEntry? JournalEntry { get; set; }

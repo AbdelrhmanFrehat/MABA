@@ -228,6 +228,11 @@ export const adminRoutes: Routes = [
         path: 'storage',
         loadComponent: () => import('./storage/storage-items.component').then(m => m.StorageItemsComponent),
         canActivate: [authGuard]
+    },
+    {
+        path: 'assets',
+        loadChildren: () => import('./assets/assets.routes').then(m => m.assetsRoutes),
+        canActivate: [authGuard]
     }
 ];
 

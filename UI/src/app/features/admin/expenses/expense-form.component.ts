@@ -14,7 +14,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TranslateModule } from '@ngx-translate/core';
 import { CurrencySelectComponent } from '../../../shared/components/currency-select/currency-select';
-import { ExpensesService } from '../../../shared/services/expenses.service';
+import { AdminUserAutocompleteComponent } from '../../../shared/components/admin-user-autocomplete/admin-user-autocomplete';
+import { ExpensesService, PaymentMethodOption } from '../../../shared/services/expenses.service';
 import { ExpenseCategory } from '../../../shared/models/expense.model';
 import { AuthService } from '../../../shared/services/auth.service';
 
@@ -35,7 +36,8 @@ import { AuthService } from '../../../shared/services/auth.service';
         MessageModule,
         ToastModule,
         TranslateModule,
-        CurrencySelectComponent
+        CurrencySelectComponent,
+        AdminUserAutocompleteComponent
     ],
     providers: [MessageService],
     styles: [`
@@ -93,6 +95,24 @@ import { AuthService } from '../../../shared/services/auth.service';
                             <p-inputNumber formControlName="amount" mode="decimal" [min]="0" [maxFractionDigits]="2" styleClass="w-full"></p-inputNumber>
                         </div>
 
+                        <div class="field">
+                            <label class="font-medium">Paid By (Admin) <span class="text-red-500">*</span></label>
+                            <app-admin-user-autocomplete formControlName="paidByUserId" placeholder="Search admin..."></app-admin-user-autocomplete>
+                        </div>
+
+                        <div class="field">
+                            <label class="font-medium">Payment Method</label>
+                            <p-select
+                                formControlName="paymentMethodId"
+                                [options]="paymentMethods"
+                                optionLabel="nameEn"
+                                optionValue="id"
+                                [showClear]="true"
+                                placeholder="Select method"
+                                styleClass="w-full"
+                            ></p-select>
+                        </div>
+
                         <div class="field field-span2">
                             <label class="font-medium">Description (English)</label>
                             <input pInputText formControlName="descriptionEn" class="w-full" />
@@ -115,6 +135,7 @@ import { AuthService } from '../../../shared/services/auth.service';
 })
 export class ExpenseFormComponent implements OnInit {
     categories: ExpenseCategory[] = [];
+    paymentMethods: PaymentMethodOption[] = [];
     saving = false;
     errorMessage = '';
 
@@ -123,6 +144,8 @@ export class ExpenseFormComponent implements OnInit {
         spentAt: [new Date(), Validators.required],
         amount: [0, [Validators.required, Validators.min(0.01)]],
         currency: ['ILS', [Validators.required, Validators.maxLength(3)]],
+        paidByUserId: ['', Validators.required],
+        paymentMethodId: [null as string | null],
         descriptionEn: [''],
         descriptionAr: ['']
     });
@@ -140,6 +163,10 @@ export class ExpenseFormComponent implements OnInit {
             error: err => {
                 this.errorMessage = err.error?.message || 'Failed to load expense categories.';
             }
+        });
+        this.expensesService.getPaymentMethods().subscribe({
+            next: pm => this.paymentMethods = pm ?? [],
+            error: () => {}
         });
     }
 
@@ -166,7 +193,9 @@ export class ExpenseFormComponent implements OnInit {
             currency: (value.currency || 'ILS').toUpperCase(),
             descriptionEn: value.descriptionEn || undefined,
             descriptionAr: value.descriptionAr || undefined,
-            enteredByUserId: userId
+            enteredByUserId: userId,
+            paidByUserId: value.paidByUserId || undefined,
+            paymentMethodId: value.paymentMethodId || undefined
         }).subscribe({
             next: () => {
                 this.messageService.add({

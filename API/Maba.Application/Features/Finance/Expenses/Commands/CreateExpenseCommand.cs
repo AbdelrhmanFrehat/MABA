@@ -13,5 +13,7 @@ public class CreateExpenseCommand : IRequest<ExpenseDto>
     public DateTime SpentAt { get; set; }
     public Guid? ReceiptMediaId { get; set; }
     public Guid EnteredByUserId { get; set; }
+    public Guid? PaidByUserId { get; set; }
+    public Guid? PaymentMethodId { get; set; }
 }
 

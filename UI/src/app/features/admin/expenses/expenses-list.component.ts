@@ -52,6 +52,8 @@ export class ExpensesListComponent implements OnInit {
         { field: 'descriptionEn', header: 'Description (English)', sortable: true },
         { field: 'amount', header: 'Amount', type: 'currency', currencyCode: 'ILS', sortable: true },
         { field: 'currency', header: 'Currency', sortable: true },
+        { field: 'paidByUserFullName', header: 'Paid By', sortable: true },
+        { field: 'paymentMethodNameEn', header: 'Payment Method', sortable: true },
         { field: 'enteredByUserFullName', header: 'Entered By', sortable: true }
     ];
 

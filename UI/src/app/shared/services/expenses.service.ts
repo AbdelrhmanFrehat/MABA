@@ -10,17 +10,29 @@ export interface ExpenseQueryParams {
     toDate?: string;
 }
 
+export interface PaymentMethodOption {
+    id: string;
+    key: string;
+    nameEn: string;
+    nameAr: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class ExpensesService {
     private categoriesUrl = `${environment.apiUrl}/ExpenseCategories`;
     private expensesUrl = `${environment.apiUrl}/Expenses`;
+    private paymentMethodsUrl = `${environment.apiUrl}/PaymentMethods`;
 
     constructor(private http: HttpClient) {}
 
     getCategories(): Observable<ExpenseCategory[]> {
         return this.http.get<ExpenseCategory[]>(this.categoriesUrl);
+    }
+
+    getPaymentMethods(): Observable<PaymentMethodOption[]> {
+        return this.http.get<PaymentMethodOption[]>(this.paymentMethodsUrl);
     }
 
     getExpenses(params?: ExpenseQueryParams): Observable<Expense[]> {

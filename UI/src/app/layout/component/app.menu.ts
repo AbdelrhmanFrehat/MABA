@@ -115,6 +115,15 @@ export class AppMenu implements OnInit, OnDestroy {
                                 { label: this.translateService.instant('menu.expenses'), icon: 'pi pi-fw pi-money-bill', routerLink: ['/admin/expenses'] }
                             ]
                         },
+                        {
+                            label: 'Asset Management',
+                            icon: 'pi pi-fw pi-box',
+                            items: [
+                                { label: 'Assets', icon: 'pi pi-fw pi-list', routerLink: ['/admin/assets'] },
+                                { label: 'Categories', icon: 'pi pi-fw pi-tags', routerLink: ['/admin/assets/categories'] },
+                                { label: 'Numbering', icon: 'pi pi-fw pi-cog', routerLink: ['/admin/assets/settings'] }
+                            ]
+                        },
                         { label: this.translateService.instant('menu.businessInventory'), icon: 'pi pi-fw pi-warehouse', routerLink: ['/admin/business-inventory/stock'] },
                         { label: this.translateService.instant('menu.payments'), icon: 'pi pi-fw pi-wallet', routerLink: ['/admin/payments'] },
                         { label: this.translateService.instant('menu.accounting'), icon: 'pi pi-fw pi-calculator', routerLink: ['/admin/accounting/chart-of-accounts'] },

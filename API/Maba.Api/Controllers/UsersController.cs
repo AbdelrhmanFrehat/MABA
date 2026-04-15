@@ -84,6 +84,21 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("admins")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<List<UserDto>>> GetAdmins([FromQuery] string? search)
+    {
+        var result = await _mediator.Send(new SearchUsersQuery
+        {
+            SearchTerm = search,
+            IsActive = true,
+            PageNumber = 1,
+            PageSize = 50
+        });
+        var admins = result.Items.Where(u => u.Roles.Contains("Admin")).ToList();
+        return Ok(admins);
+    }
+
     [HttpGet("role/{roleId}")]
     [Microsoft.AspNetCore.Authorization.Authorize]
     public async Task<ActionResult<List<UserDto>>> GetUsersByRole(Guid roleId, [FromQuery] bool? isActive)

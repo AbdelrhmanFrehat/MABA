@@ -100,5 +100,11 @@ export class UsersService {
     resetPassword(userId: number): Observable<void> {
         return this.http.post<void>(`${this.usersUrl}/${userId}/ResetPassword`, {});
     }
+
+    searchAdmins(search?: string): Observable<{ id: string; fullName: string; email: string }[]> {
+        let params = new HttpParams();
+        if (search) params = params.set('search', search);
+        return this.http.get<{ id: string; fullName: string; email: string }[]>(`${this.usersUrl}/admins`, { params });
+    }
 }
 

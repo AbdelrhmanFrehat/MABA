@@ -20,6 +20,7 @@ using Maba.Domain.Inventory;
 using Maba.Domain.Numbering;
 using Maba.Domain.Tax;
 using Maba.Domain.Accounting;
+using Maba.Domain.Assets;
 using Maba.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -58,6 +59,7 @@ public static class DatabaseSeeder
             await SeedCrossCutting(context);
             await SeedCommercialFoundation(context);
             await SeedCrm(context);
+            await SeedAssets(context);
 
             await context.SaveChangesAsync();
         }
@@ -2589,6 +2591,72 @@ public static class DatabaseSeeder
         }
 
         await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedAssets(ApplicationDbContext context)
+    {
+        // Lookup types for asset condition and status
+        async Task<LookupType> EnsureLookupTypeAsync(string key, string nameEn, string nameAr, string[] values)
+        {
+            var type = await context.LookupTypes.FirstOrDefaultAsync(x => x.Key == key);
+            if (type == null)
+            {
+                type = new LookupType
+                {
+                    Id = Guid.NewGuid(),
+                    Key = key,
+                    NameEn = nameEn,
+                    NameAr = nameAr,
+                    IsSystem = true,
+                    IsActive = true
+                };
+                context.LookupTypes.Add(type);
+                for (var i = 0; i < values.Length; i++)
+                {
+                    context.LookupValues.Add(new LookupValue
+                    {
+                        Id = Guid.NewGuid(),
+                        LookupTypeId = type.Id,
+                        Key = values[i],
+                        NameEn = values[i],
+                        NameAr = values[i],
+                        SortOrder = i + 1,
+                        IsDefault = i == 0,
+                        IsSystem = true,
+                        IsActive = true
+                    });
+                }
+                await context.SaveChangesAsync();
+            }
+            return type;
+        }
+
+        await EnsureLookupTypeAsync("AssetCondition", "Asset Condition", "حالة الأصل",
+            new[] { "New", "Used", "Refurbished", "Damaged" });
+        await EnsureLookupTypeAsync("AssetStatus", "Asset Status", "وضع الأصل",
+            new[] { "InUse", "Idle", "Disposed", "Sold" });
+
+        if (!await context.AssetNumberingSettings.AnyAsync())
+        {
+            context.AssetNumberingSettings.Add(new AssetNumberingSetting
+            {
+                Id = Guid.NewGuid(),
+                Prefix = "A-",
+                PadWidth = 4,
+                NextNumber = 1
+            });
+            await context.SaveChangesAsync();
+        }
+
+        if (!await context.AssetCategories.AnyAsync())
+        {
+            context.AssetCategories.AddRange(
+                new AssetCategory { Id = Guid.NewGuid(), NameEn = "Furniture", NameAr = "أثاث", NumberingPrefix = "FRN-", IsActive = true },
+                new AssetCategory { Id = Guid.NewGuid(), NameEn = "Electronics", NameAr = "إلكترونيات", NumberingPrefix = "ELC-", IsActive = true },
+                new AssetCategory { Id = Guid.NewGuid(), NameEn = "Tools", NameAr = "أدوات", NumberingPrefix = "TLS-", IsActive = true }
+            );
+            await context.SaveChangesAsync();
+        }
     }
 
     private static string HashPassword(string password)
