@@ -3,10 +3,7 @@ import * as path from "path";
 import { SyncEngine } from "./services/syncEngine";
 import { getPrismaClient } from "./db/client";
 
-const isDev =
-  process.env.NODE_ENV === "development" ||
-  process.defaultApp === true ||
-  /[\\/]electron(?:\.exe)?$/i.test(process.execPath);
+const isDev = process.env.MABA_CC_DEV === "1" || process.env.NODE_ENV === "development";
 const syncEngine = new SyncEngine();
 
 async function createWindow() {
@@ -25,7 +22,12 @@ async function createWindow() {
   }
 
   // Ensure DB is initialized and start sync
-  void getPrismaClient().$connect();
+  const prisma = getPrismaClient();
+  if (prisma) {
+    void prisma.$connect().catch((error) => {
+      console.error("Failed to initialize Prisma client", error);
+    });
+  }
   syncEngine.start();
 }
 

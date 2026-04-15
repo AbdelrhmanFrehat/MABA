@@ -8,4 +8,5 @@ public class AppSettings
     public bool StartWithWindows { get; set; }
     public bool CheckForUpdatesAutomatically { get; set; } = true;
     public bool DiagnosticsMode { get; set; }
+    public string ApiBaseUrl { get; set; } = "https://api.mabasol.com";
 }

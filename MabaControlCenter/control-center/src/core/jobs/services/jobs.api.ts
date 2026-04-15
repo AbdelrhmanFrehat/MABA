@@ -11,8 +11,11 @@ type JobFilters = {
 const apiBaseUrl =
   (
     globalThis.localStorage?.getItem("maba.apiBaseUrl") ??
+    (globalThis as { maba?: { apiBaseUrl?: string } }).maba?.apiBaseUrl ??
     (globalThis as { mabaApiBaseUrl?: string }).mabaApiBaseUrl ??
-    "http://localhost:5000"
+    (window.location.protocol === "file:"
+      ? "https://api.mabasol.com"
+      : "http://localhost:5000")
   ).replace(/\/$/, "");
 
 function buildUrl(path: string, filters?: JobFilters): string {

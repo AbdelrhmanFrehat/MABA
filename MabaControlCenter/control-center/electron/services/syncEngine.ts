@@ -19,6 +19,10 @@ export class SyncEngine {
 
   async syncOnce() {
     const prisma = getPrismaClient();
+    if (!prisma) {
+      return;
+    }
+
     // Placeholder: later call backend and reconcile entities.
     await prisma.syncState.findMany();
   }

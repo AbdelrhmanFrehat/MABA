@@ -8,11 +8,12 @@ public class NavigationService : INavigationService
     private readonly Dictionary<string, object> _viewModels = new();
     private object? _currentViewModel;
 
-    public NavigationService(IDeviceService deviceService, ILoggingService loggingService, IModuleService moduleService, IUpdateService updateService, INewsService newsService, IThemeService themeService, ILocalizationService localizationService, ISettingsService settingsService)
+    public NavigationService(IDeviceService deviceService, ILoggingService loggingService, IModuleService moduleService, IUpdateService updateService, INewsService newsService, IThemeService themeService, ILocalizationService localizationService, ISettingsService settingsService, IJobsService jobsService)
     {
         _viewModels["Dashboard"] = new DashboardViewModel(updateService, newsService, deviceService, moduleService, localizationService);
         _viewModels["Discover"] = new DiscoverViewModel(localizationService);
         _viewModels["Devices"] = new DevicesViewModel(deviceService, localizationService);
+        _viewModels["Jobs"] = new JobsViewModel(jobsService, deviceService);
         _viewModels["Commands"] = new CommandsViewModel(deviceService, loggingService);
         _viewModels["Modules"] = new ModulesViewModel(moduleService, deviceService, this);
         _viewModels["DexterCalibration"] = new DexterCalibrationViewModel(deviceService, loggingService, this);

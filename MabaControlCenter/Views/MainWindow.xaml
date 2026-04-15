@@ -20,6 +20,9 @@
         <DataTemplate DataType="{x:Type vm:DevicesViewModel}">
             <views:DevicesView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:JobsViewModel}">
+            <views:JobsView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:CommandsViewModel}">
             <views:CommandsView/>
         </DataTemplate>
@@ -52,6 +55,8 @@
                         Command="{Binding NavigateCommand}" CommandParameter="Discover"/>
                 <Button Content="{Binding Source={StaticResource Labels}, Path=Sidebar_Devices}" Style="{DynamicResource SidebarNavButton}"
                         Command="{Binding NavigateCommand}" CommandParameter="Devices"/>
+                <Button Content="Jobs" Style="{DynamicResource SidebarNavButton}"
+                        Command="{Binding NavigateCommand}" CommandParameter="Jobs"/>
                 <Button Content="{Binding Source={StaticResource Labels}, Path=Sidebar_Commands}" Style="{DynamicResource SidebarNavButton}"
                         Command="{Binding NavigateCommand}" CommandParameter="Commands"/>
                 <Button Content="{Binding Source={StaticResource Labels}, Path=Sidebar_Modules}" Style="{DynamicResource SidebarNavButton}"

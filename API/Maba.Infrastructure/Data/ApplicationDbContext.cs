@@ -31,6 +31,7 @@ using Maba.Domain.CommercialReturns;
 using Maba.Domain.Sales;
 using Maba.Domain.Assets;
 using Maba.Domain.Downloads;
+using Maba.Domain.Wishlist;
 using Maba.Infrastructure.Data.Configurations;
 using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
@@ -117,6 +118,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<SlicingJobStatus> SlicingJobStatuses => Set<SlicingJobStatus>();
     public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
     public DbSet<PrintJobStatus> PrintJobStatuses => Set<PrintJobStatus>();
+
+    // Wishlist
+    public DbSet<Wishlist> Wishlists => Set<Wishlist>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
 
     // Orders
     public DbSet<Cart> Carts => Set<Cart>();
