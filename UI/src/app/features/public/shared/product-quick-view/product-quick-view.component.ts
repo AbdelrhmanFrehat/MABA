@@ -171,7 +171,20 @@ import { environment } from '../../../../../environments/environment';
             background: #0f172a !important;
             border-bottom: 1px solid #1e293b !important;
         }
-        :host ::ng-deep .qv-dialog .p-dialog-header-actions { display: none !important; }
+        /* Hide every variant of PrimeNG's built-in header button area */
+        :host ::ng-deep .qv-dialog .p-dialog-header-actions,
+        :host ::ng-deep .qv-dialog .p-dialog-header-icons,
+        :host ::ng-deep .qv-dialog .p-dialog-header-icon,
+        :host ::ng-deep .qv-dialog .p-dialog-header-close,
+        :host ::ng-deep .qv-dialog .p-dialog-close-button,
+        :host ::ng-deep .qv-dialog button.p-dialog-header-close {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
         :host ::ng-deep .qv-dialog .p-dialog-content {
             padding: 0 !important;
             overflow: hidden !important;
@@ -208,20 +221,23 @@ import { environment } from '../../../../../environments/environment';
         }
         .qv-close-btn {
             flex-shrink: 0;
-            width: 2rem;
-            height: 2rem;
+            width: 1.875rem;
+            height: 1.875rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #94a3b8;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #cbd5e1;
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.15s, color 0.15s;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+            line-height: 1;
+            outline: none;
         }
-        .qv-close-btn:hover { background: rgba(255,255,255,0.14); color: #f1f5f9; }
+        .qv-close-btn:hover { background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.3); }
+        .qv-close-btn:focus-visible { box-shadow: 0 0 0 2px #667eea; }
 
         /* ── Body layout (2-column) ──────────────────────── */
         .qv-body {

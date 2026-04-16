@@ -1589,18 +1589,23 @@ export class ItemDetailsComponent implements OnInit, OnDestroy {
     }
 
     getItemImage(item: Item): string {
+        // 1. Use pre-resolved primaryImageUrl if the API provided it
+        const primary = (item as any).primaryImageUrl as string | undefined;
+        if (primary?.trim()) return this.getFullMediaUrl(primary);
+
+        // 2. Walk mediaAssets — accept isPrimary flag, Image mediaType, or any first entry
         if (item.mediaAssets && item.mediaAssets.length > 0) {
-            const primaryImage = item.mediaAssets.find((m: any) => m.isPrimary || m.mediaType === 'Image') as { fileUrl?: string; mediaAssetUrl?: string } | undefined;
-            if (primaryImage) {
-                const url = primaryImage.fileUrl ?? primaryImage.mediaAssetUrl;
-                if (url) return url;
-            }
-            const firstMedia = item.mediaAssets[0] as { fileUrl?: string; mediaAssetUrl?: string } | undefined;
-            if (firstMedia) {
-                const url = firstMedia.fileUrl ?? firstMedia.mediaAssetUrl;
-                if (url) return url;
-            }
+            const picked = item.mediaAssets.find((m: any) => m.isPrimary)
+                ?? item.mediaAssets.find((m: any) => {
+                    const t = m.mediaType ?? m.mediaTypeKey;
+                    return !t || t === 'Image';
+                })
+                ?? item.mediaAssets[0];
+
+            const raw = (picked as any)?.fileUrl ?? (picked as any)?.mediaAssetUrl ?? '';
+            if (raw) return this.getFullMediaUrl(raw);
         }
+
         return 'assets/img/defult.png';
     }
 
