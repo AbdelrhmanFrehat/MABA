@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -1285,7 +1286,7 @@ import { MediaAsset } from '../../../shared/models/media.model';
         }
     `]
 })
-export class ItemDetailsComponent implements OnInit {
+export class ItemDetailsComponent implements OnInit, OnDestroy {
     itemDetail: ItemDetail | null = null;
     loading = true;
     quantity = 1;
@@ -1304,6 +1305,7 @@ export class ItemDetailsComponent implements OnInit {
 
     reviewForm: FormGroup;
 
+    private routeSub: Subscription | null = null;
     private route = inject(ActivatedRoute);
     private router = inject(Router);
     private fb = inject(FormBuilder);
@@ -1329,27 +1331,40 @@ export class ItemDetailsComponent implements OnInit {
     }
 
     ngOnInit() {
-        const id = this.route.snapshot.paramMap.get('id');
-        if (id) {
+        this.responsiveOptions = [
+            { breakpoint: '1024px', numVisible: 4 },
+            { breakpoint: '768px',  numVisible: 3 },
+            { breakpoint: '560px',  numVisible: 1 }
+        ];
+
+        this.routeSub = this.route.paramMap.subscribe(params => {
+            const id = params.get('id');
+            if (!id) return;
+            this.resetProductState();
             this.loadItemDetail(id);
             this.checkWishlist(id);
             this.checkAuth();
-        }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 
-        this.responsiveOptions = [
-            {
-                breakpoint: '1024px',
-                numVisible: 4
-            },
-            {
-                breakpoint: '768px',
-                numVisible: 3
-            },
-            {
-                breakpoint: '560px',
-                numVisible: 1
-            }
-        ];
+    ngOnDestroy() {
+        this.routeSub?.unsubscribe();
+    }
+
+    private resetProductState() {
+        this.itemDetail = null;
+        this.loading = true;
+        this.quantity = 1;
+        this.isInWishlist = false;
+        this.images = [];
+        this.videoUrl = null;
+        this.reviews = [];
+        this.reviewsSummary = null;
+        this.relatedItems = [];
+        this.activeTab = 'details';
+        this.showReviewForm = false;
+        this.reviewForm.reset({ rating: 0, title: '', comment: '' });
     }
 
     loadItemDetail(id: string) {

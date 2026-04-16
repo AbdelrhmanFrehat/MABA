@@ -13,8 +13,8 @@ public class JobsViewModel : ViewModelBase
     private bool _isLoading;
     private string? _errorMessage;
     private const string AllFilter = "All";
-    private string _selectedStatusFilter = AllFilter;
-    private string _selectedMachineFilter = AllFilter;
+    private JobFilterOption? _selectedStatusFilter;
+    private JobFilterOption? _selectedMachineFilter;
     private ControlCenterJobListItem? _selectedJob;
     private ControlCenterJobDetail? _selectedJobDetail;
 
@@ -31,8 +31,25 @@ public class JobsViewModel : ViewModelBase
         Jobs = new ObservableCollection<ControlCenterJobListItem>();
         Attachments = new ObservableCollection<ControlCenterJobAttachment>();
         PayloadEntries = new ObservableCollection<JobPayloadEntry>();
-        StatusFilters = new ObservableCollection<string>(new[] { AllFilter, "Pending", "Ready", "InProgress", "Completed", "Failed", "Cancelled" });
-        MachineFilters = new ObservableCollection<string>(new[] { AllFilter, "CNC", "PRINTER_3D", "LASER", "DEXTER", "SCARA" });
+        StatusFilters = new ObservableCollection<JobFilterOption>(new[]
+        {
+            new JobFilterOption { Value = AllFilter, Label = AllFilter },
+            new JobFilterOption { Value = "Pending", Label = "Pending" },
+            new JobFilterOption { Value = "Ready", Label = "Ready" },
+            new JobFilterOption { Value = "InProgress", Label = "In Progress" },
+            new JobFilterOption { Value = "Completed", Label = "Completed" },
+            new JobFilterOption { Value = "Failed", Label = "Failed" },
+            new JobFilterOption { Value = "Cancelled", Label = "Cancelled" }
+        });
+        MachineFilters = new ObservableCollection<JobFilterOption>(new[]
+        {
+            new JobFilterOption { Value = AllFilter, Label = AllFilter },
+            new JobFilterOption { Value = "CNC", Label = "CNC" },
+            new JobFilterOption { Value = "PRINTER_3D", Label = "3D Printer" },
+            new JobFilterOption { Value = "LASER", Label = "Laser" },
+            new JobFilterOption { Value = "DEXTER", Label = "Dexter" },
+            new JobFilterOption { Value = "SCARA", Label = "SCARA" }
+        });
         _selectedStatusFilter = StatusFilters[0];
         _selectedMachineFilter = MachineFilters[0];
 
@@ -48,8 +65,8 @@ public class JobsViewModel : ViewModelBase
     public ObservableCollection<ControlCenterJobListItem> Jobs { get; }
     public ObservableCollection<ControlCenterJobAttachment> Attachments { get; }
     public ObservableCollection<JobPayloadEntry> PayloadEntries { get; }
-    public ObservableCollection<string> StatusFilters { get; }
-    public ObservableCollection<string> MachineFilters { get; }
+    public ObservableCollection<JobFilterOption> StatusFilters { get; }
+    public ObservableCollection<JobFilterOption> MachineFilters { get; }
     public ICommand RefreshCommand { get; }
     public ICommand ApproveCommand { get; }
     public ICommand StartCommand { get; }
@@ -59,6 +76,8 @@ public class JobsViewModel : ViewModelBase
 
     public string Title => "Jobs";
     public string Subtitle => "Production jobs bridged from the MABA backend for operator visibility.";
+    public string StatusFilterLabel => "Filter by Status";
+    public string MachineFilterLabel => "Filter by Machine Type";
     public bool HasJobs => Jobs.Count > 0;
     public string EmptyStateTitle => "No production jobs found.";
     public string EmptyStateHint => "Try changing filters or create/approve a service request first.";
@@ -89,24 +108,24 @@ public class JobsViewModel : ViewModelBase
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-    public string SelectedStatusFilter
+    public JobFilterOption? SelectedStatusFilter
     {
         get => _selectedStatusFilter;
         set
         {
-            if (_selectedStatusFilter == value) return;
+            if (ReferenceEquals(_selectedStatusFilter, value)) return;
             _selectedStatusFilter = value;
             OnPropertyChanged();
             _ = LoadJobsAsync();
         }
     }
 
-    public string SelectedMachineFilter
+    public JobFilterOption? SelectedMachineFilter
     {
         get => _selectedMachineFilter;
         set
         {
-            if (_selectedMachineFilter == value) return;
+            if (ReferenceEquals(_selectedMachineFilter, value)) return;
             _selectedMachineFilter = value;
             OnPropertyChanged();
             _ = LoadJobsAsync();
@@ -136,6 +155,7 @@ public class JobsViewModel : ViewModelBase
             OnPropertyChanged(nameof(SelectedJobDescription));
             OnPropertyChanged(nameof(SourceLabel));
             OnPropertyChanged(nameof(MachineLabel));
+            OnPropertyChanged(nameof(StatusLabel));
             OnPropertyChanged(nameof(AssignedDeviceLabel));
             OnPropertyChanged(nameof(StartedAtLabel));
             OnPropertyChanged(nameof(CompletedAtLabel));
@@ -152,6 +172,7 @@ public class JobsViewModel : ViewModelBase
     public string SelectedJobDescription => SelectedJobDetail?.Description ?? "No description available.";
     public string SourceLabel => SelectedJobDetail == null ? "N/A" : MapSourceLabel(SelectedJobDetail.SourceType);
     public string MachineLabel => SelectedJobDetail == null ? "Unknown" : MapMachineLabel(SelectedJobDetail.MachineType);
+    public string StatusLabel => SelectedJobDetail == null ? "Unknown" : ControlCenterJobDisplay.FormatStatus(SelectedJobDetail.Status);
     public string AssignedDeviceLabel => SelectedJobDetail?.AssignedDeviceId?.ToString() ?? "Unassigned";
     public string StartedAtLabel => SelectedJobDetail?.StartedAt?.ToLocalTime().ToString("g") ?? "Not started";
     public string CompletedAtLabel => SelectedJobDetail?.CompletedAt?.ToLocalTime().ToString("g") ?? "Not completed";
@@ -218,8 +239,8 @@ public class JobsViewModel : ViewModelBase
             Jobs.Clear();
 
             var jobs = await _jobsService.GetJobsAsync(
-                string.IsNullOrWhiteSpace(SelectedStatusFilter) || SelectedStatusFilter == AllFilter ? null : SelectedStatusFilter,
-                string.IsNullOrWhiteSpace(SelectedMachineFilter) || SelectedMachineFilter == AllFilter ? null : SelectedMachineFilter);
+                string.IsNullOrWhiteSpace(SelectedStatusFilter?.Value) || SelectedStatusFilter.Value == AllFilter ? null : SelectedStatusFilter.Value,
+                string.IsNullOrWhiteSpace(SelectedMachineFilter?.Value) || SelectedMachineFilter.Value == AllFilter ? null : SelectedMachineFilter.Value);
 
             foreach (var job in jobs)
             {
@@ -372,21 +393,9 @@ public class JobsViewModel : ViewModelBase
         return entries;
     }
 
-    private static string MapSourceLabel(string sourceType) => sourceType switch
-    {
-        "PRINT_REQUEST" => "3D Print Request",
-        "CNC_REQUEST" => "CNC Request",
-        "LASER_REQUEST" => "Laser Request",
-        "ORDER" => "Order",
-        _ => sourceType
-    };
+    private static string MapSourceLabel(string sourceType) => ControlCenterJobDisplay.FormatSourceType(sourceType);
 
-    private static string MapMachineLabel(string? machineType) => machineType switch
-    {
-        "PRINTER_3D" => "3D Printer",
-        null or "" => "Unknown",
-        _ => machineType
-    };
+    private static string MapMachineLabel(string? machineType) => ControlCenterJobDisplay.FormatMachineType(machineType);
 
     private static string? MapRequiredDevice(string? machineType) => machineType switch
     {

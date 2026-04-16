@@ -18,18 +18,20 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
             <StackPanel Margin="0,0,12,0">
-                <TextBlock Text="Status" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding StatusFilterLabel}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                 <ComboBox Width="160"
                           ItemsSource="{Binding StatusFilters}"
+                          DisplayMemberPath="Label"
                           SelectedItem="{Binding SelectedStatusFilter, UpdateSourceTrigger=PropertyChanged}"
                           Background="{DynamicResource BackgroundLightBrush}"
                           Foreground="{DynamicResource TextOnLightBrush}"
                           BorderBrush="{DynamicResource BorderBrush}"/>
             </StackPanel>
             <StackPanel Margin="0,0,12,0">
-                <TextBlock Text="Machine Type" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding MachineFilterLabel}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                 <ComboBox Width="160"
                           ItemsSource="{Binding MachineFilters}"
+                          DisplayMemberPath="Label"
                           SelectedItem="{Binding SelectedMachineFilter, UpdateSourceTrigger=PropertyChanged}"
                           Background="{DynamicResource BackgroundLightBrush}"
                           Foreground="{DynamicResource TextOnLightBrush}"
@@ -84,9 +86,9 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Reference" Binding="{Binding JobReference}" Width="150"/>
                             <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*"/>
-                            <DataGridTextColumn Header="Source" Binding="{Binding SourceType}" Width="120"/>
-                            <DataGridTextColumn Header="Machine" Binding="{Binding MachineType}" Width="110"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                            <DataGridTextColumn Header="Source" Binding="{Binding SourceTypeDisplay}" Width="120"/>
+                            <DataGridTextColumn Header="Machine" Binding="{Binding MachineTypeDisplay}" Width="110"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="100"/>
                             <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt, StringFormat={}{0:g}}" Width="130"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -173,7 +175,7 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Machine" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MachineLabel}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Status" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedJobDetail.Status}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding StatusLabel}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="Customer" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
                             <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedJobDetail.CustomerName}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
                             <TextBlock Grid.Row="5" Grid.Column="0" Text="Created" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
