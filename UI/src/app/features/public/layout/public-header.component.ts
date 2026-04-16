@@ -19,11 +19,30 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
     template: `
         <header class="public-header" [class.scrolled]="isScrolled" [dir]="languageService.direction">
             <div class="header-container">
-                <!-- Logo -->
-                <a routerLink="/" class="logo-link">
-                    <img src="assets/images/maba-hero-logo.png" alt="MABA" class="header-logo-img" width="2048" height="1364" />
-                    <span class="beta-chip" [pTooltip]="'beta.tooltip' | translate" tooltipPosition="bottom">{{ 'beta.label' | translate }}</span>
-                </a>
+                <!-- Logo + BETA badge -->
+                <div class="logo-area">
+                    <a routerLink="/" class="logo-link">
+                        <img src="assets/images/maba-hero-logo.png" alt="MABA" class="header-logo-img" width="2048" height="1364" />
+                    </a>
+                    <div class="beta-wrap">
+                        <a routerLink="/whats-new" class="beta-chip">{{ 'beta.label' | translate }}</a>
+                        <div class="beta-popover">
+                            <div class="beta-pop-header">
+                                <i class="pi pi-sparkles"></i>
+                                <span>{{ languageService.language === 'ar' ? 'الجديد في MABA' : "What's New" }}</span>
+                            </div>
+                            <p class="beta-pop-desc">
+                                {{ languageService.language === 'ar'
+                                    ? 'اطلع على أحدث التحديثات والتحسينات والميزات الجديدة في MABA.'
+                                    : 'See the latest updates, improvements, and new features in MABA.' }}
+                            </p>
+                            <a routerLink="/whats-new" class="beta-pop-cta">
+                                {{ languageService.language === 'ar' ? 'عرض جميع التحديثات' : 'View all updates' }}
+                                <i class="pi pi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Main Navigation -->
                 <nav class="main-nav" [class.active]="isMobileMenuOpen">
@@ -334,11 +353,17 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             height: 64px;
         }
 
-        /* Logo — height drives scale; wide max-width avoids squashing below bar height */
-        .logo-link {
+        /* ── Logo area ───────────────────────────────────── */
+        .logo-area {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
             text-decoration: none;
             flex-shrink: 0;
         }
@@ -356,11 +381,16 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             object-position: right center;
         }
 
+        /* ── BETA badge + popover ────────────────────────── */
+        .beta-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
         .beta-chip {
             display: inline-flex;
             align-items: center;
             padding: 0.2rem 0.55rem;
-            margin-inline-start: 0.2rem;
             font-size: 0.72rem;
             font-weight: 600;
             letter-spacing: 0.04em;
@@ -369,9 +399,75 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             border: 1px solid #667eea;
             border-radius: 999px;
             background: transparent;
-            cursor: default;
-            flex-shrink: 0;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
         }
+        .beta-chip:hover {
+            background: rgba(102,126,234,0.08);
+            color: #4f63d8;
+        }
+
+        /* Popover — shown on hover of the wrapper */
+        .beta-popover {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            width: 260px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(6px);
+            transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
+            z-index: 1100;
+            pointer-events: none;
+        }
+        .beta-wrap:hover .beta-popover {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        [dir="rtl"] .beta-popover {
+            left: auto;
+            right: 0;
+        }
+
+        .beta-pop-header {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.825rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+        .beta-pop-header .pi {
+            color: #667eea;
+            font-size: 0.8rem;
+        }
+        .beta-pop-desc {
+            margin: 0 0 0.75rem;
+            font-size: 0.78rem;
+            color: #475569;
+            line-height: 1.55;
+        }
+        .beta-pop-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #667eea;
+            text-decoration: none;
+            transition: gap 0.15s;
+        }
+        .beta-pop-cta:hover { gap: 0.5rem; }
+        .beta-pop-cta .pi { font-size: 0.65rem; }
 
         /* Navigation */
         .main-nav {
@@ -860,9 +956,10 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
             }
 
             .beta-chip {
-                font-size: 0.68rem;
-                padding: 0.18rem 0.5rem;
+                font-size: 0.65rem;
+                padding: 0.15rem 0.45rem;
             }
+            .beta-popover { width: 230px; }
 
             .main-nav {
                 position: fixed;

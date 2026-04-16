@@ -17,6 +17,7 @@ public partial class MainWindow : Window
         var themeService = new ThemeService();
         var settingsService = new SettingsService();
         var jobsService = new JobsService(settingsService);
+        var activeProductionJobService = new ActiveProductionJobService();
         var localizationService = (ILocalizationService)Application.Current.Resources["LocalizationService"];
 
         // Load saved settings and apply theme + language on startup
@@ -24,7 +25,7 @@ public partial class MainWindow : Window
         themeService.ApplyTheme(settings.Theme);
         localizationService.SetCulture(settings.Language);
 
-        var nav = new NavigationService(deviceService, loggingService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService);
+        var nav = new NavigationService(deviceService, loggingService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService);
         DataContext = new MainViewModel(nav);
         Loaded += (_, _) =>
         {

@@ -1,0 +1,111 @@
+<UserControl x:Class="MabaControlCenter.Views.ProductionWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDarkBrush}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" VerticalAlignment="Top">
+            <Button Content="← Back to Jobs"
+                    Command="{Binding BackToJobsCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="14,10"
+                    Margin="0,0,0,16"
+                    Style="{StaticResource SecondaryButtonStyle}"/>
+
+            <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+            <TextBlock Text="{Binding Subtitle}" FontSize="13"
+                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,24"/>
+
+            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Active Job Context" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Job" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding JobTitle}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Job Reference" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding JobReference}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Source Request" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SourceReference}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Source Type" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SourceTypeDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Machine Type" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MachineType}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Status" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding StatusDisplay}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Job Instructions" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding CustomerName, StringFormat=Customer: {0}}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Device Readiness" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding DeviceStatusText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                    <TextBlock Text="{Binding DeviceCompatibilityText}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="Files" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+
+                    <ItemsControl ItemsSource="{Binding Attachments}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="10"
+                                        Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding Kind}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                                        <TextBlock Text="{Binding FilePath}" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding FileUrl}" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="No attached files for this job."
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Visibility="{Binding HasAttachments, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

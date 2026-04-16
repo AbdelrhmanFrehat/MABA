@@ -128,6 +128,10 @@ export const publicRoutes: Routes = [
     {
         path: 'cnc',
         loadChildren: () => import('./cnc/cnc.routes').then(m => m.cncRoutes)
+    },
+    {
+        path: 'whats-new',
+        loadComponent: () => import('./whats-new/whats-new.component').then(m => m.WhatsNewComponent)
     }
 ];
 

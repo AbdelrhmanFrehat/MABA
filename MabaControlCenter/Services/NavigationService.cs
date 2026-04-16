@@ -8,15 +8,28 @@ public class NavigationService : INavigationService
     private readonly Dictionary<string, object> _viewModels = new();
     private object? _currentViewModel;
 
-    public NavigationService(IDeviceService deviceService, ILoggingService loggingService, IModuleService moduleService, IUpdateService updateService, INewsService newsService, IThemeService themeService, ILocalizationService localizationService, ISettingsService settingsService, IJobsService jobsService)
+    public NavigationService(
+        IDeviceService deviceService,
+        ILoggingService loggingService,
+        IModuleService moduleService,
+        IUpdateService updateService,
+        INewsService newsService,
+        IThemeService themeService,
+        ILocalizationService localizationService,
+        ISettingsService settingsService,
+        IJobsService jobsService,
+        IActiveProductionJobService activeProductionJobService)
     {
         _viewModels["Dashboard"] = new DashboardViewModel(updateService, newsService, deviceService, moduleService, localizationService);
         _viewModels["Discover"] = new DiscoverViewModel(localizationService);
         _viewModels["Devices"] = new DevicesViewModel(deviceService, localizationService);
-        _viewModels["Jobs"] = new JobsViewModel(jobsService, deviceService);
+        _viewModels["Jobs"] = new JobsViewModel(jobsService, deviceService, activeProductionJobService, this);
         _viewModels["Commands"] = new CommandsViewModel(deviceService, loggingService);
         _viewModels["Modules"] = new ModulesViewModel(moduleService, deviceService, this);
         _viewModels["DexterCalibration"] = new DexterCalibrationViewModel(deviceService, loggingService, this);
+        _viewModels["CncWorkspace"] = new ProductionWorkspaceViewModel("CncWorkspace", "CNC Workspace", "CNC", activeProductionJobService, deviceService, this);
+        _viewModels["LaserWorkspace"] = new ProductionWorkspaceViewModel("LaserWorkspace", "Laser Workspace", "LASER", activeProductionJobService, deviceService, this);
+        _viewModels["Print3dWorkspace"] = new ProductionWorkspaceViewModel("Print3dWorkspace", "3D Printing Workspace", "PRINTER_3D", activeProductionJobService, deviceService, this);
         _viewModels["Logs"] = new LogsViewModel(loggingService);
         _viewModels["Settings"] = new SettingsViewModel(themeService, localizationService, settingsService);
     }

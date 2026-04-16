@@ -118,6 +118,12 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12"/>
 
                         <WrapPanel Margin="0,0,0,12">
+                            <Button Content="{Binding OpenInModuleLabel}"
+                                    Command="{Binding OpenInModuleCommand}"
+                                    Visibility="{Binding CanOpenInModule, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Padding="12,8" Margin="0,0,8,8"
+                                    Background="{DynamicResource BackgroundMediumBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Cursor="Hand"/>
                             <Button Content="Mark Ready"
                                     Command="{Binding ApproveCommand}"
                                     Visibility="{Binding CanApprove, Converter={StaticResource BoolToVisibilityConverter}}"

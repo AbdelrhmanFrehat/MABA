@@ -10,6 +10,8 @@ public class JobsViewModel : ViewModelBase
 {
     private readonly IJobsService _jobsService;
     private readonly IDeviceService _deviceService;
+    private readonly IActiveProductionJobService _activeProductionJobService;
+    private readonly INavigationService _navigationService;
     private bool _isLoading;
     private string? _errorMessage;
     private const string AllFilter = "All";
@@ -18,10 +20,16 @@ public class JobsViewModel : ViewModelBase
     private ControlCenterJobListItem? _selectedJob;
     private ControlCenterJobDetail? _selectedJobDetail;
 
-    public JobsViewModel(IJobsService jobsService, IDeviceService deviceService)
+    public JobsViewModel(
+        IJobsService jobsService,
+        IDeviceService deviceService,
+        IActiveProductionJobService activeProductionJobService,
+        INavigationService navigationService)
     {
         _jobsService = jobsService;
         _deviceService = deviceService;
+        _activeProductionJobService = activeProductionJobService;
+        _navigationService = navigationService;
         _deviceService.ConnectionStateChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(CompatibilityText));
@@ -59,6 +67,7 @@ public class JobsViewModel : ViewModelBase
         CompleteCommand = new RelayCommand(_ => _ = RunJobActionAsync("complete"), _ => !IsLoading && CanComplete);
         FailCommand = new RelayCommand(_ => _ = RunJobActionAsync("fail"), _ => !IsLoading && CanFail);
         CancelCommand = new RelayCommand(_ => _ = RunJobActionAsync("cancel"), _ => !IsLoading && CanCancel);
+        OpenInModuleCommand = new RelayCommand(_ => OpenInModule(), _ => !IsLoading && CanOpenInModule);
         LoadInitialData();
     }
 
@@ -73,6 +82,7 @@ public class JobsViewModel : ViewModelBase
     public ICommand CompleteCommand { get; }
     public ICommand FailCommand { get; }
     public ICommand CancelCommand { get; }
+    public ICommand OpenInModuleCommand { get; }
 
     public string Title => "Jobs";
     public string Subtitle => "Production jobs bridged from the MABA backend for operator visibility.";
@@ -165,6 +175,8 @@ public class JobsViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanComplete));
             OnPropertyChanged(nameof(CanFail));
             OnPropertyChanged(nameof(CanCancel));
+            OnPropertyChanged(nameof(CanOpenInModule));
+            OnPropertyChanged(nameof(OpenInModuleLabel));
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -181,6 +193,16 @@ public class JobsViewModel : ViewModelBase
     public bool CanComplete => SelectedJobDetail?.Status == "InProgress";
     public bool CanFail => SelectedJobDetail?.Status == "InProgress";
     public bool CanCancel => SelectedJobDetail?.Status != null && SelectedJobDetail.Status != "Cancelled";
+    public bool CanOpenInModule => SelectedJobDetail is { } detail
+        && detail.MachineType is "CNC" or "LASER" or "PRINTER_3D"
+        && detail.Status is "Ready" or "InProgress";
+    public string OpenInModuleLabel => SelectedJobDetail?.MachineType switch
+    {
+        "CNC" => "Open in CNC Workspace",
+        "LASER" => "Open in Laser Workspace",
+        "PRINTER_3D" => "Open in 3D Printing Workspace",
+        _ => "Open in Module"
+    };
 
     public string ActiveDeviceSummary
     {
@@ -343,6 +365,45 @@ public class JobsViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    private void OpenInModule()
+    {
+        if (SelectedJobDetail == null || !CanOpenInModule)
+        {
+            return;
+        }
+
+        var pageKey = SelectedJobDetail.MachineType switch
+        {
+            "CNC" => "CncWorkspace",
+            "LASER" => "LaserWorkspace",
+            "PRINTER_3D" => "Print3dWorkspace",
+            _ => null
+        };
+
+        if (pageKey == null)
+        {
+            ErrorMessage = "This job does not have a matching workspace in Control Center yet.";
+            return;
+        }
+
+        _activeProductionJobService.SetCurrentJob(new ActiveProductionJobContext
+        {
+            JobId = SelectedJobDetail.Id,
+            JobReference = SelectedJobDetail.JobReference,
+            Title = SelectedJobDetail.Title,
+            SourceType = SelectedJobDetail.SourceType,
+            SourceReference = SelectedJobDetail.SourceReference,
+            MachineType = SelectedJobDetail.MachineType,
+            Status = SelectedJobDetail.Status,
+            Description = SelectedJobDetail.Description,
+            CustomerName = SelectedJobDetail.CustomerName,
+            PayloadJson = SelectedJobDetail.PayloadJson,
+            Attachments = SelectedJobDetail.Attachments.ToList()
+        });
+
+        _navigationService.NavigateTo(pageKey);
     }
 
     private static IEnumerable<JobPayloadEntry> ParsePayload(string? payloadJson)
