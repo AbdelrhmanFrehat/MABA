@@ -54,7 +54,7 @@ public class JobsViewModel : ViewModelBase
         _selectedMachineFilter = MachineFilters[0];
 
         RefreshCommand = new RelayCommand(_ => _ = LoadJobsAsync(), _ => !IsLoading);
-        ApproveCommand = new RelayCommand(_ => _ = RunJobActionAsync("approve"), _ => !IsLoading && CanApprove);
+        ApproveCommand = new RelayCommand(_ => _ = RunJobActionAsync("mark-ready"), _ => !IsLoading && CanApprove);
         StartCommand = new RelayCommand(_ => _ = RunJobActionAsync("start"), _ => !IsLoading && CanStart);
         CompleteCommand = new RelayCommand(_ => _ = RunJobActionAsync("complete"), _ => !IsLoading && CanComplete);
         FailCommand = new RelayCommand(_ => _ = RunJobActionAsync("fail"), _ => !IsLoading && CanFail);
@@ -180,7 +180,7 @@ public class JobsViewModel : ViewModelBase
     public bool CanStart => SelectedJobDetail?.Status == "Ready";
     public bool CanComplete => SelectedJobDetail?.Status == "InProgress";
     public bool CanFail => SelectedJobDetail?.Status == "InProgress";
-    public bool CanCancel => SelectedJobDetail?.Status is "Pending" or "Ready" or "InProgress";
+    public bool CanCancel => SelectedJobDetail?.Status != null && SelectedJobDetail.Status != "Cancelled";
 
     public string ActiveDeviceSummary
     {

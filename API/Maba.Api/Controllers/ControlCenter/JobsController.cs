@@ -115,7 +115,7 @@ public class JobsController : ControllerBase
 
         switch (normalizedAction)
         {
-            case "approve" when job.Status == CcJobStatus.Pending:
+            case "mark-ready" or "ready" or "approve" when job.Status == CcJobStatus.Pending:
                 job.Status = CcJobStatus.Ready;
                 break;
 
@@ -137,7 +137,7 @@ public class JobsController : ControllerBase
                 job.CompletedAt ??= now;
                 break;
 
-            case "cancel" when job.Status is CcJobStatus.Pending or CcJobStatus.Ready or CcJobStatus.InProgress:
+            case "cancel" when job.Status != CcJobStatus.Cancelled:
                 job.Status = CcJobStatus.Cancelled;
                 job.CompletedAt ??= now;
                 break;

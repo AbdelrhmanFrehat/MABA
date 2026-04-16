@@ -65,7 +65,7 @@ import { environment } from '../../../../../environments/environment';
                         @if (product.isNew) {
                             <span class="qv-badge qv-badge-new">NEW</span>
                         }
-                        @if (product.isOnSale && product.discountPrice) {
+                        @if (product.isOnSale) {
                             <span class="qv-badge qv-badge-sale">SALE</span>
                         }
                     </div>
@@ -99,12 +99,7 @@ import { environment } from '../../../../../environments/environment';
 
                     <!-- Price -->
                     <div class="qv-price-block">
-                        @if (product.isOnSale && product.discountPrice) {
-                            <span class="qv-price-original">₪{{ product.price | number:'1.2-2' }}</span>
-                            <span class="qv-price-main">₪{{ product.discountPrice | number:'1.2-2' }}</span>
-                        } @else {
-                            <span class="qv-price-main">₪{{ product.price | number:'1.2-2' }}</span>
-                        }
+                        <span class="qv-price-main">₪{{ product.price | number:'1.2-2' }}</span>
                     </div>
 
                     <!-- Rating -->
@@ -339,12 +334,6 @@ import { environment } from '../../../../../environments/environment';
             color: #0f172a;
             letter-spacing: -0.02em;
             line-height: 1;
-        }
-        .qv-price-original {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #94a3b8;
-            text-decoration: line-through;
         }
 
         /* ── Rating ──────────────────────────────────────── */
