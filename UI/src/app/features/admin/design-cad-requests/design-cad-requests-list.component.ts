@@ -169,6 +169,9 @@ import {
                                         <i class="pi pi-file"></i>
                                         <span class="att-name">{{ att.fileName }}</span>
                                         <span class="att-size">{{ formatFileSize(att.fileSizeBytes) }}</span>
+                                        <button class="att-download-btn" (click)="downloadAttachment(att)" pTooltip="Download" tooltipPosition="top">
+                                            <i class="pi pi-download"></i>
+                                        </button>
                                     </div>
                                 }
                             </div>
@@ -242,6 +245,9 @@ import {
         .attachment-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; background: #f8fafc; border-radius: 8px; }
         .attachment-row .att-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .attachment-row .att-size { font-size: 0.8rem; color: #64748b; }
+        .att-download-btn { margin-left: auto; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #667eea; cursor: pointer; transition: background 0.15s, border-color 0.15s; flex-shrink: 0; }
+        .att-download-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+        .att-download-btn .pi { font-size: 0.8rem; }
         .edit-content { padding: 0.5rem 0; }
         .form-field { margin-bottom: 1rem; }
         .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
@@ -397,6 +403,23 @@ export class DesignCadRequestsListComponent implements OnInit {
             MechanicalAssembly: 'تجميع ميكانيكي'
         };
         return (this.languageService.language === 'ar' ? labelsAr : labelsEn)[type] ?? type;
+    }
+
+    downloadAttachment(att: { id: string; fileName: string; fileSizeBytes: number; uploadedAt: string }) {
+        if (!this.selectedRequest) return;
+        this.designCadService.downloadAttachment(this.selectedRequest.id, att.id).subscribe({
+            next: (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = att.fileName;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: () => {
+                this.messageService.add({ severity: 'error', summary: this.translate.instant('messages.error'), detail: this.translate.instant('messages.loadError') });
+            }
+        });
     }
 
     buildTimeline(req: DesignCadRequestDto) {

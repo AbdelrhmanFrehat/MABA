@@ -111,4 +111,8 @@ export class DesignCadRequestService {
     updateStatus(id: string, payload: { status: string; notes?: string; rejectionReason?: string }): Observable<DesignCadRequestDto> {
         return this.http.put<DesignCadRequestDto>(`${this.baseUrl}/${id}/status`, payload);
     }
+
+    downloadAttachment(requestId: string, attachmentId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/${requestId}/attachments/${attachmentId}`, { responseType: 'blob' });
+    }
 }
