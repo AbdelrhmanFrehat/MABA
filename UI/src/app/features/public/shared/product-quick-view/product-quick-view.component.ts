@@ -31,6 +31,7 @@ import { environment } from '../../../../../environments/environment';
             [(visible)]="visible"
             [modal]="true"
             [closable]="false"
+            [showHeader]="false"
             [dismissableMask]="true"
             [style]="{ width: '95vw', maxWidth: '1020px' }"
             [draggable]="false"
@@ -38,18 +39,16 @@ import { environment } from '../../../../../environments/environment';
             styleClass="qv-dialog"
             (onHide)="onClose()">
 
-            <!-- Header -->
-            <ng-template pTemplate="header">
-                <div class="qv-header">
-                    <div class="qv-header-left">
-                        <span class="qv-header-eyebrow">{{ 'catalog.quickView' | translate }}</span>
-                        <h2 class="qv-header-title">{{ productName }}</h2>
-                    </div>
-                    <button type="button" class="qv-close-btn" (click)="onClose()" [attr.aria-label]="'common.close' | translate">
-                        <i class="pi pi-times"></i>
-                    </button>
+            <!-- Header (fully custom, no PrimeNG header) -->
+            <div class="qv-header">
+                <div class="qv-header-left">
+                    <span class="qv-header-eyebrow">{{ 'catalog.quickView' | translate }}</span>
+                    <h2 class="qv-header-title">{{ productName }}</h2>
                 </div>
-            </ng-template>
+                <button type="button" class="qv-close-btn" (click)="onClose()" [attr.aria-label]="'common.close' | translate">
+                    <i class="pi pi-times"></i>
+                </button>
+            </div>
 
             <!-- Body -->
             <div *ngIf="product" class="qv-body">
@@ -166,29 +165,10 @@ import { environment } from '../../../../../environments/environment';
     `,
     styles: [`
         /* ── Dialog shell overrides ──────────────────────── */
-        :host ::ng-deep .qv-dialog .p-dialog-header {
-            padding: 0 !important;
-            background: #0f172a !important;
-            border-bottom: 1px solid #1e293b !important;
-        }
-        /* Hide every variant of PrimeNG's built-in header button area */
-        :host ::ng-deep .qv-dialog .p-dialog-header-actions,
-        :host ::ng-deep .qv-dialog .p-dialog-header-icons,
-        :host ::ng-deep .qv-dialog .p-dialog-header-icon,
-        :host ::ng-deep .qv-dialog .p-dialog-header-close,
-        :host ::ng-deep .qv-dialog .p-dialog-close-button,
-        :host ::ng-deep .qv-dialog button.p-dialog-header-close {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-            overflow: hidden !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
         :host ::ng-deep .qv-dialog .p-dialog-content {
             padding: 0 !important;
             overflow: hidden !important;
-            border-radius: 0 0 12px 12px !important;
+            border-radius: 12px !important;
         }
         :host ::ng-deep .qv-dialog { border-radius: 12px !important; overflow: hidden !important; }
 
@@ -200,6 +180,8 @@ import { environment } from '../../../../../environments/environment';
             gap: 1rem;
             padding: 0.875rem 1.25rem;
             width: 100%;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+            border-bottom: 1px solid #1e293b;
         }
         .qv-header-left { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
         .qv-header-eyebrow {
