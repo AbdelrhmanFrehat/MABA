@@ -147,6 +147,15 @@ export class AppMenu implements OnInit, OnDestroy {
                     ]
                 },
                 {
+                    label: 'Machine Platform',
+                    styleClass: 'machine-platform-section',
+                    items: [
+                        { label: 'Categories', icon: 'pi pi-fw pi-th-large', routerLink: ['/admin/machine-catalog/categories'], badgeClass: 'mp-nav-item' },
+                        { label: 'Families', icon: 'pi pi-fw pi-sitemap', routerLink: ['/admin/machine-catalog/families'], badgeClass: 'mp-nav-item' },
+                        { label: 'Definitions', icon: 'pi pi-fw pi-database', routerLink: ['/admin/machine-catalog/definitions'], badgeClass: 'mp-nav-item' }
+                    ]
+                },
+                {
                     label: this.translateService.instant('menu.printing3d'),
                     items: [
                         { label: this.translateService.instant('menu.materials'), icon: 'pi pi-fw pi-palette', routerLink: ['/admin/materials'] },

@@ -47,9 +47,27 @@ public class JobsService : IJobsService
     }
 
     public async Task<ControlCenterJobDetail?> RunActionAsync(Guid id, string action, CancellationToken cancellationToken = default)
+        => await PostAsync($"/api/v1/control-center/jobs/{id}/actions/{Uri.EscapeDataString(action)}", cancellationToken);
+
+    public async Task<ControlCenterJobDetail?> MarkReadyAsync(Guid id, CancellationToken cancellationToken = default)
+        => await PostAsync($"/api/v1/control-center/jobs/{id}/mark-ready", cancellationToken);
+
+    public async Task<ControlCenterJobDetail?> StartJobAsync(Guid id, CancellationToken cancellationToken = default)
+        => await PostAsync($"/api/v1/control-center/jobs/{id}/start", cancellationToken);
+
+    public async Task<ControlCenterJobDetail?> CompleteJobAsync(Guid id, CancellationToken cancellationToken = default)
+        => await PostAsync($"/api/v1/control-center/jobs/{id}/complete", cancellationToken);
+
+    public async Task<ControlCenterJobDetail?> FailJobAsync(Guid id, CancellationToken cancellationToken = default)
+        => await PostAsync($"/api/v1/control-center/jobs/{id}/fail", cancellationToken);
+
+    public async Task<ControlCenterJobDetail?> CancelJobAsync(Guid id, CancellationToken cancellationToken = default)
+        => await PostAsync($"/api/v1/control-center/jobs/{id}/cancel", cancellationToken);
+
+    private async Task<ControlCenterJobDetail?> PostAsync(string path, CancellationToken cancellationToken)
     {
         using var client = new HttpClient();
-        var url = BuildUrl($"/api/v1/control-center/jobs/{id}/actions/{Uri.EscapeDataString(action)}");
+        var url = BuildUrl(path);
         using var response = await client.PostAsync(url, content: null, cancellationToken);
         response.EnsureSuccessStatusCode();
 

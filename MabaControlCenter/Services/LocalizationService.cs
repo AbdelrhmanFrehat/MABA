@@ -183,6 +183,9 @@ public class LocalizationService : ILocalizationService
         _en["Discover_Module_CNCManager_Desc"] = "Monitoring and control tools for CNC devices.";
         _en["Discover_Status_Available"] = "Available";
         _en["Discover_Status_ComingSoon"] = "Coming Soon";
+        _en["Cnc_Tab_Operate"] = "Operate";
+        _en["Cnc_Tab_Monitor"] = "Monitor";
+        _en["Cnc_Tab_Setup"] = "Setup";
     }
 
     private void LoadArabic()
@@ -300,5 +303,8 @@ public class LocalizationService : ILocalizationService
         _ar["Discover_Module_CNCManager_Desc"] = "أدوات المراقبة والتحكم لأجهزة CNC.";
         _ar["Discover_Status_Available"] = "متاح";
         _ar["Discover_Status_ComingSoon"] = "قريباً";
+        _ar["Cnc_Tab_Operate"] = "تشغيل";
+        _ar["Cnc_Tab_Monitor"] = "مراقبة";
+        _ar["Cnc_Tab_Setup"] = "إعداد";
     }
 }

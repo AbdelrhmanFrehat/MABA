@@ -165,6 +165,80 @@
 }
 
 // ==============================================
+// MACHINE PLATFORM SECTION — Distinct nav identity
+// ==============================================
+
+.machine-platform-section {
+    > .layout-menuitem-root-text {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--tech-primary-blue) !important;
+        border-top: 1px solid var(--surface-border);
+        padding-top: 0.75rem;
+        margin-top: 0.5rem;
+
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--tech-primary-blue);
+            flex-shrink: 0;
+        }
+
+        &::after {
+            content: 'APP';
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            background: rgba(0, 102, 255, 0.1);
+            color: var(--tech-primary-blue);
+            border: 1px solid rgba(0, 102, 255, 0.25);
+            border-radius: 3px;
+            padding: 1px 5px;
+            margin-inline-start: auto;
+        }
+    }
+}
+
+.mp-nav-item {
+    > a {
+        border-inline-start: 2px solid transparent;
+        padding-inline-start: calc(1rem - 2px);
+        transition:
+            background-color var(--element-transition-duration),
+            border-color var(--element-transition-duration),
+            box-shadow var(--element-transition-duration) !important;
+
+        .layout-menuitem-icon {
+            color: var(--tech-primary-blue);
+            opacity: 0.75;
+        }
+
+        &:hover {
+            background-color: rgba(0, 102, 255, 0.06) !important;
+            border-inline-start-color: rgba(0, 102, 255, 0.35);
+
+            .layout-menuitem-icon {
+                opacity: 1;
+            }
+        }
+
+        &.active-route {
+            border-inline-start-color: var(--tech-primary-blue) !important;
+            background-color: rgba(0, 102, 255, 0.08) !important;
+
+            .layout-menuitem-icon {
+                opacity: 1;
+                color: var(--tech-primary-blue);
+            }
+        }
+    }
+}
+
+// ==============================================
 // SUBMENU ANIMATIONS
 // ==============================================
 .layout-submenu-enter-from,

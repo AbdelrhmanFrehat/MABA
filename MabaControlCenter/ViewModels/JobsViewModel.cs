@@ -13,6 +13,7 @@ public class JobsViewModel : ViewModelBase
     private readonly IActiveProductionJobService _activeProductionJobService;
     private readonly INavigationService _navigationService;
     private bool _isLoading;
+    private bool _isExecuting;
     private string? _errorMessage;
     private const string AllFilter = "All";
     private JobFilterOption? _selectedStatusFilter;
@@ -34,6 +35,8 @@ public class JobsViewModel : ViewModelBase
         {
             OnPropertyChanged(nameof(CompatibilityText));
             OnPropertyChanged(nameof(ActiveDeviceSummary));
+            OnPropertyChanged(nameof(CanStart));
+            OnPropertyChanged(nameof(ShowStartBlockedMessage));
         };
 
         Jobs = new ObservableCollection<ControlCenterJobListItem>();
@@ -62,12 +65,12 @@ public class JobsViewModel : ViewModelBase
         _selectedMachineFilter = MachineFilters[0];
 
         RefreshCommand = new RelayCommand(_ => _ = LoadJobsAsync(), _ => !IsLoading);
-        ApproveCommand = new RelayCommand(_ => _ = RunJobActionAsync("mark-ready"), _ => !IsLoading && CanApprove);
-        StartCommand = new RelayCommand(_ => _ = RunJobActionAsync("start"), _ => !IsLoading && CanStart);
-        CompleteCommand = new RelayCommand(_ => _ = RunJobActionAsync("complete"), _ => !IsLoading && CanComplete);
-        FailCommand = new RelayCommand(_ => _ = RunJobActionAsync("fail"), _ => !IsLoading && CanFail);
-        CancelCommand = new RelayCommand(_ => _ = RunJobActionAsync("cancel"), _ => !IsLoading && CanCancel);
-        OpenInModuleCommand = new RelayCommand(_ => OpenInModule(), _ => !IsLoading && CanOpenInModule);
+        ApproveCommand = new RelayCommand(_ => _ = MarkReadyAsync(), _ => CanApprove);
+        StartCommand = new RelayCommand(_ => _ = StartJobExecutionAsync(), _ => CanStart);
+        CompleteCommand = new RelayCommand(_ => _ = CompleteJobAsync(), _ => CanComplete);
+        FailCommand = new RelayCommand(_ => _ = FailJobAsync(), _ => CanFail);
+        CancelCommand = new RelayCommand(_ => _ = CancelJobAsync(), _ => CanCancel);
+        OpenInModuleCommand = new RelayCommand(_ => OpenInModule(), _ => CanOpenInModule);
         LoadInitialData();
     }
 
@@ -100,9 +103,26 @@ public class JobsViewModel : ViewModelBase
             if (_isLoading == value) return;
             _isLoading = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
             CommandManager.InvalidateRequerySuggested();
         }
     }
+
+    public bool IsExecuting
+    {
+        get => _isExecuting;
+        private set
+        {
+            if (_isExecuting == value) return;
+            _isExecuting = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+            OnPropertyChanged(nameof(ExecutionStatusText));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    public bool IsBusy => IsLoading || IsExecuting;
 
     public string? ErrorMessage
     {
@@ -175,6 +195,12 @@ public class JobsViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanComplete));
             OnPropertyChanged(nameof(CanFail));
             OnPropertyChanged(nameof(CanCancel));
+            OnPropertyChanged(nameof(ShowApproveAction));
+            OnPropertyChanged(nameof(ShowStartAction));
+            OnPropertyChanged(nameof(ShowCompleteAction));
+            OnPropertyChanged(nameof(ShowFailAction));
+            OnPropertyChanged(nameof(ShowCancelAction));
+            OnPropertyChanged(nameof(ShowStartBlockedMessage));
             OnPropertyChanged(nameof(CanOpenInModule));
             OnPropertyChanged(nameof(OpenInModuleLabel));
             CommandManager.InvalidateRequerySuggested();
@@ -188,14 +214,22 @@ public class JobsViewModel : ViewModelBase
     public string AssignedDeviceLabel => SelectedJobDetail?.AssignedDeviceId?.ToString() ?? "Unassigned";
     public string StartedAtLabel => SelectedJobDetail?.StartedAt?.ToLocalTime().ToString("g") ?? "Not started";
     public string CompletedAtLabel => SelectedJobDetail?.CompletedAt?.ToLocalTime().ToString("g") ?? "Not completed";
-    public bool CanApprove => SelectedJobDetail?.Status == "Pending";
-    public bool CanStart => SelectedJobDetail?.Status == "Ready";
-    public bool CanComplete => SelectedJobDetail?.Status == "InProgress";
-    public bool CanFail => SelectedJobDetail?.Status == "InProgress";
-    public bool CanCancel => SelectedJobDetail?.Status != null && SelectedJobDetail.Status != "Cancelled";
+    public bool ShowApproveAction => SelectedJobDetail?.Status == "Pending";
+    public bool ShowStartAction => SelectedJobDetail?.Status == "Ready";
+    public bool ShowCompleteAction => SelectedJobDetail?.Status == "InProgress";
+    public bool ShowFailAction => SelectedJobDetail?.Status == "InProgress";
+    public bool ShowCancelAction => SelectedJobDetail?.Status != null && SelectedJobDetail.Status != "Cancelled";
+    public bool CanApprove => ShowApproveAction && !IsBusy;
+    public bool CanStart => ShowStartAction && _deviceService.IsConnected && !IsBusy;
+    public bool CanComplete => ShowCompleteAction && !IsBusy;
+    public bool CanFail => ShowFailAction && !IsBusy;
+    public bool CanCancel => ShowCancelAction && !IsBusy;
+    public bool ShowStartBlockedMessage => ShowStartAction && !_deviceService.IsConnected;
+    public string ExecutionStatusText => IsExecuting ? "Executing..." : string.Empty;
     public bool CanOpenInModule => SelectedJobDetail is { } detail
         && detail.MachineType is "CNC" or "LASER" or "PRINTER_3D"
-        && detail.Status is "Ready" or "InProgress";
+        && detail.Status is "Ready" or "InProgress"
+        && !IsBusy;
     public string OpenInModuleLabel => SelectedJobDetail?.MachineType switch
     {
         "CNC" => "Open in CNC Workspace",
@@ -335,7 +369,69 @@ public class JobsViewModel : ViewModelBase
         }
     }
 
-    private async Task RunJobActionAsync(string action)
+    private async Task MarkReadyAsync() => await ExecuteSingleActionAsync((id, ct) => _jobsService.MarkReadyAsync(id, ct));
+
+    private async Task CompleteJobAsync() => await ExecuteSingleActionAsync((id, ct) => _jobsService.CompleteJobAsync(id, ct));
+
+    private async Task FailJobAsync() => await ExecuteSingleActionAsync((id, ct) => _jobsService.FailJobAsync(id, ct));
+
+    private async Task CancelJobAsync() => await ExecuteSingleActionAsync((id, ct) => _jobsService.CancelJobAsync(id, ct));
+
+    private async Task StartJobExecutionAsync()
+    {
+        if (SelectedJobDetail == null)
+        {
+            return;
+        }
+
+        if (!_deviceService.IsConnected)
+        {
+            ErrorMessage = "Connect a device to start this job";
+            return;
+        }
+
+        try
+        {
+            ErrorMessage = null;
+            IsLoading = true;
+
+            var started = await _jobsService.StartJobAsync(SelectedJobDetail.Id);
+            await RefreshSelectedJobAsync(started);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            return;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        try
+        {
+            IsExecuting = true;
+            await Task.Delay(TimeSpan.FromSeconds(4));
+
+            var currentId = SelectedJobDetail?.Id;
+            if (currentId.HasValue)
+            {
+                var completed = await _jobsService.CompleteJobAsync(currentId.Value);
+                await RefreshSelectedJobAsync(completed);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            await LoadJobsAsync();
+        }
+        finally
+        {
+            IsExecuting = false;
+        }
+    }
+
+    private async Task ExecuteSingleActionAsync(Func<Guid, CancellationToken, Task<ControlCenterJobDetail?>> action)
     {
         if (SelectedJobDetail == null)
         {
@@ -347,15 +443,8 @@ public class JobsViewModel : ViewModelBase
             IsLoading = true;
             ErrorMessage = null;
 
-            var updated = await _jobsService.RunActionAsync(SelectedJobDetail.Id, action);
-            SelectedJobDetail = updated;
-
-            await LoadJobsAsync();
-
-            if (updated != null)
-            {
-                SelectedJob = Jobs.FirstOrDefault(x => x.Id == updated.Id);
-            }
+            var updated = await action(SelectedJobDetail.Id, CancellationToken.None);
+            await RefreshSelectedJobAsync(updated);
         }
         catch (Exception ex)
         {
@@ -364,6 +453,17 @@ public class JobsViewModel : ViewModelBase
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private async Task RefreshSelectedJobAsync(ControlCenterJobDetail? updated)
+    {
+        SelectedJobDetail = updated;
+        await LoadJobsAsync();
+
+        if (updated != null)
+        {
+            SelectedJob = Jobs.FirstOrDefault(x => x.Id == updated.Id);
         }
     }
 

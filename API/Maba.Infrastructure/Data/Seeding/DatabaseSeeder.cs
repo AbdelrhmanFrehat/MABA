@@ -21,7 +21,11 @@ using Maba.Domain.Numbering;
 using Maba.Domain.Tax;
 using Maba.Domain.Accounting;
 using Maba.Domain.Assets;
+using Maba.Domain.MachineCatalog;
+using Maba.Domain.MachineCatalog.Enums;
+using Maba.Domain.MachineCatalog.Sections;
 using Maba.Infrastructure.Data;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
@@ -56,6 +60,7 @@ public static class DatabaseSeeder
             await SeedSoftware(context);
             await SeedProjects(context);
             await SeedFaq(context);
+            await SeedMachineCatalog(context);
             await SeedCrossCutting(context);
             await SeedCommercialFoundation(context);
             await SeedCrm(context);
@@ -2664,6 +2669,280 @@ public static class DatabaseSeeder
         using var sha256 = SHA256.Create();
         var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(hashedBytes);
+    }
+
+    // ── Machine Catalog Platform Seed ─────────────────────────────────────
+
+    private static async Task SeedMachineCatalog(ApplicationDbContext context)
+    {
+        if (await context.Set<MachineCategory>().AnyAsync()) return;
+
+        var jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        };
+
+        // ── Category: CNC ──────────────────────────────────────────────
+        var cncCategory = new MachineCategory
+        {
+            Id = Guid.NewGuid(),
+            Code = "CNC",
+            DisplayNameEn = "CNC Machines",
+            DisplayNameAr = "أجهزة CNC",
+            DescriptionEn = "Computer-controlled milling, routing and drilling machines.",
+            DescriptionAr = "آلات الطحن والتوجيه والحفر المتحكم بها بالحاسوب.",
+            IconKey = "icon-cnc",
+            SortOrder = 1,
+            IsActive = true
+        };
+
+        var printer3dCategory = new MachineCategory
+        {
+            Id = Guid.NewGuid(),
+            Code = "PRINTER3D",
+            DisplayNameEn = "3D Printers",
+            DisplayNameAr = "طابعات ثلاثية الأبعاد",
+            DescriptionEn = "Fused deposition and resin 3D printing machines.",
+            DescriptionAr = "طابعات ثلاثية الأبعاد بالترسيب والراتنج.",
+            IconKey = "icon-printer3d",
+            SortOrder = 2,
+            IsActive = true
+        };
+
+        var laserCategory = new MachineCategory
+        {
+            Id = Guid.NewGuid(),
+            Code = "LASER",
+            DisplayNameEn = "Laser Machines",
+            DisplayNameAr = "آلات الليزر",
+            DescriptionEn = "Laser engraving and cutting machines.",
+            DescriptionAr = "آلات النقش والقطع بالليزر.",
+            IconKey = "icon-laser",
+            SortOrder = 3,
+            IsActive = true
+        };
+
+        context.Set<MachineCategory>().AddRange(cncCategory, printer3dCategory, laserCategory);
+
+        // ── Family: MABA CNC Series ────────────────────────────────────
+        var cncFamily = new MachineFamily
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = cncCategory.Id,
+            Code = "MABA_CNC_SERIES",
+            DisplayNameEn = "MABA CNC Series",
+            DisplayNameAr = "سلسلة CNC من MABA",
+            DescriptionEn = "MABA in-house desktop CNC routing and milling machines.",
+            DescriptionAr = "أجهزة CNC المكتبية من تصنيع MABA.",
+            Manufacturer = "MABA",
+            IsActive = true,
+            SortOrder = 1
+        };
+
+        var printer3dFamily = new MachineFamily
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = printer3dCategory.Id,
+            Code = "MABA_PRINTER3D_SERIES",
+            DisplayNameEn = "MABA Printer Series",
+            DisplayNameAr = "سلسلة الطباعة من MABA",
+            DescriptionEn = "MABA desktop FDM and resin 3D printers.",
+            DescriptionAr = "طابعات ثلاثية الأبعاد المكتبية من MABA.",
+            Manufacturer = "MABA",
+            IsActive = true,
+            SortOrder = 1
+        };
+
+        var laserFamily = new MachineFamily
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = laserCategory.Id,
+            Code = "MABA_LASER_SERIES",
+            DisplayNameEn = "MABA Laser Series",
+            DisplayNameAr = "سلسلة الليزر من MABA",
+            DescriptionEn = "MABA desktop diode and CO2 laser engravers.",
+            DescriptionAr = "آلات النقش بالليزر المكتبية من MABA.",
+            Manufacturer = "MABA",
+            IsActive = true,
+            SortOrder = 1
+        };
+
+        context.Set<MachineFamily>().AddRange(cncFamily, printer3dFamily, laserFamily);
+
+        // ── Machine Definition: MABA CNC 400 ──────────────────────────
+        var runtimeBinding = new RuntimeBindingSection
+        {
+            DefaultDriverType = DriverType.ArduinoSerial,
+            SupportedDriverTypes = new() { DriverType.ArduinoSerial, DriverType.GRBL, DriverType.Simulated },
+            FirmwareProtocol = FirmwareProtocol.GRBL_1_1,
+            SupportedSetupModes = new() { SetupMode.RealAndSimulation },
+            VisualizationType = VisualizationType.CncTopDown2D,
+            KinematicsType = KinematicsType.MovingGantryXY,
+            RuntimeUiVariant = "cnc-standard-v1"
+        };
+
+        var axisConfig = new AxisConfigSection
+        {
+            AxisCount = 3,
+            SupportedAxes = new() { AxisId.X, AxisId.Y, AxisId.Z },
+            AxisRoles = new() { { "X", AxisRole.Primary }, { "Y", AxisRole.Secondary }, { "Z", AxisRole.Vertical } },
+            AxisDirections = new() { { "X", Direction.Normal }, { "Y", Direction.Normal }, { "Z", Direction.Normal } },
+            HomingSupport = new() { { "X", true }, { "Y", true }, { "Z", true } },
+            HomeOriginConvention = HomeOriginConvention.FrontLeft,
+            WorkCoordinateSupport = true,
+            MachineCoordinateSupport = true,
+            RelativeMoveSupport = true,
+            AbsoluteMoveSupport = true
+        };
+
+        var workspace = new WorkspaceSection
+        {
+            MaxTravelMm = new() { { "X", 400.0 }, { "Y", 400.0 }, { "Z", 80.0 } },
+            MinTravelMm = new() { { "X", 0.0 }, { "Y", 0.0 }, { "Z", 0.0 } },
+            WorkAreaMm = new WorkAreaDimensions { Width = 400.0, Depth = 400.0, Height = 80.0 },
+            MachineDimensionsMm = new MachineDimensions { Width = 620.0, Depth = 620.0, Height = 520.0 },
+            SafeZHeightMm = 10.0,
+            ParkPositionMm = new() { { "X", 0.0 }, { "Y", 400.0 }, { "Z", 50.0 } }
+        };
+
+        var motionDefaults = new MotionDefaultsSection
+        {
+            StepsPerMm = new() { { "X", 800.0 }, { "Y", 800.0 }, { "Z", 800.0 } },
+            MaxFeedMmMin = new() { { "X", 3000.0 }, { "Y", 3000.0 }, { "Z", 500.0 } },
+            MaxAccelMmSec2 = new() { { "X", 200.0 }, { "Y", 200.0 }, { "Z", 50.0 } },
+            JogPresets = new()
+            {
+                new JogPreset { Label = "Fine",   FeedMmMin = 200.0,  DistanceMm = 0.1  },
+                new JogPreset { Label = "Slow",   FeedMmMin = 500.0,  DistanceMm = 1.0  },
+                new JogPreset { Label = "Normal", FeedMmMin = 1500.0, DistanceMm = 10.0 },
+                new JogPreset { Label = "Fast",   FeedMmMin = 3000.0, DistanceMm = 50.0 }
+            }
+        };
+
+        var connectionDefaults = new ConnectionDefaultsSection
+        {
+            DefaultBaudRate = 115200,
+            SupportedBaudRates = new() { 9600, 57600, 115200 },
+            SupportedConnectionTypes = new() { ConnectionType.Serial, ConnectionType.USB, ConnectionType.Simulated },
+            RequiresHandshake = true,
+            CommandTerminator = "\n",
+            ResponseAckPattern = "ok",
+            ProtocolNotes = "GRBL 1.1 — status via ? command."
+        };
+
+        var capabilities = new CapabilitiesSection
+        {
+            Motion = new MotionCapabilities
+            {
+                Homing = true, ZHoming = true, CombinedXYHoming = true,
+                RelativeMoves = true, AbsoluteMoves = true,
+                Pause = true, Resume = true, Stop = true,
+                Park = true, CenterMove = true, WorkOffset = true,
+                JogContinuous = true, JogStep = true
+            },
+            Execution = new ExecutionCapabilities
+            {
+                RealExecution = true, Simulation = true,
+                PreviewPlayback = true, DryRun = false, FileRun = true,
+                Frame = true, BoundingBoxPreview = true,
+                LiveReportedPosition = true, EstimatedPositionOnly = false,
+                ToolpathPreview = true, ProgressTracking = true
+            },
+            Protocol = new ProtocolCapabilities
+            {
+                Handshake = true, Acknowledgements = true,
+                AlarmReporting = true, AlarmReset = true,
+                StatusQuery = true, PositionQuery = true,
+                MotorEnable = true, MotorDisable = true,
+                FeedHold = true, SoftReset = true
+            },
+            Visualization = new VisualizationCapabilities
+            {
+                MachineVisualization = true, TopView2D = true,
+                Perspective3D = false, KinematicsAnimation = false,
+                RealTimePositionDisplay = true
+            },
+            FileHandling = new FileHandlingCapabilities
+            {
+                LocalFileRun = true, StreamingExecution = true,
+                GcodeValidation = true, MultipleFileFormats = true
+            }
+        };
+
+        var fileSupport = new FileSupportSection
+        {
+            SupportedInputFileTypes = new() { ".gcode", ".nc", ".tap" },
+            GcodeDialect = GcodeDialect.GRBL,
+            SupportedOperationTypes = new() { OperationType.Milling, OperationType.Engraving, OperationType.Drilling }
+        };
+
+        var visualization = new VisualizationSection
+        {
+            VisualizationType = VisualizationType.CncTopDown2D,
+            KinematicsType = KinematicsType.MovingGantryXY,
+            CoordinatePresentationMode = CoordinateMode.BottomLeft,
+            MachineShapeHint = MachineShapeHint.Rectangular,
+            DefaultViewMode = ViewMode.Top2D
+        };
+
+        var profileRules = new ProfileRulesSection
+        {
+            AllowedOverrides = new()
+            {
+                OverrideField.DriverType, OverrideField.BaudRate, OverrideField.Port,
+                OverrideField.StepsPerMm, OverrideField.MaxFeed, OverrideField.JogPresets,
+                OverrideField.SafeZ, OverrideField.ParkPosition, OverrideField.WorkOffset, OverrideField.Notes
+            },
+            OverrideConstraints = new()
+            {
+                new OverrideConstraint { Field = OverrideField.DriverType, ConstraintType = ConstraintType.AllowedValues, AllowedValues = new() { "ArduinoSerial", "GRBL", "Simulated" } },
+                new OverrideConstraint { Field = OverrideField.BaudRate,   ConstraintType = ConstraintType.AllowedValues, AllowedValues = new() { "9600", "57600", "115200" } },
+                new OverrideConstraint { Field = OverrideField.StepsPerMm, ConstraintType = ConstraintType.MaxDeltaPercent, MaxDeltaPercent = 20.0 },
+                new OverrideConstraint { Field = OverrideField.MaxFeed,    ConstraintType = ConstraintType.Range, MinValue = 100.0, MaxValue = 3000.0 },
+                new OverrideConstraint { Field = OverrideField.SafeZ,      ConstraintType = ConstraintType.Range, MinValue = 1.0,   MaxValue = 80.0   },
+                new OverrideConstraint { Field = OverrideField.WorkOffset,  ConstraintType = ConstraintType.Range, MinValue = 0.0,   MaxValue = 400.0  },
+                new OverrideConstraint { Field = OverrideField.JogPresets,  ConstraintType = ConstraintType.None },
+                new OverrideConstraint { Field = OverrideField.ParkPosition,ConstraintType = ConstraintType.Range, MinValue = 0.0,   MaxValue = 400.0  },
+                new OverrideConstraint { Field = OverrideField.Port,        ConstraintType = ConstraintType.FreeText },
+                new OverrideConstraint { Field = OverrideField.Notes,       ConstraintType = ConstraintType.FreeText }
+            },
+            BuiltInProfileRules = new BuiltInProfileRules(),
+            UserProfileRules = new UserProfileRules()
+        };
+
+        var cncDefinition = new MachineDefinition
+        {
+            Id = Guid.NewGuid(),
+            Code = "MABA_CNC_400",
+            Version = "1.0",
+            RevisionNote = "Initial release.",
+            CategoryId = cncCategory.Id,
+            FamilyId = cncFamily.Id,
+            DisplayNameEn = "MABA CNC 400",
+            DisplayNameAr = "MABA CNC 400",
+            DescriptionEn = "400×400 mm desktop CNC router with Arduino-based GRBL 1.1 control.",
+            DescriptionAr = "راوتر CNC مكتبي بمساحة 400×400 ملم مع تحكم GRBL 1.1 قائم على Arduino.",
+            Manufacturer = "MABA",
+            TagsJson = JsonSerializer.Serialize(new[] { "cnc", "desktop", "routing", "arduino", "grbl" }),
+            IsActive = true,
+            IsPublic = true,
+            IsDeprecated = false,
+            SortOrder = 1,
+            ReleasedAt = new DateTime(2025, 11, 1, 0, 0, 0, DateTimeKind.Utc),
+            RuntimeBinding = runtimeBinding,
+            AxisConfig = axisConfig,
+            Workspace = workspace,
+            MotionDefaults = motionDefaults,
+            ConnectionDefaults = connectionDefaults,
+            Capabilities = capabilities,
+            FileSupport = fileSupport,
+            Visualization = visualization,
+            ProfileRules = profileRules
+        };
+
+        context.Set<MachineDefinition>().Add(cncDefinition);
+        await context.SaveChangesAsync();
     }
 }
 

@@ -50,6 +50,8 @@ public class ModulesViewModel : ViewModelBase
 
         if (m.Code == "DEXTER-CAL")
             _navigationService.NavigateTo("DexterCalibration");
+        else if (m.Code == "CNC-MGR")
+            _navigationService.NavigateTo("CncControl");
         else
             MessageBox.Show("Module page not available yet.", "Modules", MessageBoxButton.OK, MessageBoxImage.Information);
     }

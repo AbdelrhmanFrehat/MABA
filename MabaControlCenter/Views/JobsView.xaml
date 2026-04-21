@@ -121,40 +121,57 @@
                             <Button Content="{Binding OpenInModuleLabel}"
                                     Command="{Binding OpenInModuleCommand}"
                                     Visibility="{Binding CanOpenInModule, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsEnabled="{Binding CanOpenInModule}"
                                     Padding="12,8" Margin="0,0,8,8"
                                     Background="{DynamicResource BackgroundMediumBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Cursor="Hand"/>
-                            <Button Content="Mark Ready"
+                            <Button Content="Approve Job"
                                     Command="{Binding ApproveCommand}"
-                                    Visibility="{Binding CanApprove, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Visibility="{Binding ShowApproveAction, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsEnabled="{Binding CanApprove}"
                                     Padding="12,8" Margin="0,0,8,8"
                                     Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                     BorderThickness="0" Cursor="Hand"/>
-                            <Button Content="Start"
+                            <Button Content="Start Job"
                                     Command="{Binding StartCommand}"
-                                    Visibility="{Binding CanStart, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Visibility="{Binding ShowStartAction, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsEnabled="{Binding CanStart}"
                                     Padding="12,8" Margin="0,0,8,8"
                                     Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                     BorderThickness="0" Cursor="Hand"/>
-                            <Button Content="Complete"
+                            <Button Content="Complete Job"
                                     Command="{Binding CompleteCommand}"
-                                    Visibility="{Binding CanComplete, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Visibility="{Binding ShowCompleteAction, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsEnabled="{Binding CanComplete}"
                                     Padding="12,8" Margin="0,0,8,8"
                                     Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                     BorderThickness="0" Cursor="Hand"/>
-                            <Button Content="Fail"
+                            <Button Content="Fail Job"
                                     Command="{Binding FailCommand}"
-                                    Visibility="{Binding CanFail, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Visibility="{Binding ShowFailAction, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsEnabled="{Binding CanFail}"
                                     Padding="12,8" Margin="0,0,8,8"
                                     Background="{DynamicResource BackgroundMediumBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Cursor="Hand"/>
                             <Button Content="Cancel"
                                     Command="{Binding CancelCommand}"
-                                    Visibility="{Binding CanCancel, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Visibility="{Binding ShowCancelAction, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsEnabled="{Binding CanCancel}"
                                     Padding="12,8" Margin="0,0,8,8"
                                     Background="{DynamicResource BackgroundMediumBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Cursor="Hand"/>
                         </WrapPanel>
+
+                        <TextBlock Text="Connect a device to start this job"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,8"
+                                   Visibility="{Binding ShowStartBlockedMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                        <TextBlock Text="{Binding ExecutionStatusText}"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,12"
+                                   Visibility="{Binding IsExecuting, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                         <TextBlock Text="Overview" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>

@@ -73,7 +73,7 @@ export class AppMenuitem {
 
     @Input() index!: number;
 
-    @Input() @HostBinding('class.layout-root-menuitem') root!: boolean;
+    @Input() root!: boolean;
 
     @Input() parentKey!: string;
 
@@ -172,9 +172,13 @@ export class AppMenuitem {
         return this.root ? 'expanded' : this.active ? 'expanded' : 'collapsed';
     }
 
-    @HostBinding('class.active-menuitem')
-    get activeClass() {
-        return this.active && !this.root;
+    @HostBinding('class')
+    get hostClasses(): string {
+        const cls: string[] = [];
+        if (this.root) cls.push('layout-root-menuitem');
+        if (this.active && !this.root) cls.push('active-menuitem');
+        if (this.root && this.item?.styleClass) cls.push(this.item.styleClass);
+        return cls.join(' ');
     }
 
     ngOnDestroy() {

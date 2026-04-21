@@ -35,8 +35,8 @@ public class ModuleService : IModuleService
             Code = "CNC-MGR",
             Description = "Control and monitoring tools for MABA CNC systems",
             Version = "1.0.0",
-            IsInstalled = false,
-            IsEnabled = false,
+            IsInstalled = true,
+            IsEnabled = true,
             SupportedProductCodes = new List<string> { "MABA-CNC" }
         });
     }

@@ -103,6 +103,29 @@ public class JobsController : ControllerBase
 
     [HttpPost("{id:guid}/actions/{action}")]
     public async Task<ActionResult<ControlCenterJobDetailDto>> RunAction(Guid id, string action, CancellationToken cancellationToken = default)
+        => await ExecuteActionAsync(id, action, cancellationToken);
+
+    [HttpPost("{id:guid}/mark-ready")]
+    public async Task<ActionResult<ControlCenterJobDetailDto>> MarkReady(Guid id, CancellationToken cancellationToken = default)
+        => await ExecuteActionAsync(id, "mark-ready", cancellationToken);
+
+    [HttpPost("{id:guid}/start")]
+    public async Task<ActionResult<ControlCenterJobDetailDto>> Start(Guid id, CancellationToken cancellationToken = default)
+        => await ExecuteActionAsync(id, "start", cancellationToken);
+
+    [HttpPost("{id:guid}/complete")]
+    public async Task<ActionResult<ControlCenterJobDetailDto>> Complete(Guid id, CancellationToken cancellationToken = default)
+        => await ExecuteActionAsync(id, "complete", cancellationToken);
+
+    [HttpPost("{id:guid}/fail")]
+    public async Task<ActionResult<ControlCenterJobDetailDto>> Fail(Guid id, CancellationToken cancellationToken = default)
+        => await ExecuteActionAsync(id, "fail", cancellationToken);
+
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<ActionResult<ControlCenterJobDetailDto>> Cancel(Guid id, CancellationToken cancellationToken = default)
+        => await ExecuteActionAsync(id, "cancel", cancellationToken);
+
+    private async Task<ActionResult<ControlCenterJobDetailDto>> ExecuteActionAsync(Guid id, string action, CancellationToken cancellationToken)
     {
         var job = await _context.Set<CcJob>().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (job == null)

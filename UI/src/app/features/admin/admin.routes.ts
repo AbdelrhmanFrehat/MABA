@@ -233,6 +233,11 @@ export const adminRoutes: Routes = [
         path: 'assets',
         loadChildren: () => import('./assets/assets.routes').then(m => m.assetsRoutes),
         canActivate: [authGuard]
+    },
+    {
+        path: 'machine-catalog',
+        loadChildren: () => import('./machine-catalog/machine-catalog.routes').then(m => m.machineCatalogRoutes),
+        canActivate: [authGuard]
     }
 ];
 

@@ -18,7 +18,18 @@ public class NavigationService : INavigationService
         ILocalizationService localizationService,
         ISettingsService settingsService,
         IJobsService jobsService,
-        IActiveProductionJobService activeProductionJobService)
+        IActiveProductionJobService activeProductionJobService,
+        ICncProfileService cncProfileService,
+        ICncControllerService cncControllerService,
+        IGcodeParserService gcodeParserService,
+        ICncExecutionQueueService cncExecutionQueueService,
+        ICncJobSessionService cncJobSessionService,
+        ICncPreviewPlaybackService cncPreviewPlaybackService,
+        ICncFramePathService cncFramePathService,
+        ICncJobPlacementService cncJobPlacementService,
+        IMachineCatalogService machineCatalogService,
+        IRuntimeProfileService runtimeProfileService,
+        IActiveMachineContextService activeMachineContextService)
     {
         _viewModels["Dashboard"] = new DashboardViewModel(updateService, newsService, deviceService, moduleService, localizationService);
         _viewModels["Discover"] = new DiscoverViewModel(localizationService);
@@ -27,7 +38,9 @@ public class NavigationService : INavigationService
         _viewModels["Commands"] = new CommandsViewModel(deviceService, loggingService);
         _viewModels["Modules"] = new ModulesViewModel(moduleService, deviceService, this);
         _viewModels["DexterCalibration"] = new DexterCalibrationViewModel(deviceService, loggingService, this);
-        _viewModels["CncWorkspace"] = new ProductionWorkspaceViewModel("CncWorkspace", "CNC Workspace", "CNC", activeProductionJobService, deviceService, this);
+        var cncControlViewModel = new CncControlViewModel(cncControllerService, cncProfileService, activeProductionJobService, this, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService);
+        _viewModels["CncControl"] = cncControlViewModel;
+        _viewModels["CncWorkspace"] = cncControlViewModel;
         _viewModels["LaserWorkspace"] = new ProductionWorkspaceViewModel("LaserWorkspace", "Laser Workspace", "LASER", activeProductionJobService, deviceService, this);
         _viewModels["Print3dWorkspace"] = new ProductionWorkspaceViewModel("Print3dWorkspace", "3D Printing Workspace", "PRINTER_3D", activeProductionJobService, deviceService, this);
         _viewModels["Logs"] = new LogsViewModel(loggingService);

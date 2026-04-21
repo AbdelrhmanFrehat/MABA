@@ -32,6 +32,7 @@ using Maba.Domain.Sales;
 using Maba.Domain.Assets;
 using Maba.Domain.Downloads;
 using Maba.Domain.Wishlist;
+using Maba.Domain.MachineCatalog;
 using Maba.Infrastructure.Data.Configurations;
 using CatalogInventory = Maba.Domain.Catalog.Inventory;
 
@@ -98,8 +99,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PurchaseReturn> PurchaseReturns => Set<PurchaseReturn>();
     public DbSet<PurchaseReturnLine> PurchaseReturnLines => Set<PurchaseReturnLine>();
 
-    // Machines
+    // Machines (ERP physical assets)
     public DbSet<Machine> Machines => Set<Machine>();
+
+    // Machine Catalog Platform (Control Center / app machine definitions)
+    public DbSet<MachineCategory> MachineCatalogCategories => Set<MachineCategory>();
+    public DbSet<MachineFamily> MachineCatalogFamilies => Set<MachineFamily>();
+    public DbSet<MachineDefinition> MachineDefinitions => Set<MachineDefinition>();
     public DbSet<MachinePart> MachineParts => Set<MachinePart>();
     public DbSet<ItemMachineLink> ItemMachineLinks => Set<ItemMachineLink>();
 

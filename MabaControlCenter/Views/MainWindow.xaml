@@ -35,6 +35,9 @@
         <DataTemplate DataType="{x:Type vm:DexterCalibrationViewModel}">
             <views:DexterCalibrationView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CncControlViewModel}">
+            <views:CncControlView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ProductionWorkspaceViewModel}">
             <views:ProductionWorkspaceView/>
         </DataTemplate>

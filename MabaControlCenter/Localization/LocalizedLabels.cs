@@ -127,6 +127,9 @@ public class LocalizedLabels : INotifyPropertyChanged
     public string Discover_Module_CNCManager_Desc => _service.GetString("Discover_Module_CNCManager_Desc");
     public string Discover_Status_Available => _service.GetString("Discover_Status_Available");
     public string Discover_Status_ComingSoon => _service.GetString("Discover_Status_ComingSoon");
+    public string Cnc_Tab_Operate => _service.GetString("Cnc_Tab_Operate");
+    public string Cnc_Tab_Monitor => _service.GetString("Cnc_Tab_Monitor");
+    public string Cnc_Tab_Setup => _service.GetString("Cnc_Tab_Setup");
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
