@@ -78,6 +78,7 @@ import { MachineCategory, MachineFamily, MachineDefinitionSummary } from '../../
             <p-table [value]="rows" [loading]="loading" stripedRows>
                 <ng-template pTemplate="header">
                     <tr>
+                        <th style="width:56px"></th>
                         <th>Code</th>
                         <th>Name (EN)</th>
                         <th>Ver.</th>
@@ -90,6 +91,15 @@ import { MachineCategory, MachineFamily, MachineDefinitionSummary } from '../../
                 </ng-template>
                 <ng-template pTemplate="body" let-row>
                     <tr>
+                        <td>
+                            <img *ngIf="row.thumbnailUrl || row.imageUrl"
+                                 [src]="row.thumbnailUrl || row.imageUrl" [alt]="row.code"
+                                 style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--surface-border)" />
+                            <div *ngIf="!row.thumbnailUrl && !row.imageUrl"
+                                 style="width:44px;height:44px;border-radius:6px;border:1px dashed var(--surface-border);display:flex;align-items:center;justify-content:center;">
+                                <i class="pi pi-image text-300" style="font-size:1.1rem"></i>
+                            </div>
+                        </td>
                         <td>
                             <div class="flex flex-col">
                                 <code class="text-primary font-bold text-sm">{{ row.code }}</code>
@@ -127,7 +137,7 @@ import { MachineCategory, MachineFamily, MachineDefinitionSummary } from '../../
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="emptymessage">
-                    <tr><td colspan="8" class="text-center p-5 text-500">No machine definitions found.</td></tr>
+                    <tr><td colspan="9" class="text-center p-5 text-500">No machine definitions found.</td></tr>
                 </ng-template>
             </p-table>
         </div>

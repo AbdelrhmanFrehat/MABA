@@ -179,6 +179,25 @@ const AXES            = ['X','Y','Z','A','B','C'];
                                     <label>Revision Note</label>
                                     <input pInputText formControlName="revisionNote" class="w-full" />
                                 </div>
+                                <div class="field">
+                                    <label>Machine Image URL</label>
+                                    <input pInputText formControlName="imageUrl" class="w-full" placeholder="https://…/machine-photo.jpg" />
+                                    <small>Full photo of the machine — shown in the desktop app and admin list.</small>
+                                </div>
+                                <div class="field">
+                                    <label>Thumbnail URL</label>
+                                    <input pInputText formControlName="thumbnailUrl" class="w-full" placeholder="https://…/thumb.jpg" />
+                                    <small>Small square preview (optional — falls back to image URL).</small>
+                                </div>
+                                <div class="field col-span-2" *ngIf="form.get('imageUrl')?.value">
+                                    <label class="text-sm text-500">Image Preview</label>
+                                    <div class="flex gap-3 mt-1">
+                                        <img [src]="form.get('imageUrl')?.value" alt="Machine image"
+                                             style="max-height:120px; max-width:240px; object-fit:contain; border:1px solid var(--surface-border); border-radius:6px; padding:4px; background:var(--surface-50)" />
+                                        <img *ngIf="form.get('thumbnailUrl')?.value" [src]="form.get('thumbnailUrl')?.value" alt="Thumbnail"
+                                             style="max-height:60px; max-width:60px; object-fit:cover; border:1px solid var(--surface-border); border-radius:6px;" />
+                                    </div>
+                                </div>
                                 <div class="field col-span-2">
                                     <label>Internal Notes <span class="text-500 font-normal text-sm">(admin only, never exposed)</span></label>
                                     <textarea pTextarea formControlName="internalNotes" class="w-full" rows="2"></textarea>
@@ -732,6 +751,8 @@ export class MachineDefinitionFormComponent implements OnInit {
         sortOrder:      [0],
         releasedAt:     [''],
         revisionNote:   [''],
+        imageUrl:       [''],
+        thumbnailUrl:   [''],
         internalNotes:  [''],
         isActive:       [true],
         isPublic:       [true],
@@ -922,7 +943,9 @@ export class MachineDefinitionFormComponent implements OnInit {
             descriptionEn: def.descriptionEn || '', descriptionAr: def.descriptionAr || '',
             tagsInput: (def.tags || []).join(', '),
             sortOrder: def.sortOrder, releasedAt: def.releasedAt || '',
-            revisionNote: def.revisionNote || '', internalNotes: def.internalNotes || '',
+            revisionNote: def.revisionNote || '',
+            imageUrl: def.imageUrl || '', thumbnailUrl: def.thumbnailUrl || '',
+            internalNotes: def.internalNotes || '',
             isActive: def.isActive, isPublic: def.isPublic,
             isDeprecated: def.isDeprecated, deprecationNote: def.deprecationNote || '',
 
@@ -1095,6 +1118,8 @@ export class MachineDefinitionFormComponent implements OnInit {
             sortOrder: v.sortOrder,
             releasedAt: this.isoDate(v.releasedAt),
             revisionNote: v.revisionNote || undefined,
+            imageUrl: v.imageUrl || undefined,
+            thumbnailUrl: v.thumbnailUrl || undefined,
             internalNotes: v.internalNotes || undefined,
             isActive: v.isActive, isPublic: v.isPublic,
             isDeprecated: v.isDeprecated,

@@ -74,6 +74,8 @@ public class GetMachineDefinitionsQueryHandler : IRequestHandler<GetMachineDefin
             SortOrder = d.SortOrder,
             ReleasedAt = d.ReleasedAt,
             Tags = tags,
+            ImageUrl = d.ImageUrl,
+            ThumbnailUrl = d.ThumbnailUrl,
             DefaultDriverType = d.RuntimeBinding.DefaultDriverType.ToString(),
             SupportedSetupModes = d.RuntimeBinding.SupportedSetupModes.Select(m => m.ToString()).ToList(),
             RuntimeUiVariant = d.RuntimeBinding.RuntimeUiVariant,
@@ -129,6 +131,8 @@ public class GetMachineDefinitionByIdQueryHandler : IRequestHandler<GetMachineDe
         DeprecationNote = d.DeprecationNote,
         SortOrder = d.SortOrder,
         ReleasedAt = d.ReleasedAt,
+        ImageUrl = d.ImageUrl,
+        ThumbnailUrl = d.ThumbnailUrl,
         InternalNotes = includeInternalNotes ? d.InternalNotes : null,
         CreatedAt = d.CreatedAt,
         UpdatedAt = d.UpdatedAt,
@@ -193,6 +197,8 @@ public class CreateMachineDefinitionCommandHandler : IRequestHandler<CreateMachi
             DeprecationNote = r.DeprecationNote?.Trim(),
             SortOrder = r.SortOrder,
             ReleasedAt = r.ReleasedAt,
+            ImageUrl = string.IsNullOrWhiteSpace(r.ImageUrl) ? null : r.ImageUrl.Trim(),
+            ThumbnailUrl = string.IsNullOrWhiteSpace(r.ThumbnailUrl) ? null : r.ThumbnailUrl.Trim(),
             InternalNotes = r.InternalNotes?.Trim(),
             RuntimeBinding = r.RuntimeBinding,
             AxisConfig = r.AxisConfig,
@@ -268,6 +274,8 @@ public class UpdateMachineDefinitionCommandHandler : IRequestHandler<UpdateMachi
         entity.DeprecationNote = r.DeprecationNote?.Trim();
         entity.SortOrder = r.SortOrder;
         entity.ReleasedAt = r.ReleasedAt;
+        entity.ImageUrl = string.IsNullOrWhiteSpace(r.ImageUrl) ? null : r.ImageUrl.Trim();
+        entity.ThumbnailUrl = string.IsNullOrWhiteSpace(r.ThumbnailUrl) ? null : r.ThumbnailUrl.Trim();
         entity.InternalNotes = r.InternalNotes?.Trim();
         entity.RuntimeBinding = r.RuntimeBinding;
         entity.AxisConfig = r.AxisConfig;

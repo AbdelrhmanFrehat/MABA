@@ -7,11 +7,7 @@ namespace MabaControlCenter.Services;
 
 public class RuntimeProfileService : IRuntimeProfileService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true
-    };
+    private static readonly JsonSerializerOptions JsonOptions = MachinePlatformJson.CreateOptions();
 
     private readonly string _profilesFilePath;
     private RuntimeProfile? _activeProfile;
@@ -55,6 +51,47 @@ public class RuntimeProfileService : IRuntimeProfileService
         ProfilesChanged?.Invoke(this, EventArgs.Empty);
         ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
         return Clone(profile);
+    }
+
+    public int EnsureSystemProfilesForDefinitions(IEnumerable<MachineDefinition> definitions)
+    {
+        var created = 0;
+        foreach (var definition in definitions)
+        {
+            var hasDefaultProfile = Profiles.Any(profile =>
+                profile.ProfileType == RuntimeProfileType.System
+                && profile.MachineDefinitionId == definition.Id
+                && string.Equals(profile.MachineDefinitionVersion, definition.Version, StringComparison.OrdinalIgnoreCase));
+
+            if (hasDefaultProfile)
+                continue;
+
+            var profile = new RuntimeProfile
+            {
+                ProfileName = $"{definition.DisplayNameEn} - Default",
+                ProfileType = RuntimeProfileType.System,
+                MachineDefinitionId = definition.Id,
+                MachineDefinitionVersion = definition.Version,
+                DefinitionSnapshot = Clone(definition),
+                CompatibilityState = DefinitionCompatibilityState.Current,
+                Overrides = new RuntimeProfileOverrides(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            Profiles.Add(profile);
+            if (_activeProfile == null)
+                _activeProfile = profile;
+            created++;
+        }
+
+        if (created > 0)
+        {
+            SaveStore();
+            ProfilesChanged?.Invoke(this, EventArgs.Empty);
+            ActiveProfileChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        return created;
     }
 
     public RuntimeProfile DuplicateProfile(string runtimeProfileId)
@@ -174,7 +211,7 @@ public class RuntimeProfileService : IRuntimeProfileService
                 }
             }
         }
-        catch
+        catch (JsonException)
         {
             Profiles.Clear();
             _activeProfile = null;

@@ -38,6 +38,9 @@ public class MachineDefinition : BaseEntity
     public int SortOrder { get; set; }
     public DateTime? ReleasedAt { get; set; }
 
+    public string? ImageUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
+
     /// <summary>Never exposed in app-facing API responses.</summary>
     public string? InternalNotes { get; set; }
 

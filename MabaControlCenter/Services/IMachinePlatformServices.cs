@@ -25,6 +25,7 @@ public interface IRuntimeProfileService
     event EventHandler? ActiveProfileChanged;
 
     RuntimeProfile CreateFromDefinition(MachineDefinition definition, string profileName, RuntimeProfileType profileType, DriverType? driverOverride = null);
+    int EnsureSystemProfilesForDefinitions(IEnumerable<MachineDefinition> definitions);
     RuntimeProfile DuplicateProfile(string runtimeProfileId);
     void SaveProfile(RuntimeProfile profile);
     bool DeleteProfile(string runtimeProfileId);

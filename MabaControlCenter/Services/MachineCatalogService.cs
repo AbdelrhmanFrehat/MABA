@@ -8,11 +8,7 @@ namespace MabaControlCenter.Services;
 
 public class MachineCatalogService : IMachineCatalogService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true
-    };
+    private static readonly JsonSerializerOptions JsonOptions = MachinePlatformJson.CreateOptions();
 
     private readonly ISettingsService _settingsService;
     private readonly string _cacheFilePath;
@@ -114,7 +110,14 @@ public class MachineCatalogService : IMachineCatalogService
         using var response = await client.GetAsync($"{baseUrl}{path}", cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions, cancellationToken);
+        try
+        {
+            return await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions, cancellationToken);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Machine catalog JSON parse failed for {typeof(T).Name}. Path: {ex.Path}. {ex.Message}", ex);
+        }
     }
 
     private void LoadCache()
@@ -126,6 +129,10 @@ public class MachineCatalogService : IMachineCatalogService
                 var json = File.ReadAllText(_cacheFilePath);
                 _store = JsonSerializer.Deserialize<MachineDefinitionCacheStore>(json, JsonOptions) ?? new MachineDefinitionCacheStore();
             }
+        }
+        catch (JsonException ex)
+        {
+            _store = new MachineDefinitionCacheStore { LastSyncStatus = $"Machine definition cache enum/JSON parse failed. Path: {ex.Path}. {ex.Message}" };
         }
         catch
         {

@@ -177,6 +177,8 @@ export interface MachineDefinitionSummary {
     deprecationNote?: string;
     sortOrder: number;
     releasedAt?: string;
+    imageUrl?: string;
+    thumbnailUrl?: string;
     tags: string[];
     defaultDriverType: string;
     supportedSetupModes: string[];
@@ -206,6 +208,8 @@ export interface MachineDefinition {
     deprecationNote?: string;
     sortOrder: number;
     releasedAt?: string;
+    imageUrl?: string;
+    thumbnailUrl?: string;
     internalNotes?: string;
     createdAt: string;
     updatedAt?: string;

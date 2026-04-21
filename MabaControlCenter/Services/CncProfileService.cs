@@ -7,7 +7,7 @@ namespace MabaControlCenter.Services;
 
 public class CncProfileService : ICncProfileService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOptions = MachinePlatformJson.CreateOptions();
     private readonly string _profilesFilePath;
     private readonly string _legacyConfigFilePath;
     private CncMachineProfile? _activeProfile;

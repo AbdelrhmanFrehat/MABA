@@ -67,6 +67,12 @@ public class MachineDefinitionConfiguration : IEntityTypeConfiguration<MachineDe
 
         builder.Property(x => x.SortOrder).HasDefaultValue(0);
 
+        builder.Property(x => x.ImageUrl)
+            .HasMaxLength(2000);
+
+        builder.Property(x => x.ThumbnailUrl)
+            .HasMaxLength(2000);
+
         builder.Property(x => x.InternalNotes)
             .HasColumnType("nvarchar(max)");
 

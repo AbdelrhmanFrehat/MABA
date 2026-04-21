@@ -60,6 +60,8 @@ public class MachineDefinitionSummaryDto
     public int SortOrder { get; set; }
     public DateTime? ReleasedAt { get; set; }
     public List<string> Tags { get; set; } = new();
+    public string? ImageUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string DefaultDriverType { get; set; } = string.Empty;
     public List<string> SupportedSetupModes { get; set; } = new();
     public string RuntimeUiVariant { get; set; } = string.Empty;
@@ -92,6 +94,8 @@ public class MachineDefinitionDto
     public string? DeprecationNote { get; set; }
     public int SortOrder { get; set; }
     public DateTime? ReleasedAt { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     // internalNotes intentionally omitted — populated only by admin-specific endpoint
     public string? InternalNotes { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -166,6 +170,8 @@ public class CreateMachineDefinitionRequest
     public string? DeprecationNote { get; set; }
     public int SortOrder { get; set; }
     public DateTime? ReleasedAt { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string? InternalNotes { get; set; }
 
     public RuntimeBindingSection RuntimeBinding { get; set; } = new();

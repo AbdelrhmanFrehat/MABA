@@ -65,6 +65,12 @@ public class CncControlViewModel : ViewModelBase
     private RuntimeProfile? _selectedRuntimeProfile;
     private string _newRuntimeProfileName = string.Empty;
     private string _machinePlatformStatus = "Machine platform cache not synced yet.";
+    private bool _isMachineWizardOpen;
+    private bool _isProfileManagerOpen;
+    private MachineCategory? _wizardSelectedMachineCategory;
+    private MachineFamily? _wizardSelectedMachineFamily;
+    private MachineDefinitionSummary? _wizardSelectedMachineDefinition;
+    private SetupMode? _wizardSelectedSetupMode;
 
     public CncControlViewModel(
         ICncControllerService cncControllerService,
@@ -120,6 +126,11 @@ public class CncControlViewModel : ViewModelBase
         RestoreDefaultProfilesCommand = new RelayCommand(_ => RestoreDefaultProfiles());
         SyncMachineCatalogCommand = new RelayCommand(async _ => await SyncMachineCatalogAsync());
         CreateRuntimeProfileCommand = new RelayCommand(async _ => await CreateRuntimeProfileFromSelectionAsync(), _ => SelectedMachineDefinitionSummary != null);
+        OpenMachineWizardCommand = new RelayCommand(_ => OpenMachineWizard());
+        CloseMachineWizardCommand = new RelayCommand(_ => CloseMachineWizard());
+        ConfirmMachineWizardCommand = new RelayCommand(async _ => await ConfirmMachineWizardAsync(), _ => WizardSelectedMachineDefinition != null);
+        ManageProfilesCommand = new RelayCommand(_ => IsProfileManagerOpen = !IsProfileManagerOpen);
+        UseSelectedMachineCommand = new RelayCommand(_ => ConfirmAndActivateSelectedMachine(), _ => SelectedMachineDefinitionSummary != null && SelectedRuntimeProfile != null);
         ActivateRuntimeProfileCommand = new RelayCommand(_ => ActivateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
         DuplicateRuntimeProfileCommand = new RelayCommand(_ => DuplicateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
         DeleteRuntimeProfileCommand = new RelayCommand(_ => DeleteSelectedRuntimeProfile(), _ => CanDeleteSelectedRuntimeProfile);
@@ -200,13 +211,26 @@ public class CncControlViewModel : ViewModelBase
     public ObservableCollection<string> DiagnosticsMessages { get; }
     public ObservableCollection<CncOperatorEventEntry> OperatorEvents => _jobSessionService.OperatorEvents;
     public IEnumerable<CncMachineProfile> Profiles => _cncProfileService.Profiles;
-    public IEnumerable<RuntimeProfile> RuntimeProfiles => _runtimeProfileService.Profiles;
+    public IEnumerable<RuntimeProfile> RuntimeProfiles => _runtimeProfileService.Profiles
+        .Where(profile => SelectedMachineDefinitionSummary == null || profile.MachineDefinitionId == SelectedMachineDefinitionSummary.Id)
+        .OrderBy(profile => profile.ProfileType == RuntimeProfileType.System ? 0 : 1)
+        .ThenBy(profile => profile.ProfileName);
     public IEnumerable<MachineCategory> MachineCategories => _machineCatalogService.Categories;
     public IEnumerable<MachineFamily> MachineFamilies => _machineCatalogService.Families
         .Where(f => SelectedMachineCategory == null || f.CategoryId == SelectedMachineCategory.Id);
     public IEnumerable<MachineDefinitionSummary> MachineDefinitionSummaries => _machineCatalogService.DefinitionSummaries
         .Where(d => SelectedMachineCategory == null || d.CategoryId == SelectedMachineCategory.Id)
         .Where(d => SelectedMachineFamily == null || d.FamilyId == SelectedMachineFamily.Id);
+    public IEnumerable<MachineFamily> WizardMachineFamilies => _machineCatalogService.Families
+        .Where(f => WizardSelectedMachineCategory == null || f.CategoryId == WizardSelectedMachineCategory.Id)
+        .OrderBy(f => f.SortOrder)
+        .ThenBy(f => f.DisplayNameEn);
+    public IEnumerable<MachineDefinitionSummary> WizardMachineDefinitionSummaries => _machineCatalogService.DefinitionSummaries
+        .Where(d => WizardSelectedMachineCategory == null || d.CategoryId == WizardSelectedMachineCategory.Id)
+        .Where(d => WizardSelectedMachineFamily == null || d.FamilyId == WizardSelectedMachineFamily.Id)
+        .OrderBy(d => d.SortOrder)
+        .ThenBy(d => d.DisplayNameEn);
+    public IEnumerable<SetupMode> WizardSetupModes => GetWizardSetupModes();
     public IReadOnlyList<CncDriverType> DriverTypes { get; }
     public IReadOnlyList<CncHomeOriginConvention> HomeOriginOptions { get; }
     public string MachineCatalogSyncStatus => _machineCatalogService.LastSyncStatus;
@@ -218,6 +242,74 @@ public class CncControlViewModel : ViewModelBase
     private CapabilitiesSection EffectiveCapabilities => _activeMachineContextService.Current.EffectiveCapabilities;
     public string ActiveMachineContextText => _activeMachineContextService.Current.StatusText;
     public string EffectiveCapabilitiesSummary => BuildEffectiveCapabilitiesSummary();
+    public bool HasSelectedRuntimeProfile => SelectedRuntimeProfile != null;
+    public bool HasSelectedMachineDefinition => SelectedMachineDefinitionSummary != null;
+    public bool IsMachineWizardOpen
+    {
+        get => _isMachineWizardOpen;
+        set { if (_isMachineWizardOpen == value) return; _isMachineWizardOpen = value; OnPropertyChanged(); }
+    }
+    public bool IsProfileManagerOpen
+    {
+        get => _isProfileManagerOpen;
+        set { if (_isProfileManagerOpen == value) return; _isProfileManagerOpen = value; OnPropertyChanged(); }
+    }
+    public MachineCategory? WizardSelectedMachineCategory
+    {
+        get => _wizardSelectedMachineCategory;
+        set
+        {
+            if (_wizardSelectedMachineCategory?.Id == value?.Id) return;
+            _wizardSelectedMachineCategory = value;
+            _wizardSelectedMachineFamily = null;
+            _wizardSelectedMachineDefinition = null;
+            _wizardSelectedSetupMode = null;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(WizardSelectedMachineFamily));
+            OnPropertyChanged(nameof(WizardSelectedMachineDefinition));
+            OnPropertyChanged(nameof(WizardSelectedSetupMode));
+            OnPropertyChanged(nameof(WizardMachineFamilies));
+            OnPropertyChanged(nameof(WizardMachineDefinitionSummaries));
+            OnPropertyChanged(nameof(WizardSetupModes));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+    public MachineFamily? WizardSelectedMachineFamily
+    {
+        get => _wizardSelectedMachineFamily;
+        set
+        {
+            if (_wizardSelectedMachineFamily?.Id == value?.Id) return;
+            _wizardSelectedMachineFamily = value;
+            _wizardSelectedMachineDefinition = null;
+            _wizardSelectedSetupMode = null;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(WizardSelectedMachineDefinition));
+            OnPropertyChanged(nameof(WizardSelectedSetupMode));
+            OnPropertyChanged(nameof(WizardMachineDefinitionSummaries));
+            OnPropertyChanged(nameof(WizardSetupModes));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+    public MachineDefinitionSummary? WizardSelectedMachineDefinition
+    {
+        get => _wizardSelectedMachineDefinition;
+        set
+        {
+            if (_wizardSelectedMachineDefinition?.Id == value?.Id) return;
+            _wizardSelectedMachineDefinition = value;
+            _wizardSelectedSetupMode = GetWizardSetupModes().FirstOrDefault();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(WizardSelectedSetupMode));
+            OnPropertyChanged(nameof(WizardSetupModes));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+    public SetupMode? WizardSelectedSetupMode
+    {
+        get => _wizardSelectedSetupMode;
+        set { if (_wizardSelectedSetupMode == value) return; _wizardSelectedSetupMode = value; OnPropertyChanged(); }
+    }
 
     public MachineCategory? SelectedMachineCategory
     {
@@ -228,11 +320,16 @@ public class CncControlViewModel : ViewModelBase
             _selectedMachineCategory = value;
             _selectedMachineFamily = null;
             _selectedMachineDefinitionSummary = null;
+            _selectedRuntimeProfile = null;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedMachineFamily));
             OnPropertyChanged(nameof(SelectedMachineDefinitionSummary));
+            OnPropertyChanged(nameof(SelectedRuntimeProfile));
+            OnPropertyChanged(nameof(HasSelectedMachineDefinition));
+            OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
             OnPropertyChanged(nameof(MachineFamilies));
             OnPropertyChanged(nameof(MachineDefinitionSummaries));
+            OnPropertyChanged(nameof(RuntimeProfiles));
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -245,9 +342,14 @@ public class CncControlViewModel : ViewModelBase
             if (_selectedMachineFamily?.Id == value?.Id) return;
             _selectedMachineFamily = value;
             _selectedMachineDefinitionSummary = null;
+            _selectedRuntimeProfile = null;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedMachineDefinitionSummary));
+            OnPropertyChanged(nameof(SelectedRuntimeProfile));
+            OnPropertyChanged(nameof(HasSelectedMachineDefinition));
+            OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
             OnPropertyChanged(nameof(MachineDefinitionSummaries));
+            OnPropertyChanged(nameof(RuntimeProfiles));
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -259,9 +361,12 @@ public class CncControlViewModel : ViewModelBase
         {
             if (_selectedMachineDefinitionSummary?.Id == value?.Id) return;
             _selectedMachineDefinitionSummary = value;
-            if (value != null && string.IsNullOrWhiteSpace(NewRuntimeProfileName))
-                NewRuntimeProfileName = value.DisplayNameEn;
+            if (value != null)
+                NewRuntimeProfileName = $"{value.DisplayNameEn} Custom";
+            SelectPreferredRuntimeProfileForSelectedMachine();
             OnPropertyChanged();
+            OnPropertyChanged(nameof(RuntimeProfiles));
+            OnPropertyChanged(nameof(HasSelectedMachineDefinition));
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -274,6 +379,7 @@ public class CncControlViewModel : ViewModelBase
             if (_selectedRuntimeProfile?.RuntimeProfileId == value?.RuntimeProfileId) return;
             _selectedRuntimeProfile = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
             OnPropertyChanged(nameof(CanDeleteSelectedRuntimeProfile));
             CommandManager.InvalidateRequerySuggested();
         }
@@ -303,6 +409,11 @@ public class CncControlViewModel : ViewModelBase
     public ICommand RestoreDefaultProfilesCommand { get; }
     public ICommand SyncMachineCatalogCommand { get; }
     public ICommand CreateRuntimeProfileCommand { get; }
+    public ICommand OpenMachineWizardCommand { get; }
+    public ICommand CloseMachineWizardCommand { get; }
+    public ICommand ConfirmMachineWizardCommand { get; }
+    public ICommand ManageProfilesCommand { get; }
+    public ICommand UseSelectedMachineCommand { get; }
     public ICommand ActivateRuntimeProfileCommand { get; }
     public ICommand DuplicateRuntimeProfileCommand { get; }
     public ICommand DeleteRuntimeProfileCommand { get; }
@@ -1256,14 +1367,25 @@ public class CncControlViewModel : ViewModelBase
     {
         try
         {
+            var previousCategoryId = SelectedMachineCategory?.Id;
+            var previousFamilyId = SelectedMachineFamily?.Id;
+            var previousDefinitionId = SelectedMachineDefinitionSummary?.Id;
+            var previousRuntimeProfileId = SelectedRuntimeProfile?.RuntimeProfileId;
+
             MachinePlatformStatus = "Syncing machine catalog from backend...";
             await _machineCatalogService.RefreshAsync();
+            var createdDefaults = _runtimeProfileService.EnsureSystemProfilesForDefinitions(_machineCatalogService.CachedDefinitions.ToList());
             _runtimeProfileService.RecomputeCompatibility(_machineCatalogService.CachedDefinitions.ToList());
-            MachinePlatformStatus = _machineCatalogService.LastSyncStatus;
+            MachinePlatformStatus = createdDefaults > 0
+                ? $"{_machineCatalogService.LastSyncStatus} Default profiles are ready in the background."
+                : $"{_machineCatalogService.LastSyncStatus} Choose a machine to continue.";
             OnPropertyChanged(nameof(MachineCatalogSyncStatus));
             OnPropertyChanged(nameof(MachineCategories));
             OnPropertyChanged(nameof(MachineFamilies));
             OnPropertyChanged(nameof(MachineDefinitionSummaries));
+            OnPropertyChanged(nameof(WizardMachineFamilies));
+            OnPropertyChanged(nameof(WizardMachineDefinitionSummaries));
+            RestoreMachineSelectionAfterSync(previousCategoryId, previousFamilyId, previousDefinitionId, previousRuntimeProfileId);
             RefreshRuntimeProfiles();
             AddDiagnostic("Info", MachinePlatformStatus);
         }
@@ -1287,13 +1409,13 @@ public class CncControlViewModel : ViewModelBase
                 return;
             }
 
-            var profileName = string.IsNullOrWhiteSpace(NewRuntimeProfileName) ? definition.DisplayNameEn : NewRuntimeProfileName.Trim();
+            var profileName = string.IsNullOrWhiteSpace(NewRuntimeProfileName) ? $"{definition.DisplayNameEn} Custom" : NewRuntimeProfileName.Trim();
             var driver = definition.RuntimeBinding.DefaultDriverType;
             var runtimeProfile = _runtimeProfileService.CreateFromDefinition(definition, profileName, RuntimeProfileType.User, driver);
             var cncProfile = _cncProfileService.CreateProfileFromMachineDefinition(definition, profileName, driver, RuntimeProfileType.User);
             SelectedRuntimeProfile = runtimeProfile;
             SelectedProfile = cncProfile;
-            MachinePlatformStatus = $"Created editable runtime profile '{profileName}' from {definition.DisplayNameEn} v{definition.Version}.";
+            MachinePlatformStatus = $"Created custom runtime profile '{profileName}' from {definition.DisplayNameEn} v{definition.Version}.";
             AddDiagnostic("Info", MachinePlatformStatus);
         }
         catch (Exception ex)
@@ -1302,20 +1424,104 @@ public class CncControlViewModel : ViewModelBase
         }
     }
 
+    private void OpenMachineWizard()
+    {
+        WizardSelectedMachineCategory = null;
+        WizardSelectedMachineFamily = null;
+        WizardSelectedMachineDefinition = null;
+        WizardSelectedSetupMode = null;
+        IsMachineWizardOpen = true;
+        MachinePlatformStatus = "Choose a machine definition to add or switch the CNC workspace.";
+    }
+
+    private void CloseMachineWizard()
+    {
+        IsMachineWizardOpen = false;
+    }
+
+    private async Task ConfirmMachineWizardAsync()
+    {
+        if (WizardSelectedMachineDefinition == null)
+            return;
+
+        try
+        {
+            var definition = await _machineCatalogService.GetDefinitionAsync(WizardSelectedMachineDefinition.Id);
+            if (definition == null)
+            {
+                HandleUiError("Machine definition is not available from backend or local cache.", "Add Machine", logAsWarning: true);
+                return;
+            }
+
+            _runtimeProfileService.EnsureSystemProfilesForDefinitions(new[] { definition });
+            _runtimeProfileService.RecomputeCompatibility(_machineCatalogService.CachedDefinitions.ToList());
+
+            var profile = _runtimeProfileService.Profiles
+                .Where(p => p.MachineDefinitionId == definition.Id)
+                .Where(p => string.Equals(p.MachineDefinitionVersion, definition.Version, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(p => p.ProfileType == RuntimeProfileType.System ? 0 : 1)
+                .ThenBy(p => p.ProfileName)
+                .FirstOrDefault();
+
+            if (profile == null)
+            {
+                HandleUiError("No runtime profile could be created for the selected machine.", "Add Machine", logAsWarning: true);
+                return;
+            }
+
+            SelectedMachineCategory = _machineCatalogService.Categories.FirstOrDefault(c => c.Id == definition.CategoryId);
+            SelectedMachineFamily = _machineCatalogService.Families.FirstOrDefault(f => f.Id == definition.FamilyId);
+            SelectedMachineDefinitionSummary = _machineCatalogService.DefinitionSummaries.FirstOrDefault(d => d.Id == definition.Id) ?? WizardSelectedMachineDefinition;
+            SelectedRuntimeProfile = profile;
+
+            ActivateRuntimeProfile(profile);
+            IsMachineWizardOpen = false;
+            MachinePlatformStatus = $"Using {definition.DisplayNameEn} with runtime profile '{profile.ProfileName}'.";
+            AddDiagnostic("Info", MachinePlatformStatus);
+        }
+        catch (Exception ex)
+        {
+            HandleUiError(ex.Message, "Add Machine", logAsWarning: true);
+        }
+    }
+
     private void ActivateSelectedRuntimeProfile()
     {
         if (SelectedRuntimeProfile == null)
             return;
 
-        if (!_runtimeProfileService.SetActiveProfile(SelectedRuntimeProfile.RuntimeProfileId))
+        ActivateRuntimeProfile(SelectedRuntimeProfile);
+    }
+
+    private void ConfirmAndActivateSelectedMachine()
+    {
+        if (SelectedMachineDefinitionSummary == null || SelectedRuntimeProfile == null)
+            return;
+
+        var result = MessageBox.Show(
+            Application.Current.MainWindow,
+            $"Use this machine for the CNC workspace?\n\nMachine: {SelectedMachineDefinitionSummary.DisplayNameEn}\nFamily: {SelectedMachineFamily?.DisplayNameEn ?? "Not selected"}\nProfile: {SelectedRuntimeProfile.ProfileName}\n\nThis will switch the active runtime profile.",
+            "Use Machine",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes)
+            return;
+
+        ActivateRuntimeProfile(SelectedRuntimeProfile);
+    }
+
+    private void ActivateRuntimeProfile(RuntimeProfile runtimeProfile)
+    {
+        if (!_runtimeProfileService.SetActiveProfile(runtimeProfile.RuntimeProfileId))
         {
             HandleUiError("Runtime profile cannot be activated because its machine definition is missing or incompatible.", "Activate Runtime Profile", logAsWarning: true);
             return;
         }
 
-        ApplyRuntimeProfileToCncRuntime(SelectedRuntimeProfile);
+        ApplyRuntimeProfileToCncRuntime(runtimeProfile);
         RefreshActiveMachineContext();
-        MachinePlatformStatus = $"Activated runtime profile '{SelectedRuntimeProfile.ProfileName}'.";
+        MachinePlatformStatus = $"Activated runtime profile '{runtimeProfile.ProfileName}'.";
         AddDiagnostic("Info", MachinePlatformStatus);
     }
 
@@ -1356,8 +1562,101 @@ public class CncControlViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(RuntimeProfiles));
         OnPropertyChanged(nameof(SelectedRuntimeProfile));
+        OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
         OnPropertyChanged(nameof(CanDeleteSelectedRuntimeProfile));
         CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void RestoreMachineSelectionAfterSync(Guid? categoryId, Guid? familyId, Guid? definitionId, string? runtimeProfileId)
+    {
+        if (definitionId == null)
+        {
+            _selectedMachineCategory = null;
+            _selectedMachineFamily = null;
+            _selectedMachineDefinitionSummary = null;
+            _selectedRuntimeProfile = null;
+            OnPropertyChanged(nameof(SelectedMachineCategory));
+            OnPropertyChanged(nameof(SelectedMachineFamily));
+            OnPropertyChanged(nameof(SelectedMachineDefinitionSummary));
+            OnPropertyChanged(nameof(SelectedRuntimeProfile));
+            OnPropertyChanged(nameof(HasSelectedMachineDefinition));
+            OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
+            OnPropertyChanged(nameof(MachineFamilies));
+            OnPropertyChanged(nameof(MachineDefinitionSummaries));
+            return;
+        }
+
+        var definition = _machineCatalogService.DefinitionSummaries.FirstOrDefault(d => d.Id == definitionId.Value);
+        if (definition == null)
+        {
+            _selectedMachineCategory = null;
+            _selectedMachineFamily = null;
+            _selectedMachineDefinitionSummary = null;
+            _selectedRuntimeProfile = null;
+            OnPropertyChanged(nameof(SelectedMachineCategory));
+            OnPropertyChanged(nameof(SelectedMachineFamily));
+            OnPropertyChanged(nameof(SelectedMachineDefinitionSummary));
+            OnPropertyChanged(nameof(SelectedRuntimeProfile));
+            OnPropertyChanged(nameof(HasSelectedMachineDefinition));
+            OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
+            OnPropertyChanged(nameof(MachineFamilies));
+            OnPropertyChanged(nameof(MachineDefinitionSummaries));
+            return;
+        }
+
+        _selectedMachineCategory = _machineCatalogService.Categories.FirstOrDefault(c => c.Id == (categoryId ?? definition.CategoryId));
+        _selectedMachineFamily = _machineCatalogService.Families.FirstOrDefault(f => f.Id == (familyId ?? definition.FamilyId));
+        _selectedMachineDefinitionSummary = definition;
+        _newRuntimeProfileName = $"{definition.DisplayNameEn} Custom";
+        _selectedRuntimeProfile = _runtimeProfileService.Profiles.FirstOrDefault(profile => profile.RuntimeProfileId == runtimeProfileId)
+                                  ?? _runtimeProfileService.Profiles
+                                      .Where(profile => profile.MachineDefinitionId == definition.Id)
+                                      .OrderBy(profile => profile.ProfileType == RuntimeProfileType.System ? 0 : 1)
+                                      .ThenBy(profile => profile.ProfileName)
+                                      .FirstOrDefault();
+        OnPropertyChanged(nameof(SelectedMachineCategory));
+        OnPropertyChanged(nameof(SelectedMachineFamily));
+        OnPropertyChanged(nameof(SelectedMachineDefinitionSummary));
+        OnPropertyChanged(nameof(SelectedRuntimeProfile));
+        OnPropertyChanged(nameof(NewRuntimeProfileName));
+        OnPropertyChanged(nameof(HasSelectedMachineDefinition));
+        OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
+        OnPropertyChanged(nameof(MachineFamilies));
+        OnPropertyChanged(nameof(MachineDefinitionSummaries));
+    }
+
+    private void SelectPreferredRuntimeProfileForSelectedMachine()
+    {
+        if (SelectedMachineDefinitionSummary == null)
+        {
+            SelectedRuntimeProfile = null;
+            return;
+        }
+
+        var profiles = _runtimeProfileService.Profiles
+            .Where(profile => profile.MachineDefinitionId == SelectedMachineDefinitionSummary.Id)
+            .ToList();
+
+        SelectedRuntimeProfile =
+            profiles.FirstOrDefault(profile => profile.ProfileType == RuntimeProfileType.System)
+            ?? profiles.FirstOrDefault(profile => profile.IsActive)
+            ?? profiles.FirstOrDefault();
+    }
+
+    private IEnumerable<SetupMode> GetWizardSetupModes()
+    {
+        if (WizardSelectedMachineDefinition?.SupportedSetupModes is { Count: > 0 } modes)
+        {
+            foreach (var mode in modes)
+            {
+                if (Enum.TryParse<SetupMode>(mode, ignoreCase: true, out var parsed))
+                    yield return parsed;
+            }
+
+            yield break;
+        }
+
+        yield return SetupMode.RealAndSimulation;
     }
 
     private void RefreshActiveMachineContext()
@@ -1667,7 +1966,20 @@ public class CncControlViewModel : ViewModelBase
     private string BuildEffectiveCapabilitiesSummary()
     {
         var caps = _activeMachineContextService.Current.EffectiveCapabilities;
-        return $"Motion: Home {caps.Motion.Homing}, Z Home {caps.Motion.ZHoming}, Center {caps.Motion.CenterMove}, Work Offset {caps.Motion.WorkOffset} | Execution: Preview {caps.Execution.ToolpathPreview}, Frame {caps.Execution.Frame}, Simulation {caps.Execution.Simulation}, File Run {caps.Execution.FileRun} | Protocol: Ack {caps.Protocol.Acknowledgements}, Status {caps.Protocol.StatusQuery}, Alarm Reset {caps.Protocol.AlarmReset}";
+        var enabled = new List<string>();
+
+        if (caps.Motion.Homing) enabled.Add("Homing");
+        if (caps.Motion.CenterMove) enabled.Add("Center Move");
+        if (caps.Motion.WorkOffset) enabled.Add("Work Zero");
+        if (caps.Execution.ToolpathPreview) enabled.Add("Preview");
+        if (caps.Execution.Frame) enabled.Add("Frame");
+        if (caps.Execution.FileRun) enabled.Add("File Run");
+        if (caps.Execution.Simulation) enabled.Add("Simulation");
+        if (caps.Protocol.Acknowledgements) enabled.Add("Acknowledgements");
+
+        return enabled.Count == 0
+            ? "No effective runtime capabilities resolved yet."
+            : string.Join("  |  ", enabled);
     }
 
     private static MachineDefinition BuildDefinitionFromCncProfile(CncMachineProfile profile)
