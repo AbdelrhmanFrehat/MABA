@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using MabaControlCenter.Models;
@@ -67,9 +68,10 @@ public class CncControlViewModel : ViewModelBase
     private string _machinePlatformStatus = "Machine platform cache not synced yet.";
     private bool _isMachineWizardOpen;
     private bool _isProfileManagerOpen;
-    private MachineCategory? _wizardSelectedMachineCategory;
-    private MachineFamily? _wizardSelectedMachineFamily;
-    private MachineDefinitionSummary? _wizardSelectedMachineDefinition;
+    private MachineWizardStep _wizardStep = MachineWizardStep.Catalog;
+    private MachineWizardCard? _wizardSelectedFamilyCard;
+    private MachineWizardCard? _wizardSelectedMachineCard;
+    private MachineWizardCard? _wizardSelectedModeCard;
     private SetupMode? _wizardSelectedSetupMode;
 
     public CncControlViewModel(
@@ -104,6 +106,10 @@ public class CncControlViewModel : ViewModelBase
         AvailablePorts = new ObservableCollection<string>();
         JogStepPresets = new ObservableCollection<decimal>();
         DiagnosticsMessages = new ObservableCollection<string>();
+        WizardSteps = new ObservableCollection<MachineWizardStepItem>();
+        WizardFamilyCards = new ObservableCollection<MachineWizardCard>();
+        WizardMachineCards = new ObservableCollection<MachineWizardCard>();
+        WizardModeCards = new ObservableCollection<MachineWizardCard>();
         DriverTypes = Enum.GetValues(typeof(CncDriverType)).Cast<CncDriverType>().ToList();
         HomeOriginOptions = Enum.GetValues(typeof(CncHomeOriginConvention)).Cast<CncHomeOriginConvention>().ToList();
 
@@ -128,6 +134,11 @@ public class CncControlViewModel : ViewModelBase
         CreateRuntimeProfileCommand = new RelayCommand(async _ => await CreateRuntimeProfileFromSelectionAsync(), _ => SelectedMachineDefinitionSummary != null);
         OpenMachineWizardCommand = new RelayCommand(_ => OpenMachineWizard());
         CloseMachineWizardCommand = new RelayCommand(_ => CloseMachineWizard());
+        WizardBackCommand = new RelayCommand(_ => MoveWizardBack(), _ => CanMoveWizardBack);
+        WizardNextCommand = new RelayCommand(async _ => await MoveWizardNextAsync(), _ => CanMoveWizardNext);
+        SelectWizardFamilyCommand = new RelayCommand(SelectWizardFamily);
+        SelectWizardMachineCommand = new RelayCommand(SelectWizardMachine);
+        SelectWizardModeCommand = new RelayCommand(SelectWizardMode);
         ConfirmMachineWizardCommand = new RelayCommand(async _ => await ConfirmMachineWizardAsync(), _ => WizardSelectedMachineDefinition != null);
         ManageProfilesCommand = new RelayCommand(_ => IsProfileManagerOpen = !IsProfileManagerOpen);
         UseSelectedMachineCommand = new RelayCommand(_ => ConfirmAndActivateSelectedMachine(), _ => SelectedMachineDefinitionSummary != null && SelectedRuntimeProfile != null);
@@ -221,16 +232,10 @@ public class CncControlViewModel : ViewModelBase
     public IEnumerable<MachineDefinitionSummary> MachineDefinitionSummaries => _machineCatalogService.DefinitionSummaries
         .Where(d => SelectedMachineCategory == null || d.CategoryId == SelectedMachineCategory.Id)
         .Where(d => SelectedMachineFamily == null || d.FamilyId == SelectedMachineFamily.Id);
-    public IEnumerable<MachineFamily> WizardMachineFamilies => _machineCatalogService.Families
-        .Where(f => WizardSelectedMachineCategory == null || f.CategoryId == WizardSelectedMachineCategory.Id)
-        .OrderBy(f => f.SortOrder)
-        .ThenBy(f => f.DisplayNameEn);
-    public IEnumerable<MachineDefinitionSummary> WizardMachineDefinitionSummaries => _machineCatalogService.DefinitionSummaries
-        .Where(d => WizardSelectedMachineCategory == null || d.CategoryId == WizardSelectedMachineCategory.Id)
-        .Where(d => WizardSelectedMachineFamily == null || d.FamilyId == WizardSelectedMachineFamily.Id)
-        .OrderBy(d => d.SortOrder)
-        .ThenBy(d => d.DisplayNameEn);
-    public IEnumerable<SetupMode> WizardSetupModes => GetWizardSetupModes();
+    public ObservableCollection<MachineWizardStepItem> WizardSteps { get; }
+    public ObservableCollection<MachineWizardCard> WizardFamilyCards { get; }
+    public ObservableCollection<MachineWizardCard> WizardMachineCards { get; }
+    public ObservableCollection<MachineWizardCard> WizardModeCards { get; }
     public IReadOnlyList<CncDriverType> DriverTypes { get; }
     public IReadOnlyList<CncHomeOriginConvention> HomeOriginOptions { get; }
     public string MachineCatalogSyncStatus => _machineCatalogService.LastSyncStatus;
@@ -254,57 +259,40 @@ public class CncControlViewModel : ViewModelBase
         get => _isProfileManagerOpen;
         set { if (_isProfileManagerOpen == value) return; _isProfileManagerOpen = value; OnPropertyChanged(); }
     }
-    public MachineCategory? WizardSelectedMachineCategory
+    public MachineWizardStep WizardStep
     {
-        get => _wizardSelectedMachineCategory;
+        get => _wizardStep;
         set
         {
-            if (_wizardSelectedMachineCategory?.Id == value?.Id) return;
-            _wizardSelectedMachineCategory = value;
-            _wizardSelectedMachineFamily = null;
-            _wizardSelectedMachineDefinition = null;
-            _wizardSelectedSetupMode = null;
+            if (_wizardStep == value) return;
+            _wizardStep = value;
+            RefreshWizardStepState();
             OnPropertyChanged();
-            OnPropertyChanged(nameof(WizardSelectedMachineFamily));
-            OnPropertyChanged(nameof(WizardSelectedMachineDefinition));
-            OnPropertyChanged(nameof(WizardSelectedSetupMode));
-            OnPropertyChanged(nameof(WizardMachineFamilies));
-            OnPropertyChanged(nameof(WizardMachineDefinitionSummaries));
-            OnPropertyChanged(nameof(WizardSetupModes));
-            CommandManager.InvalidateRequerySuggested();
         }
     }
-    public MachineFamily? WizardSelectedMachineFamily
+    public bool IsWizardCatalogStep => WizardStep == MachineWizardStep.Catalog;
+    public bool IsWizardFamilyStep => WizardStep == MachineWizardStep.Family;
+    public bool IsWizardMachineStep => WizardStep == MachineWizardStep.Machine;
+    public bool IsWizardModeStep => WizardStep == MachineWizardStep.Mode;
+    public bool IsWizardConfirmStep => WizardStep == MachineWizardStep.Confirm;
+    public bool CanMoveWizardBack => WizardStep != MachineWizardStep.Catalog;
+    public bool CanMoveWizardNext => WizardStep switch
     {
-        get => _wizardSelectedMachineFamily;
-        set
-        {
-            if (_wizardSelectedMachineFamily?.Id == value?.Id) return;
-            _wizardSelectedMachineFamily = value;
-            _wizardSelectedMachineDefinition = null;
-            _wizardSelectedSetupMode = null;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(WizardSelectedMachineDefinition));
-            OnPropertyChanged(nameof(WizardSelectedSetupMode));
-            OnPropertyChanged(nameof(WizardMachineDefinitionSummaries));
-            OnPropertyChanged(nameof(WizardSetupModes));
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-    public MachineDefinitionSummary? WizardSelectedMachineDefinition
-    {
-        get => _wizardSelectedMachineDefinition;
-        set
-        {
-            if (_wizardSelectedMachineDefinition?.Id == value?.Id) return;
-            _wizardSelectedMachineDefinition = value;
-            _wizardSelectedSetupMode = GetWizardSetupModes().FirstOrDefault();
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(WizardSelectedSetupMode));
-            OnPropertyChanged(nameof(WizardSetupModes));
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
+        MachineWizardStep.Catalog => _machineCatalogService.Families.Count > 0 && _machineCatalogService.DefinitionSummaries.Count > 0,
+        MachineWizardStep.Family => WizardSelectedMachineFamily != null,
+        MachineWizardStep.Machine => WizardSelectedMachineDefinition != null,
+        MachineWizardStep.Mode => WizardSelectedSetupMode != null,
+        MachineWizardStep.Confirm => WizardSelectedMachineDefinition != null,
+        _ => false
+    };
+    public string WizardNextButtonText => WizardStep == MachineWizardStep.Confirm ? "Confirm" : "Next";
+    public string WizardSyncDisplay => _machineCatalogService.LastSyncedAt.HasValue
+        ? $"Last sync: {_machineCatalogService.LastSyncedAt:yyyy-MM-dd HH:mm}"
+        : "Not synced";
+    public string WizardConnectivityText => _machineCatalogService.DefinitionSummaries.Count > 0 ? "Online / Cached" : "Offline";
+    public bool HasWizardMachines => _machineCatalogService.DefinitionSummaries.Count > 0;
+    public MachineFamily? WizardSelectedMachineFamily => _wizardSelectedFamilyCard?.Family;
+    public MachineDefinitionSummary? WizardSelectedMachineDefinition => _wizardSelectedMachineCard?.MachineSummary;
     public SetupMode? WizardSelectedSetupMode
     {
         get => _wizardSelectedSetupMode;
@@ -411,6 +399,11 @@ public class CncControlViewModel : ViewModelBase
     public ICommand CreateRuntimeProfileCommand { get; }
     public ICommand OpenMachineWizardCommand { get; }
     public ICommand CloseMachineWizardCommand { get; }
+    public ICommand WizardBackCommand { get; }
+    public ICommand WizardNextCommand { get; }
+    public ICommand SelectWizardFamilyCommand { get; }
+    public ICommand SelectWizardMachineCommand { get; }
+    public ICommand SelectWizardModeCommand { get; }
     public ICommand ConfirmMachineWizardCommand { get; }
     public ICommand ManageProfilesCommand { get; }
     public ICommand UseSelectedMachineCommand { get; }
@@ -1383,8 +1376,8 @@ public class CncControlViewModel : ViewModelBase
             OnPropertyChanged(nameof(MachineCategories));
             OnPropertyChanged(nameof(MachineFamilies));
             OnPropertyChanged(nameof(MachineDefinitionSummaries));
-            OnPropertyChanged(nameof(WizardMachineFamilies));
-            OnPropertyChanged(nameof(WizardMachineDefinitionSummaries));
+            RefreshWizardCards();
+            RefreshWizardStepState();
             RestoreMachineSelectionAfterSync(previousCategoryId, previousFamilyId, previousDefinitionId, previousRuntimeProfileId);
             RefreshRuntimeProfiles();
             AddDiagnostic("Info", MachinePlatformStatus);
@@ -1426,10 +1419,12 @@ public class CncControlViewModel : ViewModelBase
 
     private void OpenMachineWizard()
     {
-        WizardSelectedMachineCategory = null;
-        WizardSelectedMachineFamily = null;
-        WizardSelectedMachineDefinition = null;
+        _wizardSelectedFamilyCard = null;
+        _wizardSelectedMachineCard = null;
+        _wizardSelectedModeCard = null;
         WizardSelectedSetupMode = null;
+        RefreshWizardCards();
+        WizardStep = MachineWizardStep.Catalog;
         IsMachineWizardOpen = true;
         MachinePlatformStatus = "Choose a machine definition to add or switch the CNC workspace.";
     }
@@ -1483,6 +1478,72 @@ public class CncControlViewModel : ViewModelBase
         {
             HandleUiError(ex.Message, "Add Machine", logAsWarning: true);
         }
+    }
+
+    private async Task MoveWizardNextAsync()
+    {
+        if (!CanMoveWizardNext)
+            return;
+
+        if (WizardStep == MachineWizardStep.Confirm)
+        {
+            await ConfirmMachineWizardAsync();
+            return;
+        }
+
+        WizardStep = (MachineWizardStep)((int)WizardStep + 1);
+    }
+
+    private void MoveWizardBack()
+    {
+        if (!CanMoveWizardBack)
+            return;
+
+        WizardStep = (MachineWizardStep)((int)WizardStep - 1);
+    }
+
+    private void SelectWizardFamily(object? parameter)
+    {
+        if (parameter is not MachineWizardCard card || card.Family == null)
+            return;
+
+        foreach (var item in WizardFamilyCards)
+            item.IsSelected = ReferenceEquals(item, card);
+
+        _wizardSelectedFamilyCard = card;
+        _wizardSelectedMachineCard = null;
+        _wizardSelectedModeCard = null;
+        WizardSelectedSetupMode = null;
+        BuildWizardMachineCards();
+        BuildWizardModeCards();
+        RefreshWizardStepState();
+    }
+
+    private void SelectWizardMachine(object? parameter)
+    {
+        if (parameter is not MachineWizardCard card || card.MachineSummary == null)
+            return;
+
+        foreach (var item in WizardMachineCards)
+            item.IsSelected = ReferenceEquals(item, card);
+
+        _wizardSelectedMachineCard = card;
+        _wizardSelectedModeCard = null;
+        BuildWizardModeCards();
+        RefreshWizardStepState();
+    }
+
+    private void SelectWizardMode(object? parameter)
+    {
+        if (parameter is not MachineWizardCard card || card.SetupMode == null)
+            return;
+
+        foreach (var item in WizardModeCards)
+            item.IsSelected = ReferenceEquals(item, card);
+
+        _wizardSelectedModeCard = card;
+        WizardSelectedSetupMode = card.SetupMode;
+        RefreshWizardStepState();
     }
 
     private void ActivateSelectedRuntimeProfile()
@@ -1643,6 +1704,140 @@ public class CncControlViewModel : ViewModelBase
             ?? profiles.FirstOrDefault();
     }
 
+    private void RefreshWizardCards()
+    {
+        BuildWizardSteps();
+        BuildWizardFamilyCards();
+        BuildWizardMachineCards();
+        BuildWizardModeCards();
+        OnPropertyChanged(nameof(WizardSyncDisplay));
+        OnPropertyChanged(nameof(WizardConnectivityText));
+        OnPropertyChanged(nameof(HasWizardMachines));
+    }
+
+    private void BuildWizardSteps()
+    {
+        if (WizardSteps.Count == 0)
+        {
+            WizardSteps.Add(new MachineWizardStepItem(MachineWizardStep.Catalog, "1 Catalog"));
+            WizardSteps.Add(new MachineWizardStepItem(MachineWizardStep.Family, "2 Family"));
+            WizardSteps.Add(new MachineWizardStepItem(MachineWizardStep.Machine, "3 Machine"));
+            WizardSteps.Add(new MachineWizardStepItem(MachineWizardStep.Mode, "4 Mode"));
+            WizardSteps.Add(new MachineWizardStepItem(MachineWizardStep.Confirm, "5 Confirm"));
+        }
+
+        foreach (var step in WizardSteps)
+        {
+            step.IsCurrent = step.Step == WizardStep;
+            step.IsCompleted = step.Step < WizardStep;
+        }
+    }
+
+    private void BuildWizardFamilyCards()
+    {
+        WizardFamilyCards.Clear();
+        foreach (var family in _machineCatalogService.Families.OrderBy(f => f.SortOrder).ThenBy(f => f.DisplayNameEn))
+        {
+            WizardFamilyCards.Add(new MachineWizardCard
+            {
+                Title = family.DisplayNameEn,
+                Subtitle = string.IsNullOrWhiteSpace(family.DescriptionEn) ? family.Manufacturer : family.DescriptionEn,
+                IconText = "▣",
+                Family = family,
+                IsSelected = _wizardSelectedFamilyCard?.Family?.Id == family.Id
+            });
+        }
+    }
+
+    private void BuildWizardMachineCards()
+    {
+        WizardMachineCards.Clear();
+        if (WizardSelectedMachineFamily == null)
+            return;
+
+        var machines = _machineCatalogService.DefinitionSummaries
+            .Where(d => d.FamilyId == WizardSelectedMachineFamily.Id)
+            .OrderBy(d => d.SortOrder)
+            .ThenBy(d => d.DisplayNameEn);
+
+        foreach (var summary in machines)
+        {
+            var definition = _machineCatalogService.GetCachedDefinition(summary.Id, summary.Version);
+            var workspace = definition?.Workspace.WorkAreaMm;
+            var axes = definition?.AxisConfig.SupportedAxes.Count > 0
+                ? string.Join(" ", definition.AxisConfig.SupportedAxes)
+                : "X Y Z";
+
+            var tags = new ObservableCollection<string>();
+            tags.Add("CNC");
+            if (definition?.FileSupport.GcodeDialect != null || !string.IsNullOrWhiteSpace(summary.DefaultDriverType))
+                tags.Add("G-code");
+            tags.Add($"{axes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length}-axis");
+
+            WizardMachineCards.Add(new MachineWizardCard
+            {
+                Title = summary.DisplayNameEn,
+                Subtitle = FirstNonEmpty(summary.DescriptionEn, definition?.DescriptionEn, summary.Manufacturer, "Machine definition"),
+                VersionText = $"v{summary.Version}",
+                WorkspaceText = workspace != null ? $"{workspace.Width:0.#} x {workspace.Depth:0.#} x {workspace.Height:0.#} mm" : "Workspace from definition",
+                AxesText = axes,
+                ImageUrl = FirstNonEmpty(summary.ThumbnailUrl, summary.ImageUrl, summary.ImageSource, definition?.ThumbnailUrl, definition?.ImageUrl, definition?.ImageSource),
+                MachineSummary = summary,
+                MachineDefinition = definition,
+                Tags = tags,
+                IsSelected = _wizardSelectedMachineCard?.MachineSummary?.Id == summary.Id
+            });
+        }
+    }
+
+    private void BuildWizardModeCards()
+    {
+        WizardModeCards.Clear();
+        foreach (var mode in GetWizardSetupModes())
+        {
+            WizardModeCards.Add(new MachineWizardCard
+            {
+                Title = FormatSetupMode(mode),
+                Subtitle = mode switch
+                {
+                    SetupMode.RealOnly => "Connect to physical hardware.",
+                    SetupMode.SimulationOnly => "Run a virtual machine.",
+                    SetupMode.RealAndSimulation => "Use real hardware with simulation fallback.",
+                    _ => "Machine setup mode."
+                },
+                IconText = mode switch
+                {
+                    SetupMode.RealOnly => "⌁",
+                    SetupMode.SimulationOnly => "◇",
+                    SetupMode.RealAndSimulation => "◈",
+                    _ => "○"
+                },
+                SetupMode = mode,
+                IsSelected = _wizardSelectedModeCard?.SetupMode == mode
+            });
+        }
+
+        if (WizardModeCards.Count == 1)
+            SelectWizardMode(WizardModeCards[0]);
+    }
+
+    private void RefreshWizardStepState()
+    {
+        BuildWizardSteps();
+        OnPropertyChanged(nameof(IsWizardCatalogStep));
+        OnPropertyChanged(nameof(IsWizardFamilyStep));
+        OnPropertyChanged(nameof(IsWizardMachineStep));
+        OnPropertyChanged(nameof(IsWizardModeStep));
+        OnPropertyChanged(nameof(IsWizardConfirmStep));
+        OnPropertyChanged(nameof(CanMoveWizardBack));
+        OnPropertyChanged(nameof(CanMoveWizardNext));
+        OnPropertyChanged(nameof(WizardNextButtonText));
+        OnPropertyChanged(nameof(WizardSelectedMachineFamily));
+        OnPropertyChanged(nameof(WizardSelectedMachineDefinition));
+        OnPropertyChanged(nameof(WizardSelectedSetupMode));
+        CommandManager.InvalidateRequerySuggested();
+    }
+
     private IEnumerable<SetupMode> GetWizardSetupModes()
     {
         if (WizardSelectedMachineDefinition?.SupportedSetupModes is { Count: > 0 } modes)
@@ -1658,6 +1853,17 @@ public class CncControlViewModel : ViewModelBase
 
         yield return SetupMode.RealAndSimulation;
     }
+
+    private static string FirstNonEmpty(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private static string FormatSetupMode(SetupMode mode) => mode switch
+    {
+        SetupMode.RealOnly => "Real Machine",
+        SetupMode.SimulationOnly => "Simulation",
+        SetupMode.RealAndSimulation => "Real + Simulation",
+        _ => mode.ToString()
+    };
 
     private void RefreshActiveMachineContext()
     {
@@ -2360,5 +2566,90 @@ public class CncControlViewModel : ViewModelBase
             CncDeviceState.Disconnected => "Disconnected",
             _ => state.ToString()
         };
+    }
+}
+
+public enum MachineWizardStep
+{
+    Catalog = 1,
+    Family = 2,
+    Machine = 3,
+    Mode = 4,
+    Confirm = 5
+}
+
+public sealed class MachineWizardStepItem : ViewModelBase
+{
+    private bool _isCurrent;
+    private bool _isCompleted;
+
+    public MachineWizardStepItem(MachineWizardStep step, string title)
+    {
+        Step = step;
+        Title = title;
+    }
+
+    public MachineWizardStep Step { get; }
+    public string Title { get; }
+
+    public bool IsCurrent
+    {
+        get => _isCurrent;
+        set { if (_isCurrent == value) return; _isCurrent = value; OnPropertyChanged(); }
+    }
+
+    public bool IsCompleted
+    {
+        get => _isCompleted;
+        set { if (_isCompleted == value) return; _isCompleted = value; OnPropertyChanged(); }
+    }
+}
+
+public sealed class MachineWizardCard : ViewModelBase
+{
+    private bool _isSelected;
+
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public string VersionText { get; set; } = string.Empty;
+    public string WorkspaceText { get; set; } = string.Empty;
+    public string AxesText { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
+    public bool HasImage => IsDirectImageUrl(ImageUrl);
+    public string ImagePlaceholderText => string.IsNullOrWhiteSpace(ImageUrl) ? "No image" : "Image URL is not a direct image";
+    public string IconText { get; set; } = "▣";
+    public ObservableCollection<string> Tags { get; set; } = new();
+    public MachineFamily? Family { get; set; }
+    public MachineDefinitionSummary? MachineSummary { get; set; }
+    public MachineDefinition? MachineDefinition { get; set; }
+    public SetupMode? SetupMode { get; set; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { if (_isSelected == value) return; _isSelected = value; OnPropertyChanged(); }
+    }
+
+    private static bool IsDirectImageUrl(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        var trimmed = value.Trim();
+        if (trimmed.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var path = trimmed;
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            path = uri.LocalPath;
+
+        var extension = Path.GetExtension(path);
+        return extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".gif", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".webp", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".svg", StringComparison.OrdinalIgnoreCase);
     }
 }

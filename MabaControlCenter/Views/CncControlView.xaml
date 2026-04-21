@@ -687,6 +687,108 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="WizardStepPillStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BackgroundMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="Opacity" Value="0.6"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <Setter Property="Opacity" Value="0.78"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+                    <Setter Property="Opacity" Value="1"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#776366F1" BlurRadius="12" ShadowDepth="0" Opacity="0.35"/>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WizardCardButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource BackgroundMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,12,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CardShell"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="14"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CardShell" Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+                                <Setter TargetName="CardShell" Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+                                <Setter TargetName="CardShell" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#556366F1" BlurRadius="14" ShadowDepth="0" Opacity="0.28"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="CardShell" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="CardShell" Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+                                <Setter TargetName="CardShell" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#886366F1" BlurRadius="18" ShadowDepth="0" Opacity="0.45"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="CardShell" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="WizardStepPaneStyle" TargetType="Border">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform X="0"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Visibility" Value="Visible">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="0"
+                                                 To="1"
+                                                 Duration="0:0:0.16"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                 From="16"
+                                                 To="0"
+                                                 Duration="0:0:0.16"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Grid Background="{DynamicResource BackgroundDarkBrush}">
         <Grid.RowDefinitions>
@@ -1908,123 +2010,332 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Row="0" Margin="0,0,0,18">
                         <StackPanel>
                             <TextBlock Text="Add / Switch Machine"
                                        FontSize="22"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <TextBlock Text="Sync the catalog if needed, choose a machine, then confirm. The app will create or reuse the default runtime profile automatically."
+                            <TextBlock Text="A focused machine onboarding flow. Pick one thing per step, then confirm the runtime profile switch."
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextWrapping="Wrap"
                                        Margin="0,4,0,0"/>
                         </StackPanel>
-                        <Button Grid.Column="1"
-                                Content="Cancel"
-                                Command="{Binding CloseMachineWizardCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Margin="16,0,0,0"/>
-                    </Grid>
+                        <ItemsControl ItemsSource="{Binding WizardSteps}" Margin="0,16,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource WizardStepPillStyle}" Margin="0,0,8,0">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
 
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="0.85*"/>
-                            <ColumnDefinition Width="0.85*"/>
-                            <ColumnDefinition Width="1.35*"/>
-                        </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="1" ClipToBounds="True">
+                        <Border Style="{StaticResource WizardStepPaneStyle}"
+                                Visibility="{Binding IsWizardCatalogStep, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="560">
+                                <TextBlock Text="Catalog"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding WizardSyncDisplay}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,6"/>
+                                <Border CornerRadius="12"
+                                        Padding="10,5"
+                                        Background="{DynamicResource BackgroundMediumBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,0,0,18">
+                                    <TextBlock Text="{Binding WizardConnectivityText}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </Border>
+                                <Button Content="Sync Machine Catalog"
+                                        Command="{Binding SyncMachineCatalogCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,0,0,18"/>
+                                <TextBlock Text="No machines available. Sync to continue."
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding HasWizardMachines, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                <TextBlock Text="{Binding MachineCatalogSyncStatus}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
 
-                        <StackPanel Grid.Column="0" Margin="0,0,14,0">
-                            <TextBlock Text="1. Catalog"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"/>
-                            <Button Content="Sync Machine Catalog"
-                                    Command="{Binding SyncMachineCatalogCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    HorizontalAlignment="Left"
-                                    Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding MachineCatalogSyncStatus}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,16"/>
+                        <Border Style="{StaticResource WizardStepPaneStyle}"
+                                Visibility="{Binding IsWizardFamilyStep, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Choose Machine Family"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="0,0,0,14"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding WizardFamilyCards}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.SelectWizardFamilyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource WizardCardButtonStyle}"
+                                                        Width="286"
+                                                        Height="132">
+                                                    <Grid Margin="16">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="42"
+                                                                Height="42"
+                                                                CornerRadius="21"
+                                                                Background="{DynamicResource BackgroundLightBrush}"
+                                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                                BorderThickness="1"
+                                                                Margin="0,0,12,0">
+                                                            <TextBlock Text="{Binding IconText}"
+                                                                       Foreground="{DynamicResource AccentBrush}"
+                                                                       FontSize="18"
+                                                                       FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Text="{Binding Title}"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="15"/>
+                                                            <TextBlock Text="{Binding Subtitle}"
+                                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                       TextWrapping="Wrap"
+                                                                       MaxHeight="48"
+                                                                       Margin="0,5,0,0"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
 
-                            <TextBlock Text="2. Category"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"/>
-                            <ListBox ItemsSource="{Binding MachineCategories}"
-                                     SelectedItem="{Binding WizardSelectedMachineCategory, UpdateSourceTrigger=PropertyChanged}"
-                                     ItemTemplate="{StaticResource MachineCategoryDisplayTemplate}"
-                                     MinHeight="230"/>
-                        </StackPanel>
+                        <Border Style="{StaticResource WizardStepPaneStyle}"
+                                Visibility="{Binding IsWizardMachineStep, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Choose Machine"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="0,0,0,14"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding WizardMachineCards}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.SelectWizardMachineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource WizardCardButtonStyle}"
+                                                        Height="170"
+                                                        HorizontalAlignment="Stretch">
+                                                    <Grid Margin="16">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="210"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Background="{DynamicResource BackgroundDarkBrush}"
+                                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="10"
+                                                                Margin="0,0,16,0">
+                                                            <Grid>
+                                                                <Image Source="{Binding ImageUrl}"
+                                                                       Stretch="Uniform"
+                                                                       Margin="10"
+                                                                       Visibility="{Binding HasImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                                <TextBlock Text="▱"
+                                                                           FontSize="54"
+                                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"
+                                                                           Visibility="{Binding HasImage, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                                                <TextBlock Text="{Binding ImagePlaceholderText}"
+                                                                           FontSize="12"
+                                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Bottom"
+                                                                           TextAlignment="Center"
+                                                                           TextWrapping="Wrap"
+                                                                           Margin="14"
+                                                                           Visibility="{Binding HasImage, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                                            </Grid>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Text="{Binding Title}"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="17"/>
+                                                            <TextBlock Text="{Binding VersionText}"
+                                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                       Margin="0,2,0,6"/>
+                                                            <TextBlock Text="{Binding Subtitle}"
+                                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                       TextWrapping="Wrap"
+                                                                       MaxHeight="42"/>
+                                                            <WrapPanel Margin="0,12,0,8">
+                                                                <TextBlock Text="{Binding WorkspaceText, StringFormat=Workspace: {0}}"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                           Margin="0,0,18,0"/>
+                                                                <TextBlock Text="{Binding AxesText, StringFormat=Axes: {0}}"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                            </WrapPanel>
+                                                            <ItemsControl ItemsSource="{Binding Tags}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <WrapPanel/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Border Background="{DynamicResource BackgroundLightBrush}"
+                                                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                                                BorderThickness="1"
+                                                                                CornerRadius="10"
+                                                                                Padding="8,3"
+                                                                                Margin="0,0,6,0">
+                                                                            <TextBlock Text="{Binding}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
 
-                        <StackPanel Grid.Column="1" Margin="0,0,14,0">
-                            <TextBlock Text="3. Family"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"/>
-                            <ListBox ItemsSource="{Binding WizardMachineFamilies}"
-                                     SelectedItem="{Binding WizardSelectedMachineFamily, UpdateSourceTrigger=PropertyChanged}"
-                                     ItemTemplate="{StaticResource MachineFamilyDisplayTemplate}"
-                                     MinHeight="330"/>
-                        </StackPanel>
+                        <Border Style="{StaticResource WizardStepPaneStyle}"
+                                Visibility="{Binding IsWizardModeStep, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="Choose Setup Mode"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,18"/>
+                                <ItemsControl ItemsSource="{Binding WizardModeCards}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.SelectWizardModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource WizardCardButtonStyle}"
+                                                    Width="250"
+                                                    Height="150">
+                                                <StackPanel Margin="18" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding IconText}"
+                                                               Foreground="{DynamicResource AccentBrush}"
+                                                               FontSize="28"
+                                                               HorizontalAlignment="Center"
+                                                               Margin="0,0,0,8"/>
+                                                    <TextBlock Text="{Binding Title}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="16"
+                                                               HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Subtitle}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               Margin="0,8,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
 
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="4. Machine Model"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"/>
-                            <ListBox ItemsSource="{Binding WizardMachineDefinitionSummaries}"
-                                     SelectedItem="{Binding WizardSelectedMachineDefinition, UpdateSourceTrigger=PropertyChanged}"
-                                     ItemTemplate="{StaticResource MachineDefinitionDisplayTemplate}"
-                                     MinHeight="210"
-                                     Margin="0,0,0,12"/>
-
-                            <TextBlock Text="5. Setup Mode"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,0,8"/>
-                            <ComboBox ItemsSource="{Binding WizardSetupModes}"
-                                      SelectedItem="{Binding WizardSelectedSetupMode, UpdateSourceTrigger=PropertyChanged}"
-                                      Margin="0,0,0,12"/>
-
-                            <Border Background="{DynamicResource BackgroundMediumBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Padding="12">
-                                <StackPanel>
-                                    <TextBlock Text="Confirm Selection"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               FontWeight="SemiBold"
-                                               Margin="0,0,0,6"/>
-                                    <TextBlock Text="{Binding WizardSelectedMachineDefinition.DisplayNameEn, StringFormat=Machine: {0}}"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,4"/>
-                                    <TextBlock Text="{Binding WizardSelectedMachineFamily.DisplayNameEn, StringFormat=Family: {0}}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,4"/>
-                                    <TextBlock Text="{Binding WizardSelectedSetupMode, StringFormat=Mode: {0}}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,8"/>
-                                    <TextBlock Text="A default system profile will be created or reused. Custom tuning stays available in Manage Profiles."
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
+                        <Border Style="{StaticResource WizardStepPaneStyle}"
+                                Visibility="{Binding IsWizardConfirmStep, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="620">
+                                <TextBlock Text="Confirm Machine"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,18"/>
+                                <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Padding="18">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Machine" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,0,0,8">
+                                            <Run Text="{Binding WizardSelectedMachineFamily.DisplayNameEn}"/>
+                                            <Run Text=" / "/>
+                                            <Run Text="{Binding WizardSelectedMachineDefinition.DisplayNameEn}"/>
+                                        </TextBlock>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Mode" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding WizardSelectedSetupMode}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Driver" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WizardSelectedMachineDefinition.DefaultDriverType}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Profile" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Default system profile will be auto-created or reused." Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </Grid>
 
                     <Grid Grid.Row="2" Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
@@ -2033,13 +2344,18 @@
                                    TextWrapping="Wrap"
                                    VerticalAlignment="Center"/>
                         <Button Grid.Column="1"
-                                Content="Cancel"
-                                Command="{Binding CloseMachineWizardCommand}"
+                                Content="Back"
+                                Command="{Binding WizardBackCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Margin="12,0,8,0"/>
                         <Button Grid.Column="2"
-                                Content="Confirm Machine"
-                                Command="{Binding ConfirmMachineWizardCommand}"
+                                Content="Cancel"
+                                Command="{Binding CloseMachineWizardCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,0,8,0"/>
+                        <Button Grid.Column="3"
+                                Content="{Binding WizardNextButtonText}"
+                                Command="{Binding WizardNextCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"/>
                     </Grid>
                 </Grid>

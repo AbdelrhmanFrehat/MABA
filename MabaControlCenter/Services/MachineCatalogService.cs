@@ -50,6 +50,8 @@ public class MachineCatalogService : IMachineCatalogService
                     definitions.Add(definition);
             }
 
+            NormalizeImageUrls(summaries, definitions);
+
             _store = new MachineDefinitionCacheStore
             {
                 Categories = categories,
@@ -90,6 +92,7 @@ public class MachineCatalogService : IMachineCatalogService
             if (definition == null)
                 return GetCachedDefinition(definitionId);
 
+            NormalizeImageUrl(definition);
             var existing = _store.Definitions.FirstOrDefault(d => d.Id == definition.Id && d.Version == definition.Version);
             if (existing != null)
                 _store.Definitions.Remove(existing);
@@ -128,6 +131,7 @@ public class MachineCatalogService : IMachineCatalogService
             {
                 var json = File.ReadAllText(_cacheFilePath);
                 _store = JsonSerializer.Deserialize<MachineDefinitionCacheStore>(json, JsonOptions) ?? new MachineDefinitionCacheStore();
+                NormalizeImageUrls(_store.DefinitionSummaries, _store.Definitions);
             }
         }
         catch (JsonException ex)
@@ -159,6 +163,7 @@ public class MachineCatalogService : IMachineCatalogService
 
     private void PopulateCollections()
     {
+        NormalizeImageUrls(_store.DefinitionSummaries, _store.Definitions);
         Replace(Categories, _store.Categories.OrderBy(c => c.SortOrder).ThenBy(c => c.DisplayNameEn));
         Replace(Families, _store.Families.OrderBy(f => f.SortOrder).ThenBy(f => f.DisplayNameEn));
         Replace(DefinitionSummaries, _store.DefinitionSummaries.OrderBy(d => d.SortOrder).ThenBy(d => d.DisplayNameEn));
@@ -170,5 +175,44 @@ public class MachineCatalogService : IMachineCatalogService
         target.Clear();
         foreach (var item in source)
             target.Add(item);
+    }
+
+    private void NormalizeImageUrls(IEnumerable<MachineDefinitionSummary> summaries, IEnumerable<MachineDefinition> definitions)
+    {
+        foreach (var summary in summaries)
+            NormalizeImageUrl(summary);
+
+        foreach (var definition in definitions)
+            NormalizeImageUrl(definition);
+    }
+
+    private void NormalizeImageUrl(MachineDefinitionSummary summary)
+    {
+        summary.ThumbnailUrl = NormalizeImageUrlValue(summary.ThumbnailUrl);
+        summary.ImageUrl = NormalizeImageUrlValue(summary.ImageUrl);
+        summary.ImageSource = NormalizeImageUrlValue(summary.ImageSource);
+    }
+
+    private void NormalizeImageUrl(MachineDefinition definition)
+    {
+        definition.ThumbnailUrl = NormalizeImageUrlValue(definition.ThumbnailUrl);
+        definition.ImageUrl = NormalizeImageUrlValue(definition.ImageUrl);
+        definition.ImageSource = NormalizeImageUrlValue(definition.ImageSource);
+    }
+
+    private string? NormalizeImageUrlValue(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        var value = raw.Trim();
+        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+            return value;
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute))
+            return absolute.ToString();
+
+        var baseUrl = _settingsService.Load().ApiBaseUrl?.TrimEnd('/') ?? "https://api.mabasol.com";
+        return $"{baseUrl}/{value.TrimStart('/')}";
     }
 }

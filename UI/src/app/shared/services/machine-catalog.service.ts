@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
     MachineCategory, MachineFamily,
@@ -102,5 +102,18 @@ export class MachineCatalogService {
 
     deleteDefinition(id: string): Observable<void> {
         return this.http.delete<void>(`${this.base}/machine-definitions/${id}`);
+    }
+
+    // ── Image upload ──────────────────────────────────────────────────────
+
+    uploadImage(file: File): Observable<string> {
+        const IMAGE_TYPE_ID = '00000000-0000-0000-0000-000000000001';
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('mediaTypeId', IMAGE_TYPE_ID);
+        fd.append('titleEn', file.name);
+        return this.http.post<{ fileUrl: string }>(`${this.base}/media/upload`, fd).pipe(
+            map(r => r.fileUrl)
+        );
     }
 }

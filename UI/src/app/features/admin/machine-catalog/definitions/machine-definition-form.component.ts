@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -67,6 +67,13 @@ const AXES            = ['X','Y','Z','A','B','C'];
         .ng-invalid.ng-touched input, input.ng-invalid.ng-touched,
         .ng-invalid.ng-touched .p-inputtext, .ng-invalid.ng-touched p-select .p-select,
         .ng-invalid.ng-touched p-multiselect .p-multiselect { border-color:#ef4444 !important; }
+        .img-upload-zone { border:2px dashed var(--surface-border); border-radius:8px; padding:1.25rem; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; background:var(--surface-50); }
+        .img-upload-zone:hover { border-color:var(--tech-primary-blue,#0066FF); background:rgba(0,102,255,.03); }
+        .img-upload-zone.dragging { border-color:var(--tech-primary-blue,#0066FF); background:rgba(0,102,255,.06); }
+        .img-preview { position:relative; display:inline-block; }
+        .img-preview img { max-height:160px; max-width:100%; object-fit:contain; border-radius:6px; border:1px solid var(--surface-border); display:block; }
+        .img-preview .img-remove { position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%; background:#ef4444; color:#fff; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.65rem; line-height:1; }
+        .img-uploading { display:flex; align-items:center; gap:.5rem; color:var(--p-text-muted-color); font-size:.85rem; justify-content:center; padding:.75rem; }
     `],
     template: `
         <p-toast />
@@ -179,24 +186,56 @@ const AXES            = ['X','Y','Z','A','B','C'];
                                     <label>Revision Note</label>
                                     <input pInputText formControlName="revisionNote" class="w-full" />
                                 </div>
-                                <div class="field">
-                                    <label>Machine Image URL</label>
-                                    <input pInputText formControlName="imageUrl" class="w-full" placeholder="https://…/machine-photo.jpg" />
-                                    <small>Full photo of the machine — shown in the desktop app and admin list.</small>
-                                </div>
-                                <div class="field">
-                                    <label>Thumbnail URL</label>
-                                    <input pInputText formControlName="thumbnailUrl" class="w-full" placeholder="https://…/thumb.jpg" />
-                                    <small>Small square preview (optional — falls back to image URL).</small>
-                                </div>
-                                <div class="field col-span-2" *ngIf="form.get('imageUrl')?.value">
-                                    <label class="text-sm text-500">Image Preview</label>
-                                    <div class="flex gap-3 mt-1">
-                                        <img [src]="form.get('imageUrl')?.value" alt="Machine image"
-                                             style="max-height:120px; max-width:240px; object-fit:contain; border:1px solid var(--surface-border); border-radius:6px; padding:4px; background:var(--surface-50)" />
-                                        <img *ngIf="form.get('thumbnailUrl')?.value" [src]="form.get('thumbnailUrl')?.value" alt="Thumbnail"
-                                             style="max-height:60px; max-width:60px; object-fit:cover; border:1px solid var(--surface-border); border-radius:6px;" />
+                                <!-- Machine Image -->
+                                <div class="field col-span-2">
+                                    <label>Machine Image</label>
+                                    <div *ngIf="!form.get('imageUrl')?.value && !uploadingImage"
+                                         class="img-upload-zone"
+                                         [class.dragging]="draggingImage"
+                                         (click)="imageFileInput.click()"
+                                         (dragover)="$event.preventDefault(); draggingImage=true"
+                                         (dragleave)="draggingImage=false"
+                                         (drop)="onImageDrop($event, 'image')">
+                                        <i class="pi pi-image" style="font-size:2rem;color:var(--p-text-muted-color)"></i>
+                                        <p class="mt-2 mb-1 text-sm font-semibold">Click to upload or drag & drop</p>
+                                        <p class="text-xs text-500 m-0">PNG, JPG, WEBP — main photo of the machine</p>
                                     </div>
+                                    <div *ngIf="uploadingImage" class="img-uploading">
+                                        <i class="pi pi-spin pi-spinner"></i> Uploading…
+                                    </div>
+                                    <div *ngIf="form.get('imageUrl')?.value && !uploadingImage" class="img-preview mt-1">
+                                        <img [src]="form.get('imageUrl')?.value" alt="Machine image" />
+                                        <button class="img-remove" type="button" (click)="clearImage('image')" title="Remove">✕</button>
+                                    </div>
+                                    <div *ngIf="form.get('imageUrl')?.value" class="mt-1 flex gap-1 items-center">
+                                        <input pInputText [value]="form.get('imageUrl')?.value" (input)="form.get('imageUrl')?.setValue($any($event.target).value)"
+                                               class="w-full" style="font-size:.75rem" placeholder="or paste URL directly" />
+                                    </div>
+                                    <input #imageFileInput type="file" accept="image/*" style="display:none" (change)="onImageFileSelected($event, 'image')" />
+                                </div>
+
+                                <!-- Thumbnail Image -->
+                                <div class="field col-span-2">
+                                    <label>Thumbnail <span class="text-500 font-normal text-sm">(optional — small square preview, falls back to main image)</span></label>
+                                    <div *ngIf="!form.get('thumbnailUrl')?.value && !uploadingThumb"
+                                         class="img-upload-zone"
+                                         [class.dragging]="draggingThumb"
+                                         (click)="thumbFileInput.click()"
+                                         (dragover)="$event.preventDefault(); draggingThumb=true"
+                                         (dragleave)="draggingThumb=false"
+                                         (drop)="onImageDrop($event, 'thumb')">
+                                        <i class="pi pi-image" style="font-size:1.4rem;color:var(--p-text-muted-color)"></i>
+                                        <p class="mt-1 mb-0 text-sm">Click to upload thumbnail</p>
+                                    </div>
+                                    <div *ngIf="uploadingThumb" class="img-uploading">
+                                        <i class="pi pi-spin pi-spinner"></i> Uploading…
+                                    </div>
+                                    <div *ngIf="form.get('thumbnailUrl')?.value && !uploadingThumb" class="img-preview mt-1">
+                                        <img [src]="form.get('thumbnailUrl')?.value" alt="Thumbnail"
+                                             style="max-height:80px;max-width:80px;object-fit:cover" />
+                                        <button class="img-remove" type="button" (click)="clearImage('thumb')" title="Remove">✕</button>
+                                    </div>
+                                    <input #thumbFileInput type="file" accept="image/*" style="display:none" (change)="onImageFileSelected($event, 'thumb')" />
                                 </div>
                                 <div class="field col-span-2">
                                     <label>Internal Notes <span class="text-500 font-normal text-sm">(admin only, never exposed)</span></label>
@@ -703,6 +742,11 @@ export class MachineDefinitionFormComponent implements OnInit {
     saving    = false;
     submitted = false;
 
+    uploadingImage = false;
+    uploadingThumb = false;
+    draggingImage  = false;
+    draggingThumb  = false;
+
     categories:      MachineCategory[] = [];
     allFamilies:     MachineFamily[]   = [];
     filteredFamilies: MachineFamily[]  = [];
@@ -751,8 +795,8 @@ export class MachineDefinitionFormComponent implements OnInit {
         sortOrder:      [0],
         releasedAt:     [''],
         revisionNote:   [''],
-        imageUrl:       [''],
-        thumbnailUrl:   [''],
+        imageUrl:       ['', this.directImageUrlValidator],
+        thumbnailUrl:   ['', this.directImageUrlValidator],
         internalNotes:  [''],
         isActive:       [true],
         isPublic:       [true],
@@ -1052,6 +1096,20 @@ export class MachineDefinitionFormComponent implements OnInit {
         return this.submitted && (this.form.get(path)?.invalid ?? false);
     }
 
+    private directImageUrlValidator(control: AbstractControl): ValidationErrors | null {
+        const value = String(control.value || '').trim();
+        if (!value) return null;
+        if (value.startsWith('data:image/')) return null;
+
+        try {
+            const url = new URL(value, window.location.origin);
+            const pathname = url.pathname.toLowerCase();
+            return /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/.test(pathname) ? null : { directImageUrl: true };
+        } catch {
+            return { directImageUrl: true };
+        }
+    }
+
     tabErr(paths: string[]): boolean {
         return this.submitted && paths.some(p => this.form.get(p)?.invalid);
     }
@@ -1059,6 +1117,10 @@ export class MachineDefinitionFormComponent implements OnInit {
     save() {
         this.submitted = true;
         this.form.markAllAsTouched();
+        if (this.form.get('imageUrl')?.hasError('directImageUrl') || this.form.get('thumbnailUrl')?.hasError('directImageUrl')) {
+            this.err('Machine image fields must be direct image URLs, not normal webpage URLs. Use .jpg, .png, .webp, .svg, etc.');
+            return;
+        }
         if (this.form.invalid) { this.err('Please fill all required fields — check the tabs with a red dot.'); return; }
         this.saving = true;
         const v       = this.form.getRawValue() as any;
@@ -1206,6 +1268,42 @@ export class MachineDefinitionFormComponent implements OnInit {
                 userProfileRules:    v.profileRules.userProfileRules
             }
         };
+    }
+
+    onImageFileSelected(event: Event, target: 'image' | 'thumb') {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (file) this.uploadImageFile(file, target);
+        (event.target as HTMLInputElement).value = '';
+    }
+
+    onImageDrop(event: DragEvent, target: 'image' | 'thumb') {
+        event.preventDefault();
+        this.draggingImage = false;
+        this.draggingThumb = false;
+        const file = event.dataTransfer?.files?.[0];
+        if (file && file.type.startsWith('image/')) this.uploadImageFile(file, target);
+    }
+
+    private uploadImageFile(file: File, target: 'image' | 'thumb') {
+        if (target === 'image') this.uploadingImage = true;
+        else this.uploadingThumb = true;
+
+        this.svc.uploadImage(file).subscribe({
+            next: url => {
+                if (target === 'image') { this.form.get('imageUrl')?.setValue(url); this.uploadingImage = false; }
+                else { this.form.get('thumbnailUrl')?.setValue(url); this.uploadingThumb = false; }
+            },
+            error: () => {
+                if (target === 'image') this.uploadingImage = false;
+                else this.uploadingThumb = false;
+                this.err('Image upload failed. Check network and try again.');
+            }
+        });
+    }
+
+    clearImage(target: 'image' | 'thumb') {
+        if (target === 'image') this.form.get('imageUrl')?.setValue('');
+        else this.form.get('thumbnailUrl')?.setValue('');
     }
 
     cancel() { this.router.navigate(['/admin/machine-catalog/definitions']); }

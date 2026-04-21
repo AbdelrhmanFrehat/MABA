@@ -64,6 +64,11 @@ public class MachineDefinitionSummary
     public string? FamilyDisplayNameEn { get; set; }
     public string DisplayNameEn { get; set; } = string.Empty;
     public string DisplayNameAr { get; set; } = string.Empty;
+    public string? DescriptionEn { get; set; }
+    public string? DescriptionAr { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageSource { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string Manufacturer { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public bool IsPublic { get; set; }
@@ -93,6 +98,9 @@ public class MachineDefinition
     public string DisplayNameAr { get; set; } = string.Empty;
     public string? DescriptionEn { get; set; }
     public string? DescriptionAr { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageSource { get; set; }
+    public string? ThumbnailUrl { get; set; }
     public string Manufacturer { get; set; } = string.Empty;
     public List<string> Tags { get; set; } = new();
     public bool IsActive { get; set; }
