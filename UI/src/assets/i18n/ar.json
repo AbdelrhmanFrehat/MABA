@@ -1961,9 +1961,9 @@
       "colorNameAr": "اسم اللون (عربي)",
       "hexCode": "كود اللون",
       "sortOrder": "ترتيب العرض",
-      "color": "اللون",
       "density": "الكثافة",
-      "stockQuantity": "الكمية المتوفرة"
+      "colors": "الألوان",
+      "stockGrams": "المخزون (جم)"
     },
     "laserMaterials": {
       "title": "مواد الليزر",
@@ -2024,6 +2024,7 @@
       "searchPlaceholder": "البحث بالعميل، المادة...",
       "referenceId": "رقم المرجع",
       "material": "المادة",
+      "color": "اللون",
       "profile": "ملف الجودة",
       "customer": "العميل",
       "status": "الحالة",

@@ -111,7 +111,7 @@ export class FilamentSpoolsDialogComponent implements OnInit {
         } else {
             this.form = this.fb.group({
                 materialId: [null, Validators.required],
-                materialColorId: [null as string | null],
+                materialColorId: [null as string | null, Validators.required],
                 name: [''],
                 initialWeightGrams: [1000, [Validators.required, Validators.min(1)]]
             });
@@ -146,7 +146,7 @@ export class FilamentSpoolsDialogComponent implements OnInit {
         if (!mid) {
             return;
         }
-        this.printingApi.getMaterialColors(mid).subscribe({
+        this.printingApi.getAllMaterialColors(mid).subscribe({
             next: (colors: MaterialColor[]) => {
                 this.colorOptions = colors.map((c) => ({
                     label: `${this.lang === 'ar' && c.nameAr ? c.nameAr : c.nameEn} (${c.hexCode})`,
@@ -197,7 +197,7 @@ export class FilamentSpoolsDialogComponent implements OnInit {
             this.printingApi
                 .createFilamentSpool({
                     materialId: v.materialId,
-                    materialColorId: v.materialColorId || null,
+                    materialColorId: v.materialColorId,
                     name: v.name?.trim() ? v.name.trim() : null,
                     initialWeightGrams: v.initialWeightGrams
                 })

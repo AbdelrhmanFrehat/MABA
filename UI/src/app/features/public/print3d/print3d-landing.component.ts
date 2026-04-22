@@ -358,7 +358,7 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
                                      [style.animation-delay]="(i * 0.03) + 's'"
                                      [class.selected]="selectedMaterialId === material.id"
                                      (click)="selectMaterial(material.id)">
-                                    <div class="material-color-strip" [style.background]="material.color || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'"></div>
+                                    <div class="material-color-strip" [style.background]="material.availableColors?.[0]?.hexCode || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'"></div>
                                     <div class="material-content">
                                         <div class="material-header">
                                             <h3 class="material-name">{{ getMaterialName(material) }}</h3>
@@ -366,9 +366,9 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
                                         </div>
                                         <p class="material-use-case">{{ getMaterialUseCase(material) }}</p>
                                         <div class="material-specs">
-                                            <div class="spec-item" *ngIf="material.color">
+                                            <div class="spec-item" *ngIf="material.availableColors?.length">
                                                 <i class="pi pi-palette"></i>
-                                                <span>{{ material.color }}</span>
+                                                <span>{{ material.availableColors.length }} {{ languageService.language === 'ar' ? 'ألوان' : 'colors' }}</span>
                                             </div>
                                             <div class="spec-item">
                                                 <i class="pi pi-verified"></i>

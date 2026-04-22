@@ -188,6 +188,14 @@ import {
                         <label>{{ 'admin.3dRequests.material' | translate }}</label>
                         <span>{{ selectedRequest.materialName || '-' }}</span>
                     </div>
+                    <div class="detail-item" *ngIf="selectedRequest.materialColorId">
+                        <label>{{ 'admin.3dRequests.color' | translate }}</label>
+                        <span class="color-info">
+                            <span class="color-swatch" *ngIf="selectedRequest.materialColorHexCode" [style.background]="selectedRequest.materialColorHexCode"></span>
+                            {{ selectedRequest.materialColorNameEn || '-' }}
+                            <span class="color-hex" *ngIf="selectedRequest.materialColorHexCode">{{ selectedRequest.materialColorHexCode }}</span>
+                        </span>
+                    </div>
                     <div class="detail-item">
                         <label>{{ 'admin.3dRequests.profile' | translate }}</label>
                         <span>{{ selectedRequest.profileName || '-' }}</span>
@@ -548,6 +556,9 @@ import {
         .detail-item.full-width { grid-column: span 2; }
         .detail-item label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .detail-item span { font-size: 0.95rem; color: #1e293b; }
+        .color-info { display: flex; align-items: center; gap: 0.5rem; }
+        .color-swatch { display: inline-block; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.15); flex-shrink: 0; }
+        .color-hex { font-family: monospace; font-size: 0.8rem; color: #64748b; }
         .customer-details { display: flex; flex-direction: column; gap: 0.25rem; }
         .customer-details span { display: flex; align-items: center; gap: 0.5rem; }
         .customer-details i { color: #64748b; font-size: 0.875rem; }

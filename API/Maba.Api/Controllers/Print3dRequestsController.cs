@@ -72,6 +72,10 @@ public class Print3dRequestsController : ControllerBase
         WorkflowStatus = ServiceRequestWorkflowMapper.FromPrint3d(r.Status).ToString(),
         MaterialId = r.MaterialId,
         MaterialName = r.Material?.NameEn,
+        MaterialColorId = r.MaterialColorId,
+        MaterialColorNameEn = r.MaterialColor?.NameEn,
+        MaterialColorNameAr = r.MaterialColor?.NameAr,
+        MaterialColorHexCode = r.MaterialColor?.HexCode,
         ProfileId = r.ProfileId,
         ProfileName = r.Profile?.NameEn,
         FileName = r.FileName,
@@ -316,6 +320,7 @@ public class Print3dRequestsController : ControllerBase
     {
         var query = _context.Set<Print3dServiceRequest>()
             .Include(r => r.Material)
+            .Include(r => r.MaterialColor)
             .Include(r => r.Profile)
             .Include(r => r.User)
             .AsQueryable();
@@ -370,6 +375,7 @@ public class Print3dRequestsController : ControllerBase
     {
         var request = await _context.Set<Print3dServiceRequest>()
             .Include(r => r.Material)
+            .Include(r => r.MaterialColor)
             .Include(r => r.Profile)
             .Include(r => r.User)
             .Include(r => r.UsedSpool!)
@@ -436,6 +442,7 @@ public class Print3dRequestsController : ControllerBase
     {
         var request = await _context.Set<Print3dServiceRequest>()
             .Include(r => r.Material)
+            .Include(r => r.MaterialColor)
             .Include(r => r.Profile)
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id);
@@ -575,6 +582,7 @@ public class Print3dRequestsController : ControllerBase
         var refreshed = await _context.Set<Print3dServiceRequest>()
             .AsNoTracking()
             .Include(r => r.Material)
+            .Include(r => r.MaterialColor)
             .Include(r => r.Profile)
             .Include(r => r.User)
             .Include(r => r.UsedSpool!)
@@ -769,6 +777,10 @@ public class Print3dRequestDto
     public string WorkflowStatus { get; set; } = string.Empty;
     public Guid? MaterialId { get; set; }
     public string? MaterialName { get; set; }
+    public Guid? MaterialColorId { get; set; }
+    public string? MaterialColorNameEn { get; set; }
+    public string? MaterialColorNameAr { get; set; }
+    public string? MaterialColorHexCode { get; set; }
     public Guid? ProfileId { get; set; }
     public string? ProfileName { get; set; }
     public string? FileName { get; set; }

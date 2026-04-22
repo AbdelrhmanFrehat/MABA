@@ -106,34 +106,6 @@ import { Material, CreateMaterialRequest, UpdateMaterialRequest } from '../../..
                     }
                 </div>
 
-                <div class="form-field">
-                    <label for="color">
-                        {{ 'admin.materials.color' | translate }}
-                    </label>
-                    <input 
-                        pInputText 
-                        id="color" 
-                        formControlName="color"
-                        class="w-full"
-                        maxlength="50"
-                    />
-                </div>
-
-                <div class="form-field" *ngIf="isEditMode">
-                    <label for="stockQuantity">
-                        {{ 'admin.materials.stockQuantity' | translate }}
-                    </label>
-                    <p-inputNumber
-                        id="stockQuantity"
-                        formControlName="stockQuantity"
-                        [minFractionDigits]="0"
-                        [maxFractionDigits]="2"
-                        mode="decimal"
-                        styleClass="w-full"
-                        suffix=" g"
-                    ></p-inputNumber>
-                </div>
-
                 <div class="form-field form-field-full">
                     <div class="checkbox-field">
                         <p-checkbox 
@@ -251,8 +223,6 @@ export class MaterialFormComponent implements OnInit {
             nameAr: ['', [Validators.required, Validators.maxLength(200)]],
             pricePerGram: [0, [Validators.required, Validators.min(0)]],
             density: [1.0, [Validators.required, Validators.min(0)]],
-            color: [''],
-            stockQuantity: [0],
             isActive: [true]
         });
     }
@@ -267,8 +237,6 @@ export class MaterialFormComponent implements OnInit {
                 nameAr: material.nameAr,
                 pricePerGram: material.pricePerGram,
                 density: material.density,
-                color: material.color || '',
-                stockQuantity: material.stockQuantity,
                 isActive: material.isActive
             });
         }
@@ -290,8 +258,6 @@ export class MaterialFormComponent implements OnInit {
                 nameAr: formValue.nameAr,
                 pricePerGram: formValue.pricePerGram,
                 density: formValue.density,
-                color: formValue.color || null,
-                stockQuantity: formValue.stockQuantity,
                 isActive: formValue.isActive
             };
 
@@ -312,8 +278,7 @@ export class MaterialFormComponent implements OnInit {
                 nameEn: formValue.nameEn,
                 nameAr: formValue.nameAr,
                 pricePerGram: formValue.pricePerGram,
-                density: formValue.density,
-                color: formValue.color || null
+                density: formValue.density
             };
 
             this.printingApiService.createMaterial(createRequest).subscribe({

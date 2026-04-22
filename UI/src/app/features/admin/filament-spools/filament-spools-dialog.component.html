@@ -31,17 +31,20 @@
             ></p-select>
         </div>
         <div class="form-field mb-3">
-            <label for="materialColorId">{{ 'admin.filamentSpools.color' | translate }}</label>
+            <label for="materialColorId">{{ 'admin.filamentSpools.color' | translate }} <span style="color:var(--red-500)">*</span></label>
             <p-select
                 inputId="materialColorId"
                 formControlName="materialColorId"
                 [options]="colorOptions"
                 optionLabel="label"
                 optionValue="value"
-                [showClear]="true"
-                [placeholder]="'admin.filamentSpools.selectColor' | translate"
+                [placeholder]="colorOptions.length ? ('admin.filamentSpools.selectColor' | translate) : 'No colors — add colors to this material first'"
                 styleClass="w-full"
+                [disabled]="!colorOptions.length"
             ></p-select>
+            @if (!colorOptions.length && form.get('materialId')?.value) {
+                <small style="color: var(--orange-600)">This material has no colors. Use "Manage Colors" on the Materials page to add colors first.</small>
+            }
         </div>
         <div class="form-field mb-3">
             <label for="initialWeightGrams">{{ 'admin.filamentSpools.initial' | translate }} (g) *</label>

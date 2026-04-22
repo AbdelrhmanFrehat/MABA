@@ -823,87 +823,14 @@
                         Style="{StaticResource CncWorkspaceTabControlStyle}"
                         ItemContainerStyle="{StaticResource CncWorkspaceTabItemStyle}">
                 <TabItem Header="{Binding Source={StaticResource Labels}, Path=Cnc_Tab_Operate}">
-                    <StackPanel Margin="0,16,0,0">
-            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock Text="G-code Runner" FontSize="16" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-                    <WrapPanel Margin="0,0,0,12">
-                        <Button Content="Load G-code"
-                                Command="{Binding LoadGcodeCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Margin="0,0,8,8"/>
-                        <Button Content="Clear Loaded Job"
-                                Command="{Binding ClearLoadedProgramCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Margin="0,0,8,8"/>
-                        <Button Content="Start"
-                                Command="{Binding StartProgramCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Margin="0,0,8,8"/>
-                        <Button Content="Pause"
-                                Command="{Binding PauseProgramCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Margin="0,0,8,8"/>
-                        <Button Content="Resume"
-                                Command="{Binding ResumeProgramCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Margin="0,0,8,8"/>
-                        <Button Content="Stop"
-                                Command="{Binding StopCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Margin="0,0,8,8"/>
-                    </WrapPanel>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                    <Grid Margin="0,16,0,0">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Loaded File" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LoadedFileName}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Job Title" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LoadedJobTitle}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
-
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Source Reference" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LoadedJobSourceReference}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
-
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Summary" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LoadedFileSummary}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
-
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Job Status" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding JobSessionStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Active Profile" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LoadedJobProfileName}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Driver Mode" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LoadedJobDriverMode}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Run Readiness" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
-                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding JobReadinessSummary}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                    </Grid>
-                    <TextBlock Text="{Binding JobBlockingReason}"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               Margin="0,12,0,0"
-                               TextWrapping="Wrap"
-                               Visibility="{Binding HasBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                </StackPanel>
-            </Border>
-
-                        <Grid>
+                        <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1.05*"/>
                                 <ColumnDefinition Width="16"/>
@@ -1053,7 +980,7 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
-                    <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                    <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16" Visibility="Collapsed">
                         <StackPanel>
                             <TextBlock Text="G-code Preview Simulation" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
@@ -1136,7 +1063,7 @@
                             </Grid>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                    <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16" Visibility="Collapsed">
                         <StackPanel>
                             <TextBlock Text="Machine Visualization" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
@@ -1241,7 +1168,215 @@
                     </Border>
                             </StackPanel>
                         </Grid>
-                    </StackPanel>
+                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="G-code Preview Simulation" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                                    <WrapPanel Margin="0,0,0,12">
+                                        <Button Content="Frame"
+                                                Command="{Binding FramePreviewCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,8"/>
+                                        <Button Content="Play"
+                                                Command="{Binding PlayPreviewCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Margin="0,0,8,8"/>
+                                        <Button Content="Pause"
+                                                Command="{Binding PausePreviewCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,8"/>
+                                        <Button Content="Stop"
+                                                Command="{Binding StopPreviewCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,12,8"/>
+                                        <StackPanel Margin="0,2,0,8">
+                                            <TextBlock Text="Preview Speed"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Margin="0,0,0,4"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Slider Width="150"
+                                                        Minimum="0.5"
+                                                        Maximum="4"
+                                                        TickFrequency="0.5"
+                                                        IsSnapToTickEnabled="True"
+                                                        Value="{Binding PreviewPlaybackSpeed, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="{Binding PreviewPlaybackSpeedDisplay}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           Margin="10,0,0,0"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </WrapPanel>
+
+                                    <controls:CncToolpathPreviewControl Height="280"
+                                                                        Motions="{Binding PreviewMotions}"
+                                                                        CurrentSegmentIndex="{Binding PreviewCurrentSegmentIndex}"
+                                                                        SegmentProgress="{Binding PreviewSegmentProgress}"
+                                                                        ToolX="{Binding PreviewToolX}"
+                                                                        ToolY="{Binding PreviewToolY}"
+                                                                        MachineWidth="{Binding XLimitMm}"
+                                                                        MachineHeight="{Binding YLimitMm}"/>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="170"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Preview State" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewSimulationStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Current Segment" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewCurrentLineText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Total Distance" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PreviewTotalDistanceMm, Mode=OneWay, StringFormat={}{0:0.###} mm}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Cut / Rapid" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6">
+                                            <Run Text="{Binding PreviewCutDistanceMm, Mode=OneWay, StringFormat={}{0:0.###} mm cut}"/>
+                                            <Run Text=" / "/>
+                                            <Run Text="{Binding PreviewRapidDistanceMm, Mode=OneWay, StringFormat={}{0:0.###} mm rapid}"/>
+                                        </TextBlock>
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Estimated Time" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PreviewEstimatedTime, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Preview Note" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap">
+                                            <Run Text="Cut moves follow solid paths, rapid moves follow thin red travel lines, and playback stays preview-only without sending machine commands."/>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="Machine Visualization" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                                    <controls:CncMachineViewportControl Height="360"
+                                                                        Motions="{Binding PreviewMotions}"
+                                                                        CurrentMotionIndex="{Binding CurrentMotionIndex}"
+                                                                        PreviewCurrentSegmentIndex="{Binding PreviewCurrentSegmentIndex}"
+                                                                        PreviewSegmentProgress="{Binding PreviewSegmentProgress}"
+                                                                        UsePreviewPlayback="{Binding UsePreviewPlaybackInViewport}"
+                                                                        CurrentX="{Binding MachineX}"
+                                                                        CurrentY="{Binding MachineY}"
+                                                                        CurrentZ="{Binding MachineZ}"
+                                                                        WorkOffsetX="{Binding WorkOffsetX}"
+                                                                        WorkOffsetY="{Binding WorkOffsetY}"
+                                                                        WorkOffsetZ="{Binding WorkOffsetZ}"
+                                                                        MachineState="{Binding MachineStateValue}"
+                                                                        ExecutionState="{Binding ExecutionStateValue}"
+                                                                        MachineMinX="{Binding XMinMm}"
+                                                                        MachineMaxX="{Binding XLimitMm}"
+                                                                        MachineMinY="{Binding YMinMm}"
+                                                                        MachineMaxY="{Binding YLimitMm}"
+                                                                        MachineMinZ="{Binding ZMinMm}"
+                                                                        MachineMaxZ="{Binding ZLimitMm}"
+                                                                        HasFrameBounds="{Binding HasFrameBounds}"
+                                                                        FrameMinX="{Binding FrameMinX}"
+                                                                        FrameMaxX="{Binding FrameMaxX}"
+                                                                        FrameMinY="{Binding FrameMinY}"
+                                                                        FrameMaxY="{Binding FrameMaxY}"
+                                                                        IsFramePreviewActive="{Binding IsFramePreviewActive}"
+                                                                        PreviewToolX="{Binding PreviewToolX}"
+                                                                        PreviewToolY="{Binding PreviewToolY}"/>
+                                    <TextBlock Text="Executed path stays green, the active move is highlighted amber, and the remaining toolpath stays blue while the gantry and tool follow the current estimated machine position."
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Margin="0,10,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+            <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="G-code Runner" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                    <WrapPanel Margin="0,0,0,12">
+                        <Button Content="Load G-code"
+                                Command="{Binding LoadGcodeCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Margin="0,0,8,8"/>
+                        <Button Content="Clear Loaded Job"
+                                Command="{Binding ClearLoadedProgramCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,0,8,8"/>
+                        <Button Content="Start"
+                                Command="{Binding StartProgramCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Margin="0,0,8,8"/>
+                        <Button Content="Pause"
+                                Command="{Binding PauseProgramCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,0,8,8"/>
+                        <Button Content="Resume"
+                                Command="{Binding ResumeProgramCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,0,8,8"/>
+                        <Button Content="Stop"
+                                Command="{Binding StopCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,0,8,8"/>
+                    </WrapPanel>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Loaded File" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LoadedFileName}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Job Title" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LoadedJobTitle}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Source Reference" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LoadedJobSourceReference}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Summary" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LoadedFileSummary}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Job Status" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding JobSessionStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Active Profile" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LoadedJobProfileName}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Driver Mode" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LoadedJobDriverMode}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Run Readiness" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding JobReadinessSummary}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                    </Grid>
+                    <TextBlock Text="{Binding JobBlockingReason}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,12,0,0"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding HasBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </Border>
+                    </Grid>
                 </TabItem>
 
                 <TabItem Header="{Binding Source={StaticResource Labels}, Path=Cnc_Tab_Monitor}">

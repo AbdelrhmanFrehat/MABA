@@ -12,6 +12,7 @@
             <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
             <conv:BoolToLocalizedYesNoConverter x:Key="BoolToLocalizedYesNoConverter"/>
+            <conv:BoolToSidebarWidthConverter x:Key="BoolToSidebarWidthConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

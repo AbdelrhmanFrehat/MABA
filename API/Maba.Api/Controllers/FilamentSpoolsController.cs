@@ -61,21 +61,18 @@ public class FilamentSpoolsController : ControllerBase
             return BadRequest("Material not found.");
         }
 
-        if (dto.MaterialColorId.HasValue)
+        var color = await _context.Set<MaterialColor>()
+            .FirstOrDefaultAsync(c => c.Id == dto.MaterialColorId && c.MaterialId == dto.MaterialId, cancellationToken);
+        if (color == null)
         {
-            var color = await _context.Set<MaterialColor>()
-                .FirstOrDefaultAsync(c => c.Id == dto.MaterialColorId.Value && c.MaterialId == dto.MaterialId, cancellationToken);
-            if (color == null)
-            {
-                return BadRequest("Material color not found for this material.");
-            }
+            return BadRequest("Material color not found for this material.");
         }
 
         var initial = dto.InitialWeightGrams;
         var entity = new FilamentSpool
         {
             MaterialId = dto.MaterialId,
-            MaterialColorId = dto.MaterialColorId,
+            MaterialColorId = (Guid?)dto.MaterialColorId,
             Name = string.IsNullOrWhiteSpace(dto.Name) ? null : dto.Name.Trim(),
             InitialWeightGrams = initial,
             RemainingWeightGrams = initial,
@@ -147,6 +144,7 @@ public class FilamentSpoolsController : ControllerBase
         MaterialColorId = s.MaterialColorId,
         ColorNameEn = s.MaterialColor?.NameEn,
         ColorNameAr = s.MaterialColor?.NameAr,
+        ColorHexCode = s.MaterialColor?.HexCode,
         Name = s.Name,
         InitialWeightGrams = s.InitialWeightGrams,
         RemainingWeightGrams = s.RemainingWeightGrams,

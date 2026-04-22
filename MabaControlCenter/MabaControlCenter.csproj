@@ -3,6 +3,8 @@
   <ItemGroup>
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     <Resource Include="Assets\maba.ico" />
+    <Resource Include="Assets\maba.png" />
+    <Resource Include="Assets\maba-logo-transparent.png" />
   </ItemGroup>
 
   <PropertyGroup>

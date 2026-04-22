@@ -9,6 +9,7 @@ public class FilamentSpoolDto
     public Guid? MaterialColorId { get; set; }
     public string? ColorNameEn { get; set; }
     public string? ColorNameAr { get; set; }
+    public string? ColorHexCode { get; set; }
     public string? Name { get; set; }
     public int InitialWeightGrams { get; set; }
     public int RemainingWeightGrams { get; set; }
@@ -19,7 +20,7 @@ public class FilamentSpoolDto
 public class CreateFilamentSpoolDto
 {
     public Guid MaterialId { get; set; }
-    public Guid? MaterialColorId { get; set; }
+    public Guid MaterialColorId { get; set; }
     public string? Name { get; set; }
     public int InitialWeightGrams { get; set; } = 1000;
 }

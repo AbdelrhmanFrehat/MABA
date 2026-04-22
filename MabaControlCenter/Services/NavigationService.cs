@@ -29,8 +29,11 @@ public class NavigationService : INavigationService
         ICncJobPlacementService cncJobPlacementService,
         IMachineCatalogService machineCatalogService,
         IRuntimeProfileService runtimeProfileService,
-        IActiveMachineContextService activeMachineContextService)
+        IActiveMachineContextService activeMachineContextService,
+        IAuthSessionService authSessionService)
     {
+        _viewModels["Login"] = new LoginViewModel(authSessionService, this, settingsService);
+        _viewModels["Home"] = new HomeViewModel(authSessionService, deviceService, moduleService, activeMachineContextService, this);
         _viewModels["Dashboard"] = new DashboardViewModel(updateService, newsService, deviceService, moduleService, localizationService);
         _viewModels["Discover"] = new DiscoverViewModel(localizationService);
         _viewModels["Devices"] = new DevicesViewModel(deviceService, localizationService);

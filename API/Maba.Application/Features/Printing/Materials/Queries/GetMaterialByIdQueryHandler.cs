@@ -18,13 +18,21 @@ public class GetMaterialByIdQueryHandler : IRequestHandler<GetMaterialByIdQuery,
     public async Task<MaterialDto?> Handle(GetMaterialByIdQuery request, CancellationToken cancellationToken)
     {
         var material = await _context.Set<Material>()
-            .Include(m => m.AvailableColors.Where(c => c.IsActive).OrderBy(c => c.SortOrder))
+            .Include(m => m.AvailableColors.OrderBy(c => c.SortOrder))
             .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
-        if (material == null)
-        {
-            return null;
-        }
+        if (material == null) return null;
+
+        var totalStock = await _context.Set<FilamentSpool>()
+            .Where(s => s.MaterialId == material.Id && s.IsActive)
+            .SumAsync(s => s.RemainingWeightGrams, cancellationToken);
+
+        var colorIdsWithStock = (await _context.Set<FilamentSpool>()
+            .Where(s => s.MaterialId == material.Id && s.IsActive && s.RemainingWeightGrams > 0 && s.MaterialColorId != null)
+            .Select(s => s.MaterialColorId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
 
         return new MaterialDto
         {
@@ -33,21 +41,22 @@ public class GetMaterialByIdQueryHandler : IRequestHandler<GetMaterialByIdQuery,
             NameAr = material.NameAr,
             PricePerGram = material.PricePerGram,
             Density = material.Density,
-            Color = material.Color,
             IsActive = material.IsActive,
-            StockQuantity = material.StockQuantity,
-            AvailableColors = material.AvailableColors.Select(c => new MaterialColorDto
-            {
-                Id = c.Id,
-                MaterialId = c.MaterialId,
-                NameEn = c.NameEn,
-                NameAr = c.NameAr,
-                HexCode = c.HexCode,
-                IsActive = c.IsActive,
-                SortOrder = c.SortOrder,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
-            }).ToList(),
+            TotalStockGrams = totalStock,
+            AvailableColors = material.AvailableColors
+                .Where(c => c.IsActive && colorIdsWithStock.Contains(c.Id))
+                .Select(c => new MaterialColorDto
+                {
+                    Id = c.Id,
+                    MaterialId = c.MaterialId,
+                    NameEn = c.NameEn,
+                    NameAr = c.NameAr,
+                    HexCode = c.HexCode,
+                    IsActive = c.IsActive,
+                    SortOrder = c.SortOrder,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt
+                }).ToList(),
             CreatedAt = material.CreatedAt,
             UpdatedAt = material.UpdatedAt
         };

@@ -11,6 +11,12 @@
         Icon="pack://application:,,,/MabaControlCenter;component/Assets/maba.ico">
 
     <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+            <views:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+            <views:HomeView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <views:DashboardView/>
         </DataTemplate>
@@ -48,13 +54,16 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="{Binding IsAuthenticated, Converter={StaticResource BoolToSidebarWidthConverter}, ConverterParameter=220}"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Left sidebar -->
-        <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0"
+                Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel Margin="0,60,0,0">
+                <Button Content="Home" Style="{DynamicResource SidebarNavButton}"
+                        Command="{Binding NavigateCommand}" CommandParameter="Home"/>
                 <Button Content="{Binding Source={StaticResource Labels}, Path=Sidebar_Dashboard}" Style="{DynamicResource SidebarNavButton}"
                         Command="{Binding NavigateCommand}" CommandParameter="Dashboard"/>
                 <Button Content="{Binding Source={StaticResource Labels}, Path=Sidebar_Discover}" Style="{DynamicResource SidebarNavButton}"
@@ -84,7 +93,23 @@
 
             <!-- Top header -->
             <Border Grid.Row="0" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,16">
-                <TextBlock Text="{Binding Source={StaticResource Labels}, Path=App_Title}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                <Grid>
+                    <TextBlock Text="{Binding Source={StaticResource Labels}, Path=App_Title}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding CurrentUserDisplayName, StringFormat=User: {0}}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0"/>
+                        <Button Content="Logout"
+                                Command="{Binding LogoutCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="12,6"
+                                MinHeight="0"/>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Back to Modules bar: visible only on Dexter Calibration module -->

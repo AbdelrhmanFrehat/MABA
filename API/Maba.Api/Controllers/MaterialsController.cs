@@ -93,8 +93,15 @@ public class MaterialsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<List<MaterialColorDto>>> GetMaterialColors(Guid materialId)
     {
+        // Only return colors that have at least one active spool with remaining stock
+        var colorIdsWithStock = await _context.Set<FilamentSpool>()
+            .Where(s => s.MaterialId == materialId && s.IsActive && s.RemainingWeightGrams > 0 && s.MaterialColorId != null)
+            .Select(s => s.MaterialColorId!.Value)
+            .Distinct()
+            .ToListAsync();
+
         var colors = await _context.Set<MaterialColor>()
-            .Where(c => c.MaterialId == materialId && c.IsActive)
+            .Where(c => c.MaterialId == materialId && c.IsActive && colorIdsWithStock.Contains(c.Id))
             .OrderBy(c => c.SortOrder)
             .Select(c => new MaterialColorDto
             {

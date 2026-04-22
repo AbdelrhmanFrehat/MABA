@@ -37,9 +37,8 @@ export interface Material {
     nameAr: string;
     pricePerGram: number;
     density: number;
-    color?: string;
     isActive: boolean;
-    stockQuantity: number;
+    totalStockGrams: number;
     availableColors: MaterialColor[];
     createdAt: string;
     updatedAt?: string;
@@ -50,7 +49,6 @@ export interface CreateMaterialRequest {
     nameAr: string;
     pricePerGram: number;
     density: number;
-    color?: string;
 }
 
 export interface UpdateMaterialRequest {
@@ -59,9 +57,7 @@ export interface UpdateMaterialRequest {
     nameAr: string;
     pricePerGram: number;
     density: number;
-    color?: string;
     isActive: boolean;
-    stockQuantity: number;
 }
 
 export interface Print3dRequest {
@@ -71,6 +67,10 @@ export interface Print3dRequest {
     workflowStatus?: string;
     materialId?: string;
     materialName?: string;
+    materialColorId?: string | null;
+    materialColorNameEn?: string | null;
+    materialColorNameAr?: string | null;
+    materialColorHexCode?: string | null;
     profileId?: string;
     profileName?: string;
     fileName?: string;
@@ -302,6 +302,7 @@ export interface FilamentSpool {
     materialColorId?: string | null;
     colorNameEn?: string | null;
     colorNameAr?: string | null;
+    colorHexCode?: string | null;
     name?: string | null;
     initialWeightGrams: number;
     remainingWeightGrams: number;
@@ -311,7 +312,7 @@ export interface FilamentSpool {
 
 export interface CreateFilamentSpoolPayload {
     materialId: string;
-    materialColorId?: string | null;
+    materialColorId: string;
     name?: string | null;
     initialWeightGrams: number;
 }

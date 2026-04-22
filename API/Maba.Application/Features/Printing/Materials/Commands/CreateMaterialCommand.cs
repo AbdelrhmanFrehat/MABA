@@ -9,6 +9,5 @@ public class CreateMaterialCommand : IRequest<MaterialDto>
     public string NameAr { get; set; } = string.Empty;
     public decimal PricePerGram { get; set; }
     public decimal Density { get; set; }
-    public string? Color { get; set; }
 }
 

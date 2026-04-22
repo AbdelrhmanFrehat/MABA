@@ -7,9 +7,8 @@ public class MaterialDto
     public string NameAr { get; set; } = string.Empty;
     public decimal PricePerGram { get; set; }
     public decimal Density { get; set; }
-    public string? Color { get; set; }
     public bool IsActive { get; set; }
-    public decimal StockQuantity { get; set; }
+    public int TotalStockGrams { get; set; }
     public List<MaterialColorDto> AvailableColors { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

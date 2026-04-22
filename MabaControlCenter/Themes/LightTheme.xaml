@@ -28,6 +28,17 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
 
+    <LinearGradientBrush x:Key="HomeHeroBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+        <GradientStop Color="#FFF3F7FB" Offset="0.62"/>
+        <GradientStop Color="#FFE5ECF8" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="HomeHeroTitleBrush" Color="#FF111827"/>
+    <SolidColorBrush x:Key="HomeHeroSubtitleBrush" Color="#FF2563EB"/>
+    <SolidColorBrush x:Key="HomeHeroDescriptionBrush" Color="#FF334155"/>
+    <SolidColorBrush x:Key="HomeHeroVisualStrokeBrush" Color="#FF2563EB"/>
+    <SolidColorBrush x:Key="HomeHeroVisualGridBrush" Color="#553B82F6"/>
+
     <Style x:Key="SidebarNavButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>

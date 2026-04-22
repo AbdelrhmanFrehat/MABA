@@ -29,12 +29,14 @@ public class UpdateMaterialCommandHandler : IRequestHandler<UpdateMaterialComman
         material.NameAr = request.NameAr;
         material.PricePerGram = request.PricePerGram;
         material.Density = request.Density;
-        material.Color = request.Color;
         material.IsActive = request.IsActive;
-        material.StockQuantity = request.StockQuantity;
         material.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        var totalStock = await _context.Set<FilamentSpool>()
+            .Where(s => s.MaterialId == material.Id && s.IsActive)
+            .SumAsync(s => s.RemainingWeightGrams, CancellationToken.None);
 
         return new MaterialDto
         {
@@ -43,9 +45,8 @@ public class UpdateMaterialCommandHandler : IRequestHandler<UpdateMaterialComman
             NameAr = material.NameAr,
             PricePerGram = material.PricePerGram,
             Density = material.Density,
-            Color = material.Color,
             IsActive = material.IsActive,
-            StockQuantity = material.StockQuantity,
+            TotalStockGrams = totalStock,
             CreatedAt = material.CreatedAt,
             UpdatedAt = material.UpdatedAt
         };

@@ -12,15 +12,17 @@ public class JobsService : IJobsService
     };
 
     private readonly ISettingsService _settingsService;
+    private readonly IAuthSessionService? _authSessionService;
 
-    public JobsService(ISettingsService settingsService)
+    public JobsService(ISettingsService settingsService, IAuthSessionService? authSessionService = null)
     {
         _settingsService = settingsService;
+        _authSessionService = authSessionService;
     }
 
     public async Task<IReadOnlyList<ControlCenterJobListItem>> GetJobsAsync(string? status = null, string? machineType = null, CancellationToken cancellationToken = default)
     {
-        using var client = new HttpClient();
+        using var client = CreateClient();
         var url = BuildUrl("/api/v1/control-center/jobs", status, machineType);
         using var response = await client.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -32,7 +34,7 @@ public class JobsService : IJobsService
 
     public async Task<ControlCenterJobDetail?> GetJobAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        using var client = new HttpClient();
+        using var client = CreateClient();
         var url = BuildUrl($"/api/v1/control-center/jobs/{id}");
         using var response = await client.GetAsync(url, cancellationToken);
 
@@ -66,7 +68,7 @@ public class JobsService : IJobsService
 
     private async Task<ControlCenterJobDetail?> PostAsync(string path, CancellationToken cancellationToken)
     {
-        using var client = new HttpClient();
+        using var client = CreateClient();
         var url = BuildUrl(path);
         using var response = await client.PostAsync(url, content: null, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -93,5 +95,13 @@ public class JobsService : IJobsService
 
         builder.Query = string.Join("&", query);
         return builder.ToString();
+    }
+
+    private HttpClient CreateClient()
+    {
+        if (_authSessionService != null)
+            return _authSessionService.CreateHttpClient();
+
+        return new HttpClient();
     }
 }

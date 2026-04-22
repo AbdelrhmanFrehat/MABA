@@ -52,7 +52,24 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
                     [title]="'admin.materials.list' | translate"
                     [showAddButton]="false"
                     (onAction)="handleAction($event)"
-                ></app-data-table>
+                >
+                    <ng-template #customColumn let-row let-col="column">
+                        @if (col.field === 'availableColors') {
+                            <div class="color-swatches">
+                                @for (c of row.availableColors; track c.id) {
+                                    <span
+                                        class="color-dot"
+                                        [style.background]="c.hexCode"
+                                        [title]="c.nameEn"
+                                    ></span>
+                                }
+                                @if (!row.availableColors?.length) {
+                                    <span class="no-colors">—</span>
+                                }
+                            </div>
+                        }
+                    </ng-template>
+                </app-data-table>
             </div>
         </div>
     `,
@@ -126,6 +143,26 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
                 font-size: 1.25rem;
             }
         }
+
+        .color-swatches {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .color-dot {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        .no-colors {
+            color: var(--text-color-secondary);
+        }
     `]
 })
 export class MaterialsListComponent implements OnInit {
@@ -143,10 +180,11 @@ export class MaterialsListComponent implements OnInit {
         { field: 'nameAr', headerKey: 'admin.materials.nameAr', sortable: true },
         { field: 'pricePerGram', headerKey: 'admin.materials.pricePerGram', type: 'number', sortable: true },
         { field: 'density', headerKey: 'admin.materials.density', type: 'number', sortable: true },
-        { field: 'stockQuantity', headerKey: 'admin.materials.stockQuantity', type: 'number', sortable: true },
-        { 
-            field: 'isActive', 
-            headerKey: 'admin.materials.isActive', 
+        { field: 'availableColors', headerKey: 'admin.materials.colors', type: 'custom', width: '160px' },
+        { field: 'totalStockGrams', headerKey: 'admin.materials.stockGrams', type: 'number', sortable: true },
+        {
+            field: 'isActive',
+            headerKey: 'admin.materials.isActive',
             type: 'boolean',
             trueLabelKey: 'common.yes',
             falseLabelKey: 'common.no',
@@ -156,6 +194,11 @@ export class MaterialsListComponent implements OnInit {
     ];
 
     actions: TableAction[] = [
+        {
+            icon: 'pi pi-palette',
+            tooltipKey: 'admin.materials.manageColors',
+            action: 'colors'
+        },
         {
             icon: 'pi pi-pencil',
             tooltipKey: 'common.edit',

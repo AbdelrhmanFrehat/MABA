@@ -24,8 +24,7 @@ public class CreateMaterialCommandHandler : IRequestHandler<CreateMaterialComman
             NameEn = request.NameEn,
             NameAr = request.NameAr,
             PricePerGram = request.PricePerGram,
-            Density = request.Density,
-            Color = request.Color
+            Density = request.Density
         };
 
         _context.Set<Material>().Add(material);
@@ -38,7 +37,7 @@ public class CreateMaterialCommandHandler : IRequestHandler<CreateMaterialComman
             NameAr = material.NameAr,
             PricePerGram = material.PricePerGram,
             Density = material.Density,
-            Color = material.Color,
+            TotalStockGrams = 0,
             CreatedAt = material.CreatedAt,
             UpdatedAt = material.UpdatedAt
         };
