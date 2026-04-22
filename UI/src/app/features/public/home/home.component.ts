@@ -39,7 +39,7 @@ import { environment } from '../../../../environments/environment';
                                 <div class="hero-brand-logoFrame">
                                     <img
                                         class="hero-brand-logoImg"
-                                        src="assets/images/maba-hero-logo.png"
+                                        src="assets/images/maba-logo-current.png"
                                         alt="MABA"
                                         width="2048"
                                         height="1364"

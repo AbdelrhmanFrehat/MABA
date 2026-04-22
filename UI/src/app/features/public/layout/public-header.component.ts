@@ -22,7 +22,7 @@ import { CartApiService } from '../../../shared/services/cart-api.service';
                 <!-- Logo + BETA badge -->
                 <div class="logo-area">
                     <a routerLink="/" class="logo-link">
-                        <img src="assets/images/maba-hero-logo.png" alt="MABA" class="header-logo-img" width="2048" height="1364" />
+                        <img src="assets/images/maba-logo-current.png" alt="MABA" class="header-logo-img" width="2048" height="1364" />
                     </a>
                     <div class="beta-wrap">
                         <a routerLink="/whats-new" class="beta-chip">{{ 'beta.label' | translate }}</a>
