@@ -65,6 +65,7 @@ export class Design3dViewerComponent implements AfterViewInit, OnChanges, OnDest
     @Input() modelUrl = '';
     @Input() format: ViewerFormat = '';
     @Input() background = '#0f1737';
+    @Input() modelColor = ''; // hex e.g. '#FF5500'
 
     @ViewChild('canvasEl', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
@@ -97,6 +98,8 @@ export class Design3dViewerComponent implements AfterViewInit, OnChanges, OnDest
         if (!this.started) return;
         if (changes['modelUrl'] || changes['format']) {
             await this.loadModel();
+        } else if (changes['modelColor'] && this.currentModel) {
+            this.applyColorToModel();
         }
     }
 
@@ -202,7 +205,7 @@ export class Design3dViewerComponent implements AfterViewInit, OnChanges, OnDest
         const geometry = await new STLLoader().loadAsync(url);
         geometry.computeVertexNormals();
         const material = new this.three.MeshStandardMaterial({
-            color: 0x8da4ff,
+            color: this.resolveColor(),
             metalness: 0.15,
             roughness: 0.55
         });
@@ -214,10 +217,11 @@ export class Design3dViewerComponent implements AfterViewInit, OnChanges, OnDest
     private async loadObjModel(url: string): Promise<void> {
         const { OBJLoader } = await import('three/examples/jsm/loaders/OBJLoader.js');
         const obj = await new OBJLoader().loadAsync(url);
+        const color = this.resolveColor();
         obj.traverse((child: any) => {
             if (child.isMesh) {
                 child.material = new this.three.MeshStandardMaterial({
-                    color: 0x8da4ff,
+                    color,
                     metalness: 0.12,
                     roughness: 0.58
                 });
@@ -226,6 +230,24 @@ export class Design3dViewerComponent implements AfterViewInit, OnChanges, OnDest
         this.currentModel = obj;
         this.scene.add(this.currentModel);
         this.centerAndFrame(this.currentModel);
+    }
+
+    private resolveColor(): any {
+        if (this.modelColor?.trim()) {
+            return new this.three.Color(this.modelColor);
+        }
+        return new this.three.Color(0x8da4ff);
+    }
+
+    private applyColorToModel(): void {
+        if (!this.currentModel || !this.three) return;
+        const color = this.resolveColor();
+        this.currentModel.traverse?.((node: any) => {
+            if (node.isMesh && node.material) {
+                const mats = Array.isArray(node.material) ? node.material : [node.material];
+                mats.forEach((m: any) => { m.color.set(color); });
+            }
+        });
     }
 
     private centerAndFrame(object: any): void {

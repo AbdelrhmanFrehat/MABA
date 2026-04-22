@@ -20,6 +20,7 @@ import { LanguageService } from '../../../shared/services/language.service';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { Material, Print3dMaterial, Print3dProfile, PrintQualityProfile } from '../../../shared/models/printing.model';
 import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more-dialog.component';
+import { Design3dViewerComponent } from '../../../shared/components/design-3d-viewer/design-3d-viewer.component';
 
 @Component({
     selector: 'app-print3d-landing',
@@ -41,7 +42,8 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
         FileUploadModule,
         TextareaModule,
         ToastModule,
-        LearnMoreDialogComponent
+        LearnMoreDialogComponent,
+        Design3dViewerComponent
     ],
     providers: [MessageService],
     template: `
@@ -565,6 +567,10 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
                                             <span class="file-name">{{ uploadedFile.name }}</span>
                                             <span class="file-size">{{ formatFileSize(uploadedFile.size) }}</span>
                                         </div>
+                                        <button type="button" class="review-file-btn" (click)="openReview()">
+                                            <i class="pi pi-eye"></i>
+                                            {{ languageService.language === 'ar' ? 'معاينة' : 'Review' }}
+                                        </button>
                                         <button type="button" class="remove-file-btn" (click)="removeFile()">
                                             <i class="pi pi-times"></i>
                                         </button>
@@ -760,6 +766,36 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
                 </div>
             </section>
             <app-learn-more-dialog [(visible)]="showLearnMoreDialog"></app-learn-more-dialog>
+
+            <!-- 3D Review Overlay -->
+            @if (showReviewPanel && reviewModelUrl) {
+                <div class="review-overlay" (click)="closeReview()">
+                    <div class="review-panel" (click)="$event.stopPropagation()">
+                        <div class="review-header">
+                            <div class="review-meta">
+                                @if (reviewColorHex) {
+                                    <span class="review-swatch" [style.background]="reviewColorHex"></span>
+                                }
+                                <span class="review-label">{{ getSelectedMaterialName() }}</span>
+                                @if (reviewColorName) {
+                                    <span class="review-color-name">— {{ reviewColorName }}</span>
+                                }
+                            </div>
+                            <button class="review-close-btn" (click)="closeReview()">
+                                <i class="pi pi-times"></i>
+                            </button>
+                        </div>
+                        <div class="review-viewer-wrap">
+                            <app-design-3d-viewer
+                                [modelUrl]="reviewModelUrl"
+                                format="STL"
+                                [modelColor]="reviewColorHex"
+                                background="#f0f2f5">
+                            </app-design-3d-viewer>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     `,
     styles: [`
@@ -2398,6 +2434,22 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
 
+        .profile-card.selected {
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 20px 40px rgba(102, 126, 234, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .profile-card.selected .profile-name {
+            color: #667eea;
+        }
+
+        .profile-card.featured.selected {
+            border-color: rgba(255,255,255,0.6);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.2);
+        }
+
         .profile-card.featured {
             background: var(--gradient-dark);
             border-color: transparent;
@@ -3058,6 +3110,112 @@ import { LearnMoreDialogComponent } from '../shared/learn-more-dialog/learn-more
             background: #fecaca;
         }
 
+        .review-file-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0 0.9rem;
+            height: 36px;
+            border-radius: 18px;
+            border: 1.5px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .review-file-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Review overlay */
+        .review-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .review-panel {
+            width: 100%;
+            max-width: 860px;
+            height: min(80vh, 680px);
+            background: #0f1737;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+        }
+
+        .review-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.25rem;
+            background: rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+
+        .review-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .review-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+
+        .review-label {
+            color: #e2e8f0;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .review-color-name {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .review-close-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .review-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .review-viewer-wrap {
+            flex: 1;
+            min-height: 0;
+        }
+
         .upload-error {
             display: flex;
             align-items: center;
@@ -3431,6 +3589,13 @@ export class Print3dLandingComponent implements OnInit {
     isDragOver = false;
     maxFileSize = 50 * 1024 * 1024; // 50MB
 
+    // 3D Review
+    showReviewPanel = false;
+    reviewModelUrl: string | null = null;
+    reviewColorHex = '';
+    reviewColorName = '';
+    private reviewObjectUrl: string | null = null;
+
     // Request submission
     requestComments = '';
     submitting = false;
@@ -3787,6 +3952,31 @@ export class Print3dLandingComponent implements OnInit {
     removeFile() {
         this.uploadedFile = null;
         this.fileError = null;
+        this.showReviewPanel = false;
+        if (this.reviewObjectUrl) {
+            URL.revokeObjectURL(this.reviewObjectUrl);
+            this.reviewObjectUrl = null;
+            this.reviewModelUrl = null;
+        }
+    }
+
+    openReview() {
+        if (!this.uploadedFile) return;
+        if (this.reviewObjectUrl) URL.revokeObjectURL(this.reviewObjectUrl);
+        this.reviewObjectUrl = URL.createObjectURL(this.uploadedFile);
+        this.reviewModelUrl = this.reviewObjectUrl;
+
+        const color = this.availableColors.find(c => c.id === this.selectedColorId);
+        this.reviewColorHex = color?.hexCode || '';
+        this.reviewColorName = color
+            ? (this.languageService.language === 'ar' && color.nameAr ? color.nameAr : color.nameEn)
+            : '';
+
+        this.showReviewPanel = true;
+    }
+
+    closeReview() {
+        this.showReviewPanel = false;
     }
 
     formatFileSize(bytes: number): string {
