@@ -162,6 +162,10 @@ export class AppAnnouncementsListComponent implements OnInit {
             width: '520px',
             data: { item }
         });
+        if (!ref) {
+            return;
+        }
+
         ref.onClose.subscribe((saved) => {
             if (saved) this.load();
         });
@@ -196,7 +200,11 @@ export class AppAnnouncementsListComponent implements OnInit {
             width: '380px',
             data: { message: this.translate.instant('admin.appAnnouncements.confirmDelete') }
         });
-        ref?.onClose.subscribe((confirmed) => {
+        if (!ref) {
+            return;
+        }
+
+        ref.onClose.subscribe((confirmed) => {
             if (!confirmed) return;
             this.announcementsApi.delete(item.id).subscribe({
                 next: () => {
