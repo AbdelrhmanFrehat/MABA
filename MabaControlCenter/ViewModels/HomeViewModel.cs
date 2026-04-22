@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Threading;
 using System.Windows.Input;
 using MabaControlCenter.Models;
 using MabaControlCenter.Services;
@@ -12,6 +13,9 @@ public class HomeViewModel : ViewModelBase
     private readonly IModuleService _moduleService;
     private readonly IActiveMachineContextService _activeMachineContextService;
     private readonly INavigationService _navigationService;
+    private readonly DispatcherTimer _tickerTimer;
+    private int _tickerIndex;
+    private HomeTickerItem? _currentTickerItem;
 
     public HomeViewModel(
         IAuthSessionService authSessionService,
@@ -47,6 +51,25 @@ public class HomeViewModel : ViewModelBase
             new() { Title = "Production jobs", Description = "Approved backend jobs can now appear in the Control Center job flow." }
         };
 
+        TickerItems = new ObservableCollection<HomeTickerItem>
+        {
+            new() { Message = "New CNC profiles available", Type = "Machine", DisplayOrder = 10 },
+            new() { Message = "SCARA module coming soon", Type = "Module", DisplayOrder = 20 },
+            new() { Message = "New machine definitions synced", Type = "Catalog", DisplayOrder = 30 },
+            new() { Message = "System update deployed", Type = "System", DisplayOrder = 40 }
+        };
+        RefreshTickerState();
+
+        _tickerTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(5)
+        };
+        _tickerTimer.Tick += (_, _) => AdvanceTicker();
+        if (HasTickerItems)
+        {
+            _tickerTimer.Start();
+        }
+
         ModuleRows = new ObservableCollection<HomeModuleRow>();
         RefreshModuleRows();
 
@@ -59,6 +82,7 @@ public class HomeViewModel : ViewModelBase
     public ObservableCollection<ModuleInfo> Modules => _moduleService.AvailableModules;
     public ObservableCollection<HomeModuleRow> ModuleRows { get; }
     public ObservableCollection<HomeUpdateItem> WhatIsNew { get; }
+    public ObservableCollection<HomeTickerItem> TickerItems { get; }
 
     public ICommand OpenControlPanelCommand { get; }
     public ICommand AddMachineCommand { get; }
@@ -78,9 +102,65 @@ public class HomeViewModel : ViewModelBase
     public string ActiveMachineSummary => HasActiveMachine
         ? $"{ActiveMachineName} is ready for setup or operation."
         : "No machine configured";
+    public HomeTickerItem? CurrentTickerItem
+    {
+        get => _currentTickerItem;
+        private set
+        {
+            if (_currentTickerItem == value)
+            {
+                return;
+            }
+
+            _currentTickerItem = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentTickerMessage));
+            OnPropertyChanged(nameof(CurrentTickerType));
+            OnPropertyChanged(nameof(TickerPositionText));
+        }
+    }
+
+    public bool HasTickerItems => GetActiveTickerItems().Count > 0;
+    public string CurrentTickerMessage => CurrentTickerItem?.Message ?? string.Empty;
+    public string CurrentTickerType => CurrentTickerItem?.Type ?? "Info";
+    public string TickerPositionText
+    {
+        get
+        {
+            var activeItems = GetActiveTickerItems();
+            if (activeItems.Count <= 1 || CurrentTickerItem == null)
+            {
+                return string.Empty;
+            }
+
+            var currentIndex = activeItems.FindIndex(item => item.Id == CurrentTickerItem.Id);
+            return currentIndex >= 0 ? $"{currentIndex + 1}/{activeItems.Count}" : string.Empty;
+        }
+    }
 
     public string FormatModuleAction(ModuleInfo module)
         => module.IsInstalled && module.IsEnabled ? "Open" : "Coming Soon";
+
+    public void LoadTickerItems(IEnumerable<HomeTickerItem> items)
+    {
+        TickerItems.Clear();
+        foreach (var item in items.OrderBy(item => item.DisplayOrder))
+        {
+            TickerItems.Add(item);
+        }
+
+        _tickerIndex = 0;
+        RefreshTickerState();
+
+        if (HasTickerItems)
+        {
+            _tickerTimer.Start();
+        }
+        else
+        {
+            _tickerTimer.Stop();
+        }
+    }
 
     private void RefreshModuleRows()
     {
@@ -98,6 +178,39 @@ public class HomeViewModel : ViewModelBase
                 Command = isAvailable ? OpenModulesCommand : null
             });
         }
+    }
+
+    private void AdvanceTicker()
+    {
+        var activeItems = GetActiveTickerItems();
+        if (activeItems.Count == 0)
+        {
+            CurrentTickerItem = null;
+            _tickerTimer.Stop();
+            OnPropertyChanged(nameof(HasTickerItems));
+            return;
+        }
+
+        _tickerIndex = (_tickerIndex + 1) % activeItems.Count;
+        CurrentTickerItem = activeItems[_tickerIndex];
+        OnPropertyChanged(nameof(HasTickerItems));
+    }
+
+    private void RefreshTickerState()
+    {
+        var activeItems = GetActiveTickerItems();
+        CurrentTickerItem = activeItems.Count > 0 ? activeItems[0] : null;
+        OnPropertyChanged(nameof(HasTickerItems));
+    }
+
+    private List<HomeTickerItem> GetActiveTickerItems()
+    {
+        var now = DateTimeOffset.Now;
+        return TickerItems
+            .Where(item => item.ShouldDisplay(now))
+            .OrderBy(item => item.DisplayOrder)
+            .ThenBy(item => item.Message)
+            .ToList();
     }
 
     private void RefreshMachineState()

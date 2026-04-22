@@ -238,6 +238,11 @@ export const adminRoutes: Routes = [
         path: 'machine-catalog',
         loadChildren: () => import('./machine-catalog/machine-catalog.routes').then(m => m.machineCatalogRoutes),
         canActivate: [authGuard]
+    },
+    {
+        path: 'app-announcements',
+        loadChildren: () => import('./app-announcements/app-announcements.routes').then(m => m.appAnnouncementsRoutes),
+        canActivate: [authGuard]
     }
 ];
 

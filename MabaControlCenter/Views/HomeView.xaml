@@ -12,9 +12,9 @@
                     Background="{DynamicResource HomeHeroBackgroundBrush}">
                 <Grid MinHeight="150">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.25*"/>
-                        <ColumnDefinition Width="24"/>
-                        <ColumnDefinition Width="0.75*"/>
+                        <ColumnDefinition Width="0.95*"/>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="1.05*"/>
                     </Grid.ColumnDefinitions>
 
                     <Grid Grid.Column="0" VerticalAlignment="Center">
@@ -51,12 +51,55 @@
                         </StackPanel>
                     </Grid>
 
-                    <Canvas Grid.Column="2" ClipToBounds="True" Opacity="0.9">
-                        <Path Stroke="{DynamicResource HomeHeroVisualGridBrush}" StrokeThickness="1" Data="M 24 50 L 260 50 L 306 112 L 70 112 Z"/>
-                        <Path Stroke="{DynamicResource HomeHeroVisualGridBrush}" StrokeThickness="1" Opacity="0.65" Data="M 42 72 L 278 72 M 58 94 L 294 94 M 82 53 L 50 110 M 132 53 L 100 110 M 182 53 L 150 110 M 232 53 L 200 110"/>
-                        <Path Stroke="{DynamicResource HomeHeroVisualStrokeBrush}" StrokeThickness="3" Data="M 70 104 L 142 78 L 214 100 L 282 60"/>
-                        <Ellipse Canvas.Left="206" Canvas.Top="92" Width="14" Height="14" Fill="{DynamicResource HomeHeroVisualStrokeBrush}"/>
-                    </Canvas>
+                    <Border Grid.Column="2"
+                            Padding="24,18"
+                            CornerRadius="18"
+                            BorderBrush="{DynamicResource HomeHeroVisualGridBrush}"
+                            BorderThickness="1"
+                            Background="{DynamicResource BackgroundMediumBrush}"
+                            MinHeight="124"
+                            VerticalAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            Visibility="{Binding HasTickerItems, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left"
+                                        CornerRadius="999"
+                                        Padding="9,4"
+                                        Background="{DynamicResource AccentBrush}">
+                                    <TextBlock Text="{Binding CurrentTickerType}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"/>
+                                </Border>
+                                <TextBlock Text="{Binding TickerPositionText}"
+                                           Foreground="{DynamicResource HomeHeroSubtitleBrush}"
+                                           FontSize="11"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding CurrentTickerMessage}"
+                                       Foreground="{DynamicResource HomeHeroTitleBrush}"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Margin="0,14,0,10"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2"
+                                       Text="MABA Control Center announcements"
+                                       Foreground="{DynamicResource HomeHeroDescriptionBrush}"
+                                       FontSize="12"/>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
 

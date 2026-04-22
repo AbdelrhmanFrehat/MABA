@@ -17,6 +17,7 @@ using Maba.Domain.Cnc;
 using Maba.Domain.Projects;
 using Maba.Domain.Faq;
 using Maba.Domain.HeroTicker;
+using Maba.Domain.Announcements;
 using Maba.Domain.Design;
 using Maba.Domain.DesignCad;
 using Maba.Domain.ControlCenter;
@@ -209,6 +210,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Cross-cutting
     public DbSet<FaqItem> FaqItems => Set<FaqItem>();
     public DbSet<HeroTickerItem> HeroTickerItems => Set<HeroTickerItem>();
+    public DbSet<AppAnnouncementItem> AppAnnouncementItems => Set<AppAnnouncementItem>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
