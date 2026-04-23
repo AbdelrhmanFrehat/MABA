@@ -50,8 +50,16 @@ interface StorageItemVm {
                 <p-button label="Add Storage Item" icon="pi pi-plus" (onClick)="openCreateDialog()" />
             </div>
 
+            <div class="search-bar">
+                <span class="p-input-icon-left w-full">
+                    <i class="pi pi-search"></i>
+                    <input pInputText [(ngModel)]="searchQuery" placeholder="Search by name or SKU..." class="w-full" />
+                </span>
+                <small class="results-count" *ngIf="searchQuery">{{ filteredRows.length }} result{{ filteredRows.length !== 1 ? 's' : '' }}</small>
+            </div>
+
             <div class="cards-grid">
-                <p-card *ngFor="let row of rows">
+                <p-card *ngFor="let row of filteredRows">
                     <div class="storage-card">
                         <img [src]="row.imageUrl" alt="storage item" class="thumb" />
                         <div class="meta">
@@ -212,6 +220,8 @@ interface StorageItemVm {
         .header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1rem; }
         .header h1 { margin: 0 0 0.25rem; }
         .header p { margin: 0; color: #64748b; }
+        .search-bar { margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .results-count { color: #64748b; white-space: nowrap; font-size: 0.85rem; }
         .cards-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .storage-card { display: grid; grid-template-columns: 96px 1fr; gap: 1rem; }
         .thumb { width: 96px; height: 96px; border-radius: 10px; object-fit: cover; border: 1px solid #e2e8f0; }
@@ -278,6 +288,18 @@ export class StorageItemsComponent implements OnInit {
     private messageService = inject(MessageService);
 
     rows: StorageItemVm[] = [];
+    searchQuery = '';
+
+    get filteredRows(): StorageItemVm[] {
+        const q = this.searchQuery.trim().toLowerCase();
+        if (!q) return this.rows;
+        return this.rows.filter(r =>
+            r.item.nameEn?.toLowerCase().includes(q) ||
+            r.item.nameAr?.toLowerCase().includes(q) ||
+            r.item.sku?.toLowerCase().includes(q)
+        );
+    }
+
     categories: Category[] = [];
     statuses: { id: string; key: string }[] = [];
 

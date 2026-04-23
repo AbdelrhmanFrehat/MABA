@@ -147,7 +147,7 @@ export class AppAnnouncementsListComponent implements OnInit {
                 this.messageService.add({
                     severity: 'error',
                     summary: this.translate.instant('messages.error'),
-                    detail: this.translate.instant('messages.loadFailed'),
+                    detail: this.translate.instant('messages.loadError'),
                     life: 5000
                 });
             }
@@ -179,7 +179,7 @@ export class AppAnnouncementsListComponent implements OnInit {
                 this.messageService.add({
                     severity: 'success',
                     summary: this.translate.instant('messages.success'),
-                    detail: this.translate.instant(updated.isActive ? 'common.activated' : 'common.deactivated'),
+                    detail: this.translate.instant('messages.itemUpdatedSuccessfully'),
                     life: 3000
                 });
             },
@@ -187,7 +187,7 @@ export class AppAnnouncementsListComponent implements OnInit {
                 this.messageService.add({
                     severity: 'error',
                     summary: this.translate.instant('messages.error'),
-                    detail: this.translate.instant('messages.saveFailed'),
+                    detail: this.translate.instant('messages.saveError'),
                     life: 5000
                 });
             }
@@ -196,7 +196,7 @@ export class AppAnnouncementsListComponent implements OnInit {
 
     deleteItem(item: AppAnnouncementDto): void {
         const ref = this.dialogService.open(ConfirmDialogComponent, {
-            header: this.translate.instant('common.confirmDelete'),
+            header: this.translate.instant('common.confirm'),
             width: '380px',
             data: { message: this.translate.instant('admin.appAnnouncements.confirmDelete') }
         });
@@ -220,7 +220,7 @@ export class AppAnnouncementsListComponent implements OnInit {
                     this.messageService.add({
                         severity: 'error',
                         summary: this.translate.instant('messages.error'),
-                        detail: this.translate.instant('messages.deleteFailed'),
+                        detail: this.translate.instant('messages.deleteError'),
                         life: 5000
                     });
                 }

@@ -177,7 +177,7 @@ export class AppAnnouncementFormDialogComponent implements OnInit {
                 this.messageService.add({
                     severity: 'error',
                     summary: this.translate.instant('messages.error'),
-                    detail: this.translate.instant('messages.saveFailed'),
+                    detail: this.translate.instant('messages.saveError'),
                     life: 5000
                 });
                 this.saving = false;
