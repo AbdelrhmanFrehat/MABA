@@ -17,6 +17,7 @@ public partial class MainWindow : Window
         var themeService = new ThemeService();
         var settingsService = new SettingsService();
         var authSessionService = new AuthSessionService(settingsService);
+        var appAnnouncementsService = new AppAnnouncementsService(settingsService, authSessionService);
         var jobsService = new JobsService(settingsService, authSessionService);
         var activeProductionJobService = new ActiveProductionJobService();
         var machineCatalogService = new MachineCatalogService(settingsService);
@@ -39,7 +40,7 @@ public partial class MainWindow : Window
         themeService.ApplyTheme(settings.Theme);
         localizationService.SetCulture(settings.Language);
 
-        var nav = new NavigationService(deviceService, loggingService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, authSessionService);
+        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, authSessionService);
         DataContext = new MainViewModel(nav, authSessionService);
         Loaded += (_, _) =>
         {

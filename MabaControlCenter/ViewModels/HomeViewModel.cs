@@ -9,6 +9,7 @@ namespace MabaControlCenter.ViewModels;
 public class HomeViewModel : ViewModelBase
 {
     private readonly IAuthSessionService _authSessionService;
+    private readonly IAppAnnouncementsService _appAnnouncementsService;
     private readonly IDeviceService _deviceService;
     private readonly IModuleService _moduleService;
     private readonly IActiveMachineContextService _activeMachineContextService;
@@ -19,12 +20,14 @@ public class HomeViewModel : ViewModelBase
 
     public HomeViewModel(
         IAuthSessionService authSessionService,
+        IAppAnnouncementsService appAnnouncementsService,
         IDeviceService deviceService,
         IModuleService moduleService,
         IActiveMachineContextService activeMachineContextService,
         INavigationService navigationService)
     {
         _authSessionService = authSessionService;
+        _appAnnouncementsService = appAnnouncementsService;
         _deviceService = deviceService;
         _moduleService = moduleService;
         _activeMachineContextService = activeMachineContextService;
@@ -51,13 +54,7 @@ public class HomeViewModel : ViewModelBase
             new() { Title = "Production jobs", Description = "Approved backend jobs can now appear in the Control Center job flow." }
         };
 
-        TickerItems = new ObservableCollection<HomeTickerItem>
-        {
-            new() { Message = "New CNC profiles available", Type = "Machine", DisplayOrder = 10 },
-            new() { Message = "SCARA module coming soon", Type = "Module", DisplayOrder = 20 },
-            new() { Message = "New machine definitions synced", Type = "Catalog", DisplayOrder = 30 },
-            new() { Message = "System update deployed", Type = "System", DisplayOrder = 40 }
-        };
+        TickerItems = new ObservableCollection<HomeTickerItem>();
         RefreshTickerState();
 
         _tickerTimer = new DispatcherTimer
@@ -74,8 +71,10 @@ public class HomeViewModel : ViewModelBase
         RefreshModuleRows();
 
         _authSessionService.AuthenticationChanged += (_, _) => OnPropertyChanged(nameof(UserName));
+        _authSessionService.AuthenticationChanged += (_, _) => _ = LoadAnnouncementsAsync();
         _deviceService.ConnectionStateChanged += (_, _) => RefreshMachineState();
         _activeMachineContextService.ContextChanged += (_, _) => RefreshMachineState();
+        _ = LoadAnnouncementsAsync();
     }
 
     public ObservableCollection<HomeActionCard> QuickAccessCards { get; }
@@ -163,6 +162,19 @@ public class HomeViewModel : ViewModelBase
         else
         {
             _tickerTimer.Stop();
+        }
+    }
+
+    private async Task LoadAnnouncementsAsync()
+    {
+        try
+        {
+            var items = await _appAnnouncementsService.GetActiveDesktopAnnouncementsAsync();
+            LoadTickerItems(items);
+        }
+        catch
+        {
+            LoadTickerItems(Array.Empty<HomeTickerItem>());
         }
     }
 

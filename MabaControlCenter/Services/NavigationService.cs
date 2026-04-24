@@ -11,6 +11,7 @@ public class NavigationService : INavigationService
     public NavigationService(
         IDeviceService deviceService,
         ILoggingService loggingService,
+        IAppAnnouncementsService appAnnouncementsService,
         IModuleService moduleService,
         IUpdateService updateService,
         INewsService newsService,
@@ -33,7 +34,7 @@ public class NavigationService : INavigationService
         IAuthSessionService authSessionService)
     {
         _viewModels["Login"] = new LoginViewModel(authSessionService, this, settingsService);
-        _viewModels["Home"] = new HomeViewModel(authSessionService, deviceService, moduleService, activeMachineContextService, this);
+        _viewModels["Home"] = new HomeViewModel(authSessionService, appAnnouncementsService, deviceService, moduleService, activeMachineContextService, this);
         _viewModels["Dashboard"] = new DashboardViewModel(updateService, newsService, deviceService, moduleService, localizationService);
         _viewModels["Discover"] = new DiscoverViewModel(localizationService);
         _viewModels["Devices"] = new DevicesViewModel(deviceService, localizationService);
