@@ -53,10 +53,10 @@ public class HomeViewModel : ViewModelBase
 
         TickerItems = new ObservableCollection<HomeTickerItem>
         {
-            new() { Message = "New CNC profiles available", Type = "Machine", ImageUri = "/Assets/maba.png", DisplayOrder = 10 },
-            new() { Message = "SCARA module coming soon", Type = "Module", ImageUri = "/Assets/maba-logo-transparent.png", DisplayOrder = 20 },
-            new() { Message = "New machine definitions synced", Type = "Catalog", ImageUri = "/Assets/maba.png", DisplayOrder = 30 },
-            new() { Message = "System update deployed", Type = "System", ImageUri = "/Assets/maba-logo-transparent.png", DisplayOrder = 40 }
+            new() { Message = "New CNC profiles available", Type = "Machine", DisplayOrder = 10 },
+            new() { Message = "SCARA module coming soon", Type = "Module", DisplayOrder = 20 },
+            new() { Message = "New machine definitions synced", Type = "Catalog", DisplayOrder = 30 },
+            new() { Message = "System update deployed", Type = "System", DisplayOrder = 40 }
         };
         RefreshTickerState();
 
