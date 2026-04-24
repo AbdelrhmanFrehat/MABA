@@ -2374,6 +2374,11 @@
       "always": "دائماً",
       "order": "الترتيب",
       "noItems": "لا توجد إعلانات بعد.",
+      "image": "الصورة",
+      "uploadImage": "رفع صورة",
+      "replaceImage": "استبدال الصورة",
+      "imageHint": "اختياري. يُنصح باستخدام PNG/JPG/WEBP.",
+      "imageAltText": "النص البديل (اختياري)",
       "confirmDelete": "هل أنت متأكد من حذف هذا الإعلان؟",
       "deleted": "تم حذف الإعلان."
     },

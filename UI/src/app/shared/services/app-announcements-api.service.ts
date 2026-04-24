@@ -11,6 +11,8 @@ export interface AppAnnouncementDto {
     targetPlatform: string;
     startsAt?: string | null;
     endsAt?: string | null;
+    imageUrl?: string | null;
+    imageAltText?: string | null;
     createdAt?: string;
     updatedAt?: string | null;
 }
@@ -23,6 +25,8 @@ export interface CreateAppAnnouncementRequest {
     targetPlatform: string;
     startsAt?: string | null;
     endsAt?: string | null;
+    imageUrl?: string | null;
+    imageAltText?: string | null;
 }
 
 export interface UpdateAppAnnouncementRequest {
@@ -33,6 +37,8 @@ export interface UpdateAppAnnouncementRequest {
     targetPlatform: string;
     startsAt?: string | null;
     endsAt?: string | null;
+    imageUrl?: string | null;
+    imageAltText?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

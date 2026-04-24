@@ -15,9 +15,11 @@ public class AppAnnouncementDto
     public string? Type { get; set; }
     public bool IsActive { get; set; }
     public int DisplayOrder { get; set; }
-    public string TargetPlatform { get; set; } = "All";
+    public string TargetPlatform { get; set; } = "Desktop";
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageAltText { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -31,6 +33,8 @@ public class CreateAppAnnouncementRequest
     public string TargetPlatform { get; set; } = "Desktop";
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageAltText { get; set; }
 }
 
 public class UpdateAppAnnouncementRequest
@@ -42,6 +46,8 @@ public class UpdateAppAnnouncementRequest
     public string TargetPlatform { get; set; } = "Desktop";
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageAltText { get; set; }
 }
 
 // ─── Admin controller ─────────────────────────────────────────────────────────
@@ -94,7 +100,9 @@ public class AppAnnouncementsController : ControllerBase
             DisplayOrder = req.DisplayOrder,
             TargetPlatform = platform,
             StartsAt = req.StartsAt,
-            EndsAt = req.EndsAt
+            EndsAt = req.EndsAt,
+            ImageUrl = string.IsNullOrWhiteSpace(req.ImageUrl) ? null : req.ImageUrl.Trim(),
+            ImageAltText = string.IsNullOrWhiteSpace(req.ImageAltText) ? null : req.ImageAltText.Trim()
         };
 
         _context.Set<AppAnnouncementItem>().Add(entity);
@@ -125,6 +133,8 @@ public class AppAnnouncementsController : ControllerBase
         entity.TargetPlatform = platform;
         entity.StartsAt = req.StartsAt;
         entity.EndsAt = req.EndsAt;
+        entity.ImageUrl = string.IsNullOrWhiteSpace(req.ImageUrl) ? null : req.ImageUrl.Trim();
+        entity.ImageAltText = string.IsNullOrWhiteSpace(req.ImageAltText) ? null : req.ImageAltText.Trim();
 
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(entity));
@@ -184,6 +194,8 @@ public class AppAnnouncementsController : ControllerBase
         TargetPlatform = e.TargetPlatform,
         StartsAt = e.StartsAt,
         EndsAt = e.EndsAt,
+        ImageUrl = e.ImageUrl,
+        ImageAltText = e.ImageAltText,
         CreatedAt = e.CreatedAt,
         UpdatedAt = e.UpdatedAt
     };
@@ -228,7 +240,12 @@ public class ControlCenterAnnouncementsController : ControllerBase
             a.Id,
             a.Message,
             a.Type,
-            a.DisplayOrder
+            a.DisplayOrder,
+            a.TargetPlatform,
+            StartsAt = a.StartsAt,
+            EndsAt = a.EndsAt,
+            a.ImageUrl,
+            a.ImageAltText
         }));
     }
 }

@@ -16,5 +16,7 @@ public class AppAnnouncementItemConfiguration : IEntityTypeConfiguration<AppAnno
         builder.Property(x => x.TargetPlatform).IsRequired().HasMaxLength(50).HasDefaultValue("All");
         builder.Property(x => x.DisplayOrder).HasDefaultValue(0);
         builder.Property(x => x.IsActive).HasDefaultValue(true);
+        builder.Property(x => x.ImageUrl).HasMaxLength(2000);
+        builder.Property(x => x.ImageAltText).HasMaxLength(200);
     }
 }

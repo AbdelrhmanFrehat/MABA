@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../../environments/environment';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -46,6 +47,7 @@ import { AppAnnouncementFormDialogComponent } from './app-announcement-form-dial
                 <ng-template pTemplate="header">
                     <tr>
                         <th style="width:4rem">{{ 'admin.appAnnouncements.order' | translate }}</th>
+                        <th style="width:4.5rem">{{ 'admin.appAnnouncements.image' | translate }}</th>
                         <th>{{ 'admin.appAnnouncements.message' | translate }}</th>
                         <th style="width:8rem">{{ 'admin.appAnnouncements.type' | translate }}</th>
                         <th style="width:8rem">{{ 'admin.appAnnouncements.platform' | translate }}</th>
@@ -57,6 +59,10 @@ import { AppAnnouncementFormDialogComponent } from './app-announcement-form-dial
                 <ng-template pTemplate="body" let-item>
                     <tr>
                         <td class="text-center">{{ item.displayOrder }}</td>
+                        <td class="text-center">
+                            <img *ngIf="item.imageUrl" [src]="resolveImageUrl(item.imageUrl)" alt="thumb" class="list-thumb" />
+                            <i *ngIf="!item.imageUrl" class="pi pi-image text-color-secondary" style="font-size:1.1rem"></i>
+                        </td>
                         <td class="msg-cell">{{ item.message }}</td>
                         <td>
                             <p-tag *ngIf="item.type" [value]="item.type" severity="info" />
@@ -108,7 +114,7 @@ import { AppAnnouncementFormDialogComponent } from './app-announcement-form-dial
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="emptymessage">
-                    <tr><td colspan="7" class="text-center p-4">{{ 'admin.appAnnouncements.noItems' | translate }}</td></tr>
+                    <tr><td colspan="8" class="text-center p-4">{{ 'admin.appAnnouncements.noItems' | translate }}</td></tr>
                 </ng-template>
             </p-table>
         </div>
@@ -118,8 +124,9 @@ import { AppAnnouncementFormDialogComponent } from './app-announcement-form-dial
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .page-header h1 { margin: 0; font-size: 1.5rem; }
         .action-buttons { display: flex; gap: 0.25rem; }
-        .msg-cell { max-width: 28rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .msg-cell { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .schedule-cell { font-size: 0.8rem; }
+        .list-thumb { width: 44px; height: 28px; object-fit: cover; border-radius: 4px; border: 1px solid var(--surface-border); display: block; margin: 0 auto; }
     `]
 })
 export class AppAnnouncementsListComponent implements OnInit {
@@ -194,6 +201,13 @@ export class AppAnnouncementsListComponent implements OnInit {
                 });
             }
         });
+    }
+
+    resolveImageUrl(url: string): string {
+        if (!url?.trim()) return '';
+        if (url.startsWith('http') || url.startsWith('blob:')) return url;
+        const base = (environment.apiUrl ?? '').replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+        return base ? `${base}${url.startsWith('/') ? url : '/' + url}` : url;
     }
 
     deleteItem(item: AppAnnouncementDto): void {

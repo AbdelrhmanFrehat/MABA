@@ -21,6 +21,7 @@ public class HomeTickerItem
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Message { get; set; } = string.Empty;
     public string Type { get; set; } = "Info";
+    public string? ImageUri { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset? StartsAt { get; set; }

@@ -62,42 +62,62 @@
                             HorizontalAlignment="Stretch"
                             Visibility="{Binding HasTickerItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.05*"/>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="1.35*"/>
+                            </Grid.ColumnDefinitions>
 
-                            <DockPanel>
-                                <Border DockPanel.Dock="Left"
-                                        CornerRadius="999"
-                                        Padding="9,4"
-                                        Background="{DynamicResource AccentBrush}">
-                                    <TextBlock Text="{Binding CurrentTickerType}"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               FontSize="10"
-                                               FontWeight="SemiBold"/>
-                                </Border>
-                                <TextBlock Text="{Binding TickerPositionText}"
-                                           Foreground="{DynamicResource HomeHeroSubtitleBrush}"
-                                           FontSize="11"
-                                           HorizontalAlignment="Right"
+                            <Border Grid.Column="0"
+                                    CornerRadius="14"
+                                    Background="{DynamicResource HomeHeroBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    Padding="10"
+                                    Visibility="{Binding HasTickerImage, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Image Source="{Binding CurrentTickerImageUri}"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                            </Border>
+
+                            <Grid Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Left"
+                                            CornerRadius="999"
+                                            Padding="9,4"
+                                            Background="{DynamicResource AccentBrush}">
+                                        <TextBlock Text="{Binding CurrentTickerType}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding TickerPositionText}"
+                                               Foreground="{DynamicResource HomeHeroSubtitleBrush}"
+                                               FontSize="11"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding CurrentTickerMessage}"
+                                           Foreground="{DynamicResource HomeHeroTitleBrush}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           Margin="0,14,0,10"
                                            VerticalAlignment="Center"/>
-                            </DockPanel>
 
-                            <TextBlock Grid.Row="1"
-                                       Text="{Binding CurrentTickerMessage}"
-                                       Foreground="{DynamicResource HomeHeroTitleBrush}"
-                                       FontSize="20"
-                                       FontWeight="SemiBold"
-                                       TextWrapping="Wrap"
-                                       Margin="0,14,0,10"
-                                       VerticalAlignment="Center"/>
-
-                            <TextBlock Grid.Row="2"
-                                       Text="MABA Control Center announcements"
-                                       Foreground="{DynamicResource HomeHeroDescriptionBrush}"
-                                       FontSize="12"/>
+                                <TextBlock Grid.Row="2"
+                                           Text="MABA Control Center announcements"
+                                           Foreground="{DynamicResource HomeHeroDescriptionBrush}"
+                                           FontSize="12"/>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>

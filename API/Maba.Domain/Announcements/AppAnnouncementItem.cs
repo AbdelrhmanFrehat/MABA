@@ -11,4 +11,6 @@ public class AppAnnouncementItem : BaseEntity
     public string TargetPlatform { get; set; } = "All";
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageAltText { get; set; }
 }

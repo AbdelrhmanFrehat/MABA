@@ -1,14 +1,17 @@
 using System;
+using Maba.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Maba.Infrastructure.Migrations
 {
-    /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260423120000_AddAppAnnouncementItems")]
     public partial class AddAppAnnouncementItems : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -20,7 +23,7 @@ namespace Maba.Infrastructure.Migrations
                     Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    TargetPlatform = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "All"),
+                    TargetPlatform = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "Desktop"),
                     StartsAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndsAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -32,7 +35,6 @@ namespace Maba.Infrastructure.Migrations
                 });
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
