@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,6 +14,15 @@ import {
     AppAnnouncementsApiService,
     AppAnnouncementDto
 } from '../../../shared/services/app-announcements-api.service';
+
+function dateRangeValidator(group: AbstractControl): ValidationErrors | null {
+    const starts = group.get('startsAt')?.value;
+    const ends = group.get('endsAt')?.value;
+    if (starts && ends && new Date(starts) > new Date(ends)) {
+        return { dateRange: true };
+    }
+    return null;
+}
 
 const TYPE_OPTIONS = [
     { label: 'System', value: 'System' },
@@ -92,6 +101,10 @@ const PLATFORM_OPTIONS = [
                     <input type="datetime-local" pInputText formControlName="endsAt" class="w-full" />
                 </div>
             </div>
+            <small class="date-range-error" *ngIf="form.hasError('dateRange')">
+                <i class="pi pi-exclamation-triangle"></i>
+                "Starts At" must be before "Ends At".
+            </small>
 
             <div class="form-field flex align-items-center gap-2">
                 <p-checkbox formControlName="isActive" [binary]="true" inputId="isActive"></p-checkbox>
@@ -116,6 +129,17 @@ const PLATFORM_OPTIONS = [
         .form-row { display: flex; gap: 1rem; }
         .form-row .form-field { flex: 1; min-width: 0; }
         .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--surface-border); }
+        .date-range-error { display: flex; align-items: center; gap: 0.35rem; color: #ef4444; font-size: 0.8rem; margin-top: -0.5rem; margin-bottom: 0.75rem; }
+        :host ::ng-deep .p-dialog-header .p-dialog-header-icon,
+        :host ::ng-deep .p-dialog-header .p-dialog-close-button {
+            color: #fff !important;
+            opacity: 0.85;
+        }
+        :host ::ng-deep .p-dialog-header .p-dialog-header-icon:hover,
+        :host ::ng-deep .p-dialog-header .p-dialog-close-button:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.15) !important;
+        }
     `]
 })
 export class AppAnnouncementFormDialogComponent implements OnInit {
@@ -142,10 +166,10 @@ export class AppAnnouncementFormDialogComponent implements OnInit {
             type: [item?.type ?? null],
             isActive: [item?.isActive ?? true],
             displayOrder: [item?.displayOrder ?? 0, [Validators.required, Validators.min(0)]],
-            targetPlatform: [item?.targetPlatform ?? 'All', Validators.required],
+            targetPlatform: [item?.targetPlatform ?? 'Desktop', Validators.required],
             startsAt: [item?.startsAt ? this.toDateTimeLocal(item.startsAt) : null],
             endsAt: [item?.endsAt ? this.toDateTimeLocal(item.endsAt) : null]
-        });
+        }, { validators: dateRangeValidator });
     }
 
     onSubmit(): void {

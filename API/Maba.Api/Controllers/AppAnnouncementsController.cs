@@ -28,7 +28,7 @@ public class CreateAppAnnouncementRequest
     public string? Type { get; set; }
     public bool IsActive { get; set; } = true;
     public int DisplayOrder { get; set; } = 0;
-    public string TargetPlatform { get; set; } = "All";
+    public string TargetPlatform { get; set; } = "Desktop";
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
 }
@@ -39,7 +39,7 @@ public class UpdateAppAnnouncementRequest
     public string? Type { get; set; }
     public bool IsActive { get; set; }
     public int DisplayOrder { get; set; }
-    public string TargetPlatform { get; set; } = "All";
+    public string TargetPlatform { get; set; } = "Desktop";
     public DateTime? StartsAt { get; set; }
     public DateTime? EndsAt { get; set; }
 }
@@ -51,6 +51,12 @@ public class UpdateAppAnnouncementRequest
 [Authorize(Roles = "Admin,Manager")]
 public class AppAnnouncementsController : ControllerBase
 {
+    private static readonly HashSet<string> AllowedTypes =
+        new(StringComparer.OrdinalIgnoreCase) { "System", "Machine", "Module", "Catalog", "Info" };
+
+    private static readonly HashSet<string> AllowedPlatforms =
+        new(StringComparer.OrdinalIgnoreCase) { "All", "Desktop", "Web" };
+
     private readonly IApplicationDbContext _context;
 
     public AppAnnouncementsController(IApplicationDbContext context)
@@ -75,8 +81,10 @@ public class AppAnnouncementsController : ControllerBase
         [FromBody] CreateAppAnnouncementRequest req,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(req.Message))
-            return BadRequest(new { message = "Message is required." });
+        var validationError = ValidateRequest(req.Message, req.Type, req.TargetPlatform, req.StartsAt, req.EndsAt);
+        if (validationError != null) return BadRequest(new { message = validationError });
+
+        var platform = string.IsNullOrWhiteSpace(req.TargetPlatform) ? "Desktop" : req.TargetPlatform.Trim();
 
         var entity = new AppAnnouncementItem
         {
@@ -84,7 +92,7 @@ public class AppAnnouncementsController : ControllerBase
             Type = req.Type?.Trim(),
             IsActive = req.IsActive,
             DisplayOrder = req.DisplayOrder,
-            TargetPlatform = string.IsNullOrWhiteSpace(req.TargetPlatform) ? "All" : req.TargetPlatform.Trim(),
+            TargetPlatform = platform,
             StartsAt = req.StartsAt,
             EndsAt = req.EndsAt
         };
@@ -100,19 +108,21 @@ public class AppAnnouncementsController : ControllerBase
         [FromBody] UpdateAppAnnouncementRequest req,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(req.Message))
-            return BadRequest(new { message = "Message is required." });
+        var validationError = ValidateRequest(req.Message, req.Type, req.TargetPlatform, req.StartsAt, req.EndsAt);
+        if (validationError != null) return BadRequest(new { message = validationError });
 
         var entity = await _context.Set<AppAnnouncementItem>()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (entity == null) return NotFound();
 
+        var platform = string.IsNullOrWhiteSpace(req.TargetPlatform) ? "Desktop" : req.TargetPlatform.Trim();
+
         entity.Message = req.Message.Trim();
         entity.Type = req.Type?.Trim();
         entity.IsActive = req.IsActive;
         entity.DisplayOrder = req.DisplayOrder;
-        entity.TargetPlatform = string.IsNullOrWhiteSpace(req.TargetPlatform) ? "All" : req.TargetPlatform.Trim();
+        entity.TargetPlatform = platform;
         entity.StartsAt = req.StartsAt;
         entity.EndsAt = req.EndsAt;
 
@@ -144,6 +154,24 @@ public class AppAnnouncementsController : ControllerBase
         entity.IsActive = !entity.IsActive;
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(entity));
+    }
+
+    private static string? ValidateRequest(string message, string? type, string platform, DateTime? startsAt, DateTime? endsAt)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return "Message is required.";
+
+        if (!string.IsNullOrWhiteSpace(type) && !AllowedTypes.Contains(type.Trim()))
+            return $"Invalid type '{type}'. Allowed values: {string.Join(", ", AllowedTypes)}.";
+
+        var normalizedPlatform = string.IsNullOrWhiteSpace(platform) ? "Desktop" : platform.Trim();
+        if (!AllowedPlatforms.Contains(normalizedPlatform))
+            return $"Invalid platform '{platform}'. Allowed values: {string.Join(", ", AllowedPlatforms)}.";
+
+        if (startsAt.HasValue && endsAt.HasValue && startsAt.Value > endsAt.Value)
+            return "StartsAt must be before or equal to EndsAt.";
+
+        return null;
     }
 
     private static AppAnnouncementDto ToDto(AppAnnouncementItem e) => new()

@@ -160,6 +160,8 @@ export class AppAnnouncementsListComponent implements OnInit {
                 ? this.translate.instant('admin.appAnnouncements.editTitle')
                 : this.translate.instant('admin.appAnnouncements.addTitle'),
             width: '520px',
+            closable: true,
+            closeOnEscape: true,
             data: { item }
         });
         if (!ref) {
