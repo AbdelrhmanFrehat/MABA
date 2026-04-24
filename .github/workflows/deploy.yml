@@ -238,6 +238,7 @@ jobs:
             Environment=ASPNETCORE_ENVIRONMENT=Production
             Environment=ASPNETCORE_URLS=http://0.0.0.0:9090
             Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+            Environment=Database__ApplyMigrationsOnStartup=true
             ExecStart=${DOTNET_PATH} Maba.Api.dll --urls=http://0.0.0.0:9090
             Restart=always
             RestartSec=10
