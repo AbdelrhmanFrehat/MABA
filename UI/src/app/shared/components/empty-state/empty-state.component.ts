@@ -9,13 +9,13 @@ import { TranslateModule } from '@ngx-translate/core';
     standalone: true,
     imports: [CommonModule, RouterModule, ButtonModule, TranslateModule],
     template: `
-        <div class="empty-state flex flex-column align-items-center justify-content-center p-6 text-center">
-            <i [class]="icon || 'pi pi-inbox'" class="text-6xl text-500 mb-4"></i>
-            <h3 class="text-2xl font-bold mb-2">{{ titleKey ? (titleKey | translate) : title }}</h3>
-            <p class="text-500 mb-4" *ngIf="description || descriptionKey">
+        <div class="empty-state">
+            <i [class]="'empty-icon ' + (icon || 'pi pi-inbox')"></i>
+            <h3 class="empty-title">{{ titleKey ? (titleKey | translate) : title }}</h3>
+            <p class="empty-desc" *ngIf="description || descriptionKey">
                 {{ descriptionKey ? (descriptionKey | translate) : description }}
             </p>
-            <p-button 
+            <p-button
                 *ngIf="actionLabel || actionLabelKey"
                 [label]="actionLabelKey ? (actionLabelKey | translate) : actionLabel"
                 [icon]="actionIcon"
@@ -27,7 +27,31 @@ import { TranslateModule } from '@ngx-translate/core';
     `,
     styles: [`
         .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3.5rem 2rem;
             min-height: 300px;
+            gap: 0.75rem;
+        }
+        .empty-icon {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+        .empty-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #334155;
+        }
+        .empty-desc {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            max-width: 360px;
         }
     `]
 })

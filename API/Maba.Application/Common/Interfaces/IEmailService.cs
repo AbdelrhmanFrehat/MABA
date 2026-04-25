@@ -60,6 +60,18 @@ public interface IEmailService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Notifies the admin inbox that a customer has opened a new support conversation.
+    /// Sends only to <c>NotificationToEmail</c>; never throws.
+    /// </summary>
+    Task SendSupportChatNotificationAsync(
+        string? customerName,
+        string? customerEmail,
+        string subject,
+        string? initialMessage,
+        string adminChatUrl,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Sends a workflow status update email for any service request type.
     /// Covers all meaningful transitions: under review, approved, rejected, in progress, completed, etc.
     /// No-op when <paramref name="toEmail"/> is null or empty. Never throws.

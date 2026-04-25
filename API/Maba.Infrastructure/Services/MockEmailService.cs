@@ -116,4 +116,20 @@ public class MockEmailService : IEmailService
             requestTypeLabel);
         return Task.CompletedTask;
     }
+
+    public Task SendSupportChatNotificationAsync(
+        string? customerName,
+        string? customerEmail,
+        string subject,
+        string? initialMessage,
+        string adminChatUrl,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug(
+            "Mock email: would notify admin of new support conversation from {Customer} ({Email}), subject: {Subject}",
+            customerName ?? "(unknown)",
+            customerEmail ?? "(none)",
+            subject);
+        return Task.CompletedTask;
+    }
 }

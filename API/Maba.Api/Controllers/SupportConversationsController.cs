@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Maba.Infrastructure.Data;
 using Maba.Domain.SupportChat;
 using Maba.Api.DTOs.SupportChat;
@@ -18,17 +19,23 @@ public class SupportConversationsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
     private readonly SupportChatMessagingService _messaging;
+    private readonly IEmailService _email;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<SupportConversationsController> _logger;
 
     public SupportConversationsController(
         ApplicationDbContext context,
         IFileStorageService fileStorage,
         SupportChatMessagingService messaging,
+        IEmailService email,
+        IConfiguration configuration,
         ILogger<SupportConversationsController> logger)
     {
         _context = context;
         _fileStorage = fileStorage;
         _messaging = messaging;
+        _email = email;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -56,15 +63,16 @@ public class SupportConversationsController : ControllerBase
             .AsNoTracking()
             .Include(c => c.Customer)
             .Include(c => c.AssignedToUser)
-            .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
             .Where(c => c.CustomerId == userId)
             .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt)
             .ToListAsync(cancellationToken);
 
+        var lastMessages = await GetLastMessagesAsync(list.Select(c => c.Id).ToList(), cancellationToken);
+
         var dtos = list.Select(c =>
         {
-            var last = c.Messages.FirstOrDefault();
-            return MapToDto(c, last?.Content, last?.CreatedAt, 0);
+            var hasLast = lastMessages.TryGetValue(c.Id, out var last);
+            return MapToDto(c, hasLast ? last.Content : null, hasLast ? last.CreatedAt : (DateTime?)null, 0);
         }).ToList();
 
         return Ok(dtos);
@@ -144,13 +152,39 @@ public class SupportConversationsController : ControllerBase
             throw;
         }
 
+        // Fire admin notification email — non-blocking, never throws
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var customer = await _context.Users.AsNoTracking()
+                    .Where(u => u.Id == userId)
+                    .Select(u => new { u.FullName, u.Email })
+                    .FirstOrDefaultAsync();
+
+                var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
+                var adminChatUrl = $"{frontendBase}/admin/support-chat";
+
+                await _email.SendSupportChatNotificationAsync(
+                    customer?.FullName,
+                    customer?.Email,
+                    subject,
+                    request.InitialMessage,
+                    adminChatUrl,
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Support chat email notification failed for conversation {ConvId}.", conv.Id);
+            }
+        });
+
         var newId = conv.Id;
         try
         {
             var reloaded = await _context.SupportConversations
                 .Include(c => c.Customer)
                 .Include(c => c.AssignedToUser)
-                .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
                 .FirstOrDefaultAsync(c => c.Id == newId, cancellationToken);
 
             if (reloaded == null)
@@ -161,8 +195,14 @@ public class SupportConversationsController : ControllerBase
                     new { error = "Conversation was saved but could not be reloaded. Try refreshing the conversation list.", code = "support_conversation_reload" });
             }
 
-            var last = reloaded.Messages.FirstOrDefault();
-            return Ok(MapToDto(reloaded, last?.Content, last?.CreatedAt, 0));
+            var lastMsg = await _context.SupportMessages
+                .AsNoTracking()
+                .Where(m => m.ConversationId == newId)
+                .OrderByDescending(m => m.CreatedAt)
+                .Select(m => new { m.Content, m.CreatedAt })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return Ok(MapToDto(reloaded, lastMsg?.Content, lastMsg?.CreatedAt, 0));
         }
         catch (Exception ex)
         {
@@ -188,7 +228,6 @@ public class SupportConversationsController : ControllerBase
             .AsNoTracking()
             .Include(c => c.Customer)
             .Include(c => c.AssignedToUser)
-            .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1))
             .AsQueryable();
 
         if (status.HasValue)
@@ -200,10 +239,12 @@ public class SupportConversationsController : ControllerBase
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        var lastMessages = await GetLastMessagesAsync(list.Select(c => c.Id).ToList(), cancellationToken);
+
         var dtos = list.Select(c =>
         {
-            var last = c.Messages.FirstOrDefault();
-            return MapToDto(c, last?.Content, last?.CreatedAt, 0);
+            var hasLast = lastMessages.TryGetValue(c.Id, out var last);
+            return MapToDto(c, hasLast ? last.Content : null, hasLast ? last.CreatedAt : (DateTime?)null, 0);
         }).ToList();
 
         return Ok(dtos);
@@ -358,6 +399,31 @@ public class SupportConversationsController : ControllerBase
         conv.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
         return Ok();
+    }
+
+    private async Task<Dictionary<Guid, (string? Content, DateTime CreatedAt)>> GetLastMessagesAsync(
+        List<Guid> conversationIds,
+        CancellationToken cancellationToken)
+    {
+        if (conversationIds.Count == 0)
+            return new Dictionary<Guid, (string?, DateTime)>();
+
+        // Fetch the most recent message per conversation without filtered Include
+        var rows = await _context.SupportMessages
+            .AsNoTracking()
+            .Where(m => conversationIds.Contains(m.ConversationId))
+            .Select(m => new { m.ConversationId, m.Content, m.CreatedAt })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(m => m.ConversationId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var last = g.OrderByDescending(m => m.CreatedAt).First();
+                    return (last.Content, last.CreatedAt);
+                });
     }
 
     private static SupportConversationDto MapToDto(SupportConversation c, string? lastPreview, DateTime? lastAt, int unreadCount)

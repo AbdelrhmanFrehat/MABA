@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, AfterViewChecked, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -95,20 +95,20 @@ import { environment } from '../../../../environments/environment';
                                 <div class="conversations-list">
                                     <div
                                         *ngFor="let c of conversations"
-                                        class="conversation-item"
+                                        class="ticket-item"
                                         [class.active]="selectedConversation?.id === c.id"
+                                        [class.ticket-closed]="c.status === 1"
                                         (click)="selectConversation(c)">
-                                        <div class="conv-icon">
-                                            <i class="pi pi-headset"></i>
+                                        <div class="ticket-top-row">
+                                            <span class="ticket-ref">{{ ticketRef(c.id) }}</span>
+                                            <span class="ticket-status" [class.open]="c.status === 0" [class.closed]="c.status === 1">
+                                                {{ c.status === 0 ? ('chat.open' | translate) : ('chat.closed' | translate) }}
+                                            </span>
                                         </div>
-                                        <div class="conv-info">
-                                            <div class="conv-title">{{ c.subject || ('chat.supportThread' | translate) }}</div>
-                                            <div class="conv-preview" *ngIf="c.lastMessagePreview">{{ c.lastMessagePreview }}</div>
-                                            <div class="conv-meta-row">
-                                                <span class="conv-date">{{ c.lastMessageAt ? formatDate(c.lastMessageAt) : formatDate(c.createdAt) }}</span>
-                                                <span class="status-pill" *ngIf="c.status === 1">{{ 'chat.closed' | translate }}</span>
-                                            </div>
-                                        </div>
+                                        <div class="ticket-subject">{{ c.subject || ('chat.supportThread' | translate) }}</div>
+                                        <div class="ticket-preview" *ngIf="c.lastMessagePreview">{{ c.lastMessagePreview }}</div>
+                                        <div class="ticket-preview muted" *ngIf="!c.lastMessagePreview">{{ 'chat.noMessagesPreview' | translate }}</div>
+                                        <div class="ticket-date">{{ c.lastMessageAt ? formatDate(c.lastMessageAt) : formatDate(c.createdAt) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -131,8 +131,13 @@ import { environment } from '../../../../environments/environment';
                             <div class="chat-card" *ngIf="selectedConversation">
                                 <div class="thread-header">
                                     <div>
+                                        <div class="thread-ref-row">
+                                            <span class="thread-ref">{{ ticketRef(selectedConversation.id) }}</span>
+                                            <span class="ticket-status" [class.open]="selectedConversation.status === 0" [class.closed]="selectedConversation.status === 1">
+                                                {{ selectedConversation.status === 0 ? ('chat.open' | translate) : ('chat.closed' | translate) }}
+                                            </span>
+                                        </div>
                                         <h2 class="thread-title">{{ selectedConversation.subject || ('chat.supportThread' | translate) }}</h2>
-                                        <span class="status-pill" *ngIf="selectedConversation.status === 1">{{ 'chat.closed' | translate }}</span>
                                     </div>
                                     <button
                                         *ngIf="selectedConversation.status === 0"
@@ -418,77 +423,34 @@ import { environment } from '../../../../environments/environment';
             gap: 0.5rem;
         }
 
-        .conversation-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
+        /* ---- Ticket cards ---- */
+        .ticket-item {
+            padding: 0.85rem 0.9rem;
             border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
+            border: 1px solid #e9ecef;
+            margin-bottom: 0.5rem;
+            background: white;
         }
-
-        .conversation-item:hover {
-            background: #f8f9fa;
+        .ticket-item:hover { border-color: var(--color-primary); background: #fafbff; }
+        .ticket-item.active { border-color: var(--color-primary); background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%); }
+        .ticket-item.ticket-closed { opacity: 0.75; }
+        .ticket-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .ticket-ref { font-size: 0.72rem; font-weight: 700; color: #667eea; letter-spacing: 0.5px; font-family: monospace; }
+        .ticket-subject { font-weight: 600; font-size: 0.88rem; color: #1a1a2e; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ticket-preview { font-size: 0.78rem; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.2rem; }
+        .ticket-preview.muted { font-style: italic; }
+        .ticket-date { font-size: 0.72rem; color: #aaa; }
+        .ticket-status {
+            font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem;
+            border-radius: 999px; text-transform: uppercase; letter-spacing: 0.4px;
         }
-
-        .conversation-item.active {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-        }
-
-        .conv-icon {
-            width: 40px;
-            height: 40px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-primary);
-        }
-
-        .conversation-item.active .conv-icon {
-            background: var(--gradient-primary);
-            color: white;
-        }
-
-        .conv-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .conv-title {
-            font-weight: 600;
-            color: #1a1a2e;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .conv-date {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        .conv-preview {
-            font-size: 0.78rem;
-            color: #6c757d;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .conv-meta-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .status-pill {
-            font-size: 0.7rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 999px;
-            background: #eee;
-            color: #555;
-        }
+        .ticket-status.open { background: #d1fae5; color: #065f46; }
+        .ticket-status.closed { background: #f3f4f6; color: #6b7280; }
+        /* Thread header ref */
+        .thread-ref-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+        .thread-ref { font-size: 0.78rem; font-weight: 700; color: #667eea; font-family: monospace; letter-spacing: 0.5px; }
         .error-banner {
             color: #c62828;
             font-size: 0.9rem;
@@ -837,13 +799,27 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     private hub = inject(SupportChatHubService);
     private messageService = inject(MessageService);
     private translate = inject(TranslateService);
+    private zone = inject(NgZone);
     public languageService = inject(LanguageService);
+
+    private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
     get canSendMessages(): boolean {
         return !!this.selectedConversation && this.selectedConversation.status === 0;
     }
 
+    ticketRef(id: string): string {
+        return '#SUP-' + id.replace(/-/g, '').slice(-6).toUpperCase();
+    }
+
     ngOnInit() {
+        // Auto-refresh every 30s to pick up admin replies and keep previews current
+        this.zone.runOutsideAngular(() => {
+            this.refreshInterval = setInterval(() => {
+                this.zone.run(() => this.silentRefresh());
+            }, 30000);
+        });
+
         this.hub.onReceiveMessage((msg) => {
             if (this.selectedConversation && msg.conversationId === this.selectedConversation.id) {
                 if (!this.messages.some((m) => m.id === msg.id)) {
@@ -981,7 +957,24 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     ngOnDestroy() {
+        if (this.refreshInterval) clearInterval(this.refreshInterval);
         this.hub.stop();
+    }
+
+    /** Reload conversations list without resetting selection or showing spinners */
+    private silentRefresh(): void {
+        this.supportApi.getMine().subscribe({
+            next: (list) => {
+                this.conversations = list || [];
+                // Refresh messages if a conversation is open
+                if (this.selectedConversation) {
+                    const updated = this.conversations.find(c => c.id === this.selectedConversation!.id);
+                    if (updated) this.selectedConversation = updated;
+                    this.loadMessages();
+                }
+            },
+            error: () => {} // silent — don't show errors on background refresh
+        });
     }
 
     ngAfterViewChecked() {

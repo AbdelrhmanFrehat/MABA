@@ -1796,7 +1796,9 @@
     "createFailed": "تعذر إنشاء المحادثة. حاول مرة أخرى.",
     "conversationCreated": "تم بدء المحادثة.",
     "closeConversation": "إغلاق المحادثة",
+    "open": "مفتوح",
     "closed": "مغلقة",
+    "noMessagesPreview": "لا رسائل بعد",
     "closedHint": "هذه المحادثة مغلقة. يمكنك بدء محادثة جديدة من الشريط الجانبي.",
     "closeFailed": "تعذر إغلاق المحادثة.",
     "sendFailed": "تعذر إرسال الرسالة. حاول مرة أخرى.",
@@ -2341,7 +2343,10 @@
       "title": "إدارة المحتوى",
       "pages": "الصفحات",
       "createPage": "إنشاء صفحة",
-      "editPage": "تعديل صفحة"
+      "editPage": "تعديل صفحة",
+      "noPages": "لا توجد صفحات بعد",
+      "noPagesDescription": "أنشئ أول صفحة لبدء بناء محتوى الموقع.",
+      "published": "منشور"
     },
     "supportChat": {
       "title": "محادثات الدعم",

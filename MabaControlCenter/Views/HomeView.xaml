@@ -12,12 +12,12 @@
                     Background="{DynamicResource HomeHeroBackgroundBrush}">
                 <Grid MinHeight="150">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.95*"/>
+                        <ColumnDefinition Width="0.45*"/>
                         <ColumnDefinition Width="28"/>
-                        <ColumnDefinition Width="1.05*"/>
+                        <ColumnDefinition Width="0.55*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Grid Grid.Column="0" VerticalAlignment="Center">
+                    <Grid Grid.Column="0" VerticalAlignment="Top" Margin="0,20,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="22"/>
@@ -32,7 +32,7 @@
                                VerticalAlignment="Top"
                                Margin="0,0,0,0"/>
 
-                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <StackPanel Grid.Column="2" VerticalAlignment="Top">
                             <TextBlock Text="MABA Control Center"
                                        Foreground="{DynamicResource HomeHeroTitleBrush}"
                                        FontSize="34"
@@ -52,71 +52,68 @@
                     </Grid>
 
                     <Border Grid.Column="2"
-                            Padding="24,18"
                             CornerRadius="18"
-                            BorderBrush="{DynamicResource HomeHeroVisualGridBrush}"
-                            BorderThickness="1"
-                            Background="{DynamicResource BackgroundMediumBrush}"
                             MinHeight="124"
-                            VerticalAlignment="Stretch"
-                            HorizontalAlignment="Stretch"
+                            ClipToBounds="True"
                             Visibility="{Binding HasTickerItems, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1.05*"/>
-                                <ColumnDefinition Width="18"/>
-                                <ColumnDefinition Width="1.35*"/>
-                            </Grid.ColumnDefinitions>
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"/>
 
-                            <Border Grid.Column="0"
-                                    CornerRadius="14"
-                                    Background="{DynamicResource HomeHeroBackgroundBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    Padding="10"
-                                    Visibility="{Binding HasTickerImage, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Image Source="{Binding CurrentTickerImageUri}"
-                                       Stretch="Uniform"
-                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <Image Source="{Binding CurrentTickerImageUri}"
+                                   Stretch="UniformToFill"
+                                   SnapsToDevicePixels="True"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Visibility="{Binding HasTickerImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <Border>
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#181B28" Offset="0"/>
+                                        <GradientStop Color="#8C141A28" Offset="0.55"/>
+                                        <GradientStop Color="#D8161C2B" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
                             </Border>
 
-                            <Grid Grid.Column="2">
+                            <Grid Margin="24,20,24,20">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <DockPanel>
-                                    <Border DockPanel.Dock="Left"
+                                <TextBlock Text="{Binding TickerPositionText}"
+                                           Foreground="{DynamicResource HomeHeroSubtitleBrush}"
+                                           FontSize="11"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Top"/>
+
+                                <StackPanel Grid.Row="1"
+                                            VerticalAlignment="Top"
+                                            HorizontalAlignment="Left"
+                                            MaxWidth="340"
+                                            Margin="0,-120,0,0">
+                                    <Border HorizontalAlignment="Left"
                                             CornerRadius="999"
-                                            Padding="9,4"
+                                            Padding="10,4"
+                                            Margin="0,0,0,12"
                                             Background="{DynamicResource AccentBrush}">
                                         <TextBlock Text="{Binding CurrentTickerType}"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    FontSize="10"
                                                    FontWeight="SemiBold"/>
                                     </Border>
-                                    <TextBlock Text="{Binding TickerPositionText}"
-                                               Foreground="{DynamicResource HomeHeroSubtitleBrush}"
-                                               FontSize="11"
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"/>
-                                </DockPanel>
 
-                                <TextBlock Grid.Row="1"
-                                           Text="{Binding CurrentTickerMessage}"
-                                           Foreground="{DynamicResource HomeHeroTitleBrush}"
-                                           FontSize="20"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap"
-                                           Margin="0,14,0,10"
-                                           VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding CurrentTickerMessage}"
+                                               Foreground="White"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,8"/>
 
-                                <TextBlock Grid.Row="2"
-                                           Text="MABA Control Center announcements"
-                                           Foreground="{DynamicResource HomeHeroDescriptionBrush}"
-                                           FontSize="12"/>
+                                    <TextBlock Text="MABA Control Center announcements"
+                                               Foreground="{DynamicResource HomeHeroDescriptionBrush}"
+                                               FontSize="12"/>
+                                </StackPanel>
                             </Grid>
                         </Grid>
                     </Border>

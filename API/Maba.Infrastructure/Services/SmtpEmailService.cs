@@ -152,6 +152,47 @@ public class SmtpEmailService : IEmailService
         }
     }
 
+    public async Task SendSupportChatNotificationAsync(
+        string? customerName,
+        string? customerEmail,
+        string subject,
+        string? initialMessage,
+        string adminChatUrl,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_settings.NotificationToEmail))
+            {
+                _logger.LogDebug("NotificationToEmail not configured; skipping support chat notification.");
+                return;
+            }
+
+            var name = string.IsNullOrWhiteSpace(customerName) ? "A customer" : WebUtility.HtmlEncode(customerName.Trim());
+            var email = string.IsNullOrWhiteSpace(customerEmail) ? "" : $" ({WebUtility.HtmlEncode(customerEmail.Trim())})";
+            var safeSubject = WebUtility.HtmlEncode(subject.Trim());
+            var messagePreview = string.IsNullOrWhiteSpace(initialMessage)
+                ? "<em style=\"color:#888\">(no initial message)</em>"
+                : $"<blockquote style=\"border-left:3px solid #667eea;margin:0.75rem 0;padding:0.5rem 0.75rem;background:#f0f2ff;border-radius:0 6px 6px 0;\">{WebUtility.HtmlEncode(initialMessage.Length > 400 ? initialMessage[..400] + "…" : initialMessage)}</blockquote>";
+
+            var emailSubject = $"New support request — {subject}";
+            var body = BuildEmailTemplate(
+                title: "New support conversation",
+                message: $"{name}{email} has opened a new support conversation.<br/><br/><strong>Subject:</strong> {safeSubject}<br/><br/>{messagePreview}",
+                actionText: "Open Support Chat",
+                actionUrl: adminChatUrl,
+                secondaryText: "Log in to the admin panel and open Support Chat to reply."
+            );
+
+            await SendAsync(_settings.NotificationToEmail, emailSubject, body, cancellationToken);
+            _logger.LogInformation("Support chat notification sent for conversation subject: {Subject}", subject);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send support chat notification for subject: {Subject}", subject);
+        }
+    }
+
     public async Task SendRequestCancelledAsync(
         string? toEmail,
         string? customerName,
