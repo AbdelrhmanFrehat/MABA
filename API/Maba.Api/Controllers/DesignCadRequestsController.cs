@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.Interfaces;
+using Maba.Api.Services;
 using Maba.Application.Common.ServiceRequests;
 using Maba.Domain.DesignCad;
 using Maba.Domain.Users;
@@ -20,6 +21,7 @@ public class DesignCadRequestsController : ControllerBase
     private readonly IFileStorageService _fileStorage;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly AdminNotificationService _adminNotify;
     private readonly ILogger<DesignCadRequestsController> _logger;
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -36,12 +38,14 @@ public class DesignCadRequestsController : ControllerBase
         IFileStorageService fileStorage,
         IEmailService emailService,
         IConfiguration configuration,
+        AdminNotificationService adminNotify,
         ILogger<DesignCadRequestsController> logger)
     {
         _context = context;
         _fileStorage = fileStorage;
         _emailService = emailService;
         _configuration = configuration;
+        _adminNotify = adminNotify;
         _logger = logger;
     }
 
@@ -163,7 +167,9 @@ public class DesignCadRequestsController : ControllerBase
 
         try
         {
+            var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
             await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design CAD Request", null, CancellationToken.None);
+            _ = _adminNotify.NotifyNewRequestAsync(request.CustomerName, request.CustomerEmail, referenceNumber, "Design CAD Request", $"{frontendBase}/admin/cad-requests");
         }
         catch (Exception ex)
         {

@@ -8,6 +8,8 @@
     // Primary (purple/blue gradient — use for main CTAs, headers, highlights)
     --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --gradient-dark: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    // Dialog headers — dark navy → deep purple (matches Quick View modal)
+    --gradient-dialog-header: linear-gradient(135deg, #0c1445 0%, #1a1a2e 52%, #4a2080 100%);
     --color-primary: #667eea;
     --color-primary-dark: #5a67d8;
     --color-primary-rgb: 102, 126, 234;

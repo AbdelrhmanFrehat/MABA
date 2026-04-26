@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Maba.Api.Services;
 using Microsoft.Extensions.Configuration;
 using Maba.Application.Common.ControlCenterJobs;
 using Maba.Application.Common.Interfaces;
@@ -29,6 +30,7 @@ public class Print3dRequestsController : ControllerBase
     private readonly ILogger<Print3dRequestsController> _logger;
     private readonly IPricingService _pricingService;
     private readonly IControlCenterJobBridgeService _jobBridgeService;
+    private readonly AdminNotificationService _adminNotify;
 
     public Print3dRequestsController(
         IMediator mediator,
@@ -39,7 +41,8 @@ public class Print3dRequestsController : ControllerBase
         IConfiguration configuration,
         ILogger<Print3dRequestsController> logger,
         IPricingService pricingService,
-        IControlCenterJobBridgeService jobBridgeService)
+        IControlCenterJobBridgeService jobBridgeService,
+        AdminNotificationService adminNotify)
     {
         _mediator = mediator;
         _fileStorageService = fileStorageService;
@@ -50,6 +53,7 @@ public class Print3dRequestsController : ControllerBase
         _logger = logger;
         _pricingService = pricingService;
         _jobBridgeService = jobBridgeService;
+        _adminNotify = adminNotify;
     }
 
     private static string? FormatUsedSpoolLabel(FilamentSpool? spool)
@@ -267,6 +271,7 @@ public class Print3dRequestsController : ControllerBase
         {
             var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
             var viewUrl = $"{frontendBase}/account/requests?requestId={request.Id}&type=print3d";
+            var adminViewUrl = $"{frontendBase}/admin/3d-requests";
             await _emailService.SendRequestConfirmationAsync(
                 request.CustomerEmail,
                 request.CustomerName,
@@ -274,6 +279,12 @@ public class Print3dRequestsController : ControllerBase
                 "3D Print Request",
                 viewUrl,
                 CancellationToken.None);
+            _ = _adminNotify.NotifyNewRequestAsync(
+                request.CustomerName,
+                request.CustomerEmail,
+                referenceNumber,
+                "3D Print Request",
+                adminViewUrl);
         }
         catch (Exception ex)
         {

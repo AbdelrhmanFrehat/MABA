@@ -60,6 +60,13 @@ public interface IEmailService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Sends a pre-composed HTML email directly to a single recipient.
+    /// Used by AdminNotificationService to fan out alerts to all admin users.
+    /// Never throws.
+    /// </summary>
+    Task SendDirectAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Notifies the admin inbox that a customer has opened a new support conversation.
     /// Sends only to <c>NotificationToEmail</c>; never throws.
     /// </summary>

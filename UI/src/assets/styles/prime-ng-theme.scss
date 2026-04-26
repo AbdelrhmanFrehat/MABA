@@ -344,7 +344,7 @@ body .p-dynamic-dialog .p-dialog-header-content,
 .p-dialog .p-dialog-header-content,
 .p-dynamic-dialog .p-dialog-header,
 .p-dynamic-dialog .p-dialog-header-content {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: var(--gradient-dialog-header, linear-gradient(135deg, #0c1445 0%, #1a1a2e 52%, #4a2080 100%)) !important;
     background-color: transparent !important;
     color: white !important;
 }
@@ -359,7 +359,7 @@ body .p-dynamic-dialog .p-dialog-header-content,
     .p-dialog-header,
     .p-dialog-header-content,
     [class*="dialog-header"] {
-        background: var(--gradient-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%)) !important;
+        background: var(--gradient-dialog-header, linear-gradient(135deg, #0c1445 0%, #1a1a2e 52%, #4a2080 100%)) !important;
         background-color: transparent !important;
         color: white !important;
         border-radius: 0;
@@ -388,52 +388,95 @@ body .p-dynamic-dialog .p-dialog-header-content,
         border-color: var(--p-content-border-color);
     }
 
-    // Close (X) button - PrimeNG 20 uses various class names
+    // Close (X) button — strip all PrimeNG default chrome, icon only
+    .p-dialog-header-actions,
+    .p-dialog-header-actions * {
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
     .p-dialog-close-button,
     .p-dialog-header-close,
     .p-dialog-header-close-icon,
     button[aria-label="Close"],
     .p-dialog-header-actions button,
-    .p-dialog-header-action {
-        color: white !important;
-        opacity: 1 !important;
-        background: rgba(255, 255, 255, 0.15) !important;
+    .p-dialog-header-action,
+    .p-dialog-header .p-button,
+    .p-dialog-header button.p-button {
+        color: rgba(255, 255, 255, 0.8) !important;
+        background: transparent !important;
+        background-color: transparent !important;
         border: none !important;
-        border-radius: 8px !important;
-        min-width: 2.25rem !important;
-        min-height: 2.25rem !important;
-        width: 2.25rem !important;
-        height: 2.25rem !important;
+        outline: none !important;
+        box-shadow: none !important;
+        border-radius: 6px !important;
+        width: 2rem !important;
+        height: 2rem !important;
+        min-width: 2rem !important;
+        min-height: 2rem !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: none !important;
-        
+        transition: background 0.15s ease, color 0.15s ease !important;
+
         &:hover,
-        &:focus {
-            background: rgba(255, 255, 255, 0.25) !important;
+        &:focus,
+        &:active {
             color: white !important;
+            background: rgba(255, 255, 255, 0.12) !important;
+            background-color: rgba(255, 255, 255, 0.12) !important;
             box-shadow: none !important;
         }
-        
-        .p-icon,
-        svg,
-        i {
-            color: white !important;
-            fill: white !important;
+
+        .p-icon, svg, i {
+            color: inherit !important;
+            fill: currentColor !important;
+            width: 1rem !important;
+            height: 1rem !important;
         }
     }
-    
-    // Override PrimeNG button inside dialog header
-    .p-dialog-header .p-button,
-    .p-dialog-header button.p-button {
-        background: rgba(255, 255, 255, 0.15) !important;
-        border: none !important;
-        color: white !important;
-        
-        &:hover {
-            background: rgba(255, 255, 255, 0.25) !important;
-        }
+}
+
+// Global high-specificity override — kills PrimeNG's button box in dialog headers
+// (needed because PrimeNG renders overlay containers outside the .p-dialog scope)
+body .p-dialog-header-actions button,
+body .p-dialog-header-actions .p-dialog-close-button,
+body .p-dialog-header-actions .p-dialog-header-action,
+body .p-overlay .p-dialog-header-actions button,
+body .p-overlay .p-dialog-header-actions .p-dialog-close-button {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+
+    &:hover { background: rgba(255, 255, 255, 0.12) !important; color: white !important; }
+    .p-icon, svg { color: inherit !important; fill: currentColor !important; }
+}
+
+// Dialog sublabel header pattern — mirrors Quick View modal
+// Usage: wrap header content in .dlg-header > .dlg-label + .dlg-title
+.dlg-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    .dlg-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.65);
+        line-height: 1;
+    }
+
+    .dlg-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.2;
     }
 }
 

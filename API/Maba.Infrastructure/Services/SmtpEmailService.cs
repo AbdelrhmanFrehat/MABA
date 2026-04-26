@@ -399,6 +399,19 @@ public class SmtpEmailService : IEmailService
         };
     }
 
+    public async Task SendDirectAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(toEmail)) return;
+            await SendAsync(toEmail, subject, htmlBody, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send direct email to {Email}.", toEmail);
+        }
+    }
+
     private async Task SendCustomerConfirmationAsync(
         string toEmail,
         string? customerName,

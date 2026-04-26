@@ -123,7 +123,13 @@ interface StorageItemVm {
             </div>
         </div>
 
-        <p-dialog header="Add Storage Item" [(visible)]="showCreateDialog" [modal]="true" [style]="{width: '560px'}">
+        <p-dialog [(visible)]="showCreateDialog" [modal]="true" [style]="{width: '560px'}">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Storage</span>
+                    <span class="dlg-title">Add Storage Item</span>
+                </div>
+            </ng-template>
             <div class="dialog-grid">
                 <div class="field">
                     <label>Name</label>
@@ -162,7 +168,13 @@ interface StorageItemVm {
             </ng-template>
         </p-dialog>
 
-        <p-dialog header="Complete Shop Details" [(visible)]="showPublishDialog" [modal]="true" [style]="{width: '620px'}">
+        <p-dialog [(visible)]="showPublishDialog" [modal]="true" [style]="{width: '620px'}">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Shop</span>
+                    <span class="dlg-title">Complete Shop Details</span>
+                </div>
+            </ng-template>
             <div class="dialog-grid">
                 <div class="field">
                     <label>Category</label>

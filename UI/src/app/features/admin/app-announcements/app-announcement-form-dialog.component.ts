@@ -181,16 +181,6 @@ const PLATFORM_OPTIONS = [
         .remove-btn { position: absolute; top: 0.3rem; right: 0.3rem; }
         .image-upload-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
         .mt-2 { margin-top: 0.5rem; }
-        :host ::ng-deep .p-dialog-header .p-dialog-header-icon,
-        :host ::ng-deep .p-dialog-header .p-dialog-close-button {
-            color: #fff !important;
-            opacity: 0.85;
-        }
-        :host ::ng-deep .p-dialog-header .p-dialog-header-icon:hover,
-        :host ::ng-deep .p-dialog-header .p-dialog-close-button:hover {
-            opacity: 1;
-            background: rgba(255,255,255,0.15) !important;
-        }
     `]
 })
 export class AppAnnouncementFormDialogComponent implements OnInit {

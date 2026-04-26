@@ -138,7 +138,13 @@ import {
         </div>
 
         <!-- Details / Edit Dialog -->
-        <p-dialog [(visible)]="dialogVisible" [header]="'admin.projectRequests.requestDetails' | translate" [modal]="true" [style]="{width: '820px', maxWidth: '96vw'}" [closeOnEscape]="true">
+        <p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{width: '820px', maxWidth: '96vw'}" [closeOnEscape]="true">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Projects</span>
+                    <span class="dlg-title">{{ 'admin.projectRequests.requestDetails' | translate }}</span>
+                </div>
+            </ng-template>
             @if (selectedRequest) {
                 <div class="request-detail">
 

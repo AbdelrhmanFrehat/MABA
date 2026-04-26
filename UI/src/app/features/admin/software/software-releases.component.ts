@@ -172,10 +172,15 @@ import { SoftwareRelease, SoftwareFile, CreateSoftwareReleaseRequest } from '../
         <!-- Create/Edit Release Dialog -->
         <p-dialog
             [(visible)]="showReleaseDialog"
-            [header]="editMode ? ('admin.software.editRelease' | translate) : ('admin.software.addRelease' | translate)"
             [modal]="true"
             [style]="{width: '600px'}"
         >
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Software</span>
+                    <span class="dlg-title">{{ editMode ? ('admin.software.editRelease' | translate) : ('admin.software.addRelease' | translate) }}</span>
+                </div>
+            </ng-template>
             <div class="dialog-content" *ngIf="releaseFormData">
                 <div class="form-grid">
                     <div class="form-field">
@@ -230,10 +235,15 @@ import { SoftwareRelease, SoftwareFile, CreateSoftwareReleaseRequest } from '../
         <!-- Upload File Dialog -->
         <p-dialog
             [(visible)]="showUploadDialog"
-            [header]="'admin.software.uploadFile' | translate"
             [modal]="true"
             [style]="{width: '500px'}"
         >
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Software</span>
+                    <span class="dlg-title">{{ 'admin.software.uploadFile' | translate }}</span>
+                </div>
+            </ng-template>
             <div class="dialog-content">
                 <div class="form-grid">
                     <div class="form-field">

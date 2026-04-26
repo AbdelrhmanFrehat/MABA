@@ -108,13 +108,18 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
             </div>
 
             <!-- Add/Edit Dialog -->
-            <p-dialog 
-                [header]="(editingPart ? 'admin.machineParts.editPart' : 'admin.machineParts.addNew') | translate"
+            <p-dialog
                 [(visible)]="showDialog"
                 [modal]="true"
                 [style]="{width: '90vw', maxWidth: '600px'}"
                 [breakpoints]="{'960px': '90vw', '640px': '95vw'}"
                 (onHide)="closeDialog()">
+                <ng-template pTemplate="header">
+                    <div class="dlg-header">
+                        <span class="dlg-label">Machine Parts</span>
+                        <span class="dlg-title">{{ editingPart ? ('admin.machineParts.editPart' | translate) : ('admin.machineParts.addNew' | translate) }}</span>
+                    </div>
+                </ng-template>
                 <form [formGroup]="partForm" (ngSubmit)="savePart()">
                     <div class="dialog-form-grid">
                         <div class="dialog-form-field">

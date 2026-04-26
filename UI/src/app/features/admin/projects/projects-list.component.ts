@@ -107,12 +107,17 @@ import { DownloadableFilesManagerComponent } from '../../../shared/components/do
         </div>
 
         <!-- Create/Edit Dialog -->
-        <p-dialog 
-            [(visible)]="dialogVisible" 
-            [header]="editingProject ? ('admin.projects.editProject' | translate) : ('admin.projects.addProject' | translate)"
+        <p-dialog
+            [(visible)]="dialogVisible"
             [modal]="true"
             [style]="{width: '700px'}"
             [contentStyle]="{overflow: 'auto'}">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Projects</span>
+                    <span class="dlg-title">{{ editingProject ? ('admin.projects.editProject' | translate) : ('admin.projects.addProject' | translate) }}</span>
+                </div>
+            </ng-template>
             <div class="dialog-form">
                 <div class="form-grid">
                     <div class="form-field">

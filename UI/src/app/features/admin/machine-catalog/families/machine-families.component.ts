@@ -85,8 +85,13 @@ import { MachineCategory, MachineFamily } from '../../../../shared/models/machin
         </div>
 
         <p-dialog [(visible)]="showDialog" [modal]="true" [style]="{ width: '560px' }"
-                  [header]="editId ? 'Edit Family' : 'New Family'"
                   [draggable]="false" [resizable]="false">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Machine Catalog</span>
+                    <span class="dlg-title">{{ editId ? 'Edit Family' : 'New Family' }}</span>
+                </div>
+            </ng-template>
             <form [formGroup]="form" class="flex flex-col gap-3 mt-1">
                 <div class="field">
                     <label class="font-semibold block mb-1">Category <span class="text-red-500">*</span></label>

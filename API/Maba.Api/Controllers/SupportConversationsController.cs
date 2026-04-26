@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Maba.Infrastructure.Data;
 using Maba.Domain.SupportChat;
 using Maba.Api.DTOs.SupportChat;
-using System.Security.Claims;
 using Maba.Application.Common.Interfaces;
+using System.Security.Claims;
 using Maba.Api.Services;
 
 namespace Maba.Api.Controllers;
@@ -19,23 +18,20 @@ public class SupportConversationsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
     private readonly SupportChatMessagingService _messaging;
-    private readonly IEmailService _email;
-    private readonly IConfiguration _configuration;
+    private readonly AdminNotificationService _adminNotify;
     private readonly ILogger<SupportConversationsController> _logger;
 
     public SupportConversationsController(
         ApplicationDbContext context,
         IFileStorageService fileStorage,
         SupportChatMessagingService messaging,
-        IEmailService email,
-        IConfiguration configuration,
+        AdminNotificationService adminNotify,
         ILogger<SupportConversationsController> logger)
     {
         _context = context;
         _fileStorage = fileStorage;
         _messaging = messaging;
-        _email = email;
-        _configuration = configuration;
+        _adminNotify = adminNotify;
         _logger = logger;
     }
 
@@ -152,32 +148,17 @@ public class SupportConversationsController : ControllerBase
             throw;
         }
 
-        // Fire admin notification email — non-blocking, never throws
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                var customer = await _context.Users.AsNoTracking()
-                    .Where(u => u.Id == userId)
-                    .Select(u => new { u.FullName, u.Email })
-                    .FirstOrDefaultAsync();
+        // Notify all admin/manager users — fire-and-forget, never blocks
+        var customer = await _context.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.FullName, u.Email })
+            .FirstOrDefaultAsync(cancellationToken);
 
-                var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
-                var adminChatUrl = $"{frontendBase}/admin/support-chat";
-
-                await _email.SendSupportChatNotificationAsync(
-                    customer?.FullName,
-                    customer?.Email,
-                    subject,
-                    request.InitialMessage,
-                    adminChatUrl,
-                    CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Support chat email notification failed for conversation {ConvId}.", conv.Id);
-            }
-        });
+        _ = _adminNotify.NotifySupportChatAsync(
+            customer?.FullName,
+            customer?.Email,
+            subject,
+            request.InitialMessage);
 
         var newId = conv.Id;
         try

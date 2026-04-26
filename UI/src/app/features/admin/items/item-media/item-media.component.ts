@@ -90,13 +90,18 @@ import { environment } from '../../../../../environments/environment';
             </div>
 
             <!-- Upload Dialog -->
-            <p-dialog 
-                [(visible)]="showUploadDialog" 
-                [header]="'admin.items.uploadImage' | translate"
+            <p-dialog
+                [(visible)]="showUploadDialog"
                 [modal]="true"
                 [closable]="true"
                 [dismissableMask]="true"
                 [style]="{ width: '500px' }">
+                <ng-template pTemplate="header">
+                    <div class="dlg-header">
+                        <span class="dlg-label">Media</span>
+                        <span class="dlg-title">{{ 'admin.items.uploadImage' | translate }}</span>
+                    </div>
+                </ng-template>
                 <div class="upload-area">
                     <p-fileUpload
                         mode="advanced"
@@ -121,13 +126,18 @@ import { environment } from '../../../../../environments/environment';
             </p-dialog>
 
             <!-- Library Dialog -->
-            <p-dialog 
-                [(visible)]="showLibraryDialog" 
-                [header]="'admin.items.selectFromLibrary' | translate"
+            <p-dialog
+                [(visible)]="showLibraryDialog"
                 [modal]="true"
                 [closable]="true"
                 [dismissableMask]="true"
                 [style]="{ width: '800px', height: '600px' }">
+                <ng-template pTemplate="header">
+                    <div class="dlg-header">
+                        <span class="dlg-label">Media</span>
+                        <span class="dlg-title">{{ 'admin.items.selectFromLibrary' | translate }}</span>
+                    </div>
+                </ng-template>
                 <div class="library-grid" *ngIf="libraryImages.length > 0">
                     <div 
                         *ngFor="let asset of libraryImages" 

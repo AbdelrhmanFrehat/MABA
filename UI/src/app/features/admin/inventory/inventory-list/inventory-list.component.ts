@@ -124,13 +124,18 @@ interface InventoryItem {
             </div>
 
             <!-- Adjust Inventory Dialog -->
-            <p-dialog 
-                [header]="'admin.inventory.adjustInventory' | translate"
+            <p-dialog
                 [(visible)]="showAdjustDialog"
                 [modal]="true"
                 [style]="{width: '90vw', maxWidth: '500px'}"
                 [breakpoints]="{'960px': '90vw', '640px': '95vw'}"
                 (onHide)="closeAdjustDialog()">
+                <ng-template pTemplate="header">
+                    <div class="dlg-header">
+                        <span class="dlg-label">Inventory</span>
+                        <span class="dlg-title">{{ 'admin.inventory.adjustInventory' | translate }}</span>
+                    </div>
+                </ng-template>
                 <div class="dialog-content" *ngIf="selectedInventory">
                     <div class="dialog-field">
                         <strong>{{ 'admin.inventory.item' | translate }}:</strong> {{ getItemName(selectedInventory) }}

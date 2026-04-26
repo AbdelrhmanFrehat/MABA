@@ -117,6 +117,12 @@ public class MockEmailService : IEmailService
         return Task.CompletedTask;
     }
 
+    public Task SendDirectAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug("Mock email: would send '{Subject}' to {Email}.", subject, toEmail);
+        return Task.CompletedTask;
+    }
+
     public Task SendSupportChatNotificationAsync(
         string? customerName,
         string? customerEmail,

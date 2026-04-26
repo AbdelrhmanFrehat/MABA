@@ -146,11 +146,16 @@ import { SoftwareProduct, CreateSoftwareProductRequest } from '../../../shared/m
         <!-- Create/Edit Dialog -->
         <p-dialog
             [(visible)]="showDialog"
-            [header]="editMode ? ('admin.software.editProduct' | translate) : ('admin.software.addProduct' | translate)"
             [modal]="true"
             [style]="{width: '600px'}"
             [draggable]="false"
         >
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Software</span>
+                    <span class="dlg-title">{{ editMode ? ('admin.software.editProduct' | translate) : ('admin.software.addProduct' | translate) }}</span>
+                </div>
+            </ng-template>
             <div class="dialog-content" *ngIf="formData">
                 <div class="form-grid">
                     <div class="form-field">

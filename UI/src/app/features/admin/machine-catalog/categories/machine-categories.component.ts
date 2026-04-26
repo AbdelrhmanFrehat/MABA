@@ -83,8 +83,13 @@ import { MachineCategory } from '../../../../shared/models/machine-catalog.model
 
         <!-- Create / Edit Dialog -->
         <p-dialog [(visible)]="showDialog" [modal]="true" [style]="{ width: '520px' }"
-                  [header]="editId ? 'Edit Category' : 'New Category'"
                   [draggable]="false" [resizable]="false">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">Machine Catalog</span>
+                    <span class="dlg-title">{{ editId ? 'Edit Category' : 'New Category' }}</span>
+                </div>
+            </ng-template>
             <form [formGroup]="form" class="flex flex-col gap-3 mt-1">
                 <div class="field">
                     <label class="font-semibold block mb-1">Code <span class="text-red-500">*</span></label>

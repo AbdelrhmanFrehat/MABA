@@ -100,13 +100,18 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
             </div>
 
             <!-- Review Detail Dialog -->
-            <p-dialog 
-                [header]="'admin.reviews.reviewDetails' | translate"
+            <p-dialog
                 [(visible)]="showDetailDialog"
                 [modal]="true"
                 [style]="{width: '90vw', maxWidth: '600px'}"
                 [breakpoints]="{'960px': '90vw', '640px': '95vw'}"
                 (onHide)="closeDetailDialog()">
+                <ng-template pTemplate="header">
+                    <div class="dlg-header">
+                        <span class="dlg-label">Reviews</span>
+                        <span class="dlg-title">{{ 'admin.reviews.reviewDetails' | translate }}</span>
+                    </div>
+                </ng-template>
                 <div class="dialog-content" *ngIf="selectedReview">
                     <div class="dialog-field">
                         <strong>{{ 'admin.reviews.item' | translate }}:</strong> {{ getItemName(selectedReview) }}
