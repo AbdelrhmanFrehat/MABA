@@ -146,6 +146,7 @@ export interface ProjectRequest {
     estimatedTimeline?: string;
     complexityLevel?: string;
     internalNotes?: string;
+    rejectionReason?: string;
     createdAt: string;
     updatedAt?: string;
 }
@@ -261,6 +262,7 @@ export interface UpdateProjectRequestPayload {
     estimatedTimeline?: string;
     complexityLevel?: string;
     internalNotes?: string;
+    rejectionReason?: string;
     updatedBy?: string;
 }
 

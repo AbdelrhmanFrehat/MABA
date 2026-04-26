@@ -218,6 +218,16 @@ import {
                                 <label>{{ 'admin.projectRequests.assignedTo' | translate }}</label>
                                 <input pInputText [(ngModel)]="editable.assignedToName" [placeholder]="'admin.projectRequests.assignedToPlaceholder' | translate" />
                             </div>
+                            <div class="form-field span-2 rejection-reason-field" *ngIf="editable.workflowStatus === 'Rejected'">
+                                <label class="rejection-label">
+                                    <i class="pi pi-exclamation-triangle"></i>
+                                    {{ 'admin.projectRequests.rejectionReason' | translate }} *
+                                </label>
+                                <textarea pTextarea [(ngModel)]="editable.rejectionReason" rows="3"
+                                    [placeholder]="'admin.projectRequests.rejectionReasonPlaceholder' | translate"
+                                    class="rejection-textarea"></textarea>
+                                <small class="rejection-hint">{{ 'admin.projectRequests.rejectionReasonHint' | translate }}</small>
+                            </div>
                         </div>
                     </div>
 
@@ -363,6 +373,11 @@ import {
         .activity-body { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
         .activity-description { font-size: 0.875rem; color: #374151; }
         .activity-meta { display: flex; gap: 0.75rem; font-size: 0.75rem; color: #9ca3af; }
+        .rejection-reason-field { border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem; background: #fff5f5; }
+        .rejection-label { color: #dc2626 !important; display: flex; align-items: center; gap: 0.35rem; }
+        .rejection-label i { font-size: 0.85rem; }
+        .rejection-textarea { border-color: #fca5a5 !important; }
+        .rejection-hint { color: #dc2626; font-size: 0.72rem; margin-top: 0.15rem; }
         @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } .form-field.span-2 { grid-column: span 1; } }
     `]
 })
@@ -539,7 +554,8 @@ export class AdminProjectRequestsListComponent implements OnInit {
             estimatedCost: request.estimatedCost ?? null,
             estimatedTimeline: request.estimatedTimeline || '',
             complexityLevel: request.complexityLevel || '',
-            internalNotes: request.internalNotes || ''
+            internalNotes: request.internalNotes || '',
+            rejectionReason: request.rejectionReason || ''
         };
         this.dialogVisible = true;
         this.loadActivities(request.id);
@@ -556,6 +572,12 @@ export class AdminProjectRequestsListComponent implements OnInit {
 
     quickChangeStatus(request: ProjectRequest, newStatus: string) {
         if (newStatus === request.workflowStatus) return;
+        // Rejected requires a reason — open the dialog so admin can fill it in
+        if (newStatus === 'Rejected') {
+            this.viewRequest(request);
+            this.editable.workflowStatus = 'Rejected';
+            return;
+        }
         this.projectsApi.updateProjectRequest(request.id, { workflowStatus: newStatus }).subscribe({
             next: () => {
                 request.workflowStatus = newStatus;
@@ -568,6 +590,18 @@ export class AdminProjectRequestsListComponent implements OnInit {
 
     updateRequest() {
         if (!this.selectedRequest) return;
+
+        // Guard: rejection reason is mandatory when rejecting
+        if (this.editable.workflowStatus === 'Rejected' && !this.editable.rejectionReason?.trim()) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: this.translate.instant('messages.validationError'),
+                detail: this.translate.instant('admin.requests.rejectionReasonRequired'),
+                life: 5000
+            });
+            return;
+        }
+
         this.updating.set(true);
         this.projectsApi.updateProjectRequest(this.selectedRequest.id, {
             workflowStatus: this.editable.workflowStatus || undefined,
@@ -590,7 +624,8 @@ export class AdminProjectRequestsListComponent implements OnInit {
             estimatedCost: this.editable.estimatedCost ?? undefined,
             estimatedTimeline: this.editable.estimatedTimeline || undefined,
             complexityLevel: this.editable.complexityLevel || undefined,
-            internalNotes: this.editable.internalNotes ?? undefined
+            internalNotes: this.editable.internalNotes ?? undefined,
+            rejectionReason: this.editable.workflowStatus === 'Rejected' ? (this.editable.rejectionReason || undefined) : undefined
         }).subscribe({
             next: () => {
                 this.updating.set(false);
@@ -704,7 +739,8 @@ export class AdminProjectRequestsListComponent implements OnInit {
             estimatedCost: null as number | null,
             estimatedTimeline: '',
             complexityLevel: '',
-            internalNotes: ''
+            internalNotes: '',
+            rejectionReason: ''
         };
     }
 }
