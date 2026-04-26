@@ -10,10 +10,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProjectsApiService } from '../../../shared/services/projects-api.service';
-import { ProjectListItem, ProjectCategory, ProjectStatus } from '../../../shared/models/project.model';
+import { Project, ProjectListItem, ProjectCategory, ProjectStatus } from '../../../shared/models/project.model';
 import { LanguageService } from '../../../shared/services/language.service';
+import { MediaApiService } from '../../../shared/services/media-api.service';
 import { DownloadableFilesManagerComponent } from '../../../shared/components/downloadable-files-manager/downloadable-files-manager.component';
 
 @Component({
@@ -22,7 +24,7 @@ import { DownloadableFilesManagerComponent } from '../../../shared/components/do
     imports: [
         CommonModule, RouterModule, FormsModule, TranslateModule,
         ButtonModule, TableModule, TagModule, InputTextModule,
-        ToastModule, DialogModule, ConfirmDialogModule,
+        ToastModule, DialogModule, ConfirmDialogModule, TooltipModule,
         DownloadableFilesManagerComponent
     ],
     providers: [MessageService, ConfirmationService],
@@ -163,10 +165,46 @@ import { DownloadableFilesManagerComponent } from '../../../shared/components/do
                     <label>{{ 'admin.projects.summaryAr' | translate }}</label>
                     <textarea pInputText [(ngModel)]="formData.summaryAr" rows="3" class="w-full"></textarea>
                 </div>
+                <!-- Cover Image -->
                 <div class="form-field">
-                    <label>{{ 'admin.projects.coverImageUrl' | translate }}</label>
-                    <input pInputText [(ngModel)]="formData.coverImageUrl" class="w-full" />
+                    <label>Cover Image</label>
+                    <input type="file" #coverInput accept="image/*" class="hidden-input" (change)="onCoverSelected($event)" />
+                    <div class="upload-row">
+                        <p-button
+                            [label]="formData.coverImageUrl ? 'Replace Cover' : 'Upload Cover'"
+                            icon="pi pi-image"
+                            [outlined]="true"
+                            size="small"
+                            [loading]="uploadingCover"
+                            (click)="coverInput.click()">
+                        </p-button>
+                        <button *ngIf="formData.coverImageUrl" type="button" class="clear-btn" (click)="formData.coverImageUrl = ''" pTooltip="Remove">
+                            <i class="pi pi-times"></i>
+                        </button>
+                    </div>
+                    <img *ngIf="formData.coverImageUrl" [src]="resolveUrl(formData.coverImageUrl)" alt="cover" class="cover-preview" />
                 </div>
+
+                <!-- Gallery Images -->
+                <div class="form-field">
+                    <label>Gallery Images <span class="field-hint">(shown on the project page)</span></label>
+                    <input type="file" #galleryInput accept="image/*" multiple class="hidden-input" (change)="onGallerySelected($event)" />
+                    <p-button
+                        label="Add Images"
+                        icon="pi pi-plus"
+                        [outlined]="true"
+                        size="small"
+                        [loading]="uploadingGallery"
+                        (click)="galleryInput.click()">
+                    </p-button>
+                    <div class="gallery-grid" *ngIf="galleryImages.length > 0">
+                        <div class="gallery-thumb" *ngFor="let url of galleryImages; let i = index">
+                            <img [src]="resolveUrl(url)" alt="gallery" />
+                            <button type="button" class="thumb-remove" (click)="removeGalleryImage(i)"><i class="pi pi-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-field">
                     <label>{{ 'admin.projects.techStack' | translate }}</label>
                     <input pInputText [(ngModel)]="techStackInput" class="w-full" [placeholder]="'admin.projects.techStackPlaceholder' | translate" />
@@ -182,12 +220,21 @@ import { DownloadableFilesManagerComponent } from '../../../shared/components/do
                     </label>
                 </div>
 
+                <!-- Downloadable Files (PDFs, docs) -->
                 @if (editingProject) {
                     <div class="downloads-divider">
+                        <div class="section-label">
+                            <i class="pi pi-file"></i> Downloadable Files <span class="field-hint">(PDFs, docs — visible on project page)</span>
+                        </div>
                         <app-downloadable-files-manager
                             entityType="Project"
                             [entityId]="editingProject.id">
                         </app-downloadable-files-manager>
+                    </div>
+                } @else {
+                    <div class="create-files-note">
+                        <i class="pi pi-info-circle"></i>
+                        Save the project first to attach downloadable files (PDFs, documents).
                     </div>
                 }
             </div>
@@ -210,24 +257,43 @@ import { DownloadableFilesManagerComponent } from '../../../shared/components/do
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .form-field { display: flex; flex-direction: column; gap: 0.5rem; }
         .form-field label { font-weight: 600; font-size: 0.875rem; }
+        .field-hint { font-weight: 400; font-size: 0.78rem; color: #9ca3af; margin-left: 0.35rem; }
         .checkbox-grid { display: flex; gap: 2rem; }
         .checkbox-field { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
         textarea { resize: vertical; min-height: 60px; }
+        .hidden-input { display: none; }
+        .upload-row { display: flex; align-items: center; gap: 0.5rem; }
+        .clear-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 0.25rem; border-radius: 4px; display: flex; align-items: center; }
+        .clear-btn:hover { color: #ef4444; }
+        .cover-preview { width: 100%; max-height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 0.5rem; }
+        .gallery-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .gallery-thumb { position: relative; }
+        .gallery-thumb img { width: 80px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; display: block; }
+        .thumb-remove { position: absolute; top: -6px; right: -6px; background: #ef4444; border: none; border-radius: 50%; width: 18px; height: 18px; color: white; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
         .downloads-divider { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid #e2e8f0; }
+        .section-label { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+        .create-files-note { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #9ca3af; background: #f9fafb; border-radius: 8px; padding: 0.75rem 1rem; border: 1px dashed #e5e7eb; }
     `]
 })
 export class AdminProjectsListComponent implements OnInit {
     private projectsApi = inject(ProjectsApiService);
+    private mediaApi = inject(MediaApiService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
     private translate = inject(TranslateService);
     languageService = inject(LanguageService);
+
+    private readonly DEFAULT_IMAGE_MEDIA_TYPE_ID = '00000000-0000-0000-0000-000000000001';
 
     loading = signal(false);
     saving = signal(false);
     projects = signal<ProjectListItem[]>([]);
     dialogVisible = false;
     editingProject: ProjectListItem | null = null;
+
+    uploadingCover = false;
+    uploadingGallery = false;
+    galleryImages: string[] = [];
 
     formData = {
         titleEn: '',
@@ -301,6 +367,7 @@ export class AdminProjectsListComponent implements OnInit {
             isActive: true
         };
         this.techStackInput = '';
+        this.galleryImages = [];
         this.dialogVisible = true;
     }
 
@@ -322,9 +389,59 @@ export class AdminProjectsListComponent implements OnInit {
                     isActive: fullProject.isActive
                 };
                 this.techStackInput = fullProject.techStack?.join(', ') || '';
+                this.galleryImages = [...(fullProject.gallery || [])];
                 this.dialogVisible = true;
             }
         });
+    }
+
+    onCoverSelected(event: Event) {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        this.uploadingCover = true;
+        const form = new FormData();
+        form.append('file', file);
+        form.append('mediaTypeId', this.DEFAULT_IMAGE_MEDIA_TYPE_ID);
+        this.mediaApi.uploadMedia(form).subscribe({
+            next: (asset) => { this.formData.coverImageUrl = asset.fileUrl; this.uploadingCover = false; },
+            error: () => {
+                this.uploadingCover = false;
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Cover image upload failed.' });
+            }
+        });
+    }
+
+    onGallerySelected(event: Event) {
+        const files = Array.from((event.target as HTMLInputElement).files || []);
+        if (!files.length) return;
+        this.uploadingGallery = true;
+        let completed = 0;
+        files.forEach(file => {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('mediaTypeId', this.DEFAULT_IMAGE_MEDIA_TYPE_ID);
+            this.mediaApi.uploadMedia(form).subscribe({
+                next: (asset) => {
+                    this.galleryImages = [...this.galleryImages, asset.fileUrl];
+                    if (++completed === files.length) this.uploadingGallery = false;
+                },
+                error: () => {
+                    if (++completed === files.length) this.uploadingGallery = false;
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'One or more gallery images failed to upload.' });
+                }
+            });
+        });
+    }
+
+    removeGalleryImage(index: number) {
+        this.galleryImages = this.galleryImages.filter((_, i) => i !== index);
+    }
+
+    resolveUrl(url: string): string {
+        if (!url) return '';
+        if (url.startsWith('http') || url.startsWith('/assets')) return url;
+        const base = (window as any).__env?.apiUrl || '';
+        return base ? `${base.replace(/\/api\/v1\/?$/, '')}${url.startsWith('/') ? url : '/' + url}` : url;
     }
 
     saveProject() {
@@ -339,6 +456,7 @@ export class AdminProjectsListComponent implements OnInit {
         const payload = {
             ...this.formData,
             techStack,
+            gallery: [...this.galleryImages],
             category: Number(this.formData.category),
             status: Number(this.formData.status)
         };
@@ -358,11 +476,12 @@ export class AdminProjectsListComponent implements OnInit {
             });
         } else {
             this.projectsApi.createProject(payload).subscribe({
-                next: () => {
+                next: (created: Project) => {
                     this.saving.set(false);
-                    this.dialogVisible = false;
                     this.loadProjects();
                     this.messageService.add({ severity: 'success', summary: 'Success', detail: this.translate.instant('admin.projects.created') });
+                    // Switch to edit mode so the DownloadableFilesManager becomes available for PDF uploads
+                    this.editingProject = { id: created.id, titleEn: created.titleEn, titleAr: created.titleAr, slug: created.slug, summaryEn: created.summaryEn, summaryAr: created.summaryAr, coverImageUrl: created.coverImageUrl, category: created.category, categoryName: created.categoryName, status: created.status, statusName: created.statusName, year: created.year, techStack: created.techStack, isFeatured: created.isFeatured };
                 },
                 error: () => {
                     this.saving.set(false);
