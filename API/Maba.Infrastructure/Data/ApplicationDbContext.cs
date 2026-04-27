@@ -32,6 +32,7 @@ using Maba.Domain.CommercialReturns;
 using Maba.Domain.Sales;
 using Maba.Domain.Assets;
 using Maba.Domain.Downloads;
+using Maba.Domain.Storage;
 using Maba.Domain.Wishlist;
 using Maba.Domain.MachineCatalog;
 using Maba.Infrastructure.Data.Configurations;
@@ -219,6 +220,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     // Downloadable Files (polymorphic — Item, Project, Machine, Software, etc.)
     public DbSet<DownloadableFile> DownloadableFiles => Set<DownloadableFile>();
+
+    // Storage Inventory (parent items + variants — electronics, components, parts)
+    public DbSet<StorageParent> StorageParents => Set<StorageParent>();
+    public DbSet<StorageVariant> StorageVariants => Set<StorageVariant>();
 
     // Control Center
     public DbSet<ControlCenterInstance> ControlCenterInstances => Set<ControlCenterInstance>();
