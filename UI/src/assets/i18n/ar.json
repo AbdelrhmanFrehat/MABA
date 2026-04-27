@@ -2018,7 +2018,8 @@
       "stockGood": "جيد",
       "stockMedium": "متوسط",
       "stockLow": "منخفض",
-      "nameHint": "أمثلة: PLA Black — S1، PLA Black — S2"
+      "nameHint": "أمثلة: PLA Black — S1، PLA Black — S2",
+      "orNewColor": "أو أضف لوناً جديداً"
     },
     "3dRequests": {
       "title": "طلبات الطباعة ثلاثية الأبعاد",

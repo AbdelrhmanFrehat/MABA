@@ -71,6 +71,30 @@ import {
                 color: var(--text-color-secondary);
                 line-height: 1.4;
             }
+            .or-divider {
+                display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0 0;
+            }
+            .or-line { flex: 1; height: 1px; background: var(--surface-border); }
+            .or-text { font-size: 0.72rem; color: var(--text-color-secondary); white-space: nowrap; }
+            .new-color-block {
+                margin-top: 0.5rem;
+                padding: 0.75rem;
+                border: 1px dashed #c7d2fe;
+                border-radius: 8px;
+                background: #f8f9ff;
+            }
+            .new-color-grid {
+                display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem;
+            }
+            .nc-field { display: flex; flex-direction: column; gap: 0.25rem; }
+            .nc-label { font-size: 0.75rem; font-weight: 600; color: #374151; }
+            .hex-row { display: flex; align-items: center; gap: 0.35rem; }
+            .color-swatch-input {
+                width: 32px; height: 32px; padding: 0; border: 1px solid #d1d5db;
+                border-radius: 4px; cursor: pointer; flex-shrink: 0;
+            }
+            .hex-text { flex: 1; }
+            .color-note { font-size: 0.71rem; color: var(--text-color-secondary); margin-top: 0.4rem; display: block; }
         `
     ]
 })
@@ -111,7 +135,10 @@ export class FilamentSpoolsDialogComponent implements OnInit {
         } else {
             this.form = this.fb.group({
                 materialId: [null, Validators.required],
-                materialColorId: [null as string | null, Validators.required],
+                materialColorId: [null as string | null],   // optional — inline color may be used instead
+                newColorNameEn: [''],
+                newColorNameAr: [''],
+                newColorHex: ['#CCCCCC'],
                 name: [''],
                 initialWeightGrams: [1000, [Validators.required, Validators.min(1)]]
             });
@@ -194,10 +221,27 @@ export class FilamentSpoolsDialogComponent implements OnInit {
                 });
         } else {
             const v = this.form.getRawValue();
+            const hasExistingColor = !!v.materialColorId;
+            const hasNewColor = !!v.newColorNameEn?.trim();
+
+            if (!hasExistingColor && !hasNewColor) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: this.translate.instant('messages.validationError'),
+                    detail: 'Select an existing color or enter a new color name.',
+                    life: 5000
+                });
+                this.saving = false;
+                return;
+            }
+
             this.printingApi
-                .createFilamentSpool({
+                .createSpoolWithColor({
                     materialId: v.materialId,
-                    materialColorId: v.materialColorId,
+                    materialColorId: hasExistingColor ? v.materialColorId : null,
+                    newColorNameEn: hasNewColor ? v.newColorNameEn.trim() : null,
+                    newColorNameAr: hasNewColor && v.newColorNameAr?.trim() ? v.newColorNameAr.trim() : null,
+                    newColorHexCode: hasNewColor ? (v.newColorHex || '#CCCCCC') : null,
                     name: v.name?.trim() ? v.name.trim() : null,
                     initialWeightGrams: v.initialWeightGrams
                 })
@@ -211,11 +255,11 @@ export class FilamentSpoolsDialogComponent implements OnInit {
                         });
                         this.ref.close(true);
                     },
-                    error: () => {
+                    error: (err) => {
                         this.messageService.add({
                             severity: 'error',
                             summary: this.translate.instant('messages.error'),
-                            detail: this.translate.instant('admin.filamentSpools.saveError'),
+                            detail: err?.error?.message || this.translate.instant('admin.filamentSpools.saveError'),
                             life: 5000
                         });
                         this.saving = false;

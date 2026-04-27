@@ -18,6 +18,7 @@
     }
 
     @if (!isEdit) {
+        <!-- Material -->
         <div class="form-field mb-3">
             <label for="materialId">{{ 'admin.filamentSpools.material' | translate }} *</label>
             <p-select
@@ -30,22 +31,58 @@
                 styleClass="w-full"
             ></p-select>
         </div>
+
+        <!-- Color: existing OR inline new -->
         <div class="form-field mb-3">
-            <label for="materialColorId">{{ 'admin.filamentSpools.color' | translate }} <span style="color:var(--red-500)">*</span></label>
-            <p-select
-                inputId="materialColorId"
-                formControlName="materialColorId"
-                [options]="colorOptions"
-                optionLabel="label"
-                optionValue="value"
-                [placeholder]="colorOptions.length ? ('admin.filamentSpools.selectColor' | translate) : 'No colors — add colors to this material first'"
-                styleClass="w-full"
-                [disabled]="!colorOptions.length"
-            ></p-select>
-            @if (!colorOptions.length && form.get('materialId')?.value) {
-                <small style="color: var(--orange-600)">This material has no colors. Use "Manage Colors" on the Materials page to add colors first.</small>
+            <label>{{ 'admin.filamentSpools.color' | translate }} *</label>
+
+            @if (colorOptions.length > 0) {
+                <p-select
+                    formControlName="materialColorId"
+                    [options]="colorOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    [showClear]="true"
+                    [placeholder]="'admin.filamentSpools.selectColor' | translate"
+                    styleClass="w-full"
+                ></p-select>
+                <div class="or-divider">
+                    <span class="or-line"></span>
+                    <span class="or-text">{{ 'admin.filamentSpools.orNewColor' | translate }}</span>
+                    <span class="or-line"></span>
+                </div>
             }
+
+            <!-- Inline new color -->
+            <div class="new-color-block">
+                <div class="new-color-grid">
+                    <div class="nc-field">
+                        <label class="nc-label">Name (EN)</label>
+                        <input pInputText formControlName="newColorNameEn" class="w-full" placeholder="Black, Red, White…" />
+                    </div>
+                    <div class="nc-field">
+                        <label class="nc-label">Name (AR)</label>
+                        <input pInputText formControlName="newColorNameAr" class="w-full" placeholder="أسود، أحمر…" dir="rtl" />
+                    </div>
+                    <div class="nc-field">
+                        <label class="nc-label">Color</label>
+                        <div class="hex-row">
+                            <input type="color" class="color-swatch-input" formControlName="newColorHex" />
+                            <input pInputText formControlName="newColorHex" maxlength="7" class="hex-text" />
+                        </div>
+                    </div>
+                </div>
+                <small class="color-note">
+                    @if (colorOptions.length > 0) {
+                        Leave Name blank to use an existing color above.
+                    } @else {
+                        This material has no colors yet — enter a new color to continue.
+                    }
+                </small>
+            </div>
         </div>
+
+        <!-- Initial weight -->
         <div class="form-field mb-3">
             <label for="initialWeightGrams">{{ 'admin.filamentSpools.initial' | translate }} (g) *</label>
             <p-inputNumber
@@ -58,6 +95,7 @@
         </div>
     }
 
+    <!-- Label -->
     <div class="form-field mb-3">
         <label for="name">{{ 'admin.filamentSpools.name' | translate }}</label>
         <input pInputText id="name" formControlName="name" class="w-full" maxlength="200" />
