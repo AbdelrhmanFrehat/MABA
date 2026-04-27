@@ -297,16 +297,18 @@ interface ParentRow extends StorageParentDto {
         .items-table { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
         .table-head {
             display: grid;
-            grid-template-columns: 2rem 3rem 1fr 10rem 5rem 5rem 7rem 9rem;
-            padding: 0.5rem 0.75rem;
+            grid-template-columns: 2rem 3.5rem 1fr 12rem 6rem 7rem 7rem 10rem;
+            padding: 0.55rem 0.85rem;
             background: #f9fafb;
             border-bottom: 1px solid #e5e7eb;
-            font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280;
+            font-size: 0.71rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: #6b7280;
+            white-space: nowrap;
         }
         .parent-row {
             display: grid;
-            grid-template-columns: 2rem 3rem 1fr 10rem 5rem 5rem 7rem 9rem;
-            padding: 0.6rem 0.75rem;
+            grid-template-columns: 2rem 3.5rem 1fr 12rem 6rem 7rem 7rem 10rem;
+            padding: 0.65rem 0.85rem;
             border-bottom: 1px solid #f3f4f6;
             align-items: center;
             background: #fff;
@@ -323,7 +325,7 @@ interface ParentRow extends StorageParentDto {
         .col-num { font-size: 0.875rem; color: #374151; font-weight: 500; }
         .col-num.low-stock { color: #ef4444; font-weight: 700; }
         .col-status { }
-        .col-actions { display: flex; gap: 0; align-items: center; }
+        .col-actions { display: flex; gap: 0.1rem; align-items: center; }
 
         .expand-btn { background: none; border: none; color: #6b7280; cursor: pointer; padding: 0.25rem; border-radius: 4px; display: flex; align-items: center; font-size: 0.75rem; }
         .expand-btn:hover { background: #f3f4f6; color: #374151; }

@@ -323,3 +323,15 @@ export interface UpdateFilamentSpoolPayload {
     isActive: boolean;
 }
 
+export interface CreateSpoolWithColorPayload {
+    materialId: string;
+    // Either existing color:
+    materialColorId?: string | null;
+    // Or new color inline:
+    newColorNameEn?: string | null;
+    newColorNameAr?: string | null;
+    newColorHexCode?: string | null;
+    name?: string | null;
+    initialWeightGrams: number;
+}
+

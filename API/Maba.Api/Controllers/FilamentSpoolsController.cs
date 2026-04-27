@@ -47,6 +47,78 @@ public class FilamentSpoolsController : ControllerBase
         return Ok(ToDto(s));
     }
 
+    /// <summary>
+    /// Create a spool and optionally create a new color inline in one step.
+    /// Pass either MaterialColorId (existing) OR NewColor* fields (inline new color).
+    /// </summary>
+    [HttpPost("with-color")]
+    public async Task<ActionResult<FilamentSpoolDto>> CreateWithColor(
+        [FromBody] CreateSpoolWithColorDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (dto.InitialWeightGrams <= 0)
+            return BadRequest(new { message = "InitialWeightGrams must be greater than 0." });
+
+        var material = await _context.Set<Material>().FindAsync(new object[] { dto.MaterialId }, cancellationToken);
+        if (material == null) return BadRequest(new { message = "Material not found." });
+
+        Guid colorId;
+
+        if (dto.MaterialColorId.HasValue)
+        {
+            // Use existing color
+            var existingColor = await _context.Set<MaterialColor>()
+                .FirstOrDefaultAsync(c => c.Id == dto.MaterialColorId && c.MaterialId == dto.MaterialId, cancellationToken);
+            if (existingColor == null)
+                return BadRequest(new { message = "Color not found for this material." });
+            colorId = existingColor.Id;
+        }
+        else
+        {
+            // Create new color inline
+            if (string.IsNullOrWhiteSpace(dto.NewColorNameEn))
+                return BadRequest(new { message = "Either MaterialColorId or NewColorNameEn is required." });
+
+            var hex = string.IsNullOrWhiteSpace(dto.NewColorHexCode) ? "#CCCCCC" : dto.NewColorHexCode.Trim();
+            if (!hex.StartsWith('#')) hex = "#" + hex;
+
+            var newColor = new MaterialColor
+            {
+                MaterialId = dto.MaterialId,
+                NameEn = dto.NewColorNameEn.Trim(),
+                NameAr = string.IsNullOrWhiteSpace(dto.NewColorNameAr) ? dto.NewColorNameEn.Trim() : dto.NewColorNameAr.Trim(),
+                HexCode = hex,
+                IsActive = true,
+                SortOrder = 0
+            };
+            _context.Set<MaterialColor>().Add(newColor);
+            await _context.SaveChangesAsync(cancellationToken);
+            colorId = newColor.Id;
+        }
+
+        var spool = new FilamentSpool
+        {
+            MaterialId = dto.MaterialId,
+            MaterialColorId = colorId,
+            Name = string.IsNullOrWhiteSpace(dto.Name) ? null : dto.Name.Trim(),
+            InitialWeightGrams = dto.InitialWeightGrams,
+            RemainingWeightGrams = dto.InitialWeightGrams,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Set<FilamentSpool>().Add(spool);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var created = await _context.Set<FilamentSpool>()
+            .AsNoTracking()
+            .Include(s => s.Material)
+            .Include(s => s.MaterialColor)
+            .FirstAsync(s => s.Id == spool.Id, cancellationToken);
+
+        return Ok(ToDto(created));
+    }
+
     [HttpPost]
     public async Task<ActionResult<FilamentSpoolDto>> Create([FromBody] CreateFilamentSpoolDto dto, CancellationToken cancellationToken)
     {

@@ -150,6 +150,11 @@ export const adminRoutes: Routes = [
         loadChildren: () => import('./filament-spools/filament-spools.routes').then(m => m.FILAMENT_SPOOLS_ROUTES)
     },
     {
+        path: 'printing-inventory',
+        loadComponent: () => import('./filament-spools/printing-inventory.component').then(m => m.PrintingInventoryComponent),
+        canActivate: [authGuard]
+    },
+    {
         path: 'reviews',
         loadComponent: () => import('./reviews/reviews-list.component').then(m => m.ReviewsListComponent),
         canActivate: [authGuard]

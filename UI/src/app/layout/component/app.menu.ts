@@ -166,8 +166,9 @@ export class AppMenu implements OnInit, OnDestroy {
                     label: this.translateService.instant('menu.printing3d'),
                     items: [
                         { label: this.translateService.instant('menu.materials'), icon: 'pi pi-fw pi-palette', routerLink: ['/admin/materials'] },
+                        { label: 'Filament Inventory', icon: 'pi pi-fw pi-database', routerLink: ['/admin/printing-inventory'] },
                         { label: this.translateService.instant('menu.printQualityProfiles'), icon: 'pi pi-fw pi-sliders-h', routerLink: ['/admin/print-quality-profiles'] },
-                        { label: this.translateService.instant('menu.spools'), icon: 'pi pi-fw pi-database', routerLink: ['/admin/filament-spools'] },
+                        { label: this.translateService.instant('menu.spools'), icon: 'pi pi-fw pi-list', routerLink: ['/admin/filament-spools'] },
                         { label: this.translateService.instant('menu.printing3dRequests'), icon: 'pi pi-fw pi-print', routerLink: ['/admin/3d-requests'] }
                     ]
                 },

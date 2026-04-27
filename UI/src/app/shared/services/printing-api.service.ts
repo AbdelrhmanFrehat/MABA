@@ -24,7 +24,8 @@ import {
     UpdatePrintQualityProfileRequest,
     FilamentSpool,
     CreateFilamentSpoolPayload,
-    UpdateFilamentSpoolPayload
+    UpdateFilamentSpoolPayload,
+    CreateSpoolWithColorPayload
 } from '../models/printing.model';
 
 @Injectable({
@@ -196,6 +197,11 @@ export class PrintingApiService {
 
     deleteFilamentSpool(id: string): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/filament-spools/${id}`);
+    }
+
+    /** Single-step: create spool + optionally create color inline. */
+    createSpoolWithColor(payload: CreateSpoolWithColorPayload): Observable<FilamentSpool> {
+        return this.http.post<FilamentSpool>(`${this.baseUrl}/filament-spools/with-color`, payload);
     }
 }
 
