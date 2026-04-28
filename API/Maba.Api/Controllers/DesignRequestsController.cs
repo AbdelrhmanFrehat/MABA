@@ -368,6 +368,8 @@ public class DesignRequestsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(dto.RejectionReason))
             request.RejectionReason = dto.RejectionReason.Trim();
+        if (dto.QuotedPrice.HasValue && dto.QuotedPrice > 0)
+            request.QuotedPrice = dto.QuotedPrice;
 
         if (newStatus == DesignServiceRequestStatus.UnderReview && !request.ReviewedAt.HasValue)
             request.ReviewedAt = DateTime.UtcNow;
@@ -385,15 +387,25 @@ public class DesignRequestsController : ControllerBase
             var baseUrl  = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
             var viewUrl  = $"{baseUrl}/account/requests?type=design&requestId={request.Id}";
 
+            var rejectionOrNote = dto.RejectionReason;
+            if (newStatus == DesignServiceRequestStatus.Quoted && dto.QuotedPrice.HasValue)
+            {
+                var priceNote = $"Quoted price: ₪{dto.QuotedPrice:N2}";
+                if (!string.IsNullOrWhiteSpace(dto.CustomerMessage)) priceNote += $"\n\n{dto.CustomerMessage.Trim()}";
+                rejectionOrNote = priceNote;
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.CustomerMessage))
+                rejectionOrNote = dto.CustomerMessage.Trim();
+
             if (newStatus == DesignServiceRequestStatus.Cancelled)
                 await _emailService.SendRequestCancelledAsync(
                     toEmail, custName, request.ReferenceNumber,
-                    "Design Request", viewUrl, dto.Notes, CancellationToken.None);
+                    "Design Request", viewUrl, rejectionOrNote, CancellationToken.None);
             else
                 await _emailService.SendRequestStatusUpdateAsync(
                     toEmail, custName, request.ReferenceNumber,
                     "Design Request", newStatus.ToString(), viewUrl,
-                    dto.RejectionReason, CancellationToken.None);
+                    rejectionOrNote, CancellationToken.None);
         }
 
         return Ok(await MapToDto(request));
@@ -534,6 +546,8 @@ public class UpdateDesignRequestStatusDto
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public string? RejectionReason { get; set; }
+    public decimal? QuotedPrice { get; set; }
+    public string? CustomerMessage { get; set; }
 }
 
 public class UpdateDesignRequestDto

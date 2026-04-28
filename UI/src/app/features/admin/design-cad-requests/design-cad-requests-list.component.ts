@@ -192,16 +192,42 @@ import {
                     <label>{{ 'admin.serviceWorkflow.nextStatus' | translate }}</label>
                     <p-select [(ngModel)]="editStatus" [options]="statusOptions" optionLabel="label" optionValue="value" styleClass="w-full"></p-select>
                 </div>
+                <!-- Rejection reason -->
                 <div class="form-field" *ngIf="editStatus === 'Rejected'">
                     <label class="rejection-label">{{ 'admin.requests.rejectionReason' | translate }} <span class="required-star">*</span></label>
-                    <textarea pTextarea [(ngModel)]="editRejectionReason" rows="4" class="w-full"
+                    <textarea pTextarea [(ngModel)]="editRejectionReason" rows="3" class="w-full"
                         [placeholder]="'admin.requests.rejectionReasonPlaceholder' | translate"></textarea>
                     <small class="hint-text">{{ 'admin.requests.rejectionReasonHint' | translate }}</small>
                 </div>
-                <div class="form-field">
-                    <label>{{ 'admin.designRequests.adminNotes' | translate }}</label>
-                    <textarea pTextarea [(ngModel)]="editNotes" rows="4" class="w-full" [placeholder]="'admin.designRequests.adminNotesPlaceholder' | translate"></textarea>
+
+                <!-- Quote fields — shown when setting to Awaiting Customer Confirmation -->
+                <div *ngIf="editStatus === 'AwaitingCustomerConfirmation'" class="quote-section">
+                    <div class="form-field">
+                        <label class="quote-label"><i class="pi pi-tag"></i> Quoted Price (₪) *</label>
+                        <input pInputText type="number" [(ngModel)]="editQuotedPrice" class="w-full" min="0" step="0.01" placeholder="e.g. 350.00" />
+                        <small class="hint-text">This price will be shown to the customer in the email.</small>
+                    </div>
+                    <div class="form-field">
+                        <label class="quote-label"><i class="pi pi-envelope"></i> Message to Customer</label>
+                        <textarea pTextarea [(ngModel)]="editCustomerMessage" rows="3" class="w-full"
+                            placeholder="e.g. We have reviewed your request and prepared a quotation. Please review and confirm to proceed…"></textarea>
+                        <small class="hint-text">Optional message included in the quote email.</small>
+                    </div>
                 </div>
+
+                <!-- Customer message for other status changes -->
+                <div class="form-field" *ngIf="editStatus !== 'AwaitingCustomerConfirmation' && editStatus !== 'Rejected'">
+                    <label><i class="pi pi-comment"></i> Message to Customer <span class="optional-label">(optional)</span></label>
+                    <textarea pTextarea [(ngModel)]="editCustomerMessage" rows="2" class="w-full"
+                        placeholder="Add a note to include in the status update email…"></textarea>
+                </div>
+
+                <!-- Internal admin notes -->
+                <div class="form-field">
+                    <label>{{ 'admin.designRequests.adminNotes' | translate }} <span class="optional-label">(internal only)</span></label>
+                    <textarea pTextarea [(ngModel)]="editNotes" rows="2" class="w-full" [placeholder]="'admin.designRequests.adminNotesPlaceholder' | translate"></textarea>
+                </div>
+
                 <div class="notification-note" *ngIf="editStatus !== (selectedRequest?.workflowStatus || selectedRequest?.status)">
                     <i class="pi pi-envelope"></i>
                     <span>{{ 'admin.requests.customerWillBeNotified' | translate }}</span>
@@ -254,6 +280,9 @@ import {
         .rejection-label { color: #dc2626 !important; }
         .required-star { color: #dc2626; margin-left: 2px; }
         .hint-text { color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.25rem; }
+        .optional-label { font-size: 0.75rem; font-weight: 400; color: #94a3b8; margin-left: 0.25rem; }
+        .quote-section { border: 1px solid #c7d2fe; border-radius: 8px; padding: 0.85rem; background: #f8f9ff; display: flex; flex-direction: column; gap: 0.75rem; }
+        .quote-label { color: #4338ca !important; display: flex; align-items: center; gap: 0.35rem; }
         .notification-note { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #eff6ff; border-radius: 6px; color: #1e40af; font-size: 0.8rem; margin-top: 0.5rem; }
         .w-full { width: 100%; }
     `]
@@ -280,6 +309,8 @@ export class DesignCadRequestsListComponent implements OnInit {
     editStatus: ServiceWorkflowStatus = 'New';
     editNotes = '';
     editRejectionReason = '';
+    editQuotedPrice: number | null = null;
+    editCustomerMessage = '';
     saving = false;
 
     get viewDialogTitle(): string {
@@ -344,6 +375,8 @@ export class DesignCadRequestsListComponent implements OnInit {
         this.editStatus = normalizeDesignCadWorkflowStatus(req.workflowStatus || req.status);
         this.editNotes = '';
         this.editRejectionReason = '';
+        this.editQuotedPrice = null;
+        this.editCustomerMessage = '';
         this.showEditDialog = true;
     }
 
@@ -353,11 +386,17 @@ export class DesignCadRequestsListComponent implements OnInit {
             this.messageService.add({ severity: 'warn', summary: this.translate.instant('messages.validationError'), detail: this.translate.instant('admin.requests.rejectionReasonRequired') });
             return;
         }
+        if (this.editStatus === 'AwaitingCustomerConfirmation' && (!this.editQuotedPrice || this.editQuotedPrice <= 0)) {
+            this.messageService.add({ severity: 'warn', summary: this.translate.instant('messages.validationError'), detail: 'A quoted price is required when sending a quotation.' });
+            return;
+        }
         this.saving = true;
         this.designCadService.updateStatus(this.selectedRequest.id, {
             status: denormalizeDesignCadWorkflowStatus(this.editStatus),
             notes: this.editNotes || undefined,
-            rejectionReason: this.editStatus === 'Rejected' ? this.editRejectionReason.trim() : undefined
+            rejectionReason: this.editStatus === 'Rejected' ? this.editRejectionReason.trim() : undefined,
+            quotedPrice: this.editQuotedPrice ?? undefined,
+            customerMessage: this.editCustomerMessage.trim() || undefined
         }).subscribe({
             next: (updated) => {
                 this.saving = false;

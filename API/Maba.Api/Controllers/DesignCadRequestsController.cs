@@ -325,6 +325,8 @@ public class DesignCadRequestsController : ControllerBase
             request.AdminNotes = (request.AdminNotes ?? "") + "\n" + dto.Notes.Trim();
         if (!string.IsNullOrWhiteSpace(dto.RejectionReason))
             request.RejectionReason = dto.RejectionReason.Trim();
+        if (dto.QuotedPrice.HasValue && dto.QuotedPrice > 0)
+            request.QuotedPrice = dto.QuotedPrice;
 
         await _context.SaveChangesAsync(CancellationToken.None);
 
@@ -335,15 +337,29 @@ public class DesignCadRequestsController : ControllerBase
             var baseUrl  = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
             var viewUrl  = $"{baseUrl}/account/requests?type=designCad&requestId={request.Id}";
 
+            // Append quoted price and custom message to the status update email context
+            var rejectionOrNote = dto.RejectionReason;
+            if (statusEnum == DesignCadRequestStatus.Quoted && dto.QuotedPrice.HasValue)
+            {
+                var priceNote = $"Quoted price: ₪{dto.QuotedPrice:N2}";
+                if (!string.IsNullOrWhiteSpace(dto.CustomerMessage))
+                    priceNote += $"\n\n{dto.CustomerMessage.Trim()}";
+                rejectionOrNote = priceNote;
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.CustomerMessage))
+            {
+                rejectionOrNote = dto.CustomerMessage.Trim();
+            }
+
             if (statusEnum == DesignCadRequestStatus.Cancelled)
                 await _emailService.SendRequestCancelledAsync(
                     toEmail, custName, request.ReferenceNumber,
-                    "Design & CAD Request", viewUrl, dto.Notes, CancellationToken.None);
+                    "Design & CAD Request", viewUrl, rejectionOrNote, CancellationToken.None);
             else
                 await _emailService.SendRequestStatusUpdateAsync(
                     toEmail, custName, request.ReferenceNumber,
                     "Design & CAD Request", statusEnum.ToString(), viewUrl,
-                    dto.RejectionReason, CancellationToken.None);
+                    rejectionOrNote, CancellationToken.None);
         }
 
         return Ok(MapToDto(request));
@@ -490,4 +506,8 @@ public class UpdateDesignCadStatusDto
     public string Status { get; set; } = "";
     public string? Notes { get; set; }
     public string? RejectionReason { get; set; }
+    /// <summary>Quoted price sent to customer when status = Quoted/AwaitingCustomerConfirmation.</summary>
+    public decimal? QuotedPrice { get; set; }
+    /// <summary>Custom message included in the status update email to the customer.</summary>
+    public string? CustomerMessage { get; set; }
 }

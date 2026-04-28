@@ -108,7 +108,7 @@ export class DesignCadRequestService {
         return this.http.get<DesignCadRequestDto>(`${this.baseUrl}/${id}`);
     }
 
-    updateStatus(id: string, payload: { status: string; notes?: string; rejectionReason?: string }): Observable<DesignCadRequestDto> {
+    updateStatus(id: string, payload: { status: string; notes?: string; rejectionReason?: string; quotedPrice?: number; customerMessage?: string }): Observable<DesignCadRequestDto> {
         return this.http.put<DesignCadRequestDto>(`${this.baseUrl}/${id}/status`, payload);
     }
 
