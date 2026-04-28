@@ -13,12 +13,16 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
+import { DesignCadRequestService } from '../../../shared/services/design-cad-request.service';
+import { DesignRequestService } from '../../../shared/services/design-request.service';
+import { CncApiService } from '../../../shared/services/cnc-api.service';
+import { ProjectsApiService } from '../../../shared/services/projects-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
 
 interface ServiceRequest {
     id: string;
     referenceNumber: string;
-    type: 'print3d' | 'laser';
+    type: 'print3d' | 'laser' | 'designCad' | 'design' | 'cnc' | 'project';
     typeLabel: string;
     status: string;
     statusSeverity: 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
@@ -137,9 +141,9 @@ interface ServiceRequest {
                                 <span class="ref-number">{{ request.referenceNumber }}</span>
                             </td>
                             <td>
-                                <p-tag 
-                                    [value]="request.typeLabel" 
-                                    [severity]="request.type === 'print3d' ? 'info' : 'warn'"
+                                <p-tag
+                                    [value]="request.typeLabel"
+                                    [severity]="request.type === 'print3d' ? 'info' : request.type === 'designCad' || request.type === 'design' ? 'secondary' : request.type === 'project' ? 'contrast' : 'warn'"
                                     [rounded]="true">
                                 </p-tag>
                             </td>
@@ -192,7 +196,7 @@ interface ServiceRequest {
                             <p-tag [value]="selectedRequest.status" [severity]="selectedRequest.statusSeverity"></p-tag>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">{{ 'requests.material' | translate }}</span>
+                            <span class="detail-label">{{ selectedRequest.type === 'designCad' ? ('requests.title' | translate) : ('requests.material' | translate) }}</span>
                             <span class="detail-value">{{ selectedRequest.materialName || '-' }}</span>
                         </div>
                         <div class="detail-item" *ngIf="selectedRequest.fileName">
@@ -494,7 +498,11 @@ export class AccountRequestsComponent implements OnInit {
     typeOptions = [
         { label: 'All Types', value: null },
         { label: '3D Print', value: 'print3d' },
-        { label: 'Laser', value: 'laser' }
+        { label: 'Laser', value: 'laser' },
+        { label: 'Design & CAD', value: 'designCad' },
+        { label: 'Design', value: 'design' },
+        { label: 'CNC', value: 'cnc' },
+        { label: 'Project', value: 'project' }
     ];
 
     statusOptions = [
@@ -509,6 +517,10 @@ export class AccountRequestsComponent implements OnInit {
 
     private printingApiService = inject(PrintingApiService);
     private laserApiService = inject(LaserApiService);
+    private designCadService = inject(DesignCadRequestService);
+    private designRequestService = inject(DesignRequestService);
+    private cncApiService = inject(CncApiService);
+    private projectsApiService = inject(ProjectsApiService);
     private translateService = inject(TranslateService);
     private route = inject(ActivatedRoute);
     private router = inject(Router);
@@ -548,7 +560,11 @@ export class AccountRequestsComponent implements OnInit {
             this.typeOptions = [
                 { label: 'جميع الأنواع', value: null },
                 { label: 'طباعة 3D', value: 'print3d' },
-                { label: 'ليزر', value: 'laser' }
+                { label: 'ليزر', value: 'laser' },
+                { label: 'تصميم وCAD', value: 'designCad' },
+                { label: 'تصميم', value: 'design' },
+                { label: 'CNC', value: 'cnc' },
+                { label: 'مشروع', value: 'project' }
             ];
             this.statusOptions = [
                 { label: 'جميع الحالات', value: null },
@@ -566,12 +582,12 @@ export class AccountRequestsComponent implements OnInit {
         this.loading = true;
         this.allRequests = [];
         let completedCalls = 0;
-        const totalCalls = 2;
+        const totalCalls = 6;
 
         const checkComplete = () => {
             completedCalls++;
             if (completedCalls >= totalCalls) {
-                this.allRequests.sort((a, b) => 
+                this.allRequests.sort((a, b) =>
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 );
                 this.filterRequests();
@@ -621,6 +637,102 @@ export class AccountRequestsComponent implements OnInit {
                         estimatedPrice: r.estimatedPrice,
                         finalPrice: r.finalPrice,
                         notes: r.notes
+                    });
+                });
+                checkComplete();
+            },
+            error: () => checkComplete()
+        });
+
+        // Load Design & CAD requests
+        this.designCadService.getList({ page: 1, pageSize: 100 }).subscribe({
+            next: (response) => {
+                ((response as any)?.items || []).forEach((r: any) => {
+                    this.allRequests.push({
+                        id: r.id,
+                        referenceNumber: r.referenceNumber || r.id?.slice(0, 8),
+                        type: 'designCad',
+                        typeLabel: this.languageService.language === 'ar' ? 'تصميم وCAD' : 'Design & CAD',
+                        status: r.workflowStatus || r.status,
+                        statusSeverity: this.getStatusSeverity(r.workflowStatus || r.status),
+                        materialName: r.title,
+                        fileName: undefined,
+                        createdAt: r.createdAt,
+                        estimatedPrice: r.quotedPrice,
+                        finalPrice: r.finalPrice,
+                        notes: r.customerNotes
+                    });
+                });
+                checkComplete();
+            },
+            error: () => checkComplete()
+        });
+
+        // Load Design (service) requests
+        this.designRequestService.getMyRequests({ page: 1, pageSize: 100 }).subscribe({
+            next: (response: any) => {
+                ((response as any)?.items || []).forEach((r: any) => {
+                    this.allRequests.push({
+                        id: r.id,
+                        referenceNumber: r.referenceNumber || r.id?.slice(0, 8),
+                        type: 'design',
+                        typeLabel: this.languageService.language === 'ar' ? 'تصميم' : 'Design',
+                        status: r.workflowStatus || r.status,
+                        statusSeverity: this.getStatusSeverity(r.workflowStatus || r.status),
+                        materialName: r.title || r.projectName,
+                        fileName: undefined,
+                        createdAt: r.createdAt,
+                        estimatedPrice: r.quotedPrice,
+                        finalPrice: r.finalPrice,
+                        notes: r.customerNotes || r.notes
+                    });
+                });
+                checkComplete();
+            },
+            error: () => checkComplete()
+        });
+
+        // Load CNC requests
+        this.cncApiService.getAdminRequests({ take: 100 }).subscribe({
+            next: (response) => {
+                ((response as any)?.items || []).forEach((r: any) => {
+                    this.allRequests.push({
+                        id: r.id,
+                        referenceNumber: r.referenceNumber || r.id?.slice(0, 8),
+                        type: 'cnc',
+                        typeLabel: 'CNC',
+                        status: r.workflowStatus || r.status || r.statusName,
+                        statusSeverity: this.getStatusSeverity(r.workflowStatus || r.status || r.statusName),
+                        materialName: r.serviceMode || r.operationType,
+                        fileName: r.fileName,
+                        createdAt: r.createdAt,
+                        estimatedPrice: r.estimatedPrice,
+                        finalPrice: r.finalPrice,
+                        notes: r.projectDescription
+                    });
+                });
+                checkComplete();
+            },
+            error: () => checkComplete()
+        });
+
+        // Load Project requests
+        this.projectsApiService.getProjectRequests({ take: 100 }).subscribe({
+            next: (requests) => {
+                (requests || []).forEach((r: any) => {
+                    this.allRequests.push({
+                        id: r.id,
+                        referenceNumber: r.referenceNumber || r.id?.slice(0, 8),
+                        type: 'project',
+                        typeLabel: this.languageService.language === 'ar' ? 'مشروع' : 'Project',
+                        status: r.workflowStatus || r.statusName || r.status,
+                        statusSeverity: this.getStatusSeverity(r.workflowStatus || r.statusName || r.status),
+                        materialName: r.projectType || r.requestTypeName,
+                        fileName: undefined,
+                        createdAt: r.createdAt,
+                        estimatedPrice: r.estimatedCost,
+                        finalPrice: undefined,
+                        notes: r.projectDescription || r.description
                     });
                 });
                 checkComplete();

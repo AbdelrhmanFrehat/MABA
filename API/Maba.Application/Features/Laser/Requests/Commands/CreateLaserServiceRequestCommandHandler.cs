@@ -95,7 +95,10 @@ public class CreateLaserServiceRequestCommandHandler : IRequestHandler<CreateLas
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(serviceRequest.CustomerEmail, serviceRequest.CustomerName, referenceNumber, "Laser Service Request", null, cancellationToken);
+            var viewUrl = request.ViewRequestUrlTemplate != null
+                ? string.Format(request.ViewRequestUrlTemplate, serviceRequest.Id)
+                : null;
+            await _emailService.SendRequestConfirmationAsync(serviceRequest.CustomerEmail, serviceRequest.CustomerName, referenceNumber, "Laser Service Request", viewUrl, cancellationToken);
         }
         catch (Exception ex)
         {

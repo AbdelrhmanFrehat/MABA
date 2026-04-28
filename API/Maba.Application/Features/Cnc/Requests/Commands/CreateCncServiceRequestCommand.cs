@@ -36,4 +36,10 @@ public class CreateCncServiceRequestCommand : IRequest<CreateCncServiceRequestRe
 
     /// <summary>Authenticated website user ID, if available.</summary>
     public Guid? UserId { get; set; }
+
+    /// <summary>
+    /// URL template for the customer portal deep link.
+    /// Use {0} as a placeholder for the request ID.
+    /// </summary>
+    public string? ViewRequestUrlTemplate { get; set; }
 }

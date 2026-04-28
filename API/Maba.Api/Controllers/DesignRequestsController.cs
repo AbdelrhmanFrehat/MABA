@@ -153,7 +153,8 @@ public class DesignRequestsController : ControllerBase
         try
         {
             var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
-            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design Request", null, CancellationToken.None);
+            var viewUrl = $"{frontendBase}/account/requests?type=design&requestId={request.Id}";
+            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design Request", viewUrl, CancellationToken.None);
             _ = _adminNotify.NotifyNewRequestAsync(request.CustomerName, request.CustomerEmail, referenceNumber, "Design Request", $"{frontendBase}/admin/design-requests");
         }
         catch (Exception ex)
@@ -382,7 +383,7 @@ public class DesignRequestsController : ControllerBase
             var toEmail  = request.CustomerEmail ?? request.User?.Email;
             var custName = request.CustomerName  ?? request.User?.FullName;
             var baseUrl  = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
-            var viewUrl  = $"{baseUrl}/account";
+            var viewUrl  = $"{baseUrl}/account/requests?type=design&requestId={request.Id}";
 
             if (newStatus == DesignServiceRequestStatus.Cancelled)
                 await _emailService.SendRequestCancelledAsync(

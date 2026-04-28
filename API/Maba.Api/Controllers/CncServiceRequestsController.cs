@@ -15,11 +15,13 @@ public class CncServiceRequestsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
-    public CncServiceRequestsController(IMediator mediator, IWebHostEnvironment environment)
+    public CncServiceRequestsController(IMediator mediator, IWebHostEnvironment environment, IConfiguration configuration)
     {
         _mediator = mediator;
         _environment = environment;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -131,6 +133,8 @@ public class CncServiceRequestsController : ControllerBase
         {
             command.UserId = parsedUserId;
         }
+        var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
+        command.ViewRequestUrlTemplate = $"{frontendBase}/account/requests?type=cnc&requestId={{0}}";
 
         // Handle optional file upload
         if (file is { Length: > 0 })

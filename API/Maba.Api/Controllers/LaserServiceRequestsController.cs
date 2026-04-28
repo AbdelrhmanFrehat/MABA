@@ -15,15 +15,18 @@ public class LaserServiceRequestsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<LaserServiceRequestsController> _logger;
 
     public LaserServiceRequestsController(
         IMediator mediator,
         IWebHostEnvironment environment,
+        IConfiguration configuration,
         ILogger<LaserServiceRequestsController> logger)
     {
         _mediator = mediator;
         _environment = environment;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -88,6 +91,7 @@ public class LaserServiceRequestsController : ControllerBase
                 userId = parsedUserId;
             }
 
+            var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
             var command = new CreateLaserServiceRequestCommand
             {
                 MaterialId = materialId,
@@ -100,7 +104,8 @@ public class LaserServiceRequestsController : ControllerBase
                 CustomerEmail = customerEmail,
                 CustomerPhone = customerPhone,
                 CustomerNotes = customerNotes,
-                UserId = userId
+                UserId = userId,
+                ViewRequestUrlTemplate = $"{frontendBase}/account/requests?type=laser&requestId={{0}}"
             };
 
             var result = await _mediator.Send(command);

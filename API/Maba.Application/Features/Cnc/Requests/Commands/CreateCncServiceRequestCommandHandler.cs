@@ -107,7 +107,10 @@ public class CreateCncServiceRequestCommandHandler : IRequestHandler<CreateCncSe
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(serviceRequest.CustomerEmail, serviceRequest.CustomerName, referenceNumber, "CNC Service Request", null, cancellationToken);
+            var viewUrl = request.ViewRequestUrlTemplate != null
+                ? string.Format(request.ViewRequestUrlTemplate, serviceRequest.Id)
+                : null;
+            await _emailService.SendRequestConfirmationAsync(serviceRequest.CustomerEmail, serviceRequest.CustomerName, referenceNumber, "CNC Service Request", viewUrl, cancellationToken);
         }
         catch (Exception ex)
         {

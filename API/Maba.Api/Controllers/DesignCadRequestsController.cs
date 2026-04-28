@@ -168,7 +168,8 @@ public class DesignCadRequestsController : ControllerBase
         try
         {
             var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
-            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design CAD Request", null, CancellationToken.None);
+            var viewUrl = $"{frontendBase}/account/requests?type=designCad&requestId={request.Id}";
+            await _emailService.SendRequestConfirmationAsync(request.CustomerEmail, request.CustomerName, referenceNumber, "Design CAD Request", viewUrl, CancellationToken.None);
             _ = _adminNotify.NotifyNewRequestAsync(request.CustomerName, request.CustomerEmail, referenceNumber, "Design CAD Request", $"{frontendBase}/admin/cad-requests");
         }
         catch (Exception ex)
@@ -332,7 +333,7 @@ public class DesignCadRequestsController : ControllerBase
             var toEmail  = request.CustomerEmail ?? request.User?.Email;
             var custName = request.CustomerName  ?? request.User?.FullName;
             var baseUrl  = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "http://localhost:4200";
-            var viewUrl  = $"{baseUrl}/account";
+            var viewUrl  = $"{baseUrl}/account/requests?type=designCad&requestId={request.Id}";
 
             if (statusEnum == DesignCadRequestStatus.Cancelled)
                 await _emailService.SendRequestCancelledAsync(

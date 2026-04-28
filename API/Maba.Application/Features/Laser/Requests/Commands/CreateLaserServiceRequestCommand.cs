@@ -21,4 +21,11 @@ public class CreateLaserServiceRequestCommand : IRequest<CreateLaserServiceReque
 
     /// <summary>Authenticated website user ID, if available.</summary>
     public Guid? UserId { get; set; }
+
+    /// <summary>
+    /// URL template for the customer portal deep link.
+    /// Use {0} as a placeholder for the request ID.
+    /// Example: "https://mabasol.com/account/requests?type=laser&amp;requestId={0}"
+    /// </summary>
+    public string? ViewRequestUrlTemplate { get; set; }
 }

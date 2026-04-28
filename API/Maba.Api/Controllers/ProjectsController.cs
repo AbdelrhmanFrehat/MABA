@@ -14,10 +14,12 @@ namespace Maba.Api.Controllers;
 public class ProjectsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IConfiguration _configuration;
 
-    public ProjectsController(IMediator mediator)
+    public ProjectsController(IMediator mediator, IConfiguration configuration)
     {
         _mediator = mediator;
+        _configuration = configuration;
     }
 
     [HttpGet]
@@ -104,7 +106,8 @@ public class ProjectsController : ControllerBase
                 AttachmentUrl = request.AttachmentUrl,
                 AttachmentFileName = request.AttachmentFileName,
                 Attachments = request.Attachments,
-                UserId = userId
+                UserId = userId,
+                ViewRequestUrlTemplate = $"{(_configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com")}/account/requests?type=project&requestId={{0}}"
             });
 
             return Ok(new

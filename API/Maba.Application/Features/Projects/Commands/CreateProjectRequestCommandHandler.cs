@@ -80,7 +80,8 @@ public class CreateProjectRequestCommandHandler : IRequestHandler<CreateProjectR
 
         try
         {
-            await _emailService.SendRequestConfirmationAsync(projectRequest.Email, projectRequest.FullName, referenceNumber, "Project Request", null, cancellationToken);
+            var viewUrl = request.ViewRequestUrlTemplate != null ? string.Format(request.ViewRequestUrlTemplate, projectRequest.Id) : null;
+            await _emailService.SendRequestConfirmationAsync(projectRequest.Email, projectRequest.FullName, referenceNumber, "Project Request", viewUrl, cancellationToken);
         }
         catch (Exception ex)
         {
