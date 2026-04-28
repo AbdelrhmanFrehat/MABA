@@ -176,11 +176,8 @@ public class DesignCadRequestsController : ControllerBase
             _logger.LogError(ex, "Failed to send confirmation email for Design CAD request {ReferenceNumber}", referenceNumber);
         }
 
-        var created = await _context.Set<DesignCadServiceRequest>()
-            .Include(r => r.User)
-            .Include(r => r.Attachments)
-            .FirstAsync(r => r.Id == request.Id);
-        return CreatedAtAction(nameof(GetById), new { id = request.Id }, MapToDto(created));
+        // Return DTO built from the in-memory entity (avoids a re-query that can fail due to EF tracking state after insert)
+        return CreatedAtAction(nameof(GetById), new { id = request.Id }, MapToDto(request));
     }
 
     private static bool TryParseRequestType(string rawRequestType, out DesignCadRequestType requestType)

@@ -159,6 +159,8 @@ export function normalizeDesignCadWorkflowStatus(status: WorkflowInput): Service
             return 'AwaitingCustomerConfirmation';
         case 'Approved':
             return 'Approved';
+        case 'InProgress':
+            return 'InProgress';
         case 'Completed':
             return 'Completed';
         case 'Rejected':
@@ -174,10 +176,10 @@ export function denormalizeDesignCadWorkflowStatus(status: ServiceWorkflowStatus
     switch (status) {
         case 'AwaitingCustomerConfirmation':
             return 'Quoted';
-        case 'InProgress':
-            return 'Approved';
+        case 'New':
+            return 'Pending';
         default:
-            return status === 'New' ? 'Pending' : status;
+            return status; // InProgress, Approved, Completed, Rejected, Cancelled map directly
     }
 }
 

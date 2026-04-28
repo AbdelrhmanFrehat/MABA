@@ -8,5 +8,6 @@ public enum DesignCadRequestStatus
     Approved = 3,
     Rejected = 4,
     Completed = 5,
-    Cancelled = 6
+    Cancelled = 6,
+    InProgress = 7
 }
