@@ -97,6 +97,13 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 1rem;
+
+    // p-tag inside dark gradient header — use light variant
+    :host-context(.p-dialog-header) ::ng-deep .p-tag {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
 }
 
 .dialog-title-row {
@@ -108,11 +115,15 @@
 
 .dialog-title-row h3 {
     margin: 0;
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 700;
 }
 
 .dialog-header p {
     margin: 0;
-    color: var(--text-color-secondary);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
 }
 
 .manage-grid {

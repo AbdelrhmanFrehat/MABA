@@ -253,7 +253,7 @@
   "messages": {
     "success": "Success",
     "error": "Error",
-    "validationError": "Validation Error",
+    "validationError": "Please check your input.",
     "loadError": "Could not load data. Please try again.",
     "saveError": "Could not save data. Please try again.",
     "deleteError": "Could not delete data. Please try again.",
@@ -318,7 +318,6 @@
     "badRequest": "Invalid request.",
     "notFound": "The requested resource was not found.",
     "forbidden": "You do not have permission to perform this action.",
-    "validationError": "Please check your input.",
     "serverError": "A server error occurred. Please try again later.",
     "serviceUnavailable": "Service temporarily unavailable. Please try again later.",
     "roleCreatedSuccessfully": "Role created successfully",
@@ -2006,68 +2005,6 @@
     },
     "projectRequests": {
       "title": "Project Requests",
-      "subtitle": "Manage incoming project requests from customers",
-      "filterByStatus": "Filter by status",
-      "allStatuses": "All Statuses",
-      "noRequests": "No project requests found",
-      "reference": "Reference",
-      "type": "Type",
-      "customer": "Customer",
-      "project": "Project",
-      "category": "Category",
-      "status": "Status",
-      "date": "Date",
-      "typeSimilar": "Similar Project",
-      "typeCustom": "Custom Project",
-      "requestDetails": "Request Details",
-      "email": "Email",
-      "phone": "Phone",
-      "linkedProject": "Linked Project",
-      "budget": "Budget",
-      "timeline": "Timeline",
-      "description": "Description",
-      "attachment": "Attachment",
-      "updateStatus": "Update Status",
-      "saveStatus": "Save Status",
-      "statusUpdated": "Status updated successfully",
-      "adminNotes": "Admin Notes",
-      "notesPlaceholder": "Add internal notes about this request...",
-      "saveNotes": "Save Notes",
-      "notesUpdated": "Notes updated successfully"
-    },
-    "unifiedRequests": {
-      "title": "Title",
-      "subtitle": "Unified view of all service requests",
-      "totalRequests": "Total Requests",
-      "pending": "pending",
-      "projectRequests": "Project Requests",
-      "print3dRequests": "3D Print Requests",
-      "laserRequests": "Laser Requests",
-      "searchPlaceholder": "Search by reference, title, or customer...",
-      "filterByType": "Filter by type",
-      "filterByStatus": "Filter by status",
-      "allTypes": "All Types",
-      "allStatuses": "All Statuses",
-      "typeProject": "Project",
-      "type3dPrint": "3D Print",
-      "typeLaser": "Laser",
-      "statusPending": "Pending",
-      "statusNew": "New",
-      "statusInProgress": "In Progress",
-      "statusCompleted": "Completed",
-      "statusCancelled": "Cancelled",
-      "statusApproved": "Approved",
-      "statusRejected": "Rejected",
-      "statusUnderReview": "Under Review",
-      "referenceNumber": "Reference",
-      "type": "Type",
-      "customer": "Customer",
-      "status": "Status",
-      "date": "Date",
-      "noRequests": "No requests found"
-    },
-    "projectRequests": {
-      "title": "Project Requests",
       "subtitle": "Manage engineering project requests from one operational view.",
       "filterByStatus": "Filter by status",
       "filterByProjectType": "Filter by project type",
@@ -2157,6 +2094,37 @@
         "Moderate": "Moderate",
         "Complex": "Complex"
       }
+    },
+    "unifiedRequests": {
+      "title": "Title",
+      "subtitle": "Unified view of all service requests",
+      "totalRequests": "Total Requests",
+      "pending": "pending",
+      "projectRequests": "Project Requests",
+      "print3dRequests": "3D Print Requests",
+      "laserRequests": "Laser Requests",
+      "searchPlaceholder": "Search by reference, title, or customer...",
+      "filterByType": "Filter by type",
+      "filterByStatus": "Filter by status",
+      "allTypes": "All Types",
+      "allStatuses": "All Statuses",
+      "typeProject": "Project",
+      "type3dPrint": "3D Print",
+      "typeLaser": "Laser",
+      "statusPending": "Pending",
+      "statusNew": "New",
+      "statusInProgress": "In Progress",
+      "statusCompleted": "Completed",
+      "statusCancelled": "Cancelled",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected",
+      "statusUnderReview": "Under Review",
+      "referenceNumber": "Reference",
+      "type": "Type",
+      "customer": "Customer",
+      "status": "Status",
+      "date": "Date",
+      "noRequests": "No requests found"
     },
     "allRequests": {
       "title": "All Requests",
@@ -2388,10 +2356,18 @@
       }
     },
     "purchasing": {
-      "quotations": { "title": "Purchase Quotations" },
-      "orders": { "title": "Purchase Orders" },
-      "invoices": { "title": "Purchase Invoices" },
-      "returns": { "title": "Purchase Returns" }
+      "quotations": {
+        "title": "Purchase Quotations"
+      },
+      "orders": {
+        "title": "Purchase Orders"
+      },
+      "invoices": {
+        "title": "Purchase Invoices"
+      },
+      "returns": {
+        "title": "Purchase Returns"
+      }
     },
     "payments": {
       "title": "Payment Vouchers",
@@ -4030,6 +4006,35 @@
       "firmware": "Firmware",
       "download": "Download",
       "other": "Other"
+    }
+  },
+  "erp": {
+    "sales": {
+      "commercialPipeline": {
+        "title": "Commercial Pipeline",
+        "createQuotation": "Create Quotation",
+        "openQuotation": "Open Linked Quotation",
+        "openOrder": "Open Linked Order",
+        "openInvoice": "Open Linked Invoice",
+        "noLinkedDocuments": "No linked commercial documents yet.",
+        "linkedQuotation": "Linked Quotation",
+        "linkedOrder": "Linked Order",
+        "linkedInvoice": "Linked Invoice",
+        "sourceRequest": "Source Request",
+        "convertToOrder": "Convert to Order",
+        "validUntil": "Valid Until",
+        "items": "Line Items",
+        "addItem": "Add Item",
+        "description": "Description",
+        "qty": "Qty",
+        "unit": "Unit",
+        "unitPrice": "Unit Price",
+        "discount": "Discount %",
+        "tax": "Tax %",
+        "createSuccess": "Quotation created successfully.",
+        "createError": "Failed to create quotation. Please try again.",
+        "duplicateWarning": "An active quotation already exists for this request."
+      }
     }
   }
 }
