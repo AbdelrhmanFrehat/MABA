@@ -30,6 +30,8 @@ public class AuthSessionService : IAuthSessionService
     public bool IsAuthenticated => _session?.User != null
         && !string.IsNullOrWhiteSpace(_session.Token)
         && _session.ExpiresAt > DateTime.UtcNow.AddMinutes(1);
+    public bool HasPersistedSession => _session?.User != null
+        && !string.IsNullOrWhiteSpace(_session.RefreshToken);
 
     public AuthUser? CurrentUser => IsAuthenticated ? _session?.User : null;
     public AuthSession? CurrentSession => IsAuthenticated ? _session : null;
@@ -68,6 +70,67 @@ public class AuthSessionService : IAuthSessionService
         return true;
     }
 
+    public async Task<bool> RestoreSessionAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsAuthenticated)
+            return true;
+
+        if (_session?.User == null
+            || string.IsNullOrWhiteSpace(_session.Token)
+            || string.IsNullOrWhiteSpace(_session.RefreshToken))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var client = new HttpClient();
+            var baseUrl = _settingsService.Load().ApiBaseUrl?.TrimEnd('/') ?? "https://api.mabasol.com";
+            var payload = JsonSerializer.Serialize(new
+            {
+                token = _session.Token,
+                refreshToken = _session.RefreshToken
+            }, JsonOptions);
+
+            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync($"{baseUrl}/api/v1/auth/refresh-token", content, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _session = null;
+                DeletePersistedSession();
+                AuthenticationChanged?.Invoke(this, EventArgs.Empty);
+                return false;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var refreshed = await JsonSerializer.DeserializeAsync<AuthLoginResponse>(stream, JsonOptions, cancellationToken);
+            if (refreshed == null || string.IsNullOrWhiteSpace(refreshed.Token))
+            {
+                _session = null;
+                DeletePersistedSession();
+                AuthenticationChanged?.Invoke(this, EventArgs.Empty);
+                return false;
+            }
+
+            _session = new AuthSession
+            {
+                Token = refreshed.Token,
+                RefreshToken = refreshed.RefreshToken,
+                ExpiresAt = refreshed.ExpiresAt,
+                User = refreshed.User
+            };
+
+            SaveSession();
+            AuthenticationChanged?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public void Logout()
     {
         _session = null;
@@ -93,8 +156,12 @@ public class AuthSessionService : IAuthSessionService
 
             var json = File.ReadAllText(_sessionFilePath);
             _session = JsonSerializer.Deserialize<AuthSession>(json, JsonOptions);
-            if (!IsAuthenticated)
+            if (_session?.User == null
+                || string.IsNullOrWhiteSpace(_session.Token)
+                || string.IsNullOrWhiteSpace(_session.RefreshToken))
+            {
                 _session = null;
+            }
         }
         catch
         {

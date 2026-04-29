@@ -28,6 +28,7 @@ public class MainViewModel : ViewModelBase
         NavigateCommand = new RelayCommand(Navigate);
         LogoutCommand = new RelayCommand(_ => _authSessionService.Logout());
         _navigation.NavigateTo(_authSessionService.IsAuthenticated ? "Home" : "Login");
+        _ = RestorePersistedSessionIfNeededAsync();
     }
 
     public object? CurrentViewModel => _navigation.CurrentViewModel;
@@ -40,6 +41,16 @@ public class MainViewModel : ViewModelBase
 
     public ICommand NavigateCommand { get; }
     public ICommand LogoutCommand { get; }
+
+    private async Task RestorePersistedSessionIfNeededAsync()
+    {
+        if (_authSessionService.IsAuthenticated || !_authSessionService.HasPersistedSession)
+            return;
+
+        var restored = await _authSessionService.RestoreSessionAsync();
+        if (restored)
+            _navigation.NavigateTo("Home");
+    }
 
     private void Navigate(object? parameter)
     {

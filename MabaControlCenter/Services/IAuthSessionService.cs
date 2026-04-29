@@ -6,11 +6,13 @@ namespace MabaControlCenter.Services;
 public interface IAuthSessionService
 {
     bool IsAuthenticated { get; }
+    bool HasPersistedSession { get; }
     AuthUser? CurrentUser { get; }
     AuthSession? CurrentSession { get; }
     event EventHandler? AuthenticationChanged;
 
     Task<bool> LoginAsync(string email, string password, bool rememberMe, CancellationToken cancellationToken = default);
+    Task<bool> RestoreSessionAsync(CancellationToken cancellationToken = default);
     void Logout();
     HttpClient CreateHttpClient();
 }
