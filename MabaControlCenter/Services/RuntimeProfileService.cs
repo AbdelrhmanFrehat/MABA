@@ -63,25 +63,46 @@ public class RuntimeProfileService : IRuntimeProfileService
                 && profile.MachineDefinitionId == definition.Id
                 && string.Equals(profile.MachineDefinitionVersion, definition.Version, StringComparison.OrdinalIgnoreCase));
 
-            if (hasDefaultProfile)
-                continue;
-
-            var profile = new RuntimeProfile
+            if (!hasDefaultProfile)
             {
-                ProfileName = $"{definition.DisplayNameEn} - Default",
-                ProfileType = RuntimeProfileType.System,
-                MachineDefinitionId = definition.Id,
-                MachineDefinitionVersion = definition.Version,
-                DefinitionSnapshot = Clone(definition),
-                CompatibilityState = DefinitionCompatibilityState.Current,
-                Overrides = new RuntimeProfileOverrides(),
-                CreatedAt = DateTime.UtcNow
-            };
+                var profile = new RuntimeProfile
+                {
+                    ProfileName = $"{definition.DisplayNameEn} - Default",
+                    ProfileType = RuntimeProfileType.System,
+                    MachineDefinitionId = definition.Id,
+                    MachineDefinitionVersion = definition.Version,
+                    DefinitionSnapshot = Clone(definition),
+                    CompatibilityState = DefinitionCompatibilityState.Current,
+                    Overrides = new RuntimeProfileOverrides(),
+                    CreatedAt = DateTime.UtcNow
+                };
 
-            Profiles.Add(profile);
-            if (_activeProfile == null)
-                _activeProfile = profile;
-            created++;
+                Profiles.Add(profile);
+                if (_activeProfile == null)
+                    _activeProfile = profile;
+                created++;
+            }
+
+            if (SupportsSimulation(definition) && !HasSystemSimulationProfile(definition))
+            {
+                var simulationProfile = new RuntimeProfile
+                {
+                    ProfileName = $"{definition.DisplayNameEn} - Simulation",
+                    ProfileType = RuntimeProfileType.System,
+                    MachineDefinitionId = definition.Id,
+                    MachineDefinitionVersion = definition.Version,
+                    DefinitionSnapshot = Clone(definition),
+                    CompatibilityState = DefinitionCompatibilityState.Current,
+                    Overrides = new RuntimeProfileOverrides
+                    {
+                        DriverType = DriverType.Simulated
+                    },
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                Profiles.Add(simulationProfile);
+                created++;
+            }
         }
 
         if (created > 0)
@@ -250,6 +271,21 @@ public class RuntimeProfileService : IRuntimeProfileService
 
     private static bool IsOverrideAllowed(MachineDefinition definition, OverrideField field)
         => definition.ProfileRules.AllowedOverrides.Contains(field);
+
+    private bool HasSystemSimulationProfile(MachineDefinition definition)
+        => Profiles.Any(profile =>
+            profile.ProfileType == RuntimeProfileType.System
+            && profile.MachineDefinitionId == definition.Id
+            && string.Equals(profile.MachineDefinitionVersion, definition.Version, StringComparison.OrdinalIgnoreCase)
+            && (profile.Overrides.DriverType == DriverType.Simulated
+                || string.Equals(profile.ProfileName, $"{definition.DisplayNameEn} - Simulation", StringComparison.OrdinalIgnoreCase)));
+
+    private static bool SupportsSimulation(MachineDefinition definition)
+        => definition.Capabilities.Execution.Simulation
+           || definition.RuntimeBinding.DefaultDriverType == DriverType.Simulated
+           || definition.RuntimeBinding.SupportedDriverTypes.Contains(DriverType.Simulated)
+           || definition.RuntimeBinding.SupportedSetupModes.Contains(SetupMode.SimulationOnly)
+           || definition.RuntimeBinding.SupportedSetupModes.Contains(SetupMode.RealAndSimulation);
 
     private static void ClampOverrides(RuntimeProfile profile, MachineDefinition definition)
     {

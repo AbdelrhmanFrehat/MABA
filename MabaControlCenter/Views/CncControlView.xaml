@@ -1175,7 +1175,8 @@
                                 <ColumnDefinition Width="1*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0">
+                            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0"
+                                    Visibility="{Binding HasToolpathPreviewCapability, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <StackPanel>
                                     <TextBlock Text="G-code Preview Simulation" FontSize="16" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
@@ -1259,7 +1260,8 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+                            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0"
+                                    Visibility="{Binding HasMachineVisualizationCapability, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <StackPanel>
                                     <TextBlock Text="Machine Visualization" FontSize="16" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
@@ -1419,7 +1421,8 @@
                             </DataGrid>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                    <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16"
+                            Visibility="{Binding HasProgressTrackingCapability, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel>
                             <TextBlock Text="Operator Session Log" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
@@ -1528,8 +1531,10 @@
                                 <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DeviceStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Position Source" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
                                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PositionTrackingDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Reported Position" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DeviceReportedPositionText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Reported Position" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"
+                                           Visibility="{Binding HasLiveReportedPositionCapability, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DeviceReportedPositionText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
+                                           Visibility="{Binding HasLiveReportedPositionCapability, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Last Ack" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
                                 <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastAcknowledgementText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
                                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Protocol Status" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
@@ -1639,7 +1644,7 @@
                                             Style="{StaticResource PrimaryButtonStyle}"
                                             Margin="0,0,8,8"/>
                                     <Button Content="Switch Machine"
-                                            Command="{Binding OpenMachineWizardCommand}"
+                                            Command="{Binding OpenMachineSwitchCommand}"
                                             Style="{StaticResource SecondaryButtonStyle}"
                                             Margin="0,0,8,8"/>
                                     <Button Content="Sync Catalog"
@@ -2491,6 +2496,161 @@
                         <Button Grid.Column="3"
                                 Content="{Binding WizardNextButtonText}"
                                 Command="{Binding WizardNextCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.RowSpan="2"
+              Background="#99000000"
+              Visibility="{Binding IsMachineSwitchOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Width="860"
+                    MaxHeight="680"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource BackgroundLightBrush}"
+                    BorderBrush="{DynamicResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="20">
+                <Border.Effect>
+                    <DropShadowEffect Color="#AA000000" BlurRadius="28" ShadowDepth="6" Opacity="0.45"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,18">
+                        <TextBlock Text="Switch Existing Machine"
+                                   FontSize="22"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="Choose from machines you already added. Use Add Machine only for a brand-new machine."
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <StackPanel Visibility="{Binding HasExistingMachines, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Previously Added Machines"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Margin="0,0,0,14"/>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding ExistingMachineCards}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.SelectExistingMachineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource WizardCardButtonStyle}"
+                                                    Height="126"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,12">
+                                                <Grid Margin="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                   FontWeight="SemiBold"
+                                                                   FontSize="16"/>
+                                                        <TextBlock Text="{Binding Subtitle}"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                   Margin="0,4,0,8"
+                                                                   TextWrapping="Wrap"/>
+                                                        <WrapPanel>
+                                                            <Border CornerRadius="8"
+                                                                    Padding="10,5"
+                                                                    Background="{DynamicResource BackgroundLightBrush}"
+                                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                                    BorderThickness="1"
+                                                                    Margin="0,0,8,6">
+                                                                <TextBlock Text="{Binding ProfileText}"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                           FontSize="11"/>
+                                                            </Border>
+                                                            <Border CornerRadius="8"
+                                                                    Padding="10,5"
+                                                                    Background="{DynamicResource BackgroundLightBrush}"
+                                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                                    BorderThickness="1"
+                                                                    Margin="0,0,8,6">
+                                                                <TextBlock Text="{Binding ModeText}"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                           FontSize="11"/>
+                                                            </Border>
+                                                            <Border CornerRadius="8"
+                                                                    Padding="10,5"
+                                                                    Background="{DynamicResource BackgroundLightBrush}"
+                                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                                    BorderThickness="1"
+                                                                    Margin="0,0,8,6">
+                                                                <TextBlock Text="{Binding DriverText}"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                           FontSize="11"/>
+                                                            </Border>
+                                                        </WrapPanel>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding StatusText}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                                               VerticalAlignment="Top"
+                                                               Margin="18,0,0,0"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding HasExistingMachines, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            <TextBlock Text="No added machines found yet."
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock Text="Use Add Machine to onboard your first machine normally."
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       MaxWidth="420"
+                                       Margin="0,0,0,18"/>
+                            <Button Content="Add Machine"
+                                    Command="{Binding OpenMachineWizardCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="2" Margin="0,18,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding MachinePlatformStatus}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="1"
+                                Content="Cancel"
+                                Command="{Binding CloseMachineSwitchCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="12,0,8,0"/>
+                        <Button Grid.Column="2"
+                                Content="Use This Machine"
+                                Command="{Binding ConfirmExistingMachineSwitchCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"/>
                     </Grid>
                 </Grid>

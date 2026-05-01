@@ -67,12 +67,14 @@ public class CncControlViewModel : ViewModelBase
     private string _newRuntimeProfileName = string.Empty;
     private string _machinePlatformStatus = "Machine platform cache not synced yet.";
     private bool _isMachineWizardOpen;
+    private bool _isMachineSwitchOpen;
     private bool _isProfileManagerOpen;
     private MachineWizardStep _wizardStep = MachineWizardStep.Catalog;
     private MachineWizardCard? _wizardSelectedFamilyCard;
     private MachineWizardCard? _wizardSelectedMachineCard;
     private MachineWizardCard? _wizardSelectedModeCard;
     private SetupMode? _wizardSelectedSetupMode;
+    private ExistingMachineCard? _selectedExistingMachineCard;
 
     public CncControlViewModel(
         ICncControllerService cncControllerService,
@@ -110,21 +112,22 @@ public class CncControlViewModel : ViewModelBase
         WizardFamilyCards = new ObservableCollection<MachineWizardCard>();
         WizardMachineCards = new ObservableCollection<MachineWizardCard>();
         WizardModeCards = new ObservableCollection<MachineWizardCard>();
+        ExistingMachineCards = new ObservableCollection<ExistingMachineCard>();
         DriverTypes = Enum.GetValues(typeof(CncDriverType)).Cast<CncDriverType>().ToList();
         HomeOriginOptions = Enum.GetValues(typeof(CncHomeOriginConvention)).Cast<CncHomeOriginConvention>().ToList();
 
         RefreshPortsCommand = new RelayCommand(_ => RefreshPorts());
         ConnectCommand = new RelayCommand(_ => RunAction(() => _cncControllerService.Connect(SelectedPort ?? string.Empty)), _ => !IsConnected && (IsSimulationMode || !string.IsNullOrWhiteSpace(SelectedPort)));
         DisconnectCommand = new RelayCommand(_ => RunAction(() => _cncControllerService.Disconnect()), _ => IsConnected);
-        EnableMotorsCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.EnableMotors()), _ => IsConnected);
-        DisableMotorsCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.DisableMotors()), _ => IsConnected);
-        HomeCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.AutoHome()), _ => IsConnected);
+        EnableMotorsCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.EnableMotors()), _ => CanEnableMotors);
+        DisableMotorsCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.DisableMotors()), _ => CanDisableMotors);
+        HomeCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.AutoHome()), _ => CanHome);
         GoToCenterCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.GoToCenter()), _ => CanGoToCenter);
-        SetZeroCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.SetWorkZero()), _ => IsConnected);
+        SetZeroCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.SetWorkZero()), _ => CanSetZero);
         ResetStateCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.ResetState()), _ => CanResetState);
         ClearWarningCommand = new RelayCommand(_ => RunAction(_cncControllerService.ClearWarning), _ => HasWarning);
         StopCommand = new RelayCommand(async _ => await StopExecutionAsync(), _ => CanStopExecution);
-        RefreshStatusCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.RefreshStatus()), _ => IsConnected);
+        RefreshStatusCommand = new RelayCommand(_ => RunResponseAction(() => _cncControllerService.RefreshStatus()), _ => CanRefreshStatus);
         SaveConfigCommand = new RelayCommand(_ => SaveConfig(), _ => CanSaveSelectedProfile);
         ApplyProfileCommand = new RelayCommand(_ => ApplySelectedProfile(), _ => CanApplySelectedProfile);
         DuplicateProfileCommand = new RelayCommand(_ => DuplicateSelectedProfile(), _ => SelectedProfile != null);
@@ -133,13 +136,17 @@ public class CncControlViewModel : ViewModelBase
         SyncMachineCatalogCommand = new RelayCommand(async _ => await SyncMachineCatalogAsync());
         CreateRuntimeProfileCommand = new RelayCommand(async _ => await CreateRuntimeProfileFromSelectionAsync(), _ => SelectedMachineDefinitionSummary != null);
         OpenMachineWizardCommand = new RelayCommand(_ => OpenMachineWizard());
+        OpenMachineSwitchCommand = new RelayCommand(_ => OpenMachineSwitch());
         CloseMachineWizardCommand = new RelayCommand(_ => CloseMachineWizard());
+        CloseMachineSwitchCommand = new RelayCommand(_ => CloseMachineSwitch());
         WizardBackCommand = new RelayCommand(_ => MoveWizardBack(), _ => CanMoveWizardBack);
         WizardNextCommand = new RelayCommand(async _ => await MoveWizardNextAsync(), _ => CanMoveWizardNext);
         SelectWizardFamilyCommand = new RelayCommand(SelectWizardFamily);
         SelectWizardMachineCommand = new RelayCommand(SelectWizardMachine);
         SelectWizardModeCommand = new RelayCommand(SelectWizardMode);
         ConfirmMachineWizardCommand = new RelayCommand(async _ => await ConfirmMachineWizardAsync(), _ => WizardSelectedMachineDefinition != null);
+        SelectExistingMachineCommand = new RelayCommand(SelectExistingMachine);
+        ConfirmExistingMachineSwitchCommand = new RelayCommand(_ => ConfirmExistingMachineSwitch(), _ => SelectedExistingMachineCard?.RuntimeProfile != null);
         ManageProfilesCommand = new RelayCommand(_ => IsProfileManagerOpen = !IsProfileManagerOpen);
         UseSelectedMachineCommand = new RelayCommand(_ => ConfirmAndActivateSelectedMachine(), _ => SelectedMachineDefinitionSummary != null && SelectedRuntimeProfile != null);
         ActivateRuntimeProfileCommand = new RelayCommand(_ => ActivateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
@@ -152,7 +159,7 @@ public class CncControlViewModel : ViewModelBase
         JogYNegativeCommand = new RelayCommand(_ => Jog("Y", -SelectedJogStep), _ => CanJog);
         JogZPositiveCommand = new RelayCommand(_ => Jog("Z", SelectedJogStep), _ => CanJog);
         JogZNegativeCommand = new RelayCommand(_ => Jog("Z", -SelectedJogStep), _ => CanJog);
-        LoadGcodeCommand = new RelayCommand(_ => LoadGcodeFile());
+        LoadGcodeCommand = new RelayCommand(_ => LoadGcodeFile(), _ => CanLoadGcode);
         ClearLoadedProgramCommand = new RelayCommand(_ => ClearLoadedProgram(), _ => HasLoadedProgram);
         ApplyPlacementCommand = new RelayCommand(_ => ApplyPlacement(), _ => CanApplyPlacement);
         ResetPlacementCommand = new RelayCommand(_ => ResetPlacement(), _ => CanApplyPlacement);
@@ -206,6 +213,7 @@ public class CncControlViewModel : ViewModelBase
             RefreshExecutionState();
         };
 
+        _runtimeProfileService.EnsureSystemProfilesForDefinitions(_machineCatalogService.CachedDefinitions.ToList());
         LoadProfileFields(_cncProfileService.ActiveProfile);
         RefreshActiveMachineContext();
         RefreshPorts();
@@ -236,6 +244,7 @@ public class CncControlViewModel : ViewModelBase
     public ObservableCollection<MachineWizardCard> WizardFamilyCards { get; }
     public ObservableCollection<MachineWizardCard> WizardMachineCards { get; }
     public ObservableCollection<MachineWizardCard> WizardModeCards { get; }
+    public ObservableCollection<ExistingMachineCard> ExistingMachineCards { get; }
     public IReadOnlyList<CncDriverType> DriverTypes { get; }
     public IReadOnlyList<CncHomeOriginConvention> HomeOriginOptions { get; }
     public string MachineCatalogSyncStatus => _machineCatalogService.LastSyncStatus;
@@ -253,6 +262,11 @@ public class CncControlViewModel : ViewModelBase
     {
         get => _isMachineWizardOpen;
         set { if (_isMachineWizardOpen == value) return; _isMachineWizardOpen = value; OnPropertyChanged(); }
+    }
+    public bool IsMachineSwitchOpen
+    {
+        get => _isMachineSwitchOpen;
+        set { if (_isMachineSwitchOpen == value) return; _isMachineSwitchOpen = value; OnPropertyChanged(); }
     }
     public bool IsProfileManagerOpen
     {
@@ -293,6 +307,21 @@ public class CncControlViewModel : ViewModelBase
     public bool HasWizardMachines => _machineCatalogService.DefinitionSummaries.Count > 0;
     public MachineFamily? WizardSelectedMachineFamily => _wizardSelectedFamilyCard?.Family;
     public MachineDefinitionSummary? WizardSelectedMachineDefinition => _wizardSelectedMachineCard?.MachineSummary;
+    public ExistingMachineCard? SelectedExistingMachineCard
+    {
+        get => _selectedExistingMachineCard;
+        set
+        {
+            if (ReferenceEquals(_selectedExistingMachineCard, value))
+                return;
+
+            _selectedExistingMachineCard = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasExistingMachines));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+    public bool HasExistingMachines => ExistingMachineCards.Count > 0;
     public SetupMode? WizardSelectedSetupMode
     {
         get => _wizardSelectedSetupMode;
@@ -398,13 +427,17 @@ public class CncControlViewModel : ViewModelBase
     public ICommand SyncMachineCatalogCommand { get; }
     public ICommand CreateRuntimeProfileCommand { get; }
     public ICommand OpenMachineWizardCommand { get; }
+    public ICommand OpenMachineSwitchCommand { get; }
     public ICommand CloseMachineWizardCommand { get; }
+    public ICommand CloseMachineSwitchCommand { get; }
     public ICommand WizardBackCommand { get; }
     public ICommand WizardNextCommand { get; }
     public ICommand SelectWizardFamilyCommand { get; }
     public ICommand SelectWizardMachineCommand { get; }
     public ICommand SelectWizardModeCommand { get; }
     public ICommand ConfirmMachineWizardCommand { get; }
+    public ICommand SelectExistingMachineCommand { get; }
+    public ICommand ConfirmExistingMachineSwitchCommand { get; }
     public ICommand ManageProfilesCommand { get; }
     public ICommand UseSelectedMachineCommand { get; }
     public ICommand ActivateRuntimeProfileCommand { get; }
@@ -620,6 +653,9 @@ public class CncControlViewModel : ViewModelBase
                           && EffectiveCapabilities.Motion.JogStep
                           && _executionQueueService.ExecutionState is not CncExecutionState.Running and not CncExecutionState.Paused
                           && _cncControllerService.MachineState is CncMachineState.Idle or CncMachineState.Running or CncMachineState.Stopped or CncMachineState.Warning;
+    public bool CanEnableMotors => IsConnected && EffectiveCapabilities.Protocol.MotorEnable;
+    public bool CanDisableMotors => IsConnected && EffectiveCapabilities.Protocol.MotorDisable;
+    public bool CanHome => IsConnected && EffectiveCapabilities.Motion.Homing;
     public bool CanGoToCenter => IsConnected
                                  && _cncControllerService.DeviceStatus.IsResponsive
                                  && MotorsEnabled
@@ -628,6 +664,8 @@ public class CncControlViewModel : ViewModelBase
                                  && _executionQueueService.ExecutionState is not CncExecutionState.Running and not CncExecutionState.Paused
                                  && SupportsXAxis
                                  && SupportsYAxis;
+    public bool CanSetZero => IsConnected && EffectiveCapabilities.Motion.WorkOffset;
+    public bool CanRefreshStatus => IsConnected && EffectiveCapabilities.Protocol.StatusQuery;
 
     public string LastFeedback
     {
@@ -804,6 +842,10 @@ public class CncControlViewModel : ViewModelBase
     public decimal FrameMaxX => _frameBounds.MaxX;
     public decimal FrameMinY => _frameBounds.MinY;
     public decimal FrameMaxY => _frameBounds.MaxY;
+    public bool HasToolpathPreviewCapability => EffectiveCapabilities.Execution.ToolpathPreview;
+    public bool HasMachineVisualizationCapability => EffectiveCapabilities.Visualization.MachineVisualization;
+    public bool HasProgressTrackingCapability => EffectiveCapabilities.Execution.ProgressTracking;
+    public bool HasLiveReportedPositionCapability => EffectiveCapabilities.Protocol.PositionQuery || EffectiveCapabilities.Execution.LiveReportedPosition;
     public bool CanFramePreview => HasLoadedProgram && HasFrameBounds && EffectiveCapabilities.Execution.Frame;
     public decimal PlacementOffsetX
     {
@@ -838,6 +880,7 @@ public class CncControlViewModel : ViewModelBase
         }
     }
     public bool CanApplyPlacement => HasLoadedProgram && _executionQueueService.ExecutionState is not (CncExecutionState.Running or CncExecutionState.Paused);
+    public bool CanLoadGcode => EffectiveCapabilities.FileHandling.LocalFileRun;
     public bool CanPlayPreview => HasLoadedProgram && MotionCommands.Any() && EffectiveCapabilities.Execution.ToolpathPreview && EffectiveCapabilities.Execution.PreviewPlayback && PreviewSimulationState is CncPreviewSimulationState.Ready or CncPreviewSimulationState.Paused or CncPreviewSimulationState.Completed;
     public bool CanPausePreview => PreviewSimulationState == CncPreviewSimulationState.Playing;
     public bool CanStopPreview => PreviewSimulationState is CncPreviewSimulationState.Playing or CncPreviewSimulationState.Paused or CncPreviewSimulationState.Completed;
@@ -854,8 +897,10 @@ public class CncControlViewModel : ViewModelBase
         _executionQueueService.ExecutionState is CncExecutionState.Idle or CncExecutionState.Completed or CncExecutionState.Stopped;
     public bool CanPauseProgram => EffectiveCapabilities.Motion.Pause && _executionQueueService.ExecutionState == CncExecutionState.Running;
     public bool CanResumeProgram => EffectiveCapabilities.Motion.Resume && _executionQueueService.ExecutionState == CncExecutionState.Paused && IsConnected && MotorsEnabled && !HasAlarm;
-    public bool CanStopExecution => _executionQueueService.ExecutionState is CncExecutionState.Running or CncExecutionState.Paused;
-    public bool CanResetState => IsConnected && (HasAlarm || _cncControllerService.MachineState == CncMachineState.Warning);
+    public bool CanStopExecution => EffectiveCapabilities.Motion.Stop && _executionQueueService.ExecutionState is CncExecutionState.Running or CncExecutionState.Paused;
+    public bool CanResetState => IsConnected
+                                 && (HasAlarm || _cncControllerService.MachineState == CncMachineState.Warning)
+                                 && (EffectiveCapabilities.Protocol.AlarmReset || EffectiveCapabilities.Protocol.SoftReset);
     public bool CanApplySelectedProfile => SelectedProfile != null && SelectedProfile.ProfileId != _cncProfileService.ActiveProfile.ProfileId;
     public bool IsSelectedProfileBuiltIn => SelectedProfile?.IsBuiltIn == true;
     public bool CanEditSelectedProfile => SelectedProfile?.IsEditable == true;
@@ -1419,6 +1464,7 @@ public class CncControlViewModel : ViewModelBase
 
     private void OpenMachineWizard()
     {
+        IsMachineSwitchOpen = false;
         _wizardSelectedFamilyCard = null;
         _wizardSelectedMachineCard = null;
         _wizardSelectedModeCard = null;
@@ -1432,6 +1478,33 @@ public class CncControlViewModel : ViewModelBase
     private void CloseMachineWizard()
     {
         IsMachineWizardOpen = false;
+    }
+
+    private void OpenMachineSwitch()
+    {
+        BuildExistingMachineCards();
+        if (ExistingMachineCards.Count == 0)
+        {
+            MachinePlatformStatus = "No previously added machines were found. Add a machine first.";
+            OpenMachineWizard();
+            return;
+        }
+
+        IsMachineWizardOpen = false;
+        IsMachineSwitchOpen = true;
+        SelectedExistingMachineCard = ExistingMachineCards
+            .FirstOrDefault(card => card.RuntimeProfile?.IsActive == true)
+            ?? ExistingMachineCards.FirstOrDefault();
+
+        foreach (var card in ExistingMachineCards)
+            card.IsSelected = ReferenceEquals(card, SelectedExistingMachineCard);
+
+        MachinePlatformStatus = "Choose an existing machine to switch the CNC workspace.";
+    }
+
+    private void CloseMachineSwitch()
+    {
+        IsMachineSwitchOpen = false;
     }
 
     private async Task ConfirmMachineWizardAsync()
@@ -1554,6 +1627,39 @@ public class CncControlViewModel : ViewModelBase
         ActivateRuntimeProfile(SelectedRuntimeProfile);
     }
 
+    private void SelectExistingMachine(object? parameter)
+    {
+        if (parameter is not ExistingMachineCard card || card.RuntimeProfile == null)
+            return;
+
+        foreach (var item in ExistingMachineCards)
+            item.IsSelected = ReferenceEquals(item, card);
+
+        SelectedExistingMachineCard = card;
+    }
+
+    private void ConfirmExistingMachineSwitch()
+    {
+        if (SelectedExistingMachineCard?.RuntimeProfile == null)
+            return;
+
+        var runtimeProfile = SelectedExistingMachineCard.RuntimeProfile;
+        var result = MessageBox.Show(
+            Application.Current.MainWindow,
+            $"Switch to this machine?\n\nMachine: {SelectedExistingMachineCard.Title}\nProfile: {runtimeProfile.ProfileName}\nDriver: {SelectedExistingMachineCard.DriverText}\n\nThis will activate the existing runtime profile without repeating machine setup.",
+            "Switch Machine",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes)
+            return;
+
+        ActivateRuntimeProfile(runtimeProfile);
+        CloseMachineSwitch();
+        MachinePlatformStatus = $"Switched to existing machine '{SelectedExistingMachineCard.Title}'.";
+        AddDiagnostic("Info", MachinePlatformStatus);
+    }
+
     private void ConfirmAndActivateSelectedMachine()
     {
         if (SelectedMachineDefinitionSummary == null || SelectedRuntimeProfile == null)
@@ -1625,6 +1731,8 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedRuntimeProfile));
         OnPropertyChanged(nameof(HasSelectedRuntimeProfile));
         OnPropertyChanged(nameof(CanDeleteSelectedRuntimeProfile));
+        BuildExistingMachineCards();
+        OnPropertyChanged(nameof(HasExistingMachines));
         CommandManager.InvalidateRequerySuggested();
     }
 
@@ -1713,6 +1821,50 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(WizardSyncDisplay));
         OnPropertyChanged(nameof(WizardConnectivityText));
         OnPropertyChanged(nameof(HasWizardMachines));
+    }
+
+    private void BuildExistingMachineCards()
+    {
+        ExistingMachineCards.Clear();
+
+        var cards = _runtimeProfileService.Profiles
+            .Select(runtimeProfile =>
+            {
+                var definition = _machineCatalogService.GetCachedDefinition(runtimeProfile.MachineDefinitionId, runtimeProfile.MachineDefinitionVersion)
+                                 ?? runtimeProfile.DefinitionSnapshot;
+
+                var title = definition?.DisplayNameEn ?? runtimeProfile.ProfileName;
+                var subtitle = FirstNonEmpty(
+                    definition?.FamilyDisplayNameEn,
+                    runtimeProfile.ProfileType == RuntimeProfileType.System ? "Default system machine" : "Custom machine profile",
+                    "Existing machine");
+                var driver = runtimeProfile.Overrides.DriverType
+                             ?? definition?.RuntimeBinding.DefaultDriverType
+                             ?? DriverType.Unknown;
+                var modeText = driver == DriverType.Simulated ? "Simulation" : "Real Hardware";
+
+                return new ExistingMachineCard
+                {
+                    Title = title,
+                    Subtitle = subtitle,
+                    ProfileText = runtimeProfile.ProfileName,
+                    ModeText = modeText,
+                    DriverText = driver.ToString(),
+                    StatusText = runtimeProfile.IsActive ? "Currently active" : "Available to switch",
+                    RuntimeProfile = runtimeProfile,
+                    IsSelected = SelectedExistingMachineCard?.RuntimeProfile?.RuntimeProfileId == runtimeProfile.RuntimeProfileId
+                };
+            })
+            .OrderByDescending(card => card.RuntimeProfile?.IsActive == true)
+            .ThenBy(card => card.Title)
+            .ThenBy(card => card.ModeText)
+            .ToList();
+
+        foreach (var card in cards)
+            ExistingMachineCards.Add(card);
+
+        SelectedExistingMachineCard = cards.FirstOrDefault(card => card.IsSelected)
+                                     ?? cards.FirstOrDefault();
     }
 
     private void BuildWizardSteps()
@@ -1908,6 +2060,23 @@ public class CncControlViewModel : ViewModelBase
         _activeMachineContextService.Resolve(runtimeProfile, liveDefinition);
         OnPropertyChanged(nameof(ActiveMachineContextText));
         OnPropertyChanged(nameof(EffectiveCapabilitiesSummary));
+        OnPropertyChanged(nameof(HasToolpathPreviewCapability));
+        OnPropertyChanged(nameof(HasMachineVisualizationCapability));
+        OnPropertyChanged(nameof(HasProgressTrackingCapability));
+        OnPropertyChanged(nameof(HasLiveReportedPositionCapability));
+        OnPropertyChanged(nameof(CanEnableMotors));
+        OnPropertyChanged(nameof(CanDisableMotors));
+        OnPropertyChanged(nameof(CanHome));
+        OnPropertyChanged(nameof(CanSetZero));
+        OnPropertyChanged(nameof(CanRefreshStatus));
+        OnPropertyChanged(nameof(CanLoadGcode));
+        OnPropertyChanged(nameof(CanStopExecution));
+        OnPropertyChanged(nameof(CanResetState));
+        OnPropertyChanged(nameof(CanFramePreview));
+        OnPropertyChanged(nameof(CanPlayPreview));
+        OnPropertyChanged(nameof(CanPauseProgram));
+        OnPropertyChanged(nameof(CanResumeProgram));
+        OnPropertyChanged(nameof(CanStartProgram));
     }
 
     private void ApplyRuntimeProfileToCncRuntime(RuntimeProfile runtimeProfile)
@@ -2423,7 +2592,17 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(ProtocolErrorText));
         OnPropertyChanged(nameof(DeviceReportedPositionText));
         OnPropertyChanged(nameof(CanJog));
+        OnPropertyChanged(nameof(CanEnableMotors));
+        OnPropertyChanged(nameof(CanDisableMotors));
+        OnPropertyChanged(nameof(CanHome));
         OnPropertyChanged(nameof(CanGoToCenter));
+        OnPropertyChanged(nameof(CanSetZero));
+        OnPropertyChanged(nameof(CanRefreshStatus));
+        OnPropertyChanged(nameof(CanLoadGcode));
+        OnPropertyChanged(nameof(HasToolpathPreviewCapability));
+        OnPropertyChanged(nameof(HasMachineVisualizationCapability));
+        OnPropertyChanged(nameof(HasProgressTrackingCapability));
+        OnPropertyChanged(nameof(HasLiveReportedPositionCapability));
         OnPropertyChanged(nameof(MachineX));
         OnPropertyChanged(nameof(MachineY));
         OnPropertyChanged(nameof(MachineZ));
@@ -2651,5 +2830,24 @@ public sealed class MachineWizardCard : ViewModelBase
             || extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".webp", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".svg", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+public sealed class ExistingMachineCard : ViewModelBase
+{
+    private bool _isSelected;
+
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public string ProfileText { get; set; } = string.Empty;
+    public string ModeText { get; set; } = string.Empty;
+    public string DriverText { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public RuntimeProfile? RuntimeProfile { get; set; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { if (_isSelected == value) return; _isSelected = value; OnPropertyChanged(); }
     }
 }

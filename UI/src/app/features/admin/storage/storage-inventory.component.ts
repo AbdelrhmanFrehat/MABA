@@ -109,15 +109,12 @@ interface ParentRow extends StorageParentDto {
                             />
                         </div>
                         <div class="col-actions">
-                            <p-button icon="pi pi-plus" size="small" [text]="true" severity="secondary" (click)="openVariantDialog(row, null)" pTooltip="Add variant" />
-                            <p-button icon="pi pi-pencil" size="small" [text]="true" severity="secondary" (click)="openParentDialog(row)" pTooltip="Edit item" />
-                            <p-button
-                                [icon]="row.isPublishedToShop ? 'pi pi-eye-slash' : 'pi pi-shopping-bag'"
-                                size="small" [text]="true"
-                                [severity]="row.isPublishedToShop ? 'warn' : 'info'"
-                                (click)="toggleParentShop(row)"
-                                [pTooltip]="row.isPublishedToShop ? 'Unpublish' : 'Publish to shop'" />
-                            <p-button icon="pi pi-trash" size="small" [text]="true" severity="danger" (click)="deleteParent(row)" pTooltip="Delete item" />
+                            <button class="act-btn" (click)="openVariantDialog(row, null)" title="Add variant"><i class="pi pi-plus"></i></button>
+                            <button class="act-btn" (click)="openParentDialog(row)" title="Edit item"><i class="pi pi-pencil"></i></button>
+                            <button class="act-btn" [class.act-btn-warn]="row.isPublishedToShop" (click)="toggleParentShop(row)" [title]="row.isPublishedToShop ? 'Unpublish' : 'Publish to shop'">
+                                <i [class]="row.isPublishedToShop ? 'pi pi-eye-slash' : 'pi pi-shopping-bag'"></i>
+                            </button>
+                            <button class="act-btn act-btn-danger" (click)="deleteParent(row)" title="Delete item"><i class="pi pi-trash"></i></button>
                         </div>
                     </div>
 
@@ -167,14 +164,11 @@ interface ParentRow extends StorageParentDto {
                                                 <p-tag [value]="v.isPublishedToShop ? '✓' : '–'" [severity]="v.isPublishedToShop ? 'success' : 'secondary'" />
                                             </div>
                                             <div class="vc-act">
-                                                <p-button icon="pi pi-pencil" size="small" [text]="true" severity="secondary" (click)="openVariantDialog(row, v)" pTooltip="Edit" />
-                                                <p-button
-                                                    [icon]="v.isPublishedToShop ? 'pi pi-eye-slash' : 'pi pi-shopping-bag'"
-                                                    size="small" [text]="true"
-                                                    [severity]="v.isPublishedToShop ? 'warn' : 'info'"
-                                                    (click)="toggleVariantShop(row, v)"
-                                                    [pTooltip]="v.isPublishedToShop ? 'Unpublish' : 'Publish'" />
-                                                <p-button icon="pi pi-trash" size="small" [text]="true" severity="danger" (click)="deleteVariant(row, v)" pTooltip="Delete" />
+                                                <button class="act-btn" (click)="openVariantDialog(row, v)" title="Edit"><i class="pi pi-pencil"></i></button>
+                                                <button class="act-btn" [class.act-btn-warn]="v.isPublishedToShop" (click)="toggleVariantShop(row, v)" [title]="v.isPublishedToShop ? 'Unpublish' : 'Publish'">
+                                                    <i [class]="v.isPublishedToShop ? 'pi pi-eye-slash' : 'pi pi-shopping-bag'"></i>
+                                                </button>
+                                                <button class="act-btn act-btn-danger" (click)="deleteVariant(row, v)" title="Delete"><i class="pi pi-trash"></i></button>
                                             </div>
                                         </div>
                                     }
@@ -184,11 +178,14 @@ interface ParentRow extends StorageParentDto {
                             <!-- Quick add variant inline form -->
                             <div class="quick-add-form">
                                 <span class="qa-label">Quick add:</span>
-                                <input pInputText class="qa-input" [(ngModel)]="quick.value" placeholder="Value (e.g. 10)" />
-                                <input pInputText class="qa-input qa-sm" [(ngModel)]="quick.valueUnit" placeholder="Unit (kΩ)" />
-                                <input pInputText class="qa-input qa-sm" [(ngModel)]="quick.package" placeholder="Package" />
+                                <input pInputText class="qa-input" [(ngModel)]="quick.value" placeholder="Value (e.g. 10)"
+                                    (ngModelChange)="autoSku(row)" />
+                                <input pInputText class="qa-input qa-sm" [(ngModel)]="quick.valueUnit" placeholder="Unit (kΩ)"
+                                    (ngModelChange)="autoSku(row)" />
+                                <input pInputText class="qa-input qa-sm" [(ngModel)]="quick.package" placeholder="Package"
+                                    (ngModelChange)="autoSku(row)" />
                                 <input pInputText class="qa-input qa-sm" [(ngModel)]="quick.tolerance" placeholder="±%" />
-                                <input pInputText class="qa-input" [(ngModel)]="quick.sku" placeholder="SKU *" />
+                                <input pInputText class="qa-input" [(ngModel)]="quick.sku" placeholder="SKU (auto)" title="Auto-generated — edit to override" />
                                 <input type="number" class="qa-input qa-num" [(ngModel)]="quick.quantity" placeholder="Qty" min="0" />
                                 <p-button label="Add" size="small" [loading]="quickAdding" (click)="quickAddVariant(row)" />
                             </div>
@@ -326,6 +323,20 @@ interface ParentRow extends StorageParentDto {
         .col-num.low-stock { color: #ef4444; font-weight: 700; }
         .col-status { }
         .col-actions { display: flex; gap: 0.1rem; align-items: center; }
+        .act-btn {
+            width: 28px; height: 28px;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: transparent; border: none; border-radius: 5px;
+            color: #6b7280; cursor: pointer; padding: 0;
+            transition: background 0.12s, color 0.12s;
+            font-size: 0.82rem;
+        }
+        .act-btn:hover { background: #f3f4f6; color: #374151; }
+        .act-btn-warn { color: #d97706; }
+        .act-btn-warn:hover { background: #fef3c7; color: #b45309; }
+        .act-btn-danger { color: #ef4444; }
+        .act-btn-danger:hover { background: #fee2e2; color: #dc2626; }
+        .vc-act { display: flex; gap: 0; }
 
         .expand-btn { background: none; border: none; color: #6b7280; cursor: pointer; padding: 0.25rem; border-radius: 4px; display: flex; align-items: center; font-size: 0.75rem; }
         .expand-btn:hover { background: #f3f4f6; color: #374151; }
@@ -611,8 +622,23 @@ export class StorageInventoryComponent implements OnInit {
 
     // ── Quick Add ──────────────────────────────────────────────────────────
 
+    autoSku(row: ParentRow) {
+        // Build SKU from: first 3 letters of parent name + value + valueUnit + package
+        const prefix = row.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase();
+        const val = (this.quick.value || '').replace(/[^a-zA-Z0-9]/g, '');
+        const unit = (this.quick.valueUnit || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const pkg = (this.quick.package || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const parts = [prefix, val + unit, pkg].filter(p => p);
+        this.quick.sku = parts.join('-');
+    }
+
     quickAddVariant(row: ParentRow) {
-        if (!this.quick.sku?.trim()) return this.toast('warn', 'SKU is required for quick add.');
+        // Auto-generate SKU if still blank
+        if (!this.quick.sku?.trim()) this.autoSku(row);
+        if (!this.quick.sku?.trim()) {
+            // Last resort: timestamp-based unique SKU
+            this.quick.sku = `${row.name.replace(/[^a-zA-Z0-9]/g,'').slice(0,4).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+        }
         this.quickAdding = true;
         const req: UpsertStorageVariantRequest = {
             variantLabel: '', sku: this.quick.sku.trim(),
