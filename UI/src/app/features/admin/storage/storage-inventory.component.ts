@@ -294,7 +294,7 @@ interface ParentRow extends StorageParentDto {
         .items-table { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
         .table-head {
             display: grid;
-            grid-template-columns: 2rem 3.5rem 1fr 12rem 6rem 7rem 7rem 10rem;
+            grid-template-columns: 2rem 4.5rem 1fr 12rem 6rem 7rem 7rem 10rem;
             padding: 0.55rem 0.85rem;
             background: #f9fafb;
             border-bottom: 1px solid #e5e7eb;
@@ -304,7 +304,7 @@ interface ParentRow extends StorageParentDto {
         }
         .parent-row {
             display: grid;
-            grid-template-columns: 2rem 3.5rem 1fr 12rem 6rem 7rem 7rem 10rem;
+            grid-template-columns: 2rem 4.5rem 1fr 12rem 6rem 7rem 7rem 10rem;
             padding: 0.65rem 0.85rem;
             border-bottom: 1px solid #f3f4f6;
             align-items: center;
@@ -341,8 +341,8 @@ interface ParentRow extends StorageParentDto {
         .expand-btn { background: none; border: none; color: #6b7280; cursor: pointer; padding: 0.25rem; border-radius: 4px; display: flex; align-items: center; font-size: 0.75rem; }
         .expand-btn:hover { background: #f3f4f6; color: #374151; }
 
-        .item-thumb { width: 32px; height: 28px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; }
-        .thumb-placeholder { width: 32px; height: 28px; background: #f3f4f6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #d1d5db; font-size: 0.9rem; }
+        .item-thumb { width: 44px; height: 38px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; }
+        .thumb-placeholder { width: 44px; height: 38px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #d1d5db; font-size: 1rem; }
         .item-name { font-size: 0.88rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .item-mfr { font-size: 0.75rem; color: #9ca3af; }
         .cat-badge { font-size: 0.72rem; background: #f3f4f6; color: #374151; padding: 0.15rem 0.45rem; border-radius: 3px; }
