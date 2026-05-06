@@ -14,6 +14,7 @@ import { DialogModule } from 'primeng/dialog';
 import { PrintingApiService } from '../../../shared/services/printing-api.service';
 import { LaserApiService } from '../../../shared/services/laser-api.service';
 import { DesignCadRequestService } from '../../../shared/services/design-cad-request.service';
+import { environment } from '../../../../environments/environment';
 import { DesignRequestService } from '../../../shared/services/design-request.service';
 import { CncApiService } from '../../../shared/services/cnc-api.service';
 import { ProjectsApiService } from '../../../shared/services/projects-api.service';
@@ -218,6 +219,19 @@ interface ServiceRequest {
                         <div class="detail-item full-width" *ngIf="selectedRequest.notes">
                             <span class="detail-label">{{ 'requests.notes' | translate }}</span>
                             <span class="detail-value">{{ selectedRequest.notes }}</span>
+                        </div>
+                        <!-- Attachments from server -->
+                        <div class="detail-item full-width" *ngIf="selectedRequestAttachments.length > 0">
+                            <span class="detail-label">Files</span>
+                            <div class="portal-att-list">
+                                <a *ngFor="let att of selectedRequestAttachments"
+                                    [href]="att.downloadUrl" target="_blank" rel="noopener"
+                                    class="portal-att-row">
+                                    <i class="pi pi-file"></i>
+                                    <span>{{ att.fileName }}</span>
+                                    <i class="pi pi-download portal-att-dl"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -462,6 +476,11 @@ interface ServiceRequest {
             color: #667eea;
         }
 
+        .portal-att-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+        .portal-att-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; background: #f8f9ff; border: 1px solid #e0e7ff; border-radius: 8px; text-decoration: none; color: #374151; font-size: 0.85rem; transition: background 0.15s; }
+        .portal-att-row:hover { background: #eff2ff; }
+        .portal-att-dl { margin-left: auto; color: #667eea; }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -492,6 +511,7 @@ export class AccountRequestsComponent implements OnInit {
 
     showViewDialog = false;
     selectedRequest: ServiceRequest | null = null;
+    selectedRequestAttachments: { id: string; fileName: string; downloadUrl: string }[] = [];
     /** Open this request after list loads (e.g. email deep link). */
     private pendingOpenRequestId: string | null = null;
 
@@ -751,7 +771,22 @@ export class AccountRequestsComponent implements OnInit {
 
     viewRequest(request: ServiceRequest) {
         this.selectedRequest = request;
+        this.selectedRequestAttachments = [];
         this.showViewDialog = true;
+        // Load attachments for CAD requests
+        if (request.type === 'designCad') {
+            this.designCadService.getById(request.id).subscribe({
+                next: (full: any) => {
+                    const apiBase = (environment.apiUrl || '').replace(/\/api\/v1\/?$/, '');
+                    this.selectedRequestAttachments = (full?.attachments || []).map((a: any) => ({
+                        id: a.id,
+                        fileName: a.fileName,
+                        downloadUrl: `${apiBase}/api/v1/design-cad-requests/${request.id}/attachments/${a.id}`
+                    }));
+                },
+                error: () => {}
+            });
+        }
     }
 
     private tryOpenRequestFromQuery() {

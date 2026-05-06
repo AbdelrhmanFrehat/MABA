@@ -170,12 +170,18 @@ import {
                     </div>
                         <div class="detail-item full-width" *ngIf="selectedRequest.description"><label>{{ 'designCad.new.description' | translate }}</label><p class="notes-text">{{ selectedRequest.description }}</p></div>
                         <div class="detail-item"><label>{{ 'admin.cadRequests.created' | translate }}</label><span>{{ formatDate(selectedRequest.createdAt) }}</span></div>
-                        <div class="detail-item full-width" *ngIf="(selectedRequest.attachments?.length ?? 0) > 0">
-                            <label>{{ 'admin.cadRequests.attachments' | translate }}</label>
-                            <div class="attachment-list">
+                        <!-- Files section -->
+                        <div class="detail-item full-width files-section">
+                            <div class="files-header">
+                                <label>Files &amp; Attachments</label>
+                                <span class="att-count" *ngIf="selectedRequest.attachments?.length">{{ selectedRequest.attachments?.length }} file(s)</span>
+                            </div>
+
+                            <!-- Existing attachments -->
+                            <div class="attachment-list" *ngIf="(selectedRequest.attachments?.length ?? 0) > 0">
                                 @for (att of selectedRequest.attachments; track att.id) {
                                     <div class="attachment-row">
-                                        <i class="pi pi-file"></i>
+                                        <i [class]="getFileIcon(att.fileName)"></i>
                                         <span class="att-name">{{ att.fileName }}</span>
                                         <span class="att-size">{{ formatFileSize(att.fileSizeBytes) }}</span>
                                         <button class="att-download-btn" (click)="downloadAttachment(att)" pTooltip="Download" tooltipPosition="top">
@@ -183,6 +189,32 @@ import {
                                         </button>
                                     </div>
                                 }
+                            </div>
+
+                            <!-- Upload new files -->
+                            <div class="upload-section">
+                                <input type="file" #attFileInput multiple
+                                    accept=".png,.jpg,.jpeg,.webp,.pdf,.step,.stp,.stl,.obj,.dxf,.dwg,.zip"
+                                    class="hidden-input-att"
+                                    (change)="onAttFilesSelected($event)" />
+                                <div class="upload-drop-row" (click)="attFileInput.click()">
+                                    <i class="pi pi-upload"></i>
+                                    <span>{{ pendingAttFiles.length ? pendingAttFiles.length + ' file(s) ready to upload' : 'Click to attach files (images, PDFs, CAD files…)' }}</span>
+                                </div>
+                                <div class="pending-files" *ngIf="pendingAttFiles.length > 0">
+                                    @for (f of pendingAttFiles; track f.name) {
+                                        <div class="pending-row">
+                                            <i [class]="getFileIcon(f.name)"></i>
+                                            <span class="att-name">{{ f.name }}</span>
+                                            <span class="att-size">{{ formatFileSize(f.size) }}</span>
+                                            <button class="att-download-btn" (click)="removePendingFile(f)" title="Remove"><i class="pi pi-times"></i></button>
+                                        </div>
+                                    }
+                                    <button class="upload-btn" [disabled]="uploadingFiles" (click)="uploadPendingFiles()">
+                                        <i [class]="uploadingFiles ? 'pi pi-spin pi-spinner' : 'pi pi-cloud-upload'"></i>
+                                        {{ uploadingFiles ? 'Uploading…' : 'Upload ' + pendingAttFiles.length + ' file(s)' }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -383,6 +415,19 @@ import {
         .att-download-btn { margin-left: auto; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #667eea; cursor: pointer; transition: background 0.15s, border-color 0.15s; flex-shrink: 0; }
         .att-download-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
         .att-download-btn .pi { font-size: 0.8rem; }
+        /* Files section */
+        .files-section { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem; }
+        .files-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .files-header label { font-weight: 700; font-size: 0.85rem; margin: 0; }
+        .att-count { font-size: 0.75rem; background: #f3f4f6; color: #6b7280; padding: 0.1rem 0.5rem; border-radius: 999px; }
+        .hidden-input-att { display: none; }
+        .upload-section { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .upload-drop-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.85rem; border: 1.5px dashed #c7d2fe; border-radius: 8px; background: #f8f9ff; color: #667eea; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.15s; }
+        .upload-drop-row:hover { background: #eff2ff; }
+        .pending-files { display: flex; flex-direction: column; gap: 0.35rem; }
+        .pending-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.5rem; background: #f0f2ff; border-radius: 6px; font-size: 0.83rem; }
+        .upload-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.55rem 1.25rem; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; margin-top: 0.25rem; }
+        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .edit-content { padding: 0.5rem 0; }
         .form-field { margin-bottom: 1rem; }
         .form-field label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #475569; }
@@ -413,6 +458,8 @@ export class DesignCadRequestsListComponent implements OnInit {
     statusOptions: { value: ServiceWorkflowStatus; label: string }[] = [];
 
     showViewDialog = false;
+    pendingAttFiles: File[] = [];
+    uploadingFiles = false;
     showEditDialog = false;
     selectedRequest: DesignCadRequestDto | null = null;
     editStatus: ServiceWorkflowStatus = 'New';
@@ -550,6 +597,7 @@ export class DesignCadRequestsListComponent implements OnInit {
 
     viewRequest(req: DesignCadRequestDto) {
         this.selectedRequest = req;
+        this.pendingAttFiles = [];
         if ((req.attachments?.length ?? 0) === 0 && (req.attachmentCount ?? 0) > 0) {
             this.designCadService.getById(req.id).subscribe({
                 next: (full) => {
@@ -635,6 +683,49 @@ export class DesignCadRequestsListComponent implements OnInit {
             MechanicalAssembly: 'تجميع ميكانيكي'
         };
         return (this.languageService.language === 'ar' ? labelsAr : labelsEn)[type] ?? type;
+    }
+
+    onAttFilesSelected(event: Event) {
+        const files = Array.from((event.target as HTMLInputElement).files || []);
+        (event.target as HTMLInputElement).value = '';
+        this.pendingAttFiles = [...this.pendingAttFiles, ...files];
+    }
+
+    removePendingFile(file: File) {
+        this.pendingAttFiles = this.pendingAttFiles.filter(f => f !== file);
+    }
+
+    uploadPendingFiles() {
+        if (!this.selectedRequest || this.pendingAttFiles.length === 0) return;
+        this.uploadingFiles = true;
+        this.designCadService.uploadAttachments(this.selectedRequest.id, this.pendingAttFiles).subscribe({
+            next: (added) => {
+                this.uploadingFiles = false;
+                this.pendingAttFiles = [];
+                // Merge new attachments into the selected request
+                if (this.selectedRequest) {
+                    this.selectedRequest = {
+                        ...this.selectedRequest,
+                        attachments: [...(this.selectedRequest.attachments || []), ...added],
+                        attachmentCount: (this.selectedRequest.attachmentCount || 0) + added.length
+                    } as any;
+                }
+                this.messageService.add({ severity: 'success', summary: 'Done', detail: `${added.length} file(s) uploaded successfully.`, life: 3000 });
+            },
+            error: () => {
+                this.uploadingFiles = false;
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'File upload failed.', life: 4000 });
+            }
+        });
+    }
+
+    getFileIcon(fileName: string): string {
+        const ext = (fileName || '').split('.').pop()?.toLowerCase();
+        if (['jpg','jpeg','png','webp','gif'].includes(ext || '')) return 'pi pi-image';
+        if (ext === 'pdf') return 'pi pi-file-pdf';
+        if (['zip','rar'].includes(ext || '')) return 'pi pi-file-export';
+        if (['step','stp','stl','obj','dxf','dwg'].includes(ext || '')) return 'pi pi-box';
+        return 'pi pi-file';
     }
 
     downloadAttachment(att: { id: string; fileName: string; fileSizeBytes: number; uploadedAt: string }) {

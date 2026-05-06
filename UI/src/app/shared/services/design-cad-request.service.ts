@@ -121,7 +121,17 @@ export class DesignCadRequestService {
         return this.http.put<DesignCadRequestDto>(`${this.baseUrl}/${id}/status`, payload);
     }
 
+    uploadAttachments(requestId: string, files: File[]): Observable<any[]> {
+        const form = new FormData();
+        files.forEach(f => form.append('files', f));
+        return this.http.post<any[]>(`${this.baseUrl}/${requestId}/attachments/upload`, form);
+    }
+
     downloadAttachment(requestId: string, attachmentId: string): Observable<Blob> {
         return this.http.get(`${this.baseUrl}/${requestId}/attachments/${attachmentId}`, { responseType: 'blob' });
+    }
+
+    getAttachmentUrl(requestId: string, attachmentId: string): string {
+        return `${this.baseUrl}/${requestId}/attachments/${attachmentId}`;
     }
 }

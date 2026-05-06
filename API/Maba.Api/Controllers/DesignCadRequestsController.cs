@@ -367,6 +367,63 @@ public class DesignCadRequestsController : ControllerBase
     }
 
     /// <summary>
+    /// Upload one or more files to an existing request (admin or request owner).
+    /// </summary>
+    [HttpPost("{id}/attachments/upload")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<List<DesignCadAttachmentDto>>> UploadAttachments(
+        Guid id,
+        IFormFileCollection files,
+        CancellationToken cancellationToken)
+    {
+        var request = await _context.Set<DesignCadServiceRequest>().FindAsync(new object[] { id }, cancellationToken);
+        if (request == null) return NotFound();
+
+        var isAdmin = User.IsInRole("Admin") || User.IsInRole("Manager");
+        if (!isAdmin)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var uid) || request.UserId != uid)
+                return Forbid();
+        }
+
+        if (files == null || files.Count == 0) return BadRequest("No files provided.");
+        if (files.Count > MaxFiles) return BadRequest($"Maximum {MaxFiles} files.");
+
+        var added = new List<DesignCadAttachmentDto>();
+        foreach (var file in files)
+        {
+            if (file.Length == 0) continue;
+            if (file.Length > MaxFileSizeBytes) return BadRequest($"{file.FileName} exceeds 50 MB.");
+
+            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant() ?? "";
+            if (!AllowedExtensions.Contains(ext)) return BadRequest($"File type not allowed: {file.FileName}");
+
+            var safeName = SanitizeFileName(file.FileName);
+            var storedName = $"{Guid.NewGuid()}_{safeName}";
+            string filePath;
+            await using (var stream = file.OpenReadStream())
+                filePath = await _fileStorage.SaveFileAsync(stream, storedName, file.ContentType ?? "application/octet-stream", "design-cad-requests");
+
+            var attachment = new DesignCadServiceRequestAttachment
+            {
+                Id = Guid.NewGuid(),
+                RequestId = id,
+                FileName = file.FileName,
+                FilePath = filePath,
+                FileSizeBytes = file.Length,
+                ContentType = file.ContentType ?? "application/octet-stream",
+                UploadedAt = DateTime.UtcNow
+            };
+            _context.Set<DesignCadServiceRequestAttachment>().Add(attachment);
+            added.Add(new DesignCadAttachmentDto { Id = attachment.Id, FileName = attachment.FileName, FileSizeBytes = attachment.FileSizeBytes, UploadedAt = attachment.UploadedAt });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return Ok(added);
+    }
+
+    /// <summary>
     /// Update request status (admin/manager).
     /// </summary>
     [HttpPut("{id}/status")]
