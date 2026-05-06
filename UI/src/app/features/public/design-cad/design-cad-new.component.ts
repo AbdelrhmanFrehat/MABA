@@ -157,7 +157,7 @@ const REQUEST_SCENARIO_CARDS: { key: CadRequestScenario; icon: string; titleKey:
                                         @if (selectedScenario() === 'ideaOnly') {
                                             <div class="form-group">
                                                 <label>{{ 'designCad.new.intendedUse' | translate }} <span class="required">*</span></label>
-                                                <input pInputText formControlName="intendedUse" class="w-full" placeholder="e.g. Wall bracket for a small sensor enclosure" />
+                                                <textarea pTextarea formControlName="intendedUse" rows="3" class="w-full" placeholder="e.g. Wall bracket for a small sensor enclosure — describe the purpose, environment, and any special requirements"></textarea>
                                             </div>
                                             <div class="form-group">
                                                 <label>{{ 'designCad.new.materialPreference' | translate }}</label>
@@ -193,11 +193,11 @@ const REQUEST_SCENARIO_CARDS: { key: CadRequestScenario; icon: string; titleKey:
                                             </div>
                                             <div class="form-group">
                                                 <label>{{ 'designCad.new.criticalSurfaces' | translate }}</label>
-                                                <textarea pTextarea formControlName="criticalSurfaces" rows="2" class="w-full" placeholder="e.g. Outer clip edges and center shaft profile are critical"></textarea>
+                                                <textarea pTextarea formControlName="criticalSurfaces" rows="3" class="w-full" placeholder="e.g. Outer clip edges and center shaft profile are critical"></textarea>
                                             </div>
                                             <div class="form-group">
                                                 <label>{{ 'designCad.new.fitmentRequirements' | translate }}</label>
-                                                <textarea pTextarea formControlName="fitmentRequirements" rows="2" class="w-full" placeholder="e.g. Must snap into original housing and rotate smoothly"></textarea>
+                                                <textarea pTextarea formControlName="fitmentRequirements" rows="3" class="w-full" placeholder="e.g. Must snap into original housing and rotate smoothly"></textarea>
                                             </div>
                                         }
                                         @if (selectedScenario() === 'physicalObject') {
@@ -278,7 +278,7 @@ const REQUEST_SCENARIO_CARDS: { key: CadRequestScenario; icon: string; titleKey:
                                         </div>
                                         <div class="form-group">
                                             <label>{{ 'designCad.new.additionalNotes' | translate }}</label>
-                                            <textarea pTextarea formControlName="additionalNotes" rows="2" class="w-full"></textarea>
+                                            <textarea pTextarea formControlName="additionalNotes" rows="4" class="w-full"></textarea>
                                         </div>
                                     </div>
                                 </div>

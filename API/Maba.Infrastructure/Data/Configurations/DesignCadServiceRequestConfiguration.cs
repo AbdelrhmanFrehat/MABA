@@ -16,18 +16,19 @@ public class DesignCadServiceRequestConfiguration : IEntityTypeConfiguration<Des
         builder.HasIndex(r => r.ReferenceNumber).IsUnique();
 
         builder.Property(r => r.Title).IsRequired().HasMaxLength(500);
-        builder.Property(r => r.Description).HasMaxLength(4000);
-        builder.Property(r => r.IntendedUse).HasMaxLength(200);
-        builder.Property(r => r.MaterialNotes).HasMaxLength(500);
-        builder.Property(r => r.DimensionsNotes).HasMaxLength(1000);
-        builder.Property(r => r.ToleranceNotes).HasMaxLength(1000);
-        builder.Property(r => r.WhatNeedsChange).HasMaxLength(2000);
-        builder.Property(r => r.CriticalSurfaces).HasMaxLength(1000);
-        builder.Property(r => r.FitmentRequirements).HasMaxLength(1000);
-        builder.Property(r => r.PurposeAndConstraints).HasMaxLength(2000);
-        builder.Property(r => r.Deadline).HasMaxLength(100);
-        builder.Property(r => r.CustomerNotes).HasMaxLength(2000);
-        builder.Property(r => r.AdminNotes).HasMaxLength(4000);
+        // Free-text fields — no artificial length cap so customers can be thorough
+        builder.Property(r => r.Description);
+        builder.Property(r => r.IntendedUse);
+        builder.Property(r => r.MaterialNotes);
+        builder.Property(r => r.DimensionsNotes);
+        builder.Property(r => r.ToleranceNotes);
+        builder.Property(r => r.WhatNeedsChange);
+        builder.Property(r => r.CriticalSurfaces);
+        builder.Property(r => r.FitmentRequirements);
+        builder.Property(r => r.PurposeAndConstraints);
+        builder.Property(r => r.Deadline).HasMaxLength(200);
+        builder.Property(r => r.CustomerNotes);
+        builder.Property(r => r.AdminNotes);
         builder.Property(r => r.CustomerName).HasMaxLength(200);
         builder.Property(r => r.CustomerEmail).HasMaxLength(255);
         builder.Property(r => r.CustomerPhone).HasMaxLength(50);
