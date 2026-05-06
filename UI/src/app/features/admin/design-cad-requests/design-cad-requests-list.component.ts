@@ -14,7 +14,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { TextareaModule } from 'primeng/textarea';
 import { MessageService } from 'primeng/api';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { DesignCadRequestService } from '../../../shared/services/design-cad-request.service';
+import { UsersApiService, UserSearchResult } from '../../../shared/services/users-api.service';
 import { LanguageService } from '../../../shared/services/language.service';
 import { ServiceRequestStatusBadgeComponent } from '../../../shared/components/service-request-status-badge/service-request-status-badge.component';
 import type { DesignCadRequestDto } from '../../../shared/models/design-cad-request.model';
@@ -41,6 +43,7 @@ import {
         ToastModule,
         DialogModule,
         ProgressSpinnerModule,
+        AutoCompleteModule,
         TooltipModule,
         TextareaModule,
         TranslateModule,
@@ -55,6 +58,12 @@ import {
                     <h1>{{ 'admin.cadRequests.title' | translate }}</h1>
                     <p class="subtitle">{{ 'admin.cadRequests.subtitle' | translate }}</p>
                 </div>
+                <p-button
+                    label="Create for Customer"
+                    icon="pi pi-plus"
+                    size="small"
+                    (click)="openCreateForCustomerDialog()">
+                </p-button>
             </div>
 
             <p-card class="filters-card">
@@ -238,13 +247,113 @@ import {
                 <p-button [label]="'common.save' | translate" (onClick)="saveRequest()" [loading]="saving"></p-button>
             </ng-template>
         </p-dialog>
+
+        <!-- ── Create for Customer Dialog ── -->
+        <p-dialog [(visible)]="showCreateForCustomer" [modal]="true" [style]="{width:'580px'}" [draggable]="false">
+            <ng-template pTemplate="header">
+                <div class="dlg-header">
+                    <span class="dlg-label">CAD Requests</span>
+                    <span class="dlg-title">Create Request for Customer</span>
+                </div>
+            </ng-template>
+            <div class="create-form">
+                <div class="section-title">Customer</div>
+
+                <!-- User search -->
+                <div class="ff">
+                    <label>Search existing account <span class="optional">(type name or email)</span></label>
+                    <p-autocomplete
+                        [(ngModel)]="userSearchText"
+                        [suggestions]="userSuggestions"
+                        (completeMethod)="searchUsers($event)"
+                        (onSelect)="onUserSelected($event)"
+                        (onClear)="onUserCleared()"
+                        (onUnselect)="onUserCleared()"
+                        optionLabel="fullName"
+                        [forceSelection]="true"
+                        [showClear]="true"
+                        [minLength]="1"
+                        emptyMessage="No users found"
+                        placeholder="Type name or email to search…"
+                        styleClass="w-full"
+                        appendTo="body">
+                        <ng-template let-u pTemplate="item">
+                            <div class="user-option">
+                                <span class="user-name">{{ u.fullName }}</span>
+                                <span class="user-email">{{ u.email }}</span>
+                            </div>
+                        </ng-template>
+                    </p-autocomplete>
+                    <small *ngIf="selectedUser?.id" class="linked-hint">
+                        <i class="pi pi-link"></i> Linked to <strong>{{ selectedUser!.fullName }}</strong> — request will appear in their portal
+                    </small>
+                    <small *ngIf="!selectedUser?.id" class="or-manual">— or fill in manually below —</small>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="ff"><label>Customer Name *</label><input pInputText [(ngModel)]="cf.customerName" class="w-full" placeholder="Full name" /></div>
+                    <div class="ff"><label>Customer Phone</label><input pInputText [(ngModel)]="cf.customerPhone" class="w-full" placeholder="+972..." /></div>
+                </div>
+                <div class="ff"><label>Customer Email</label><input pInputText [(ngModel)]="cf.customerEmail" class="w-full" type="email" placeholder="customer@email.com" /></div>
+
+                <div class="section-title mt">Request Details</div>
+                <div class="ff"><label>Title *</label><input pInputText [(ngModel)]="cf.title" class="w-full" placeholder="e.g. Bracket for sensor housing" /></div>
+                <div class="ff">
+                    <label>Request Type</label>
+                    <select class="native-select w-full" [(ngModel)]="cf.requestType">
+                        <option value="ideaOnly">Idea only (concept)</option>
+                        <option value="existingCad">Existing CAD — needs changes</option>
+                        <option value="reverseEngineering">Reverse engineering from physical part</option>
+                        <option value="physicalObject">Physical object to model</option>
+                        <option value="modifyProduct">Modify existing product</option>
+                        <option value="mechanicalAssembly">Mechanical assembly</option>
+                    </select>
+                </div>
+                <div class="ff"><label>Description *</label>
+                    <textarea pInputText rows="4" [(ngModel)]="cf.description" class="w-full" placeholder="Describe what the customer needs in detail…"></textarea>
+                </div>
+                <div class="ff"><label>Intended Use</label>
+                    <textarea pInputText rows="2" [(ngModel)]="cf.intendedUse" class="w-full" placeholder="What will the part be used for?"></textarea>
+                </div>
+                <div class="form-row-2">
+                    <div class="ff"><label>Material Notes</label><input pInputText [(ngModel)]="cf.materialNotes" class="w-full" placeholder="PLA, aluminum, etc." /></div>
+                    <div class="ff"><label>Deadline</label><input pInputText [(ngModel)]="cf.deadline" class="w-full" placeholder="e.g. 2 weeks" /></div>
+                </div>
+                <div class="ff"><label>Customer Notes / Special Requests</label>
+                    <textarea pInputText rows="2" [(ngModel)]="cf.customerNotes" class="w-full"></textarea>
+                </div>
+                <div class="ff"><label>Internal Admin Notes <span class="optional">(not shown to customer)</span></label>
+                    <textarea pInputText rows="2" [(ngModel)]="cf.adminNotes" class="w-full" placeholder="e.g. Called on 29 Apr, budget ~500 ILS"></textarea>
+                </div>
+            </div>
+            <ng-template pTemplate="footer">
+                <p-button label="Cancel" [text]="true" (click)="showCreateForCustomer = false" />
+                <p-button label="Create Request" icon="pi pi-check" [loading]="creatingForCustomer" (click)="submitCreateForCustomer()" />
+            </ng-template>
+        </p-dialog>
         </div>
     `,
     styles: [`
         .cad-requests-container { padding: 1.5rem; }
-        .page-header { margin-bottom: 1.5rem; }
+        .page-header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; }
+        .header-content { flex: 1; }
         .page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #1e293b; }
         .subtitle { margin: 0.25rem 0 0; color: #64748b; font-size: 0.875rem; }
+        /* Create-for-customer dialog */
+        .create-form { display: flex; flex-direction: column; gap: 0.8rem; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #667eea; border-bottom: 1px solid #e0e7ff; padding-bottom: 0.3rem; }
+        .section-title.mt { margin-top: 0.4rem; }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .ff { display: flex; flex-direction: column; gap: 0.3rem; }
+        .ff label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+        .optional { font-weight: 400; font-size: 0.72rem; color: #9ca3af; }
+        .w-full { width: 100%; box-sizing: border-box; }
+        .native-select { height: 36px; padding: 0 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: #fff; color: #374151; }
+        .user-option { display: flex; flex-direction: column; gap: 1px; padding: 0.1rem 0; }
+        .user-name { font-weight: 600; font-size: 0.875rem; color: #111827; }
+        .user-email { font-size: 0.78rem; color: #9ca3af; }
+        .linked-hint { color: #059669; font-size: 0.78rem; display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
+        .or-manual { color: #9ca3af; font-size: 0.75rem; text-align: center; display: block; margin: 0.1rem 0; }
         .filters-card { margin-bottom: 1.5rem; }
         .filters-grid { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
         .filter-item { min-width: 180px; }
@@ -312,6 +421,90 @@ export class DesignCadRequestsListComponent implements OnInit {
     editQuotedPrice: number | null = null;
     editCustomerMessage = '';
     saving = false;
+
+    // ── Create for Customer ──────────────────────────────────────────────────
+    showCreateForCustomer = false;
+    creatingForCustomer = false;
+    cf = this.emptyCf();
+    selectedUser: UserSearchResult | null = null;
+    userSearchText: UserSearchResult | string | null = null;
+    userSuggestions: UserSearchResult[] = [];
+    private usersApi = inject(UsersApiService);
+
+    private emptyCf() {
+        return {
+            customerName: '', customerEmail: '', customerPhone: '',
+            requestType: 'ideaOnly', title: '', description: '',
+            intendedUse: '', materialNotes: '', deadline: '',
+            customerNotes: '', adminNotes: ''
+        };
+    }
+
+    openCreateForCustomerDialog() {
+        this.cf = this.emptyCf();
+        this.selectedUser = null;
+        this.userSearchText = null;
+        this.userSuggestions = [];
+        this.showCreateForCustomer = true;
+    }
+
+    searchUsers(event: { query: string }) {
+        if (!event.query?.trim()) { this.userSuggestions = []; return; }
+        this.usersApi.searchUsers(event.query.trim(), 15).subscribe({
+            next: (users) => { this.userSuggestions = users || []; },
+            error: () => { this.userSuggestions = []; }
+        });
+    }
+
+    onUserSelected(event: any) {
+        const user: UserSearchResult = event?.value ?? event;
+        this.selectedUser = user;
+        this.cf.customerName  = user.fullName || '';
+        this.cf.customerEmail = user.email || '';
+        this.cf.customerPhone = user.phone || '';
+    }
+
+    onUserCleared() {
+        this.selectedUser = null;
+        this.userSearchText = null;
+    }
+
+    submitCreateForCustomer() {
+        if (!this.cf.customerName.trim() && !this.cf.customerEmail.trim()) {
+            this.messageService.add({ severity: 'warn', summary: 'Required', detail: 'Enter at least a customer name or email.' });
+            return;
+        }
+        if (!this.cf.title.trim()) {
+            this.messageService.add({ severity: 'warn', summary: 'Required', detail: 'Title is required.' });
+            return;
+        }
+        this.creatingForCustomer = true;
+        this.designCadService.adminCreateForCustomer({
+            userId: this.selectedUser?.id || undefined,
+            customerName: this.cf.customerName.trim() || undefined,
+            customerEmail: this.cf.customerEmail.trim() || undefined,
+            customerPhone: this.cf.customerPhone.trim() || undefined,
+            requestType: this.cf.requestType,
+            title: this.cf.title.trim(),
+            description: this.cf.description.trim() || undefined,
+            intendedUse: this.cf.intendedUse.trim() || undefined,
+            materialNotes: this.cf.materialNotes.trim() || undefined,
+            deadline: this.cf.deadline.trim() || undefined,
+            customerNotes: this.cf.customerNotes.trim() || undefined,
+            adminNotes: this.cf.adminNotes.trim() || undefined
+        }).subscribe({
+            next: () => {
+                this.creatingForCustomer = false;
+                this.showCreateForCustomer = false;
+                this.loadRequests();
+                this.messageService.add({ severity: 'success', summary: 'Created', detail: 'Request created. Confirmation email sent if email was provided.' });
+            },
+            error: (err) => {
+                this.creatingForCustomer = false;
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message || 'Failed to create request.' });
+            }
+        });
+    }
 
     get viewDialogTitle(): string {
         return this.translate.instant('admin.cadRequests.viewDetails');

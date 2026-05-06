@@ -268,6 +268,80 @@ public class DesignCadRequestsController : ControllerBase
     }
 
     /// <summary>
+    /// Admin: create a request on behalf of a customer (JSON body, no file upload).
+    /// </summary>
+    [HttpPost("admin/create-for-customer")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<DesignCadRequestDto>> AdminCreateForCustomer(
+        [FromBody] AdminCreateDesignCadDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Title))
+            return BadRequest(new { message = "Title is required." });
+        if (string.IsNullOrWhiteSpace(dto.CustomerEmail) && string.IsNullOrWhiteSpace(dto.CustomerName))
+            return BadRequest(new { message = "At least customer name or email is required." });
+
+        if (!TryParseRequestType(dto.RequestType ?? "ideaOnly", out var requestTypeEnum))
+            requestTypeEnum = DesignCadRequestType.IdeaOnly;
+
+        // If a user account is selected, use their profile details
+        User? linkedUser = null;
+        if (dto.UserId.HasValue)
+            linkedUser = await _context.Set<User>().AsNoTracking().FirstOrDefaultAsync(u => u.Id == dto.UserId.Value, cancellationToken);
+
+        var customerName  = linkedUser?.FullName ?? dto.CustomerName?.Trim();
+        var customerEmail = linkedUser?.Email    ?? dto.CustomerEmail?.Trim();
+        var customerPhone = linkedUser?.Phone    ?? dto.CustomerPhone?.Trim();
+
+        var referenceNumber = $"DCAD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
+
+        var request = new DesignCadServiceRequest
+        {
+            Id = Guid.NewGuid(),
+            ReferenceNumber = referenceNumber,
+            UserId = linkedUser?.Id,
+            RequestType = requestTypeEnum,
+            Title = dto.Title.Trim(),
+            Description = dto.Description?.Trim(),
+            IntendedUse = dto.IntendedUse?.Trim(),
+            MaterialNotes = dto.MaterialNotes?.Trim(),
+            DimensionsNotes = dto.DimensionsNotes?.Trim(),
+            Deadline = dto.Deadline?.Trim(),
+            CustomerNotes = dto.CustomerNotes?.Trim(),
+            AdminNotes = dto.AdminNotes?.Trim(),
+            Status = DesignCadRequestStatus.Pending,
+            HasPhysicalPart = false,
+            LegalConfirmation = true,
+            CanDeliverPhysicalPart = false,
+            CustomerName  = customerName,
+            CustomerEmail = customerEmail,
+            CustomerPhone = customerPhone
+        };
+
+        _context.Set<DesignCadServiceRequest>().Add(request);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Send confirmation email to the customer if we have their email
+        if (!string.IsNullOrWhiteSpace(customerEmail))
+        {
+            try
+            {
+                var frontendBase = _configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://mabasol.com";
+                var viewUrl = $"{frontendBase}/account/requests?type=designCad&requestId={request.Id}";
+                await _emailService.SendRequestConfirmationAsync(
+                    customerEmail, customerName,
+                    referenceNumber, "Design & CAD Request", viewUrl, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send confirmation email for admin-created CAD request {Ref}", referenceNumber);
+            }
+        }
+
+        return Ok(MapToDto(request));
+    }
+
+    /// <summary>
     /// Get a single request by ID (own or admin).
     /// </summary>
     [HttpGet("{id}")]
@@ -491,6 +565,24 @@ public class DesignCadAttachmentDto
     public string FileName { get; set; } = "";
     public long FileSizeBytes { get; set; }
     public DateTime UploadedAt { get; set; }
+}
+
+public class AdminCreateDesignCadDto
+{
+    /// <summary>If provided, links request to an existing user account and uses their profile data.</summary>
+    public Guid? UserId { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CustomerEmail { get; set; }
+    public string? CustomerPhone { get; set; }
+    public string? RequestType { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? IntendedUse { get; set; }
+    public string? MaterialNotes { get; set; }
+    public string? DimensionsNotes { get; set; }
+    public string? Deadline { get; set; }
+    public string? CustomerNotes { get; set; }
+    public string? AdminNotes { get; set; }
 }
 
 public class DesignCadRequestListDto

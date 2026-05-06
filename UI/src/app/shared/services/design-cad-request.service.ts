@@ -108,6 +108,15 @@ export class DesignCadRequestService {
         return this.http.get<DesignCadRequestDto>(`${this.baseUrl}/${id}`);
     }
 
+    adminCreateForCustomer(payload: {
+        userId?: string; customerName?: string; customerEmail?: string; customerPhone?: string;
+        requestType?: string; title: string; description?: string;
+        intendedUse?: string; materialNotes?: string; dimensionsNotes?: string;
+        deadline?: string; customerNotes?: string; adminNotes?: string;
+    }): Observable<DesignCadRequestDto> {
+        return this.http.post<DesignCadRequestDto>(`${this.baseUrl}/admin/create-for-customer`, payload);
+    }
+
     updateStatus(id: string, payload: { status: string; notes?: string; rejectionReason?: string; quotedPrice?: number; customerMessage?: string }): Observable<DesignCadRequestDto> {
         return this.http.put<DesignCadRequestDto>(`${this.baseUrl}/${id}/status`, payload);
     }
