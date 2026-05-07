@@ -26,4 +26,5 @@ public interface ICncDriver
     string Stop();
     string RefreshStatus();
     string Jog(string axis, decimal deltaMm);
+    string MoveLinear(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm);
 }

@@ -206,6 +206,32 @@ public class SimulatedCncDriver : ICncDriver
         return DeviceStatus.LastStatusText;
     }
 
+    public string MoveLinear(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
+    {
+        EnsureConnected();
+        EnsureMotorsEnabled();
+
+        DeviceStatus.DeviceState = CncDeviceState.Running;
+        DeviceStatus.LastStatusText = "STATUS:RUNNING";
+        NotifyStateChanged();
+
+        var distance = Math.Sqrt((double)((deltaXmm * deltaXmm) + (deltaYmm * deltaYmm) + (deltaZmm * deltaZmm)));
+        var duration = 100 + (int)Math.Min(1400d, distance * 24d);
+        SimulateDelay(duration);
+
+        DeviceStatus.ReportedX = (DeviceStatus.ReportedX ?? _profile.XMinMm) + deltaXmm;
+        DeviceStatus.ReportedY = (DeviceStatus.ReportedY ?? _profile.YMinMm) + deltaYmm;
+        DeviceStatus.ReportedZ = (DeviceStatus.ReportedZ ?? _profile.ZMinMm) + deltaZmm;
+        DeviceStatus.HasReportedPosition = true;
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.LastStatusText = $"POS:{DeviceStatus.ReportedX ?? 0m:0.###},{DeviceStatus.ReportedY ?? 0m:0.###},{DeviceStatus.ReportedZ ?? 0m:0.###}";
+        DeviceStatus.LastAcknowledgement = DeviceStatus.LastStatusText;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        AddDriverLog($"Simulated coordinated move completed. ΔX {deltaXmm:0.###} / ΔY {deltaYmm:0.###} / ΔZ {deltaZmm:0.###} mm.", "Info");
+        NotifyStateChanged();
+        return DeviceStatus.LastStatusText;
+    }
+
     private string Complete(string command, string response)
     {
         DeviceStatus.IsResponsive = true;

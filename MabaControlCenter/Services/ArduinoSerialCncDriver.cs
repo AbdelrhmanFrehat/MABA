@@ -208,6 +208,49 @@ public class ArduinoSerialCncDriver : ICncDriver
         return SendProtocolCommand(_commandFormatter.CreateJogCommand(normalizedAxis, steps, firmwareDelta >= 0m)).RawText;
     }
 
+    public string MoveLinear(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
+    {
+        if (UsesSimpleFirmwareProtocol)
+            return SendLegacyLinearMove(deltaXmm, deltaYmm, deltaZmm);
+
+        var responses = new List<string>();
+        if (deltaXmm != 0m)
+            responses.Add(Jog("X", deltaXmm));
+        if (deltaYmm != 0m)
+            responses.Add(Jog("Y", deltaYmm));
+        if (deltaZmm != 0m)
+            responses.Add(Jog("Z", deltaZmm));
+
+        return string.Join(" | ", responses.Where(r => !string.IsNullOrWhiteSpace(r)));
+    }
+
+    private string SendLegacyLinearMove(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
+    {
+        var adjustedX = ApplyAxisDirection("X", deltaXmm);
+        var adjustedY = ApplyAxisDirection("Y", deltaYmm);
+        var adjustedZ = ApplyAxisDirection("Z", deltaZmm);
+
+        var xSteps = ToSteps(adjustedX, _profile.XStepsPerMm);
+        var ySteps = ToSteps(adjustedY, _profile.YStepsPerMm);
+        var zSteps = ToSteps(adjustedZ, _profile.ZStepsPerMm);
+
+        var responses = new List<string>();
+        if (xSteps > 0 && ySteps > 0)
+            responses.Add(SendLegacyCombinedXyCommand(xSteps, adjustedX >= 0m, ySteps, adjustedY >= 0m));
+        else
+        {
+            if (xSteps > 0)
+                responses.Add(SendLegacyJogCommand("X", xSteps, adjustedX >= 0m));
+            if (ySteps > 0)
+                responses.Add(SendLegacyJogCommand("Y", ySteps, adjustedY >= 0m));
+        }
+
+        if (zSteps > 0)
+            responses.Add(SendLegacyJogCommand("Z", zSteps, adjustedZ >= 0m));
+
+        return string.Join(" | ", responses.Where(r => !string.IsNullOrWhiteSpace(r)));
+    }
+
     private string SendLegacyJogCommand(string axis, int steps, bool positive)
     {
         EnsureConnected();
@@ -236,6 +279,40 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LastAcknowledgement = command;
         DeviceStatus.LastAcknowledgedAt = DateTime.Now;
         DeviceStatus.LastStatusText = "Legacy move completed.";
+        NotifyStateChanged();
+        return command;
+    }
+
+    private string SendLegacyCombinedXyCommand(int xSteps, bool positiveX, int ySteps, bool positiveY)
+    {
+        EnsureConnected();
+        var signedX = positiveX ? xSteps : -xSteps;
+        var signedY = positiveY ? ySteps : -ySteps;
+        var command = $"XY,{signedX},{signedY}";
+        AddSerialLog("Sent", command, "Info");
+        _loggingService.AddLog("CNC Sent", command, "Info");
+
+        try
+        {
+            _serialPort!.WriteLine(command);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            HandleUnexpectedDisconnect($"Serial connection lost while sending '{command}'.");
+            throw new InvalidOperationException("Serial connection was lost.", ex);
+        }
+
+        Thread.Sleep(CalculateLegacyCombinedMoveDelayMs(xSteps, ySteps));
+        var residual = DrainAvailableText();
+        if (!string.IsNullOrWhiteSpace(residual))
+            AddSerialLog("Received", residual, "Info");
+
+        DeviceStatus.IsResponsive = true;
+        DeviceStatus.IsReady = true;
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.LastAcknowledgement = command;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        DeviceStatus.LastStatusText = "Legacy coordinated XY move completed.";
         NotifyStateChanged();
         return command;
     }
@@ -599,6 +676,18 @@ public class ArduinoSerialCncDriver : ICncDriver
         return (int)Math.Clamp(Math.Ceiling(estimated), 80, 10000);
     }
 
+    private static int CalculateLegacyCombinedMoveDelayMs(int xSteps, int ySteps)
+    {
+        var maxSteps = Math.Max(xSteps, ySteps);
+        var estimated = 100 + (maxSteps * 0.65);
+        return (int)Math.Clamp(Math.Ceiling(estimated), 100, 12000);
+    }
+
+    private static int ToSteps(decimal deltaMm, decimal stepsPerMm)
+    {
+        return (int)Math.Round(Math.Abs(deltaMm * stepsPerMm), MidpointRounding.AwayFromZero);
+    }
+
     private string UnsupportedResponse(string name, string message)
     {
         DeviceStatus.LastProtocolError = message;
@@ -633,11 +722,13 @@ public class ArduinoSerialCncDriver : ICncDriver
             Capabilities.SupportsLivePositionReporting = false;
             Capabilities.SupportsPause = false;
             Capabilities.SupportsAlarmReset = false;
+            Capabilities.SupportsCombinedXyMove = true;
             return;
         }
 
         Capabilities.SupportsAcknowledgements = true;
         Capabilities.SupportsLivePositionReporting = true;
+        Capabilities.SupportsCombinedXyMove = false;
         Capabilities.SupportsPause = false;
         Capabilities.SupportsAlarmReset = true;
     }

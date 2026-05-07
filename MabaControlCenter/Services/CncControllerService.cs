@@ -290,6 +290,58 @@ public class CncControllerService : ICncControllerService
         return response;
     }
 
+    public string MoveLinear(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
+    {
+        EnsureConnected();
+        EnsureMotorsEnabled();
+        EnsureNoAlarmBlocking();
+
+        var targetX = _machineX + deltaXmm;
+        var targetY = _machineY + deltaYmm;
+        var targetZ = _machineZ + deltaZmm;
+
+        var limitError = ValidateMachinePosition(targetX, targetY, targetZ);
+        if (limitError != null)
+        {
+            _lastWarning = limitError;
+            UpdateState(CncMachineState.Warning);
+            AddControllerLog(limitError, "Warning");
+            throw new InvalidOperationException(limitError);
+        }
+
+        if (deltaXmm != 0m)
+            EnsureAxisSupported("X");
+        if (deltaYmm != 0m)
+            EnsureAxisSupported("Y");
+        if (deltaZmm != 0m)
+            EnsureAxisSupported("Z");
+
+        UpdateState(CncMachineState.Running);
+        var response = _driver.MoveLinear(deltaXmm, deltaYmm, deltaZmm);
+
+        if (!IsErrorLikeResponse(response))
+        {
+            if (DeviceStatus.HasReportedPosition)
+            {
+                _machineX = DeviceStatus.ReportedX ?? targetX;
+                _machineY = DeviceStatus.ReportedY ?? targetY;
+                _machineZ = DeviceStatus.ReportedZ ?? targetZ;
+            }
+            else
+            {
+                _machineX = targetX;
+                _machineY = targetY;
+                _machineZ = targetZ;
+            }
+
+            if (_machineState != CncMachineState.Stopped && _machineState != CncMachineState.Warning)
+                UpdateState(CncMachineState.Idle);
+        }
+
+        NotifyStateChanged();
+        return response;
+    }
+
     public void UpdateConfig(CncMachineConfig config)
     {
         var profile = CloneProfile(_profileService.ActiveProfile);

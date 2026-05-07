@@ -1668,6 +1668,30 @@
                                       BorderBrush="{DynamicResource BorderBrush}"
                                       Margin="0,0,0,0">
                                 <StackPanel Margin="0,12,0,0">
+                                    <TextBlock Text="Arduino Firmware Package" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                    <Grid Margin="0,0,0,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Current Bundle"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1"
+                                                Content="Export Firmware (.ino)"
+                                                Command="{Binding ExportArduinoFirmwareCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="Use this bundled Arduino sketch when you want the real machine to support physical framing and smoother coordinated XY motion for circles and curved toolpaths."
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+
                                     <TextBlock Text="Create Custom Profile" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                                     <Grid Margin="0,0,0,14">

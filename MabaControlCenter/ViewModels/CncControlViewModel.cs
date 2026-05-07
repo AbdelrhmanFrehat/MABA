@@ -152,6 +152,7 @@ public class CncControlViewModel : ViewModelBase
         ActivateRuntimeProfileCommand = new RelayCommand(_ => ActivateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
         DuplicateRuntimeProfileCommand = new RelayCommand(_ => DuplicateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
         DeleteRuntimeProfileCommand = new RelayCommand(_ => DeleteSelectedRuntimeProfile(), _ => CanDeleteSelectedRuntimeProfile);
+        ExportArduinoFirmwareCommand = new RelayCommand(_ => ExportArduinoFirmwarePackage());
         BackToJobsCommand = new RelayCommand(_ => _navigationService.NavigateTo("Jobs"), _ => ActiveJob != null);
         JogXPositiveCommand = new RelayCommand(_ => Jog("X", SelectedJogStep), _ => CanJog);
         JogXNegativeCommand = new RelayCommand(_ => Jog("X", -SelectedJogStep), _ => CanJog);
@@ -168,7 +169,7 @@ public class CncControlViewModel : ViewModelBase
         PlaceBottomLeftCommand = new RelayCommand(_ => ApplyPlacementPreset(CncPlacementPreset.BottomLeft), _ => CanApplyPlacement);
         PlaceBottomRightCommand = new RelayCommand(_ => ApplyPlacementPreset(CncPlacementPreset.BottomRight), _ => CanApplyPlacement);
         PlaceCenterCommand = new RelayCommand(_ => ApplyPlacementPreset(CncPlacementPreset.Center), _ => CanApplyPlacement);
-        FramePreviewCommand = new RelayCommand(_ => StartFramePreview(), _ => CanFramePreview);
+        FramePreviewCommand = new RelayCommand(async _ => await StartFramePreviewAsync(), _ => CanFramePreview);
         PlayPreviewCommand = new RelayCommand(_ => PlayPreview(), _ => CanPlayPreview);
         PausePreviewCommand = new RelayCommand(_ => PausePreview(), _ => CanPausePreview);
         StopPreviewCommand = new RelayCommand(_ => StopPreview(), _ => CanStopPreview);
@@ -443,6 +444,7 @@ public class CncControlViewModel : ViewModelBase
     public ICommand ActivateRuntimeProfileCommand { get; }
     public ICommand DuplicateRuntimeProfileCommand { get; }
     public ICommand DeleteRuntimeProfileCommand { get; }
+    public ICommand ExportArduinoFirmwareCommand { get; }
     public ICommand BackToJobsCommand { get; }
     public ICommand JogXPositiveCommand { get; }
     public ICommand JogXNegativeCommand { get; }
@@ -907,6 +909,7 @@ public class CncControlViewModel : ViewModelBase
     public bool CanSaveSelectedProfile => CanEditSelectedProfile;
     public bool CanDeleteSelectedProfile => SelectedProfile != null && SelectedProfile.IsEditable && !SelectedProfile.IsDefault && _cncProfileService.Profiles.Count > 1;
     public bool CanDeleteSelectedRuntimeProfile => SelectedRuntimeProfile?.ProfileType == RuntimeProfileType.User;
+    public bool HasBundledArduinoFirmware => ArduinoFirmwarePackage.Exists();
     public string SelectedProfileKindDisplay => IsSelectedProfileBuiltIn ? "System profile / Read-only" : "User profile / Editable";
     public string ProfilePermissionHint => IsSelectedProfileBuiltIn
         ? "This system profile is protected. Duplicate it to create an editable copy."
@@ -2178,6 +2181,33 @@ public class CncControlViewModel : ViewModelBase
         LastError = "No current alarms.";
     }
 
+    private void ExportArduinoFirmwarePackage()
+    {
+        try
+        {
+            if (!ArduinoFirmwarePackage.Exists())
+                throw new InvalidOperationException("The bundled Arduino firmware package is missing from this app build.");
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Arduino sketch (*.ino)|*.ino|All files (*.*)|*.*",
+                FileName = ArduinoFirmwarePackage.BundledFileName,
+                Title = "Export Arduino CNC Firmware"
+            };
+
+            if (dialog.ShowDialog(Application.Current.MainWindow) != true)
+                return;
+
+            ArduinoFirmwarePackage.ExportTo(dialog.FileName);
+            LastFeedback = $"Arduino firmware exported to {dialog.FileName}. Upload it to the Uno to enable coordinated XY moves and machine framing.";
+            AddDiagnostic("Info", $"Bundled Arduino firmware exported: {dialog.FileName}");
+        }
+        catch (Exception ex)
+        {
+            HandleUiError(ex.Message, "Export Arduino Firmware", logAsWarning: false);
+        }
+    }
+
     private void AddDiagnostics(IEnumerable<string> messages, string defaultSeverity)
     {
         foreach (var message in messages)
@@ -2416,7 +2446,7 @@ public class CncControlViewModel : ViewModelBase
                 ResponseAckPattern = driverType == DriverType.Simulated ? "READY" : "HOME DONE",
                 ProtocolNotes = driverType == DriverType.Simulated
                     ? "Simulation profile."
-                    : "Legacy Arduino protocol using +stepsx/-stepsx and H for homing."
+                : "Legacy Arduino protocol using +stepsx/-stepsx, XY,signedX,signedY, and H for homing."
             },
             Capabilities = new CapabilitiesSection
             {
@@ -2497,7 +2527,7 @@ public class CncControlViewModel : ViewModelBase
         RefreshPreviewState();
     }
 
-    private void StartFramePreview()
+    private async Task StartFramePreviewAsync()
     {
         try
         {
@@ -2507,11 +2537,52 @@ public class CncControlViewModel : ViewModelBase
             var frameMotions = _framePathService.BuildFramePath(_frameBounds);
             _previewPlaybackService.PlayFrame(frameMotions);
             LastFeedback = "Frame preview simulation started.";
+
+            if (ShouldRunFrameOnMachine())
+            {
+                LastFeedback = "Frame preview started. Running physical frame on the machine...";
+                AddDiagnostic("Info", "Physical frame started on the connected machine.");
+                await Task.Run(() => RunFrameOnMachine(frameMotions));
+                LastFeedback = "Frame preview completed and the machine traced the loaded job bounds.";
+                AddDiagnostic("Info", "Physical frame completed on the connected machine.");
+            }
+
             RefreshPreviewState();
         }
         catch (Exception ex)
         {
             HandleUiError(ex.Message, "Start Frame Preview", logAsWarning: true);
+        }
+    }
+
+    private bool ShouldRunFrameOnMachine()
+    {
+        return IsConnected
+               && !IsSimulationMode
+               && MotorsEnabled
+               && !HasAlarm
+               && EffectiveCapabilities.Execution.RealExecution
+               && EffectiveCapabilities.Execution.Frame;
+    }
+
+    private void RunFrameOnMachine(IReadOnlyList<GcodeMotionCommand> frameMotions)
+    {
+        if (frameMotions.Count == 0)
+            return;
+
+        foreach (var motion in frameMotions.Where(m => m.IsExecutable))
+        {
+            var targetX = motion.EndX;
+            var targetY = motion.EndY;
+            var targetZ = motion.EndZ;
+            var boundsMessage = _cncControllerService.ValidateWorkPosition(targetX, targetY, targetZ);
+            if (boundsMessage != null)
+                throw new InvalidOperationException($"Frame blocked: {boundsMessage}");
+
+            var deltaX = targetX - _cncControllerService.WorkX;
+            var deltaY = targetY - _cncControllerService.WorkY;
+            var deltaZ = targetZ - _cncControllerService.WorkZ;
+            _cncControllerService.MoveLinear(deltaX, deltaY, deltaZ);
         }
     }
 

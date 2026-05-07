@@ -188,12 +188,7 @@ public class CncExecutionQueueService : ICncExecutionQueueService
                     return;
                 }
 
-                if (deltaX != 0m)
-                    controllerService.Jog("X", deltaX);
-                if (deltaY != 0m)
-                    controllerService.Jog("Y", deltaY);
-                if (deltaZ != 0m)
-                    controllerService.Jog("Z", deltaZ);
+                controllerService.MoveLinear(deltaX, deltaY, deltaZ);
 
                 _completedCount = index + 1;
                 NotifyChanged();

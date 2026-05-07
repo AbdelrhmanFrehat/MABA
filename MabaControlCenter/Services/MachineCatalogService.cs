@@ -365,7 +365,7 @@ public class MachineCatalogService : IMachineCatalogService
                 RequiresHandshake = false,
                 CommandTerminator = "\n",
                 ResponseAckPattern = "HOME DONE",
-                ProtocolNotes = "Legacy step-based protocol using +stepsx/-stepsx, H for homing and B for square test."
+                    ProtocolNotes = "Legacy Arduino protocol using +stepsx/-stepsx, XY,signedX,signedY for coordinated XY moves, H for homing and B for square test."
             },
             Capabilities = new CapabilitiesSection
             {

@@ -5,6 +5,9 @@
     <Resource Include="Assets\maba.ico" />
     <Resource Include="Assets\maba.png" />
     <Resource Include="Assets\maba-logo-transparent.png" />
+    <Content Include="Firmware\MabaArduinoCncFirmware.ino">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <PropertyGroup>
@@ -16,7 +19,7 @@
     <ApplicationIcon>Assets\maba.ico</ApplicationIcon>
     <RootNamespace>MabaControlCenter</RootNamespace>
     <AssemblyName>MabaControlCenter</AssemblyName>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
   </PropertyGroup>
 
 </Project>
