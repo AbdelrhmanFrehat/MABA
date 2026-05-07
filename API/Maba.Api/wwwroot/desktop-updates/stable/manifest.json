@@ -1,6 +1,6 @@
 {
-  "version": "0.1.4",
-  "packageUri": "MabaControlCenter-0.1.4-win-x64.zip",
-  "notes": "v0.1.4 — Real-machine frame execution from the app, coordinated linear move path for better circle/curve execution, bundled Arduino firmware export support.",
-  "publishedAt": "2026-05-07T09:25:48.9455381Z"
+  "version": "0.1.5",
+  "packageUri": "MabaControlCenter-0.1.5-win-x64.zip",
+  "notes": "v0.1.5 — Real-machine frame execution, coordinated XY move path for smoother circles/curves, firmware management UI in CNC Setup, one-click Arduino firmware upload via Arduino CLI/IDE.",
+  "publishedAt": "2026-05-07T12:37:30.9817034Z"
 }
