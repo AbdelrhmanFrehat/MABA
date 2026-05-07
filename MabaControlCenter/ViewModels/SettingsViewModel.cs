@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using MabaControlCenter.Models;
 using MabaControlCenter.Services;
@@ -16,6 +17,7 @@ public class SettingsViewModel : ViewModelBase
     private bool _startWithWindows;
     private bool _checkForUpdatesAuto = true;
     private bool _diagnosticsMode;
+    private string _updateManifestUri = string.Empty;
 
     public SettingsViewModel(IThemeService themeService, ILocalizationService localizationService, ISettingsService settingsService)
     {
@@ -48,6 +50,7 @@ public class SettingsViewModel : ViewModelBase
         _startWithWindows = saved.StartWithWindows;
         _checkForUpdatesAuto = saved.CheckForUpdatesAutomatically;
         _diagnosticsMode = saved.DiagnosticsMode;
+        _updateManifestUri = saved.UpdateManifestUri ?? string.Empty;
     }
 
     public string Title => _localizationService.GetString("Page_Settings_Title");
@@ -105,17 +108,47 @@ public class SettingsViewModel : ViewModelBase
         set { if (_diagnosticsMode == value) return; _diagnosticsMode = value; OnPropertyChanged(); SaveCurrentSettings(); }
     }
 
-    public string AppVersion => "0.1.0";
+    public string UpdateManifestUri
+    {
+        get => _updateManifestUri;
+        set
+        {
+            if (_updateManifestUri == value) return;
+            _updateManifestUri = value;
+            OnPropertyChanged();
+            SaveCurrentSettings();
+        }
+    }
+
+    public string AppVersion
+    {
+        get
+        {
+            var informational = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                .InformationalVersion;
+            if (!string.IsNullOrWhiteSpace(informational))
+                return informational.Split('+')[0];
+
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version == null)
+                return "0.0.0";
+
+            return version.Build > 0
+                ? $"{version.Major}.{version.Minor}.{version.Build}"
+                : $"{version.Major}.{version.Minor}.0";
+        }
+    }
 
     private void SaveCurrentSettings()
     {
-        _settingsService.Save(new AppSettings
-        {
-            Theme = _selectedTheme,
-            Language = _selectedLanguage?.CultureCode ?? _localizationService.CurrentCulture,
-            StartWithWindows = _startWithWindows,
-            CheckForUpdatesAutomatically = _checkForUpdatesAuto,
-            DiagnosticsMode = _diagnosticsMode
-        });
+        var current = _settingsService.Load();
+        current.Theme = _selectedTheme;
+        current.Language = _selectedLanguage?.CultureCode ?? _localizationService.CurrentCulture;
+        current.StartWithWindows = _startWithWindows;
+        current.CheckForUpdatesAutomatically = _checkForUpdatesAuto;
+        current.DiagnosticsMode = _diagnosticsMode;
+        current.UpdateManifestUri = _updateManifestUri?.Trim() ?? string.Empty;
+        _settingsService.Save(current);
     }
 }

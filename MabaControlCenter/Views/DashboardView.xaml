@@ -79,9 +79,18 @@
                         <TextBlock Grid.Column="1" Text="{Binding UpdateInfo.LatestVersion}" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </Grid>
                     <TextBlock Text="{Binding UpdateInfo.StatusMessage}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-                    <Button Content="{Binding Source={StaticResource Labels}, Path=Button_CheckForUpdates}" Command="{Binding CheckForUpdatesCommand}"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource PrimaryButtonStyle}"/>
+                    <TextBlock Text="{Binding UpdateInfo.ReleaseNotes}" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding UpdateInfo.UpdateSource, StringFormat=Update source: {0}}" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="{Binding Source={StaticResource Labels}, Path=Button_CheckForUpdates}" Command="{Binding CheckForUpdatesCommand}"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,10,0"/>
+                        <Button Content="Install Update"
+                                Command="{Binding InstallUpdateCommand}"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                IsEnabled="{Binding UpdateInfo.CanInstall}"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

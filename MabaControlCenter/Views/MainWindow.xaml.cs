@@ -12,10 +12,10 @@ public partial class MainWindow : Window
         var loggingService = new LoggingService();
         var deviceService = new DeviceService(loggingService);
         var moduleService = new ModuleService();
-        var updateService = new UpdateService();
+        var settingsService = new SettingsService();
+        var updateService = new UpdateService(settingsService);
         var newsService = new NewsService();
         var themeService = new ThemeService();
-        var settingsService = new SettingsService();
         var authSessionService = new AuthSessionService(settingsService);
         var appAnnouncementsService = new AppAnnouncementsService(settingsService, authSessionService);
         var jobsService = new JobsService(settingsService, authSessionService);
@@ -42,6 +42,8 @@ public partial class MainWindow : Window
 
         var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, authSessionService);
         DataContext = new MainViewModel(nav, authSessionService);
+        if (settings.CheckForUpdatesAutomatically)
+            _ = updateService.CheckForUpdatesAsync(userInitiated: false);
         Loaded += (_, _) =>
         {
             FlowDirection = localizationService.FlowDirection;

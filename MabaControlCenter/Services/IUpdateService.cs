@@ -5,6 +5,7 @@ namespace MabaControlCenter.Services;
 public interface IUpdateService
 {
     AppUpdateInfo GetUpdateInfo();
-    void CheckForUpdates();
+    Task CheckForUpdatesAsync(bool userInitiated = true, CancellationToken cancellationToken = default);
+    Task<bool> InstallUpdateAsync(CancellationToken cancellationToken = default);
     event EventHandler? UpdateInfoChanged;
 }

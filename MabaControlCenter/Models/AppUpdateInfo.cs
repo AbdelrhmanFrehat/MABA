@@ -6,4 +6,8 @@ public class AppUpdateInfo
     public string LatestVersion { get; set; } = "";
     public bool IsUpdateAvailable { get; set; }
     public string StatusMessage { get; set; } = "";
+    public string ReleaseNotes { get; set; } = "";
+    public string UpdateSource { get; set; } = "";
+    public bool IsBusy { get; set; }
+    public bool CanInstall { get; set; }
 }

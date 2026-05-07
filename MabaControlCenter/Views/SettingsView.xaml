@@ -73,6 +73,18 @@
                     <CheckBox Content="{Binding Source={StaticResource Labels}, Path=Settings_DiagnosticsMode}"
                               IsChecked="{Binding DiagnosticsMode, UpdateSourceTrigger=PropertyChanged}"
                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Update Manifest Path or URL" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,12,0,4"/>
+                    <TextBox Text="{Binding UpdateManifestUri, UpdateSourceTrigger=PropertyChanged}"
+                             MinHeight="28"
+                             Background="{DynamicResource BackgroundMediumBrush}"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}"/>
+                    <TextBlock Text="Use a shared file path or URL that points to a manifest.json generated for desktop releases."
+                               FontSize="11"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>
 

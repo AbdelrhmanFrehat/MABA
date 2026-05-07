@@ -33,7 +33,8 @@ public class DashboardViewModel : ViewModelBase
             OnPropertyChanged(nameof(ModuleCountText));
         };
 
-        CheckForUpdatesCommand = new RelayCommand(_ => _updateService.CheckForUpdates());
+        CheckForUpdatesCommand = new RelayCommand(async _ => await _updateService.CheckForUpdatesAsync());
+        InstallUpdateCommand = new RelayCommand(async _ => await _updateService.InstallUpdateAsync(), _ => UpdateInfo.CanInstall && !UpdateInfo.IsBusy);
     }
 
     public string Title => _localizationService.GetString("Page_Dashboard_Title");
@@ -42,6 +43,7 @@ public class DashboardViewModel : ViewModelBase
     public AppUpdateInfo UpdateInfo => _updateService.GetUpdateInfo();
     public System.Collections.ObjectModel.ObservableCollection<NewsItem> NewsItems => _newsService.NewsItems;
     public ICommand CheckForUpdatesCommand { get; }
+    public ICommand InstallUpdateCommand { get; }
 
     public string ConnectedDeviceName => _deviceService.IsConnected && _deviceService.ConnectedDeviceName != null
         ? _deviceService.ConnectedDeviceName

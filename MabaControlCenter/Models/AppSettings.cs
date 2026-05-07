@@ -9,4 +9,5 @@ public class AppSettings
     public bool CheckForUpdatesAutomatically { get; set; } = true;
     public bool DiagnosticsMode { get; set; }
     public string ApiBaseUrl { get; set; } = "https://api.mabasol.com";
+    public string UpdateManifestUri { get; set; } = string.Empty;
 }
