@@ -190,6 +190,7 @@ public class ArduinoSerialCncDriver : ICncDriver
     public string Jog(string axis, decimal deltaMm)
     {
         var normalizedAxis = (axis ?? string.Empty).Trim().ToUpperInvariant();
+        var firmwareDelta = ApplyAxisDirection(normalizedAxis, deltaMm);
         var stepsPerMm = normalizedAxis switch
         {
             "X" => _profile.XStepsPerMm,
@@ -197,14 +198,14 @@ public class ArduinoSerialCncDriver : ICncDriver
             _ => _profile.ZStepsPerMm
         };
 
-        var steps = (int)Math.Round(Math.Abs(deltaMm * stepsPerMm), MidpointRounding.AwayFromZero);
+        var steps = (int)Math.Round(Math.Abs(firmwareDelta * stepsPerMm), MidpointRounding.AwayFromZero);
         if (steps <= 0)
             throw new InvalidOperationException("Jog step is too small for the current steps/mm configuration.");
 
         if (UsesSimpleFirmwareProtocol)
-            return SendLegacyJogCommand(normalizedAxis, steps, deltaMm >= 0m);
+            return SendLegacyJogCommand(normalizedAxis, steps, firmwareDelta >= 0m);
 
-        return SendProtocolCommand(_commandFormatter.CreateJogCommand(normalizedAxis, steps, deltaMm >= 0m)).RawText;
+        return SendProtocolCommand(_commandFormatter.CreateJogCommand(normalizedAxis, steps, firmwareDelta >= 0m)).RawText;
     }
 
     private string SendLegacyJogCommand(string axis, int steps, bool positive)
@@ -605,6 +606,18 @@ public class ArduinoSerialCncDriver : ICncDriver
         AddProtocolLog($"{name} blocked: {message}", "Warning");
         NotifyStateChanged();
         return $"ERR:{message}";
+    }
+
+    private decimal ApplyAxisDirection(string axis, decimal deltaMm)
+    {
+        var definition = _profile.DefinitionSnapshot;
+        if (definition?.AxisConfig.AxisDirections == null)
+            return deltaMm;
+
+        if (definition.AxisConfig.AxisDirections.TryGetValue(axis, out var direction) && direction == Direction.Inverted)
+            return -deltaMm;
+
+        return deltaMm;
     }
 
     private void RefreshCapabilities()

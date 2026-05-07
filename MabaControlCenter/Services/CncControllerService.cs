@@ -369,7 +369,7 @@ public class CncControllerService : ICncControllerService
 
     public string? ValidateMachinePosition(decimal machineX, decimal machineY, decimal machineZ)
     {
-        if (Config.SoftLimitsEnabled)
+        if (Config.SoftLimitsEnabled && HasValidMachineReference)
         {
             if (machineX < Bounds.XMin || machineX > Bounds.XMax)
                 return $"Bounds violation: X {machineX:0.###} mm is outside [{Bounds.XMin:0.###}, {Bounds.XMax:0.###}] mm.";

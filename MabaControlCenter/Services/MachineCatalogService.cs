@@ -332,7 +332,7 @@ public class MachineCatalogService : IMachineCatalogService
                 AxisCount = 3,
                 SupportedAxes = new List<AxisId> { AxisId.X, AxisId.Y, AxisId.Z },
                 AxisRoles = new Dictionary<string, AxisRole> { ["X"] = AxisRole.Primary, ["Y"] = AxisRole.Secondary, ["Z"] = AxisRole.Vertical },
-                AxisDirections = new Dictionary<string, Direction> { ["X"] = Direction.Normal, ["Y"] = Direction.Normal, ["Z"] = Direction.Normal },
+                AxisDirections = new Dictionary<string, Direction> { ["X"] = Direction.Normal, ["Y"] = Direction.Normal, ["Z"] = Direction.Inverted },
                 HomingSupport = new Dictionary<string, bool> { ["X"] = true, ["Y"] = true, ["Z"] = false },
                 HomeOriginConvention = MachineHomeOriginConvention.FrontLeft,
                 WorkCoordinateSupport = true,

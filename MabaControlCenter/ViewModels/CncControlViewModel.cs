@@ -2388,6 +2388,7 @@ public class CncControlViewModel : ViewModelBase
                     .Where(x => x.Item1)
                     .Select(x => x.Item2)
                     .ToList(),
+                AxisDirections = new Dictionary<string, Direction> { ["X"] = Direction.Normal, ["Y"] = Direction.Normal, ["Z"] = Direction.Inverted },
                 HomingSupport = new Dictionary<string, bool> { ["X"] = profile.HomeXEnabled, ["Y"] = profile.HomeYEnabled, ["Z"] = profile.HomeZEnabled },
                 HomeOriginConvention = MachineHomeOriginConvention.FrontLeft,
                 WorkCoordinateSupport = true,
