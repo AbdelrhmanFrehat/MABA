@@ -420,6 +420,10 @@ public class ArduinoSerialCncDriver : ICncDriver
                 ? new[] { "UNLOCKED", "OK" }
                 : commandText.Equals("!", StringComparison.OrdinalIgnoreCase)
                     ? new[] { "ALARM:", "ERR:" }
+                    : commandText.Equals("M3", StringComparison.OrdinalIgnoreCase)
+                        ? new[] { "SPINDLE:ON" }
+                        : commandText.Equals("M5", StringComparison.OrdinalIgnoreCase)
+                            ? new[] { "SPINDLE:OFF" }
                     : new[] { "OK" };
 
         var timeoutMs = commandText.StartsWith("G", StringComparison.OrdinalIgnoreCase) ? 30000 : 15000;

@@ -16,7 +16,8 @@ public interface ICncExecutionPlanner
 {
     bool HasLoadedPlan { get; }
     IReadOnlyList<GcodeMotionCommand> PlannedMotions { get; }
-    CncStreamingSession CreatePlan(IReadOnlyList<GcodeMotionCommand> motions, ICncControllerService controllerService, string? activeJobName);
+    IReadOnlyList<GcodeInterpretedCommand> InterpretedCommands { get; }
+    CncStreamingSession CreatePlan(IReadOnlyList<GcodeInterpretedCommand> commands, ICncControllerService controllerService, string? activeJobName);
 }
 
 public interface ICncControllerStateMachine

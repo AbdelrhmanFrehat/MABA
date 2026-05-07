@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 using MabaControlCenter.Models;
+using MabaControlCenter.Services;
 
 namespace MabaControlCenter.Controls;
 
@@ -119,8 +120,6 @@ public class CncToolpathPreviewControl : FrameworkElement
         for (var i = 0; i < motions.Count; i++)
         {
             var motion = motions[i];
-            var start = Map(motion.StartX, motion.StartY);
-            var end = Map(motion.EndX, motion.EndY);
 
             Pen pen;
             if (CurrentSegmentIndex >= 0 && i < CurrentSegmentIndex)
@@ -136,15 +135,19 @@ public class CncToolpathPreviewControl : FrameworkElement
                 pen = motion.IsRapidMove ? remainingRapidPen : remainingCutPen;
             }
 
-            dc.DrawLine(motion.IsRapidMove ? rapidPen : cutPen, start, end);
-            dc.DrawLine(pen, start, end);
+            DrawMotion(dc, motion, Map, motion.IsRapidMove ? rapidPen : cutPen);
+            DrawMotion(dc, motion, Map, pen);
 
             if (i == CurrentSegmentIndex && SegmentProgress > 0d && SegmentProgress < 1d)
             {
-                var currentPoint = new Point(
-                    start.X + ((end.X - start.X) * SegmentProgress),
-                    start.Y + ((end.Y - start.Y) * SegmentProgress));
-                dc.DrawLine(currentPen, start, currentPoint);
+                var sampled = GcodeMotionGeometry.SamplePath(motion);
+                var visibleSegments = Math.Clamp((int)Math.Ceiling((sampled.Count - 1) * SegmentProgress), 1, sampled.Count - 1);
+                for (var segmentIndex = 0; segmentIndex < visibleSegments; segmentIndex++)
+                {
+                    var segmentStart = Map(sampled[segmentIndex].X, sampled[segmentIndex].Y);
+                    var segmentEnd = Map(sampled[segmentIndex + 1].X, sampled[segmentIndex + 1].Y);
+                    dc.DrawLine(currentPen, segmentStart, segmentEnd);
+                }
             }
         }
 
@@ -183,5 +186,12 @@ public class CncToolpathPreviewControl : FrameworkElement
     private static Color WithAlpha(Color color, byte alpha)
     {
         return Color.FromArgb(alpha, color.R, color.G, color.B);
+    }
+
+    private static void DrawMotion(DrawingContext dc, GcodeMotionCommand motion, Func<decimal, decimal, Point> map, Pen pen)
+    {
+        var points = GcodeMotionGeometry.SamplePath(motion);
+        for (var i = 0; i < points.Count - 1; i++)
+            dc.DrawLine(pen, map(points[i].X, points[i].Y), map(points[i + 1].X, points[i + 1].Y));
     }
 }

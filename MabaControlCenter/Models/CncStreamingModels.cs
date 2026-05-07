@@ -40,6 +40,10 @@ public class CncPlannedCommand
     public CncCommandSafetyCategory SafetyCategory { get; set; } = CncCommandSafetyCategory.Motion;
     public string? Metadata { get; set; }
     public int SequenceIndex { get; set; }
+    public GcodeCoordinateSpace CoordinateSpace { get; set; } = GcodeCoordinateSpace.Work;
+    public decimal? FeedRateMmPerMinute { get; set; }
+    public GcodeSpindleState? SpindleState { get; set; }
+    public string? OriginalRawLine { get; set; }
     public string ProgressLabel => $"Line {SourceLineNumber}";
 }
 

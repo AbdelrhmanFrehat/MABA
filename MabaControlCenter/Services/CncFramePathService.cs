@@ -56,7 +56,11 @@ public class CncFramePathService : ICncFramePathService
                 EndY = corners[i + 1].Y,
                 EndZ = 0m,
                 IsAbsoluteMode = true,
-                FeedRate = 6000m
+                FeedRate = 6000m,
+                Units = GcodeUnitMode.Millimeters,
+                DistanceMode = GcodeDistanceMode.Absolute,
+                Plane = GcodePlane.XY,
+                ModalSummary = "Frame path"
             });
         }
 

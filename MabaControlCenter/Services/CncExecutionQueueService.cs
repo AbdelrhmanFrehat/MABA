@@ -17,6 +17,7 @@ public class CncExecutionQueueService : ICncExecutionQueueService
     private CncExecutionState _executionState = CncExecutionState.Idle;
     private string? _lastInterruptionReason;
     private string? _activeJobName;
+    private readonly List<GcodeInterpretedCommand> _interpretedCommands = new();
     private CncStreamingSession? _currentStreamingSession;
     private readonly CncStreamingDiagnostics _standaloneDiagnostics = new();
 
@@ -28,6 +29,7 @@ public class CncExecutionQueueService : ICncExecutionQueueService
     public CncExecutionState ExecutionState => _executionState;
     public IReadOnlyList<GcodeMotionCommand> LoadedMotions => _loadedMotions;
     public IReadOnlyList<GcodeMotionCommand> PlannedMotions => _executionPlanner.PlannedMotions;
+    public IReadOnlyList<GcodeInterpretedCommand> InterpretedCommands => _interpretedCommands;
     public bool HasLoadedPlan => _executionPlanner.HasLoadedPlan;
     public bool IsStreaming => StreamingState == CncStreamingState.Streaming;
     public bool IsPauseRequested => _pauseRequested;
@@ -43,10 +45,13 @@ public class CncExecutionQueueService : ICncExecutionQueueService
     public string? LastInterruptionReason => _lastInterruptionReason;
     public event EventHandler? ExecutionStateChanged;
 
-    public void Load(IReadOnlyList<GcodeMotionCommand> motions, string? activeJobName = null)
+    public void Load(IReadOnlyList<GcodeMotionCommand> motions, string? activeJobName = null, IReadOnlyList<GcodeInterpretedCommand>? interpretedCommands = null)
     {
         _loadedMotions.Clear();
         _loadedMotions.AddRange(motions.Where(m => m.IsExecutable));
+        _interpretedCommands.Clear();
+        if (interpretedCommands != null)
+            _interpretedCommands.AddRange(interpretedCommands);
         _activeJobName = string.IsNullOrWhiteSpace(activeJobName) ? "Loaded CNC Job" : activeJobName;
         _currentMotionIndex = -1;
         _completedCount = 0;
@@ -69,9 +74,9 @@ public class CncExecutionQueueService : ICncExecutionQueueService
         SetState(_loadedMotions.Count == 0 ? CncExecutionState.Idle : CncExecutionState.JobLoaded);
     }
 
-    public CncStreamingSession CreatePlan(IReadOnlyList<GcodeMotionCommand> motions, ICncControllerService controllerService, string? activeJobName)
+    public CncStreamingSession CreatePlan(IReadOnlyList<GcodeInterpretedCommand> commands, ICncControllerService controllerService, string? activeJobName)
     {
-        return _executionPlanner.CreatePlan(motions, controllerService, activeJobName);
+        return _executionPlanner.CreatePlan(commands, controllerService, activeJobName);
     }
 
     public Task StartAsync(ICncControllerService controllerService)
@@ -89,7 +94,10 @@ public class CncExecutionQueueService : ICncExecutionQueueService
         _completedCount = 0;
         _currentMotionIndex = -1;
 
-        _currentStreamingSession = _executionPlanner.CreatePlan(_loadedMotions, controllerService, _activeJobName);
+        var planSource = _interpretedCommands.Count > 0
+            ? _interpretedCommands
+            : BuildFallbackInterpretedCommands();
+        _currentStreamingSession = _executionPlanner.CreatePlan(planSource, controllerService, _activeJobName);
         _plannedDistanceMm = _currentStreamingSession.PlannedCommands.Sum(command => command.EstimatedDistanceMm);
         _currentStreamingSession.State = CncStreamingState.Preflight;
         _currentStreamingSession.LastMessage = "Planner complete. Running execution preflight.";
@@ -109,6 +117,45 @@ public class CncExecutionQueueService : ICncExecutionQueueService
         SetState(CncExecutionState.ReadyToRun);
         _runnerTask = RunStreamingAsync(controllerService, startIndex: 0);
         return _runnerTask;
+    }
+
+    private IReadOnlyList<GcodeInterpretedCommand> BuildFallbackInterpretedCommands()
+    {
+        return _loadedMotions.Select(motion => new GcodeInterpretedCommand
+        {
+            SourceLineNumber = motion.LineNumber,
+            RawLine = motion.RawText,
+            SanitizedLine = motion.RawText,
+            Units = motion.Units,
+            DistanceMode = motion.DistanceMode,
+            Plane = motion.Plane,
+            MotionMode = motion.MotionType switch
+            {
+                GcodeMotionType.Rapid => GcodeModalMotionMode.Rapid,
+                GcodeMotionType.Linear => GcodeModalMotionMode.Linear,
+                GcodeMotionType.ArcClockwise => GcodeModalMotionMode.ArcClockwise,
+                GcodeMotionType.ArcCounterClockwise => GcodeModalMotionMode.ArcCounterClockwise,
+                _ => GcodeModalMotionMode.Linear
+            },
+            HasMotion = true,
+            EmitsControllerCommand = true,
+            StartX = motion.StartX,
+            StartY = motion.StartY,
+            StartZ = motion.StartZ,
+            EndX = motion.EndX,
+            EndY = motion.EndY,
+            EndZ = motion.EndZ,
+            FeedRateMmPerMinute = motion.FeedRate,
+            ArcOffsetI = motion.ArcOffsetI,
+            ArcOffsetJ = motion.ArcOffsetJ,
+            ArcOffsetK = motion.ArcOffsetK,
+            ArcCenterX = motion.ArcCenterX,
+            ArcCenterY = motion.ArcCenterY,
+            ArcCenterZ = motion.ArcCenterZ,
+            ArcRadiusMm = motion.ArcRadiusMm,
+            ArcLengthMm = motion.ArcLengthMm,
+            CoordinateSpace = GcodeCoordinateSpace.JobPreview
+        }).ToList();
     }
 
     public void Pause()

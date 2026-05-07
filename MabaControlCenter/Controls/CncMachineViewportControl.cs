@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 using MabaControlCenter.Models;
+using MabaControlCenter.Services;
 
 namespace MabaControlCenter.Controls;
 
@@ -528,49 +529,36 @@ public class CncMachineViewportControl : FrameworkElement
         for (var i = 0; i < motions.Count; i++)
         {
             var motion = motions[i];
-            var start = ProjectMotion(
-                topLeft,
-                topRight,
-                bottomLeft,
-                worldWidth,
-                worldHeight,
-                worldDepth,
-                (double)motion.StartX + WorkOffsetX,
-                (double)motion.StartY + WorkOffsetY,
-                (double)motion.StartZ + WorkOffsetZ);
-            var end = ProjectMotion(
-                topLeft,
-                topRight,
-                bottomLeft,
-                worldWidth,
-                worldHeight,
-                worldDepth,
-                (double)motion.EndX + WorkOffsetX,
-                (double)motion.EndY + WorkOffsetY,
-                (double)motion.EndZ + WorkOffsetZ);
-
             var pen = ExecutionState == CncExecutionState.Completed || i < activeIndex
                 ? completedPen
                 : i == activeIndex
                     ? currentPen
                     : remainingPen;
 
-            dc.DrawLine(shadowPen, new Point(start.X + 1.5, start.Y + 1.5), new Point(end.X + 1.5, end.Y + 1.5));
-            dc.DrawLine(pen, start, end);
+            DrawMotion(dc, motion, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft, shadowPen, 1.5);
+            DrawMotion(dc, motion, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft, pen, 0d);
 
             if (i == activeIndex)
             {
+                var activeToolPoint = GcodeMotionGeometry.GetPointAtProgress(motion, UsePreviewPlayback ? PreviewSegmentProgress : 1d);
+                var end = ProjectMotion(
+                    topLeft,
+                    topRight,
+                    bottomLeft,
+                    worldWidth,
+                    worldHeight,
+                    worldDepth,
+                    (double)activeToolPoint.X + WorkOffsetX,
+                    (double)activeToolPoint.Y + WorkOffsetY,
+                    (double)activeToolPoint.Z + WorkOffsetZ);
                 dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x55, 0xF5, 0x9E, 0x0B)), null, end, 7, 7);
                 dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)), new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)), 1.4), end, 4.2, 4.2);
 
                 if (UsePreviewPlayback && activeProgress > 0d && activeProgress < 1d)
                 {
-                    var partialEnd = new Point(
-                        start.X + ((end.X - start.X) * activeProgress),
-                        start.Y + ((end.Y - start.Y) * activeProgress));
-                    dc.DrawLine(currentPen, start, partialEnd);
-                    dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x55, 0xF5, 0x9E, 0x0B)), null, partialEnd, 7, 7);
-                    dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)), new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)), 1.4), partialEnd, 4.2, 4.2);
+                    DrawPartialMotion(dc, motion, activeProgress, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft, currentPen);
+                    dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x55, 0xF5, 0x9E, 0x0B)), null, end, 7, 7);
+                    dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)), new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)), 1.4), end, 4.2, 4.2);
                 }
             }
         }
@@ -809,6 +797,55 @@ public class CncMachineViewportControl : FrameworkElement
         return Color.FromArgb(alpha, color.R, color.G, color.B);
     }
 
+    private void DrawMotion(
+        DrawingContext dc,
+        GcodeMotionCommand motion,
+        double worldWidth,
+        double worldHeight,
+        double worldDepth,
+        Point topLeft,
+        Point topRight,
+        Point bottomLeft,
+        Pen pen,
+        double offset)
+    {
+        var points = GcodeMotionGeometry.SamplePath(motion);
+        for (var i = 0; i < points.Count - 1; i++)
+        {
+            var start = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)points[i].X + WorkOffsetX, (double)points[i].Y + WorkOffsetY, (double)points[i].Z + WorkOffsetZ);
+            var end = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)points[i + 1].X + WorkOffsetX, (double)points[i + 1].Y + WorkOffsetY, (double)points[i + 1].Z + WorkOffsetZ);
+            if (Math.Abs(offset) > 0.001d)
+            {
+                start = new Point(start.X + offset, start.Y + offset);
+                end = new Point(end.X + offset, end.Y + offset);
+            }
+
+            dc.DrawLine(pen, start, end);
+        }
+    }
+
+    private void DrawPartialMotion(
+        DrawingContext dc,
+        GcodeMotionCommand motion,
+        double progress,
+        double worldWidth,
+        double worldHeight,
+        double worldDepth,
+        Point topLeft,
+        Point topRight,
+        Point bottomLeft,
+        Pen pen)
+    {
+        var sampled = GcodeMotionGeometry.SamplePath(motion);
+        var visibleSegments = Math.Clamp((int)Math.Ceiling((sampled.Count - 1) * progress), 1, sampled.Count - 1);
+        for (var i = 0; i < visibleSegments; i++)
+        {
+            var start = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)sampled[i].X + WorkOffsetX, (double)sampled[i].Y + WorkOffsetY, (double)sampled[i].Z + WorkOffsetZ);
+            var end = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)sampled[i + 1].X + WorkOffsetX, (double)sampled[i + 1].Y + WorkOffsetY, (double)sampled[i + 1].Z + WorkOffsetZ);
+            dc.DrawLine(pen, start, end);
+        }
+    }
+
     private Color GetStateColor()
     {
         return MachineState switch
@@ -848,10 +885,16 @@ public class CncMachineViewportControl : FrameworkElement
         return state switch
         {
             CncExecutionState.Idle => "Idle",
+            CncExecutionState.JobLoaded => "Job Loaded",
+            CncExecutionState.PreflightChecking => "Preflight",
+            CncExecutionState.ReadyToRun => "Ready",
             CncExecutionState.Running => "Running",
             CncExecutionState.Paused => "Paused",
+            CncExecutionState.Stopping => "Stopping",
             CncExecutionState.Stopped => "Stopped",
+            CncExecutionState.Alarmed => "Alarmed",
             CncExecutionState.Error => "Error",
+            CncExecutionState.Failed => "Failed",
             CncExecutionState.Completed => "Completed",
             _ => state.ToString()
         };

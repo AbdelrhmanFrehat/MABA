@@ -20,8 +20,70 @@ public class CncJobPlacementService : ICncJobPlacementService
                 EndZ = m.EndZ,
                 IsAbsoluteMode = m.IsAbsoluteMode,
                 FeedRate = m.FeedRate,
+                Units = m.Units,
+                DistanceMode = m.DistanceMode,
+                Plane = m.Plane,
+                ArcOffsetI = m.ArcOffsetI,
+                ArcOffsetJ = m.ArcOffsetJ,
+                ArcOffsetK = m.ArcOffsetK,
+                ArcCenterX = m.ArcCenterX.HasValue ? m.ArcCenterX + placement.OffsetX : null,
+                ArcCenterY = m.ArcCenterY.HasValue ? m.ArcCenterY + placement.OffsetY : null,
+                ArcCenterZ = m.ArcCenterZ,
+                ArcRadiusMm = m.ArcRadiusMm,
+                ArcLengthMm = m.ArcLengthMm,
+                ModalSummary = m.ModalSummary,
                 IsValid = m.IsValid,
                 ValidationMessage = m.ValidationMessage
+            })
+            .ToList();
+    }
+
+    public IReadOnlyList<GcodeInterpretedCommand> ApplyPlacement(IReadOnlyList<GcodeInterpretedCommand> commands, CncJobPlacement placement)
+    {
+        return commands
+            .Select(command =>
+            {
+                var clone = new GcodeInterpretedCommand
+                {
+                    SourceLineNumber = command.SourceLineNumber,
+                    RawLine = command.RawLine,
+                    SanitizedLine = command.SanitizedLine,
+                    CommentText = command.CommentText,
+                    IsIgnored = command.IsIgnored,
+                    IsUnsupported = command.IsUnsupported,
+                    BlocksExecution = command.BlocksExecution,
+                    DiagnosticMessage = command.DiagnosticMessage,
+                    Units = command.Units,
+                    DistanceMode = command.DistanceMode,
+                    Plane = command.Plane,
+                    MotionMode = command.MotionMode,
+                    HasMotion = command.HasMotion,
+                    EmitsControllerCommand = command.EmitsControllerCommand,
+                    IsSpindleChange = command.IsSpindleChange,
+                    SpindleState = command.SpindleState,
+                    SpindleSpeed = command.SpindleSpeed,
+                    ToolNumber = command.ToolNumber,
+                    StartX = command.StartX + placement.OffsetX,
+                    StartY = command.StartY + placement.OffsetY,
+                    StartZ = command.StartZ,
+                    EndX = command.EndX + placement.OffsetX,
+                    EndY = command.EndY + placement.OffsetY,
+                    EndZ = command.EndZ,
+                    FeedRateMmPerMinute = command.FeedRateMmPerMinute,
+                    ArcOffsetI = command.ArcOffsetI,
+                    ArcOffsetJ = command.ArcOffsetJ,
+                    ArcOffsetK = command.ArcOffsetK,
+                    ArcCenterX = command.ArcCenterX.HasValue ? command.ArcCenterX + placement.OffsetX : null,
+                    ArcCenterY = command.ArcCenterY.HasValue ? command.ArcCenterY + placement.OffsetY : null,
+                    ArcCenterZ = command.ArcCenterZ,
+                    ArcRadiusMm = command.ArcRadiusMm,
+                    ArcLengthMm = command.ArcLengthMm,
+                    CoordinateSpace = GcodeCoordinateSpace.JobPreview,
+                    ModalStateAfterLine = command.ModalStateAfterLine.Clone()
+                };
+                clone.ModalStateAfterLine.Coordinates.PlacementOffsetX = placement.OffsetX;
+                clone.ModalStateAfterLine.Coordinates.PlacementOffsetY = placement.OffsetY;
+                return clone;
             })
             .ToList();
     }

@@ -57,6 +57,7 @@ public class CncControlViewModel : ViewModelBase
     private double _previewPlaybackSpeed = 1d;
     private CncFrameBounds _frameBounds = new();
     private readonly List<GcodeMotionCommand> _placedMotions = new();
+    private readonly List<GcodeInterpretedCommand> _placedInterpretedCommands = new();
     private CncJobPlacement _jobPlacement = new();
     private decimal _placementOffsetX;
     private decimal _placementOffsetY;
@@ -521,6 +522,18 @@ public class CncControlViewModel : ViewModelBase
     public string LoadedJobMotionCount => LoadedJobInfo != null ? $"{LoadedJobInfo.MotionLineCount} motion lines" : "0 motion lines";
     public string LoadedJobProfileName => LoadedJobInfo?.ActiveProfileName ?? ActiveProfileName;
     public string LoadedJobDriverMode => LoadedJobInfo?.DriverMode ?? RuntimeModeText;
+    public string ActiveGcodeUnits => LoadedProgram?.FinalModalState.Units == GcodeUnitMode.Inches ? "Inch (G20)" : "Millimeter (G21)";
+    public string ActiveGcodeDistanceMode => LoadedProgram?.FinalModalState.DistanceMode == GcodeDistanceMode.Incremental ? "Incremental (G91)" : "Absolute (G90)";
+    public string ActiveGcodePlane => LoadedProgram?.FinalModalState.Plane switch
+    {
+        GcodePlane.XZ => "XZ (G18)",
+        GcodePlane.YZ => "YZ (G19)",
+        _ => "XY (G17)"
+    };
+    public int UnsupportedCommandCount => LoadedProgram?.UnsupportedCommandCount ?? 0;
+    public string InterpretationSummary => LoadedProgram == null
+        ? "No interpreted G-code loaded."
+        : $"{LoadedProgram.InterpretedCommands.Count} interpreted line(s) | {UnsupportedCommandCount} unsupported command(s)";
     public string SessionStartedAtDisplay => CurrentJobSession?.StartedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Not started";
     public string SessionEndedAtDisplay => (CurrentJobSession?.EndedAt ?? CurrentJobSession?.InterruptedAt)?.ToString("yyyy-MM-dd HH:mm:ss") ?? "In progress";
     public string SessionLastAction => CurrentJobSession?.LastAction ?? "No session action yet";
@@ -705,7 +718,7 @@ public class CncControlViewModel : ViewModelBase
 
     public string CurrentAlarmText => _cncControllerService.LastFaultReason ?? "No active alarm.";
     public string CurrentWarningText => _cncControllerService.LastWarning ?? "No active warning.";
-    public string DiagnosticsSummary => $"{TotalMotionCount} parsed moves | {WarningCount} warnings | {ErrorCount} errors";
+    public string DiagnosticsSummary => $"{TotalMotionCount} interpreted moves | {UnsupportedCommandCount} unsupported | {WarningCount} warnings | {ErrorCount} errors";
     public int WarningCount => DiagnosticsMessages.Count(m => m.StartsWith("[Warning]"));
     public int ErrorCount => DiagnosticsMessages.Count(m => m.StartsWith("[Error]"));
     public string DeviceReadyDisplay => _cncControllerService.DeviceStatus.IsReady ? "Ready" : "Waiting / Not Ready";
@@ -1339,7 +1352,7 @@ public class CncControlViewModel : ViewModelBase
             _runtimeCoordinator.SetJobLoaded(parsed.FileName, true);
             RevalidateLoadedProgram();
             LastFeedback = $"Loaded {LoadedProgram.FileName}.";
-            AddDiagnostic("Info", $"Parse completed with {LoadedProgram.Motions.Count} motion line(s).");
+            AddDiagnostic("Info", $"Parse completed with {LoadedProgram.Motions.Count} motion line(s) and {LoadedProgram.InterpretedCommands.Count} interpreted line(s).");
             AddDiagnostics(LoadedProgram.Messages, defaultSeverity: "Warning");
         }
         catch (Exception ex)
@@ -1373,7 +1386,7 @@ public class CncControlViewModel : ViewModelBase
         PlacementOffsetY = 0m;
         PlacementStatus = "Placement offsets are zeroed.";
         ClearDiagnostics();
-        _executionQueueService.Load(Array.Empty<GcodeMotionCommand>(), LoadedProgram?.FileName);
+        _executionQueueService.Load(Array.Empty<GcodeMotionCommand>(), LoadedProgram?.FileName, Array.Empty<GcodeInterpretedCommand>());
         LastFeedback = "Loaded G-code cleared.";
         AddDiagnostic("Info", "Loaded G-code cleared.");
         RefreshWorkflowState();
@@ -1392,7 +1405,7 @@ public class CncControlViewModel : ViewModelBase
             if (ErrorCount > 0 || _placedMotions.Any(m => !m.IsValid))
                 throw new InvalidOperationException("Critical validation issues are blocking execution.");
 
-            _executionQueueService.Load(_placedMotions.ToList(), LoadedProgram?.FileName);
+            _executionQueueService.Load(_placedMotions.ToList(), LoadedProgram?.FileName, _placedInterpretedCommands.ToList());
             _jobSessionService.StartSession(TotalMotionCount);
             LastFeedback = "Execution started.";
             AddDiagnostic("Info", "Execution started.");
@@ -2312,6 +2325,7 @@ public class CncControlViewModel : ViewModelBase
         if (LoadedProgram == null)
         {
             _placedMotions.Clear();
+            _placedInterpretedCommands.Clear();
             _frameBounds = new CncFrameBounds();
             _jobSessionService.UpdateReadiness(false, "Load a G-code job to prepare a CNC session.", "No CNC job is currently loaded.");
             return;
@@ -2320,7 +2334,9 @@ public class CncControlViewModel : ViewModelBase
         ClearDiagnostics();
 
         _placedMotions.Clear();
+        _placedInterpretedCommands.Clear();
         _placedMotions.AddRange(_jobPlacementService.ApplyPlacement(LoadedProgram.Motions.ToList(), _jobPlacement));
+        _placedInterpretedCommands.AddRange(_jobPlacementService.ApplyPlacement(LoadedProgram.InterpretedCommands.ToList(), _jobPlacement));
         _frameBounds = _jobPlacementService.CalculateBounds(_placedMotions);
 
         foreach (var motion in _placedMotions)
@@ -2342,7 +2358,7 @@ public class CncControlViewModel : ViewModelBase
         AddDiagnostics(LoadedProgram.Messages, defaultSeverity: "Warning");
         _previewPlaybackService.Stop();
         _previewPlaybackService.Load(_placedMotions.ToList());
-        _executionQueueService.Load(_placedMotions.ToList(), LoadedProgram?.FileName);
+        _executionQueueService.Load(_placedMotions.ToList(), LoadedProgram?.FileName, _placedInterpretedCommands.ToList());
         OnPropertyChanged(nameof(MotionCommands));
         OnPropertyChanged(nameof(TotalMotionCount));
         OnPropertyChanged(nameof(DiagnosticsSummary));
@@ -2424,7 +2440,24 @@ public class CncControlViewModel : ViewModelBase
     private void AddDiagnostics(IEnumerable<string> messages, string defaultSeverity)
     {
         foreach (var message in messages)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                continue;
+
+            if (message.StartsWith("[") && message.Contains("]"))
+            {
+                var endBracket = message.IndexOf(']');
+                if (endBracket > 1)
+                {
+                    var severity = message[1..endBracket];
+                    var body = message[(endBracket + 1)..].Trim();
+                    AddDiagnostic(severity, body);
+                    continue;
+                }
+            }
+
             AddDiagnostic(defaultSeverity, message);
+        }
     }
 
     private void AddDiagnostic(string severity, string message)
@@ -2482,6 +2515,9 @@ public class CncControlViewModel : ViewModelBase
 
         if (LoadedProgram != null && (ErrorCount > 0 || _placedMotions.Any(m => !m.IsValid)))
             failures.Add("Resolve parser or bounds errors before starting the job.");
+
+        if (LoadedProgram != null && LoadedProgram.UnsupportedCommandCount > 0)
+            failures.Add("Unsupported G-code commands or planes are blocking execution.");
 
         return failures
             .Where(message => !string.IsNullOrWhiteSpace(message))
@@ -2837,6 +2873,11 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(LoadedJobMotionCount));
         OnPropertyChanged(nameof(LoadedJobProfileName));
         OnPropertyChanged(nameof(LoadedJobDriverMode));
+        OnPropertyChanged(nameof(ActiveGcodeUnits));
+        OnPropertyChanged(nameof(ActiveGcodeDistanceMode));
+        OnPropertyChanged(nameof(ActiveGcodePlane));
+        OnPropertyChanged(nameof(UnsupportedCommandCount));
+        OnPropertyChanged(nameof(InterpretationSummary));
         OnPropertyChanged(nameof(JobSessionState));
         OnPropertyChanged(nameof(JobSessionStateDisplay));
         OnPropertyChanged(nameof(JobReadinessSummary));
@@ -2927,6 +2968,11 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(LoadedJobMotionCount));
         OnPropertyChanged(nameof(LoadedJobProfileName));
         OnPropertyChanged(nameof(LoadedJobDriverMode));
+        OnPropertyChanged(nameof(ActiveGcodeUnits));
+        OnPropertyChanged(nameof(ActiveGcodeDistanceMode));
+        OnPropertyChanged(nameof(ActiveGcodePlane));
+        OnPropertyChanged(nameof(UnsupportedCommandCount));
+        OnPropertyChanged(nameof(InterpretationSummary));
         OnPropertyChanged(nameof(OperatorEvents));
         OnPropertyChanged(nameof(JobSessionState));
         OnPropertyChanged(nameof(JobSessionStateDisplay));

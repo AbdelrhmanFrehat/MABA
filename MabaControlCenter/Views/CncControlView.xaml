@@ -1403,6 +1403,10 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Loaded File" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
@@ -1426,8 +1430,20 @@
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Driver Mode" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
                         <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LoadedJobDriverMode}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
 
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Run Readiness" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
-                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding JobReadinessSummary}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Units" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ActiveGcodeUnits}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Distance Mode" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding ActiveGcodeDistanceMode}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="Active Plane" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding ActiveGcodePlane}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Interpreter" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding InterpretationSummary}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="Run Readiness" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding JobReadinessSummary}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                     </Grid>
                     <TextBlock Text="{Binding JobBlockingReason}"
                                Foreground="{DynamicResource TextSecondaryBrush}"

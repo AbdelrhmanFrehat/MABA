@@ -253,14 +253,20 @@ public class SimulatedCncDriver : ICncDriver
         try
         {
             string response;
-            if (command.CommandText.StartsWith("J", StringComparison.OrdinalIgnoreCase))
+            if (command.CommandText.Equals("M3", StringComparison.OrdinalIgnoreCase))
+            {
+                response = Complete("SPINDLE ON", "SPINDLE:ON");
+            }
+            else if (command.CommandText.Equals("M5", StringComparison.OrdinalIgnoreCase))
+            {
+                response = Complete("SPINDLE OFF", "SPINDLE:OFF");
+            }
+            else if (command.CommandText.StartsWith("J", StringComparison.OrdinalIgnoreCase))
             {
                 response = ExecuteSimulatedJog(command.CommandText);
             }
             else if (command.CommandText.StartsWith("G0", StringComparison.OrdinalIgnoreCase)
-                     || command.CommandText.StartsWith("G1", StringComparison.OrdinalIgnoreCase)
-                     || command.CommandText.StartsWith("G2", StringComparison.OrdinalIgnoreCase)
-                     || command.CommandText.StartsWith("G3", StringComparison.OrdinalIgnoreCase))
+                     || command.CommandText.StartsWith("G1", StringComparison.OrdinalIgnoreCase))
             {
                 var targetX = command.ExpectedEndX ?? (_profile.XMinMm + (decimal)(DeviceStatus.ReportedX ?? 0m));
                 var targetY = command.ExpectedEndY ?? (_profile.YMinMm + (decimal)(DeviceStatus.ReportedY ?? 0m));
@@ -269,6 +275,11 @@ public class SimulatedCncDriver : ICncDriver
                 var currentY = DeviceStatus.ReportedY ?? _profile.YMinMm;
                 var currentZ = DeviceStatus.ReportedZ ?? _profile.ZMinMm;
                 response = MoveLinear(targetX - currentX, targetY - currentY, targetZ - currentZ);
+            }
+            else if (command.CommandText.StartsWith("G2", StringComparison.OrdinalIgnoreCase)
+                     || command.CommandText.StartsWith("G3", StringComparison.OrdinalIgnoreCase))
+            {
+                response = ExecuteSimulatedArc(command);
             }
             else
             {
@@ -461,5 +472,30 @@ public class SimulatedCncDriver : ICncDriver
     {
         return text.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase)
                || text.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string ExecuteSimulatedArc(CncPlannedCommand command)
+    {
+        EnsureConnected();
+        EnsureMotorsEnabled();
+
+        DeviceStatus.DeviceState = CncDeviceState.Running;
+        DeviceStatus.LastStatusText = "STATUS:RUNNING";
+        NotifyStateChanged();
+
+        var duration = 120 + (int)Math.Min(1600m, command.EstimatedDistanceMm * 24m);
+        SimulateDelay(duration);
+
+        DeviceStatus.ReportedX = command.ExpectedEndX ?? DeviceStatus.ReportedX;
+        DeviceStatus.ReportedY = command.ExpectedEndY ?? DeviceStatus.ReportedY;
+        DeviceStatus.ReportedZ = command.ExpectedEndZ ?? DeviceStatus.ReportedZ;
+        DeviceStatus.HasReportedPosition = true;
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.LastStatusText = $"POS:{DeviceStatus.ReportedX ?? 0m:0.###},{DeviceStatus.ReportedY ?? 0m:0.###},{DeviceStatus.ReportedZ ?? 0m:0.###}";
+        DeviceStatus.LastAcknowledgement = DeviceStatus.LastStatusText;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        AddDriverLog($"Simulated arc completed with {command.EstimatedDistanceMm:0.###} mm of travel.", "Info");
+        NotifyStateChanged();
+        return DeviceStatus.LastStatusText;
     }
 }

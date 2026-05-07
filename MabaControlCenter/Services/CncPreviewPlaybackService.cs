@@ -149,9 +149,10 @@ public class CncPreviewPlaybackService : ICncPreviewPlaybackService
             var durationMs = GetSegmentDurationMilliseconds(motion);
             var progress = durationMs <= 0.001 ? 1d : Math.Clamp(_segmentElapsedMs / durationMs, 0d, 1d);
             _segmentProgress = progress;
-            _toolX = Interpolate(motion.StartX, motion.EndX, progress);
-            _toolY = Interpolate(motion.StartY, motion.EndY, progress);
-            _toolZ = Interpolate(motion.StartZ, motion.EndZ, progress);
+            var point = GcodeMotionGeometry.GetPointAtProgress(motion, progress);
+            _toolX = point.X;
+            _toolY = point.Y;
+            _toolZ = point.Z;
 
             if (progress < 1d)
                 break;
@@ -237,11 +238,6 @@ public class CncPreviewPlaybackService : ICncPreviewPlaybackService
 
         var seconds = (double)(motion.LengthMm / mmPerMinute) * 60d;
         return Math.Max(120d, seconds * 1000d);
-    }
-
-    private static decimal Interpolate(decimal start, decimal end, double progress)
-    {
-        return start + ((end - start) * (decimal)progress);
     }
 
     private void NotifyChanged()

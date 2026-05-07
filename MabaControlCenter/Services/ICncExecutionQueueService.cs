@@ -14,7 +14,7 @@ public interface ICncExecutionQueueService : ICncExecutionPlanner, ICncCommandSt
     string? LastInterruptionReason { get; }
     event EventHandler? ExecutionStateChanged;
 
-    void Load(IReadOnlyList<GcodeMotionCommand> motions, string? activeJobName = null);
+    void Load(IReadOnlyList<GcodeMotionCommand> motions, string? activeJobName = null, IReadOnlyList<GcodeInterpretedCommand>? interpretedCommands = null);
     Task StartAsync(ICncControllerService controllerService);
     void Pause();
     Task ResumeAsync(ICncControllerService controllerService);
