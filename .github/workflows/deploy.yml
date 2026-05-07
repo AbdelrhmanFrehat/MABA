@@ -188,8 +188,27 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
+            # ── Ensure Nginx allows large uploads (desktop update packages) ──
+            NGINX_CONF="/etc/nginx/nginx.conf"
+            if grep -q "client_max_body_size" "$NGINX_CONF" 2>/dev/null; then
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' sed -i 's/client_max_body_size[^;]*;/client_max_body_size 500m;/g' "$NGINX_CONF"
+            else
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' sed -i '/http {/a\    client_max_body_size 500m;' "$NGINX_CONF"
+            fi
+            for f in /etc/nginx/sites-available/* /etc/nginx/conf.d/*.conf; do
+              [ -f "$f" ] || continue
+              grep -q "client_max_body_size" "$f" && \
+                echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' sed -i 's/client_max_body_size[^;]*;/client_max_body_size 500m;/g' "$f"
+            done
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' nginx -t 2>/dev/null && \
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl reload nginx && \
+              echo "Nginx reloaded with client_max_body_size 500m" || true
+
+            # ── Ensure desktop-updates directory exists ──────────────────────
+            mkdir -p /home/abd/WebSites/MABA/publish/wwwroot/desktop-updates/stable
+
             cd /home/abd/WebSites/MABA/publish
-            
+
             # Ensure appsettings.json exists
             if [ ! -f appsettings.json ]; then
               if [ -f appsettings.Production.json ]; then
