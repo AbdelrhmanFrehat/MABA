@@ -26,7 +26,11 @@ public class SettingsService : ISettingsService
                 var json = File.ReadAllText(SettingsFilePath);
                 var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
                 if (loaded != null)
+                {
+                    if (string.IsNullOrWhiteSpace(loaded.UpdateManifestUri))
+                        loaded.UpdateManifestUri = AppSettings.DefaultUpdateManifestUri;
                     return loaded;
+                }
             }
         }
         catch { /* ignore */ }
