@@ -1,0 +1,58 @@
+name: Fix Nginx Upload Limit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-nginx:
+    name: Set client_max_body_size on server Nginx
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Nginx config and upload desktop zip
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            # --- 1. Fix Nginx client_max_body_size ---
+            NGINX_CONF="/etc/nginx/nginx.conf"
+            SITE_CONF_DIR="/etc/nginx/sites-available"
+            SITE_CONF_DIR2="/etc/nginx/conf.d"
+
+            # Patch nginx.conf http block if it has a small client_max_body_size
+            if grep -q "client_max_body_size" "$NGINX_CONF" 2>/dev/null; then
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' sed -i 's/client_max_body_size[^;]*;/client_max_body_size 500m;/g' "$NGINX_CONF"
+              echo "Patched client_max_body_size in $NGINX_CONF"
+            else
+              echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' sed -i '/http {/a\    client_max_body_size 500m;' "$NGINX_CONF"
+              echo "Inserted client_max_body_size 500m into http block"
+            fi
+
+            # Also patch any site configs
+            for conf in "$SITE_CONF_DIR"/* "$SITE_CONF_DIR2"/*.conf 2>/dev/null; do
+              [ -f "$conf" ] || continue
+              if grep -q "client_max_body_size" "$conf"; then
+                echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' sed -i 's/client_max_body_size[^;]*;/client_max_body_size 500m;/g' "$conf"
+                echo "Patched $conf"
+              fi
+            done
+
+            # Test and reload Nginx
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' nginx -t && \
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S -p '' systemctl reload nginx
+            echo "Nginx reloaded ✓"
+
+      - name: Upload MabaControlCenter zip directly to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            TARGET="/home/abd/WebSites/MABA/publish/wwwroot/desktop-updates/stable"
+            mkdir -p "$TARGET"
+            echo "Target directory ready: $TARGET"
+            ls -lh "$TARGET"
