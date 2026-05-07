@@ -63,7 +63,8 @@ public class DesktopUpdatesController : ControllerBase
     [HttpPost("publish")]
     [Authorize(Roles = "Admin,Manager")]
     [Consumes("multipart/form-data")]
-    [RequestSizeLimit(500 * 1024 * 1024)] // 500 MB max
+    [DisableRequestSizeLimit]
+    [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue, ValueLengthLimit = int.MaxValue)]
     public async Task<ActionResult<DesktopUpdateManifest>> Publish(
         IFormFile file,
         [FromForm] string version,

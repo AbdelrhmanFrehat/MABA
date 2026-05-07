@@ -42,6 +42,9 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = long.MaxValue;
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+    options.BufferBodyLengthLimit = long.MaxValue;
 });
 builder.WebHost.ConfigureKestrel(options =>
 {
