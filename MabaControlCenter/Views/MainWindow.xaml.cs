@@ -28,11 +28,14 @@ public partial class MainWindow : Window
         var cncDriverFactory = new CncDriverFactory(loggingService);
         var cncControllerService = new CncControllerService(loggingService, cncProfileService, cncDriverFactory);
         var gcodeParserService = new GcodeParserService();
-        var cncExecutionQueueService = new CncExecutionQueueService();
+        var cncExecutionPlannerService = new CncExecutionPlannerService(activeMachineContextService);
+        var cncExecutionQueueService = new CncExecutionQueueService(cncExecutionPlannerService);
         var cncJobSessionService = new CncJobSessionService();
         var cncPreviewPlaybackService = new CncPreviewPlaybackService();
         var cncFramePathService = new CncFramePathService();
         var cncJobPlacementService = new CncJobPlacementService();
+        var cncControllerStateMachine = new CncControllerStateMachine();
+        var cncRuntimeCoordinator = new CncRuntimeCoordinator(cncControllerService, cncExecutionQueueService, cncJobSessionService, activeMachineContextService, cncControllerStateMachine);
         var localizationService = (ILocalizationService)Application.Current.Resources["LocalizationService"];
 
         // Load saved settings and apply theme + language on startup
@@ -40,7 +43,7 @@ public partial class MainWindow : Window
         themeService.ApplyTheme(settings.Theme);
         localizationService.SetCulture(settings.Language);
 
-        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, authSessionService);
+        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, cncRuntimeCoordinator, authSessionService);
         DataContext = new MainViewModel(nav, authSessionService);
         if (settings.CheckForUpdatesAutomatically)
             _ = updateService.CheckForUpdatesAsync(userInitiated: false);

@@ -61,10 +61,14 @@ public class SimulatedCncDriver : ICncDriver
         SimulateDelay(180);
         DeviceStatus.IsResponsive = true;
         DeviceStatus.IsReady = true;
+        DeviceStatus.IsLocked = true;
+        DeviceStatus.IsAlarmed = false;
         DeviceStatus.DeviceState = CncDeviceState.Ready;
         DeviceStatus.LastAcknowledgement = "READY";
         DeviceStatus.LastAcknowledgedAt = DateTime.Now;
         DeviceStatus.LastStatusText = "STATUS:IDLE";
+        DeviceStatus.FirmwareVersion = "SIM-1.0";
+        DeviceStatus.ProtocolVersion = "SIMULATION";
         DeviceStatus.ReportedX = _profile.XMinMm;
         DeviceStatus.ReportedY = _profile.YMinMm;
         DeviceStatus.ReportedZ = _profile.ZMinMm;
@@ -94,6 +98,7 @@ public class SimulatedCncDriver : ICncDriver
         EnsureConnected();
         SimulateDelay(120);
         _motorsEnabled = true;
+        DeviceStatus.IsLocked = false;
         DeviceStatus.DeviceState = CncDeviceState.Idle;
         return Complete("ENABLE", "OK");
     }
@@ -103,6 +108,7 @@ public class SimulatedCncDriver : ICncDriver
         EnsureConnected();
         SimulateDelay(120);
         _motorsEnabled = false;
+        DeviceStatus.IsLocked = true;
         DeviceStatus.DeviceState = CncDeviceState.Idle;
         return Complete("DISABLE", "OK");
     }
@@ -112,6 +118,7 @@ public class SimulatedCncDriver : ICncDriver
         EnsureConnected();
         EnsureMotorsEnabled();
         DeviceStatus.DeviceState = CncDeviceState.Homing;
+        DeviceStatus.IsLocked = true;
         DeviceStatus.LastStatusText = "STATUS:HOMING";
         AddProtocolLog("Simulated home started.", "Info");
         NotifyStateChanged();
@@ -125,6 +132,7 @@ public class SimulatedCncDriver : ICncDriver
             DeviceStatus.ReportedZ = _profile.ZMinMm;
 
         DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.IsLocked = false;
         DeviceStatus.LastStatusText = "HOME DONE";
         DeviceStatus.LastAcknowledgement = "HOME DONE";
         DeviceStatus.LastAcknowledgedAt = DateTime.Now;
@@ -138,6 +146,8 @@ public class SimulatedCncDriver : ICncDriver
         EnsureConnected();
         SimulateDelay(100);
         DeviceStatus.LastProtocolError = null;
+        DeviceStatus.IsAlarmed = false;
+        DeviceStatus.IsLocked = false;
         DeviceStatus.DeviceState = CncDeviceState.Idle;
         return Complete("RESET", "OK");
     }
@@ -146,6 +156,8 @@ public class SimulatedCncDriver : ICncDriver
     {
         EnsureConnected();
         SimulateDelay(80);
+        DeviceStatus.IsAlarmed = true;
+        DeviceStatus.IsLocked = true;
         DeviceStatus.DeviceState = CncDeviceState.Stopped;
         DeviceStatus.LastStatusText = "STOPPED";
         DeviceStatus.LastAcknowledgement = "STOPPED";
@@ -232,10 +244,68 @@ public class SimulatedCncDriver : ICncDriver
         return DeviceStatus.LastStatusText;
     }
 
+    public CncControllerAckResult ExecutePlannedCommand(CncPlannedCommand command)
+    {
+        if (command == null)
+            throw new ArgumentNullException(nameof(command));
+
+        var startedAt = DateTime.UtcNow;
+        try
+        {
+            string response;
+            if (command.CommandText.StartsWith("J", StringComparison.OrdinalIgnoreCase))
+            {
+                response = ExecuteSimulatedJog(command.CommandText);
+            }
+            else if (command.CommandText.StartsWith("G0", StringComparison.OrdinalIgnoreCase)
+                     || command.CommandText.StartsWith("G1", StringComparison.OrdinalIgnoreCase)
+                     || command.CommandText.StartsWith("G2", StringComparison.OrdinalIgnoreCase)
+                     || command.CommandText.StartsWith("G3", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetX = command.ExpectedEndX ?? (_profile.XMinMm + (decimal)(DeviceStatus.ReportedX ?? 0m));
+                var targetY = command.ExpectedEndY ?? (_profile.YMinMm + (decimal)(DeviceStatus.ReportedY ?? 0m));
+                var targetZ = command.ExpectedEndZ ?? (_profile.ZMinMm + (decimal)(DeviceStatus.ReportedZ ?? 0m));
+                var currentX = DeviceStatus.ReportedX ?? _profile.XMinMm;
+                var currentY = DeviceStatus.ReportedY ?? _profile.YMinMm;
+                var currentZ = DeviceStatus.ReportedZ ?? _profile.ZMinMm;
+                response = MoveLinear(targetX - currentX, targetY - currentY, targetZ - currentZ);
+            }
+            else
+            {
+                response = ExecuteLegacyCommand(command.CommandText);
+            }
+
+            return new CncControllerAckResult
+            {
+                Success = !IsErrorLikeText(response),
+                IsAlarm = response.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase),
+                ResponseText = response,
+                ErrorMessage = IsErrorLikeText(response) ? response : null,
+                AcknowledgedAt = DateTime.UtcNow,
+                RoundTripMilliseconds = (DateTime.UtcNow - startedAt).TotalMilliseconds,
+                SourceLineNumber = command.SourceLineNumber
+            };
+        }
+        catch (Exception ex)
+        {
+            return new CncControllerAckResult
+            {
+                Success = false,
+                ResponseText = ex.Message,
+                ErrorMessage = ex.Message,
+                AcknowledgedAt = DateTime.UtcNow,
+                RoundTripMilliseconds = (DateTime.UtcNow - startedAt).TotalMilliseconds,
+                SourceLineNumber = command.SourceLineNumber
+            };
+        }
+    }
+
     private string Complete(string command, string response)
     {
         DeviceStatus.IsResponsive = true;
         DeviceStatus.IsReady = true;
+        if (!response.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) && !response.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
+            DeviceStatus.IsAlarmed = false;
         DeviceStatus.LastAcknowledgement = response;
         DeviceStatus.LastAcknowledgedAt = DateTime.Now;
         DeviceStatus.LastStatusText = response;
@@ -248,11 +318,18 @@ public class SimulatedCncDriver : ICncDriver
     {
         DeviceStatus.IsResponsive = false;
         DeviceStatus.IsReady = false;
+        DeviceStatus.IsLocked = false;
+        DeviceStatus.IsAlarmed = false;
         DeviceStatus.DeviceState = CncDeviceState.Unknown;
         DeviceStatus.LastProtocolError = null;
         DeviceStatus.LastStatusText = null;
         DeviceStatus.LastAcknowledgement = null;
         DeviceStatus.LastAcknowledgedAt = null;
+        DeviceStatus.FirmwareVersion = "SIM-1.0";
+        DeviceStatus.ProtocolVersion = "SIMULATION";
+        DeviceStatus.LimitXTriggered = false;
+        DeviceStatus.LimitYTriggered = false;
+        DeviceStatus.LimitZTriggered = false;
     }
 
     private void EnsureConnected()
@@ -328,5 +405,61 @@ public class SimulatedCncDriver : ICncDriver
         }
 
         Application.Current.Dispatcher.Invoke(action);
+    }
+
+    private string ExecuteSimulatedJog(string commandText)
+    {
+        var axis = commandText[1].ToString();
+        if (!decimal.TryParse(commandText[2..], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var distance))
+            throw new InvalidOperationException($"Unsupported simulated jog command '{commandText}'.");
+
+        return Jog(axis, distance);
+    }
+
+    private string ExecuteLegacyCommand(string commandText)
+    {
+        if (commandText.StartsWith("XY,", StringComparison.OrdinalIgnoreCase))
+        {
+            var parts = commandText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length != 3
+                || !int.TryParse(parts[1], out var signedX)
+                || !int.TryParse(parts[2], out var signedY))
+            {
+                throw new InvalidOperationException($"Unsupported simulated command '{commandText}'.");
+            }
+
+            var deltaX = signedX / _profile.XStepsPerMm;
+            var deltaY = signedY / _profile.YStepsPerMm;
+            return MoveLinear(deltaX, deltaY, 0m);
+        }
+
+        if (commandText.Length >= 3 && (commandText[0] == '+' || commandText[0] == '-'))
+        {
+            var axis = commandText[^1].ToString();
+            var stepText = commandText[1..^1];
+            if (!int.TryParse(stepText, out var steps))
+                throw new InvalidOperationException($"Unsupported simulated command '{commandText}'.");
+
+            var stepsPerMm = axis.ToUpperInvariant() switch
+            {
+                "X" => _profile.XStepsPerMm,
+                "Y" => _profile.YStepsPerMm,
+                _ => _profile.ZStepsPerMm
+            };
+
+            var distance = steps / stepsPerMm;
+            if (commandText[0] == '-')
+                distance = -distance;
+
+            return Jog(axis, distance);
+        }
+
+        throw new InvalidOperationException($"Unsupported simulated command '{commandText}'.");
+    }
+
+    private static bool IsErrorLikeText(string text)
+    {
+        return text.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase)
+               || text.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase);
     }
 }

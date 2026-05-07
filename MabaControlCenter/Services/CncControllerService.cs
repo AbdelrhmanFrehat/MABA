@@ -342,6 +342,66 @@ public class CncControllerService : ICncControllerService
         return response;
     }
 
+    public CncControllerAckResult ExecutePlannedCommand(CncPlannedCommand command)
+    {
+        if (command == null)
+            throw new ArgumentNullException(nameof(command));
+
+        EnsureConnected();
+        if (command.SafetyCategory == CncCommandSafetyCategory.Motion)
+            EnsureMotorsEnabled();
+        EnsureNoAlarmBlocking();
+
+        var startedAt = DateTime.UtcNow;
+        UpdateState(command.SafetyCategory == CncCommandSafetyCategory.Motion
+            ? CncMachineState.Running
+            : _machineState);
+
+        try
+        {
+            var ack = _driver.ExecutePlannedCommand(command);
+            ack.SourceLineNumber ??= command.SourceLineNumber;
+            ack.RoundTripMilliseconds = ack.RoundTripMilliseconds <= 0d
+                ? (DateTime.UtcNow - startedAt).TotalMilliseconds
+                : ack.RoundTripMilliseconds;
+
+            if (ack.Success)
+            {
+                ApplySnapshotForPlannedCommand(command);
+                if (_machineState != CncMachineState.Stopped && _machineState != CncMachineState.Warning)
+                    UpdateState(CncMachineState.Idle);
+            }
+            else if (ack.IsAlarm)
+            {
+                _lastFaultReason = ack.ErrorMessage ?? ack.ResponseText;
+                UpdateState(CncMachineState.Alarm);
+            }
+            else
+            {
+                _lastFaultReason = ack.ErrorMessage ?? ack.ResponseText;
+                UpdateState(CncMachineState.Error);
+            }
+
+            NotifyStateChanged();
+            return ack;
+        }
+        catch (Exception ex)
+        {
+            _lastFaultReason = ex.Message;
+            UpdateState(CncMachineState.Error);
+            NotifyStateChanged();
+
+            return new CncControllerAckResult
+            {
+                Success = false,
+                ResponseText = ex.Message,
+                ErrorMessage = ex.Message,
+                RoundTripMilliseconds = (DateTime.UtcNow - startedAt).TotalMilliseconds,
+                SourceLineNumber = command.SourceLineNumber
+            };
+        }
+    }
+
     public void UpdateConfig(CncMachineConfig config)
     {
         var profile = CloneProfile(_profileService.ActiveProfile);
@@ -550,6 +610,24 @@ public class CncControllerService : ICncControllerService
 
         UpdateState(MapDeviceStateToMachineState(DeviceStatus.DeviceState));
         NotifyStateChanged();
+    }
+
+    private void ApplySnapshotForPlannedCommand(CncPlannedCommand command)
+    {
+        if (DeviceStatus.HasReportedPosition)
+        {
+            _machineX = DeviceStatus.ReportedX ?? _machineX;
+            _machineY = DeviceStatus.ReportedY ?? _machineY;
+            _machineZ = DeviceStatus.ReportedZ ?? _machineZ;
+            return;
+        }
+
+        if (command.ExpectedEndX.HasValue)
+            _machineX = command.ExpectedEndX.Value + _workOffsetX;
+        if (command.ExpectedEndY.HasValue)
+            _machineY = command.ExpectedEndY.Value + _workOffsetY;
+        if (command.ExpectedEndZ.HasValue)
+            _machineZ = command.ExpectedEndZ.Value + _workOffsetZ;
     }
 
     private void EnsureConnected()

@@ -86,10 +86,14 @@ public class ArduinoSerialCncDriver : ICncDriver
                 DeviceStatus.DeviceState = CncDeviceState.Ready;
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
+                DeviceStatus.IsLocked = true;
+                DeviceStatus.IsAlarmed = false;
                 DeviceStatus.LastAcknowledgement = string.IsNullOrWhiteSpace(startupBanner) ? "MABA CNC FIRMWARE READY" : startupBanner;
                 DeviceStatus.LastStatusText = string.IsNullOrWhiteSpace(startupBanner)
                     ? "MABA CNC FIRMWARE READY"
                     : startupBanner;
+                DeviceStatus.FirmwareVersion = "2.0.0";
+                DeviceStatus.ProtocolVersion = "MabaProtocol";
                 AddProtocolLog("MABA motion firmware connected.", "Info");
                 RefreshStatus();
             }
@@ -100,16 +104,22 @@ public class ArduinoSerialCncDriver : ICncDriver
                 DeviceStatus.DeviceState = CncDeviceState.Ready;
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
+                DeviceStatus.IsLocked = false;
+                DeviceStatus.IsAlarmed = false;
                 DeviceStatus.LastAcknowledgement = string.IsNullOrWhiteSpace(startupBanner) ? "Ready" : startupBanner;
                 DeviceStatus.LastStatusText = string.IsNullOrWhiteSpace(startupBanner)
                     ? "Simple firmware connected."
                     : startupBanner;
+                DeviceStatus.ProtocolVersion = "LegacySimple";
                 AddProtocolLog("Simple firmware connected using legacy step-command mode.", "Info");
             }
             else
             {
                 DeviceStatus.DeviceState = CncDeviceState.Ready;
                 DeviceStatus.IsReady = true;
+                DeviceStatus.IsLocked = false;
+                DeviceStatus.IsAlarmed = false;
+                DeviceStatus.ProtocolVersion = "Custom";
                 SendProtocolCommand(_commandFormatter.CreateStatusCommand());
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
@@ -313,6 +323,66 @@ public class ArduinoSerialCncDriver : ICncDriver
         return string.Join(" | ", responses.Where(r => !string.IsNullOrWhiteSpace(r)));
     }
 
+    public CncControllerAckResult ExecutePlannedCommand(CncPlannedCommand command)
+    {
+        if (command == null)
+            throw new ArgumentNullException(nameof(command));
+
+        var startedAt = DateTime.UtcNow;
+        try
+        {
+            var response = ExecuteCommandText(command.CommandText, command.RequiresAck);
+            return new CncControllerAckResult
+            {
+                Success = !IsErrorLikeText(response),
+                IsAlarm = response.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase),
+                IsTimeout = false,
+                ResponseText = response,
+                ErrorMessage = IsErrorLikeText(response) ? response : null,
+                AcknowledgedAt = DateTime.UtcNow,
+                RoundTripMilliseconds = (DateTime.UtcNow - startedAt).TotalMilliseconds,
+                SourceLineNumber = command.SourceLineNumber
+            };
+        }
+        catch (TimeoutException ex)
+        {
+            return new CncControllerAckResult
+            {
+                Success = false,
+                IsTimeout = true,
+                ResponseText = ex.Message,
+                ErrorMessage = ex.Message,
+                AcknowledgedAt = DateTime.UtcNow,
+                RoundTripMilliseconds = (DateTime.UtcNow - startedAt).TotalMilliseconds,
+                SourceLineNumber = command.SourceLineNumber
+            };
+        }
+        catch (Exception ex)
+        {
+            return new CncControllerAckResult
+            {
+                Success = false,
+                IsAlarm = DeviceStatus.IsAlarmed,
+                ResponseText = ex.Message,
+                ErrorMessage = ex.Message,
+                AcknowledgedAt = DateTime.UtcNow,
+                RoundTripMilliseconds = (DateTime.UtcNow - startedAt).TotalMilliseconds,
+                SourceLineNumber = command.SourceLineNumber
+            };
+        }
+    }
+
+    private string ExecuteCommandText(string commandText, bool requiresAck)
+    {
+        if (UsesMabaMotionFirmware)
+            return SendMabaPlannerCommand(commandText, requiresAck);
+
+        if (UsesSimpleFirmwareProtocol)
+            return SendLegacyPlannerCommand(commandText, requiresAck);
+
+        return SendCustomPlannerCommand(commandText);
+    }
+
     private string SendMabaLinearMove(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
     {
         var firmwareDeltaX = ApplyAxisDirection("X", deltaXmm);
@@ -326,6 +396,91 @@ public class ArduinoSerialCncDriver : ICncDriver
         var response = SendMabaCommandAwaiting("Linear Move", command, new[] { "OK" }, 30000);
         UpdateEstimatedPosition(deltaXmm, deltaYmm, deltaZmm);
         return response;
+    }
+
+    private string SendMabaPlannerCommand(string commandText, bool requiresAck)
+    {
+        if (!requiresAck)
+        {
+            EnsureConnected();
+            AddSerialLog("Sent", commandText, "Info");
+            _loggingService.AddLog("CNC Sent", commandText, "Info");
+            _serialPort!.WriteLine(commandText);
+            DeviceStatus.LastAcknowledgement = commandText;
+            DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+            DeviceStatus.IsResponsive = true;
+            DeviceStatus.LastStatusText = commandText;
+            NotifyStateChanged();
+            return commandText;
+        }
+
+        var expected = commandText.StartsWith("$H", StringComparison.OrdinalIgnoreCase) || commandText.Equals("H", StringComparison.OrdinalIgnoreCase)
+            ? new[] { "HOME:DONE" }
+            : commandText.Equals("$X", StringComparison.OrdinalIgnoreCase)
+                ? new[] { "UNLOCKED", "OK" }
+                : commandText.Equals("!", StringComparison.OrdinalIgnoreCase)
+                    ? new[] { "ALARM:", "ERR:" }
+                    : new[] { "OK" };
+
+        var timeoutMs = commandText.StartsWith("G", StringComparison.OrdinalIgnoreCase) ? 30000 : 15000;
+        return SendMabaCommandAwaiting("Stream", commandText, expected, timeoutMs);
+    }
+
+    private string SendLegacyPlannerCommand(string commandText, bool requiresAck)
+    {
+        if (commandText.StartsWith("XY,", StringComparison.OrdinalIgnoreCase))
+        {
+            var parts = commandText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length != 3
+                || !int.TryParse(parts[1], out var signedX)
+                || !int.TryParse(parts[2], out var signedY))
+            {
+                throw new InvalidOperationException($"Unsupported legacy planner command '{commandText}'.");
+            }
+
+            return SendLegacyCombinedXyCommand(Math.Abs(signedX), signedX >= 0, Math.Abs(signedY), signedY >= 0);
+        }
+
+        if (commandText.Length >= 3 && (commandText[0] == '+' || commandText[0] == '-'))
+        {
+            var axis = commandText[^1].ToString().ToUpperInvariant();
+            var stepText = commandText[1..^1];
+            if (!int.TryParse(stepText, out var steps))
+                throw new InvalidOperationException($"Unsupported legacy planner command '{commandText}'.");
+
+            return SendLegacyJogCommand(axis, steps, commandText[0] == '+');
+        }
+
+        if (requiresAck)
+            return SendLegacyCommandAwaiting("Legacy Stream", commandText, "OK", 15000);
+
+        EnsureConnected();
+        AddSerialLog("Sent", commandText, "Info");
+        _loggingService.AddLog("CNC Sent", commandText, "Info");
+        _serialPort!.WriteLine(commandText);
+        Thread.Sleep(120);
+        var residual = DrainAvailableText();
+        if (!string.IsNullOrWhiteSpace(residual))
+            AddSerialLog("Received", residual, "Info");
+        DeviceStatus.LastAcknowledgement = residual ?? commandText;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        DeviceStatus.IsResponsive = true;
+        DeviceStatus.LastStatusText = residual ?? commandText;
+        NotifyStateChanged();
+        return residual ?? commandText;
+    }
+
+    private string SendCustomPlannerCommand(string commandText)
+    {
+        var response = SendProtocolCommand(new CncProtocolCommandSpec
+        {
+            Name = "Planned Command",
+            Commands = new[] { commandText },
+            TerminalMessageTypes = new[] { CncProtocolMessageType.Acknowledgement, CncProtocolMessageType.Status, CncProtocolMessageType.Position },
+            TimeoutMs = 15000,
+            AllowLegacyStatusWords = true
+        });
+        return response.RawText;
     }
 
     private string SendLegacyLinearMove(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
@@ -628,11 +783,16 @@ public class ArduinoSerialCncDriver : ICncDriver
     {
         DeviceStatus.IsResponsive = false;
         DeviceStatus.IsReady = false;
+        DeviceStatus.IsLocked = false;
+        DeviceStatus.IsAlarmed = false;
         DeviceStatus.DeviceState = CncDeviceState.Unknown;
         DeviceStatus.HasReportedPosition = false;
         DeviceStatus.ReportedX = null;
         DeviceStatus.ReportedY = null;
         DeviceStatus.ReportedZ = null;
+        DeviceStatus.LimitXTriggered = false;
+        DeviceStatus.LimitYTriggered = false;
+        DeviceStatus.LimitZTriggered = false;
         DeviceStatus.LastAcknowledgement = null;
         DeviceStatus.LastAcknowledgedAt = null;
         DeviceStatus.LastProtocolError = null;
@@ -643,6 +803,8 @@ public class ArduinoSerialCncDriver : ICncDriver
     {
         DeviceStatus.IsResponsive = false;
         DeviceStatus.IsReady = false;
+        DeviceStatus.IsLocked = false;
+        DeviceStatus.IsAlarmed = false;
         DeviceStatus.DeviceState = CncDeviceState.Disconnected;
         DeviceStatus.LastProtocolError = reason;
         DeviceStatus.LastStatusText = reason ?? "Disconnected";
@@ -652,6 +814,7 @@ public class ArduinoSerialCncDriver : ICncDriver
     {
         DeviceStatus.LastProtocolError = message;
         DeviceStatus.IsReady = false;
+        DeviceStatus.IsAlarmed = true;
         DeviceStatus.DeviceState = CncDeviceState.Error;
         AddProtocolLog(message, "Error");
         NotifyStateChanged();
@@ -798,6 +961,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) || rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
                 {
                     DeviceStatus.LastProtocolError = rawLine;
+                    DeviceStatus.IsAlarmed = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase);
                     DeviceStatus.DeviceState = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase)
                         ? CncDeviceState.Alarm
                         : CncDeviceState.Error;
@@ -866,6 +1030,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase))
                 {
                     DeviceStatus.LastProtocolError = rawLine;
+                    DeviceStatus.IsAlarmed = false;
                     DeviceStatus.DeviceState = CncDeviceState.Error;
                     NotifyStateChanged();
                     return rawLine;
@@ -874,6 +1039,8 @@ public class ArduinoSerialCncDriver : ICncDriver
                 if (rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
                 {
                     DeviceStatus.LastProtocolError = rawLine;
+                    DeviceStatus.IsAlarmed = true;
+                    DeviceStatus.IsLocked = true;
                     DeviceStatus.DeviceState = CncDeviceState.Alarm;
                     _motorsEnabled = false;
                     NotifyStateChanged();
@@ -883,18 +1050,23 @@ public class ArduinoSerialCncDriver : ICncDriver
                 if (rawLine.Equals("UNLOCKED", StringComparison.OrdinalIgnoreCase))
                 {
                     DeviceStatus.IsReady = true;
+                    DeviceStatus.IsLocked = false;
+                    DeviceStatus.IsAlarmed = false;
                     DeviceStatus.DeviceState = CncDeviceState.Ready;
                     _motorsEnabled = true;
                 }
                 else if (rawLine.Equals("HOME:DONE", StringComparison.OrdinalIgnoreCase))
                 {
                     DeviceStatus.IsReady = true;
+                    DeviceStatus.IsLocked = false;
+                    DeviceStatus.IsAlarmed = false;
                     DeviceStatus.DeviceState = CncDeviceState.Idle;
                     _motorsEnabled = true;
                 }
                 else if (rawLine.Equals("OK", StringComparison.OrdinalIgnoreCase))
                 {
                     DeviceStatus.IsReady = true;
+                    DeviceStatus.IsAlarmed = false;
                     DeviceStatus.DeviceState = CncDeviceState.Idle;
                 }
 
@@ -935,6 +1107,8 @@ public class ArduinoSerialCncDriver : ICncDriver
 
         var stateToken = values.TryGetValue("MABA", out var stateValue) ? stateValue : "LOCKED";
         var alarmActive = values.TryGetValue("ALARM", out var alarmValue) && alarmValue == "1";
+        var xLimitTriggered = values.TryGetValue("XLIM", out var xLimitValue) && xLimitValue == "1";
+        var yLimitTriggered = values.TryGetValue("YLIM", out var yLimitValue) && yLimitValue == "1";
         var x = values.TryGetValue("X", out var xValue) && decimal.TryParse(xValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedX) ? parsedX : _estimatedX;
         var y = values.TryGetValue("Y", out var yValue) && decimal.TryParse(yValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedY) ? parsedY : _estimatedY;
         var z = values.TryGetValue("Z", out var zValue) && decimal.TryParse(zValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedZ) ? parsedZ : _estimatedZ;
@@ -949,7 +1123,11 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.HasReportedPosition = true;
         DeviceStatus.IsResponsive = true;
         DeviceStatus.LastStatusText = rawLine;
+        DeviceStatus.LimitXTriggered = xLimitTriggered;
+        DeviceStatus.LimitYTriggered = yLimitTriggered;
         DeviceStatus.LastProtocolError = alarmActive ? "ALARM:LIMIT_OR_ESTOP" : null;
+        DeviceStatus.IsAlarmed = alarmActive;
+        DeviceStatus.IsLocked = !stateToken.Equals("READY", StringComparison.OrdinalIgnoreCase);
 
         if (alarmActive)
         {
@@ -963,12 +1141,14 @@ public class ArduinoSerialCncDriver : ICncDriver
         {
             DeviceStatus.DeviceState = CncDeviceState.Ready;
             DeviceStatus.IsReady = true;
+            DeviceStatus.IsLocked = false;
             _motorsEnabled = true;
             return;
         }
 
         DeviceStatus.DeviceState = CncDeviceState.Idle;
         DeviceStatus.IsReady = false;
+        DeviceStatus.IsLocked = true;
         _motorsEnabled = false;
     }
 
@@ -1048,6 +1228,8 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LastAcknowledgedAt = DateTime.Now;
         DeviceStatus.IsResponsive = true;
         DeviceStatus.IsReady = true;
+        DeviceStatus.IsLocked = false;
+        DeviceStatus.IsAlarmed = false;
         DeviceStatus.DeviceState = CncDeviceState.Idle;
         DeviceStatus.LastProtocolError = null;
         NotifyStateChanged();

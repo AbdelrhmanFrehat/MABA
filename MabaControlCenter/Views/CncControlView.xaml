@@ -874,8 +874,55 @@
                                         Style="{StaticResource SecondaryButtonStyle}"/>
                             </Grid>
                             <TextBlock Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+                            <WrapPanel Margin="0,0,0,8">
+                                <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="10,5"
+                                        Margin="0,0,8,8">
+                                    <TextBlock Text="{Binding RuntimeStateDisplay}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               FontWeight="SemiBold"/>
+                                </Border>
+                                <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="10,5"
+                                        Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding RuntimeModeDisplay}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </Border>
+                            </WrapPanel>
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12,10"
+                                    Margin="0,0,0,8"
+                                    Visibility="{Binding HasRuntimeAlarmBanner, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding RuntimeAlarmBannerText}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap"/>
+                            </Border>
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12,10"
+                                    Margin="0,0,0,8"
+                                    Visibility="{Binding HasRuntimeLockBanner, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding RuntimeLockBannerText}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap"/>
+                            </Border>
                             <TextBlock Text="{Binding RuntimeModeText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                             <TextBlock Text="{Binding ActiveProfileBaudRateDisplay, StringFormat=Baud rate: {0}}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding RuntimeBlockingReasonText}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasRuntimeBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
@@ -1118,21 +1165,32 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="State" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ExecutionStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Current Line" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CurrentLineNumber}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Current Raw Line" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentRawLine}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Progress" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ProgressSummary}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Session Started" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SessionStartedAtDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Last Action" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SessionLastAction}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Session Result" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
-                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SessionResultText}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Streaming State" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding StreamingStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Current Line" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentLineNumber}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Current Command" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CurrentStreamedCommand}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Current Raw Line" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CurrentRawLine}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Progress" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ProgressSummary}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Stream Metrics" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding StreamingProgressSummary}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="Failed Line" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding FailedLineNumber}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="Session Started" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SessionStartedAtDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="9" Grid.Column="0" Text="Last Action" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,6"/>
+                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SessionLastAction}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="10" Grid.Column="0" Text="Session Result" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding SessionResultText}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                             </Grid>
                             <TextBlock Text="{Binding SessionSummaryText}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
@@ -1496,15 +1554,21 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="State" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding MachineStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RuntimeStateDisplay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Connection" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
                                 <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ConnectionStatusText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Motors" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
                                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MotorsEnabled}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Execution Ready" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CanStartProgram}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Execution Ready" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CanStartProgram}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Firmware" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RuntimeFirmwareVersionText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Protocol" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding RuntimeProtocolVersionText}" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -2175,7 +2239,8 @@
                                     MinWidth="112"
                                     MinHeight="34"
                                     Padding="10,6"
-                                    Margin="0,0,8,8"/>
+                                    Margin="0,0,8,8"
+                                    Visibility="{Binding CanResetState, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             <Button Content="Clear Warning"
                                     Command="{Binding ClearWarningCommand}"
                                     Style="{StaticResource CncPrimaryButtonStyle}"

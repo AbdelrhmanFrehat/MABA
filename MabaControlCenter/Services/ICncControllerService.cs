@@ -43,6 +43,7 @@ public interface ICncControllerService
     string RefreshStatus();
     string Jog(string axis, decimal deltaMm);
     string MoveLinear(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm);
+    CncControllerAckResult ExecutePlannedCommand(CncPlannedCommand command);
     void UpdateConfig(CncMachineConfig config);
     string? ValidateMachinePosition(decimal machineX, decimal machineY, decimal machineZ);
     string? ValidateWorkPosition(decimal workX, decimal workY, decimal workZ);

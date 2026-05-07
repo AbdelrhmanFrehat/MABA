@@ -31,6 +31,7 @@ public class NavigationService : INavigationService
         IMachineCatalogService machineCatalogService,
         IRuntimeProfileService runtimeProfileService,
         IActiveMachineContextService activeMachineContextService,
+        ICncRuntimeCoordinator cncRuntimeCoordinator,
         IAuthSessionService authSessionService)
     {
         _viewModels["Login"] = new LoginViewModel(authSessionService, this, settingsService);
@@ -42,7 +43,7 @@ public class NavigationService : INavigationService
         _viewModels["Commands"] = new CommandsViewModel(deviceService, loggingService);
         _viewModels["Modules"] = new ModulesViewModel(moduleService, deviceService, this);
         _viewModels["DexterCalibration"] = new DexterCalibrationViewModel(deviceService, loggingService, this);
-        var cncControlViewModel = new CncControlViewModel(cncControllerService, cncProfileService, activeProductionJobService, this, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService);
+        var cncControlViewModel = new CncControlViewModel(cncControllerService, cncProfileService, activeProductionJobService, this, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, cncRuntimeCoordinator);
         _viewModels["CncControl"] = cncControlViewModel;
         _viewModels["CncWorkspace"] = cncControlViewModel;
         _viewModels["LaserWorkspace"] = new ProductionWorkspaceViewModel("LaserWorkspace", "Laser Workspace", "LASER", activeProductionJobService, deviceService, this);
