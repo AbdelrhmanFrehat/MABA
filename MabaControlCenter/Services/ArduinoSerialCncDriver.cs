@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Ports;
+using System.Threading;
 using System.Windows;
 using MabaControlCenter.Models;
 
@@ -23,15 +24,9 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus = new CncDeviceStatusSnapshot();
         Capabilities = new CncDriverCapabilities
         {
-            SupportsZHoming = false,
-            SupportsAcknowledgements = true,
-            SupportsLivePositionReporting = true,
-            SupportsCombinedXyMove = false,
-            SupportsPause = false,
-            SupportsAlarmReset = true,
-            SupportsWorkCoordinateSystem = true,
             VisualizationModelType = "Gantry3Axis"
         };
+        RefreshCapabilities();
     }
 
     public ObservableCollection<LogEntry> SerialLogs { get; } = new();
@@ -49,6 +44,7 @@ public class ArduinoSerialCncDriver : ICncDriver
     public void ApplyProfile(CncMachineProfile profile)
     {
         _profile = profile;
+        RefreshCapabilities();
     }
 
     public void Connect(string portName)
@@ -73,19 +69,35 @@ public class ArduinoSerialCncDriver : ICncDriver
         _serialPort.DiscardInBuffer();
         _serialPort.DiscardOutBuffer();
         _connectedPort = portName.Trim();
-        _motorsEnabled = false;
+        _motorsEnabled = UsesSimpleFirmwareProtocol;
         ResetDeviceStatusForConnection();
         AddSerialLog("System", $"Connected to {_connectedPort} @ {_profile.BaudRate}", "Info");
         _loggingService.AddLog("CNC", $"Connected to {_connectedPort} @ {_profile.BaudRate}", "Info");
 
         try
         {
-            DeviceStatus.DeviceState = CncDeviceState.Ready;
-            DeviceStatus.IsReady = true;
-            SendProtocolCommand(_commandFormatter.CreateStatusCommand());
-            DeviceStatus.IsResponsive = true;
-            DeviceStatus.IsReady = true;
-            AddProtocolLog($"Handshake completed with {DeviceStatus.LastAcknowledgement}.", "Info");
+            if (UsesSimpleFirmwareProtocol)
+            {
+                Thread.Sleep(1800);
+                var startupBanner = DrainAvailableText();
+                DeviceStatus.DeviceState = CncDeviceState.Ready;
+                DeviceStatus.IsResponsive = true;
+                DeviceStatus.IsReady = true;
+                DeviceStatus.LastAcknowledgement = string.IsNullOrWhiteSpace(startupBanner) ? "Ready" : startupBanner;
+                DeviceStatus.LastStatusText = string.IsNullOrWhiteSpace(startupBanner)
+                    ? "Simple firmware connected."
+                    : startupBanner;
+                AddProtocolLog("Simple firmware connected using legacy step-command mode.", "Info");
+            }
+            else
+            {
+                DeviceStatus.DeviceState = CncDeviceState.Ready;
+                DeviceStatus.IsReady = true;
+                SendProtocolCommand(_commandFormatter.CreateStatusCommand());
+                DeviceStatus.IsResponsive = true;
+                DeviceStatus.IsReady = true;
+                AddProtocolLog($"Handshake completed with {DeviceStatus.LastAcknowledgement}.", "Info");
+            }
         }
         catch (Exception ex)
         {
@@ -110,6 +122,9 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string EnableMotors()
     {
+        if (UsesSimpleFirmwareProtocol)
+            return UnsupportedResponse("Enable Motors", "This firmware keeps the CNC shield enabled directly and does not support ENABLE.");
+
         var response = SendProtocolCommand(_commandFormatter.CreateEnableCommand());
         _motorsEnabled = !response.IsError;
         NotifyStateChanged();
@@ -118,6 +133,9 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string DisableMotors()
     {
+        if (UsesSimpleFirmwareProtocol)
+            return UnsupportedResponse("Disable Motors", "This firmware does not support DISABLE.");
+
         var response = SendProtocolCommand(_commandFormatter.CreateDisableCommand());
         if (!response.IsError)
             _motorsEnabled = false;
@@ -125,10 +143,49 @@ public class ArduinoSerialCncDriver : ICncDriver
         return response.RawText;
     }
 
-    public string AutoHome() => SendProtocolCommand(_commandFormatter.CreateHomeCommand()).RawText;
-    public string ResetAlarm() => SendProtocolCommand(_commandFormatter.CreateResetCommand()).RawText;
-    public string Stop() => SendProtocolCommand(_commandFormatter.CreateStopCommand()).RawText;
-    public string RefreshStatus() => SendProtocolCommand(_commandFormatter.CreateStatusCommand()).RawText;
+    public string AutoHome()
+    {
+        if (UsesSimpleFirmwareProtocol)
+        {
+            DeviceStatus.DeviceState = CncDeviceState.Homing;
+            DeviceStatus.IsReady = false;
+            NotifyStateChanged();
+            return SendLegacyCommandAwaiting("Home", "H", "HOME DONE", 30000);
+        }
+
+        return SendProtocolCommand(_commandFormatter.CreateHomeCommand()).RawText;
+    }
+
+    public string ResetAlarm()
+    {
+        if (UsesSimpleFirmwareProtocol)
+            return UnsupportedResponse("Reset", "This firmware does not support alarm reset.");
+
+        return SendProtocolCommand(_commandFormatter.CreateResetCommand()).RawText;
+    }
+
+    public string Stop()
+    {
+        if (UsesSimpleFirmwareProtocol)
+            return UnsupportedResponse("Stop", "This firmware does not support STOP.");
+
+        return SendProtocolCommand(_commandFormatter.CreateStopCommand()).RawText;
+    }
+
+    public string RefreshStatus()
+    {
+        if (UsesSimpleFirmwareProtocol)
+        {
+            DeviceStatus.IsResponsive = true;
+            DeviceStatus.IsReady = true;
+            DeviceStatus.DeviceState = CncDeviceState.Idle;
+            DeviceStatus.LastStatusText = "Legacy firmware has no STATUS command.";
+            NotifyStateChanged();
+            return "STATUS:UNSUPPORTED";
+        }
+
+        return SendProtocolCommand(_commandFormatter.CreateStatusCommand()).RawText;
+    }
 
     public string Jog(string axis, decimal deltaMm)
     {
@@ -144,7 +201,99 @@ public class ArduinoSerialCncDriver : ICncDriver
         if (steps <= 0)
             throw new InvalidOperationException("Jog step is too small for the current steps/mm configuration.");
 
+        if (UsesSimpleFirmwareProtocol)
+            return SendLegacyJogCommand(normalizedAxis, steps, deltaMm >= 0m);
+
         return SendProtocolCommand(_commandFormatter.CreateJogCommand(normalizedAxis, steps, deltaMm >= 0m)).RawText;
+    }
+
+    private string SendLegacyJogCommand(string axis, int steps, bool positive)
+    {
+        EnsureConnected();
+        var command = $"{(positive ? "+" : "-")}{steps}{axis.ToLowerInvariant()}";
+        AddSerialLog("Sent", command, "Info");
+        _loggingService.AddLog("CNC Sent", command, "Info");
+
+        try
+        {
+            _serialPort!.WriteLine(command);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            HandleUnexpectedDisconnect($"Serial connection lost while sending '{command}'.");
+            throw new InvalidOperationException("Serial connection was lost.", ex);
+        }
+
+        Thread.Sleep(CalculateLegacyMoveDelayMs(steps));
+        var residual = DrainAvailableText();
+        if (!string.IsNullOrWhiteSpace(residual))
+            AddSerialLog("Received", residual, "Info");
+
+        DeviceStatus.IsResponsive = true;
+        DeviceStatus.IsReady = true;
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.LastAcknowledgement = command;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        DeviceStatus.LastStatusText = "Legacy move completed.";
+        NotifyStateChanged();
+        return command;
+    }
+
+    private string SendLegacyCommandAwaiting(string name, string command, string expectedLine, int timeoutMs)
+    {
+        EnsureConnected();
+        AddSerialLog("Sent", command, "Info");
+        _loggingService.AddLog("CNC Sent", command, "Info");
+
+        try
+        {
+            _serialPort!.WriteLine(command);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            HandleUnexpectedDisconnect($"Serial connection lost while sending '{command}'.");
+            throw new InvalidOperationException("Serial connection was lost.", ex);
+        }
+
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                _serialPort!.ReadTimeout = Math.Max(120, (int)(deadline - DateTime.UtcNow).TotalMilliseconds);
+                var rawLine = _serialPort.ReadLine()?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(rawLine))
+                    continue;
+
+                AddSerialLog("Received", rawLine, "Info");
+                _loggingService.AddLog("CNC Received", rawLine, "Info");
+
+                if (rawLine.Contains(expectedLine, StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.IsResponsive = true;
+                    DeviceStatus.IsReady = true;
+                    DeviceStatus.DeviceState = CncDeviceState.Idle;
+                    DeviceStatus.LastAcknowledgement = rawLine;
+                    DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+                    DeviceStatus.LastStatusText = rawLine;
+                    AddProtocolLog($"{name} completed using legacy firmware acknowledgement.", "Info");
+                    NotifyStateChanged();
+                    return rawLine;
+                }
+            }
+            catch (TimeoutException)
+            {
+                break;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+            {
+                HandleUnexpectedDisconnect($"Serial connection lost while waiting for '{name}'.");
+                throw new InvalidOperationException("Serial connection was lost.", ex);
+            }
+        }
+
+        HandleProtocolFailure($"{name} timed out waiting for {expectedLine}.");
+        throw new TimeoutException($"{name} timed out after {timeoutMs} ms.");
     }
 
     private CncProtocolResponse SendProtocolCommand(CncProtocolCommandSpec spec)
@@ -406,5 +555,77 @@ public class ArduinoSerialCncDriver : ICncDriver
         }
 
         Application.Current.Dispatcher.Invoke(action);
+    }
+
+    private string? DrainAvailableText()
+    {
+        try
+        {
+            if (_serialPort == null || !_serialPort.IsOpen || _serialPort.BytesToRead <= 0)
+                return null;
+
+            var text = _serialPort.ReadExisting();
+            return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private bool UsesSimpleFirmwareProtocol
+    {
+        get
+        {
+            var definition = _profile.DefinitionSnapshot;
+            if (definition == null)
+                return false;
+
+            if (definition.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.Custom)
+                return true;
+
+            var protocol = definition.Capabilities.Protocol;
+            return !protocol.StatusQuery
+                   && !protocol.MotorEnable
+                   && !protocol.MotorDisable
+                   && !protocol.Acknowledgements;
+        }
+    }
+
+    private static int CalculateLegacyMoveDelayMs(int steps)
+    {
+        var estimated = 80 + (steps * 0.6);
+        return (int)Math.Clamp(Math.Ceiling(estimated), 80, 10000);
+    }
+
+    private string UnsupportedResponse(string name, string message)
+    {
+        DeviceStatus.LastProtocolError = message;
+        DeviceStatus.LastStatusText = message;
+        AddProtocolLog($"{name} blocked: {message}", "Warning");
+        NotifyStateChanged();
+        return $"ERR:{message}";
+    }
+
+    private void RefreshCapabilities()
+    {
+        Capabilities.SupportsZHoming = false;
+        Capabilities.SupportsCombinedXyMove = false;
+        Capabilities.SupportsWorkCoordinateSystem = true;
+        Capabilities.VisualizationModelType = "Gantry3Axis";
+
+        if (UsesSimpleFirmwareProtocol)
+        {
+            Capabilities.SupportsAcknowledgements = false;
+            Capabilities.SupportsLivePositionReporting = false;
+            Capabilities.SupportsPause = false;
+            Capabilities.SupportsAlarmReset = false;
+            return;
+        }
+
+        Capabilities.SupportsAcknowledgements = true;
+        Capabilities.SupportsLivePositionReporting = true;
+        Capabilities.SupportsPause = false;
+        Capabilities.SupportsAlarmReset = true;
     }
 }

@@ -321,7 +321,7 @@ public class MachineCatalogService : IMachineCatalogService
             {
                 DefaultDriverType = DriverType.ArduinoSerial,
                 SupportedDriverTypes = new List<DriverType> { DriverType.ArduinoSerial, DriverType.Simulated },
-                FirmwareProtocol = FirmwareProtocol.MabaProtocol,
+                FirmwareProtocol = FirmwareProtocol.Custom,
                 SupportedSetupModes = new List<SetupMode> { SetupMode.RealOnly, SetupMode.SimulationOnly },
                 VisualizationType = VisualizationType.CncTopDown2D,
                 KinematicsType = KinematicsType.MovingGantryXY,
@@ -362,10 +362,10 @@ public class MachineCatalogService : IMachineCatalogService
                 DefaultBaudRate = 115200,
                 SupportedBaudRates = new List<int> { 115200 },
                 SupportedConnectionTypes = new List<ConnectionType> { ConnectionType.Serial, ConnectionType.Simulated },
-                RequiresHandshake = true,
+                RequiresHandshake = false,
                 CommandTerminator = "\n",
-                ResponseAckPattern = "OK",
-                ProtocolNotes = "Text protocol using ENABLE, DISABLE, STATUS, HOME/H, STOP and +/-step axis jog commands."
+                ResponseAckPattern = "HOME DONE",
+                ProtocolNotes = "Legacy step-based protocol using +stepsx/-stepsx, H for homing and B for square test."
             },
             Capabilities = new CapabilitiesSection
             {
@@ -375,10 +375,10 @@ public class MachineCatalogService : IMachineCatalogService
                     ZHoming = false,
                     CombinedXYHoming = true,
                     RelativeMoves = true,
-                    AbsoluteMoves = true,
-                    Pause = true,
-                    Resume = true,
-                    Stop = true,
+                    AbsoluteMoves = false,
+                    Pause = false,
+                    Resume = false,
+                    Stop = false,
                     Park = false,
                     CenterMove = true,
                     WorkOffset = true,
@@ -394,23 +394,23 @@ public class MachineCatalogService : IMachineCatalogService
                     FileRun = true,
                     Frame = true,
                     BoundingBoxPreview = true,
-                    LiveReportedPosition = true,
+                    LiveReportedPosition = false,
                     EstimatedPositionOnly = true,
                     ToolpathPreview = true,
                     ProgressTracking = true
                 },
                 Protocol = new ProtocolCapabilities
                 {
-                    Handshake = true,
-                    Acknowledgements = true,
-                    AlarmReporting = true,
-                    AlarmReset = true,
-                    StatusQuery = true,
-                    PositionQuery = true,
-                    MotorEnable = true,
-                    MotorDisable = true,
+                    Handshake = false,
+                    Acknowledgements = false,
+                    AlarmReporting = false,
+                    AlarmReset = false,
+                    StatusQuery = false,
+                    PositionQuery = false,
+                    MotorEnable = false,
+                    MotorDisable = false,
                     FeedHold = false,
-                    SoftReset = true
+                    SoftReset = false
                 },
                 Visualization = new VisualizationCapabilities
                 {

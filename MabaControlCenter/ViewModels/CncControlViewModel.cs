@@ -2375,7 +2375,7 @@ public class CncControlViewModel : ViewModelBase
             {
                 DefaultDriverType = driverType,
                 SupportedDriverTypes = new List<DriverType> { driverType },
-                FirmwareProtocol = driverType == DriverType.Simulated ? FirmwareProtocol.Custom : FirmwareProtocol.MabaProtocol,
+                FirmwareProtocol = FirmwareProtocol.Custom,
                 SupportedSetupModes = driverType == DriverType.Simulated ? new List<SetupMode> { SetupMode.SimulationOnly } : new List<SetupMode> { SetupMode.RealOnly },
                 VisualizationType = VisualizationType.CncTopDown2D,
                 KinematicsType = KinematicsType.MovingGantryXY,
@@ -2393,7 +2393,7 @@ public class CncControlViewModel : ViewModelBase
                 WorkCoordinateSupport = true,
                 MachineCoordinateSupport = true,
                 RelativeMoveSupport = true,
-                AbsoluteMoveSupport = true
+                AbsoluteMoveSupport = driverType == DriverType.Simulated
             },
             Workspace = new WorkspaceSection
             {
@@ -2411,13 +2411,53 @@ public class CncControlViewModel : ViewModelBase
                 DefaultBaudRate = profile.BaudRate,
                 SupportedBaudRates = new List<int> { profile.BaudRate },
                 SupportedConnectionTypes = driverType == DriverType.Simulated ? new List<ConnectionType> { ConnectionType.Simulated } : new List<ConnectionType> { ConnectionType.Serial },
-                RequiresHandshake = driverType != DriverType.Simulated
+                RequiresHandshake = false,
+                ResponseAckPattern = driverType == DriverType.Simulated ? "READY" : "HOME DONE",
+                ProtocolNotes = driverType == DriverType.Simulated
+                    ? "Simulation profile."
+                    : "Legacy Arduino protocol using +stepsx/-stepsx and H for homing."
             },
             Capabilities = new CapabilitiesSection
             {
-                Motion = new MotionCapabilities { Homing = profile.HomeXEnabled || profile.HomeYEnabled, ZHoming = profile.HomeZEnabled, CombinedXYHoming = profile.HomeXEnabled && profile.HomeYEnabled, RelativeMoves = true, AbsoluteMoves = true, Pause = true, Resume = true, Stop = true, CenterMove = profile.SupportsXAxis && profile.SupportsYAxis, WorkOffset = true, JogStep = true },
-                Execution = new ExecutionCapabilities { RealExecution = driverType != DriverType.Simulated, Simulation = driverType == DriverType.Simulated, PreviewPlayback = true, FileRun = true, Frame = true, BoundingBoxPreview = true, EstimatedPositionOnly = true, ToolpathPreview = true, ProgressTracking = true },
-                Protocol = new ProtocolCapabilities { Handshake = true, Acknowledgements = true, AlarmReporting = true, AlarmReset = true, StatusQuery = true, MotorEnable = true, MotorDisable = true, SoftReset = true },
+                Motion = new MotionCapabilities
+                {
+                    Homing = profile.HomeXEnabled || profile.HomeYEnabled,
+                    ZHoming = profile.HomeZEnabled,
+                    CombinedXYHoming = profile.HomeXEnabled && profile.HomeYEnabled,
+                    RelativeMoves = true,
+                    AbsoluteMoves = driverType == DriverType.Simulated,
+                    Pause = driverType == DriverType.Simulated,
+                    Resume = driverType == DriverType.Simulated,
+                    Stop = driverType == DriverType.Simulated,
+                    CenterMove = profile.SupportsXAxis && profile.SupportsYAxis,
+                    WorkOffset = true,
+                    JogStep = true
+                },
+                Execution = new ExecutionCapabilities
+                {
+                    RealExecution = driverType != DriverType.Simulated,
+                    Simulation = driverType == DriverType.Simulated,
+                    PreviewPlayback = true,
+                    FileRun = true,
+                    Frame = true,
+                    BoundingBoxPreview = true,
+                    EstimatedPositionOnly = true,
+                    LiveReportedPosition = false,
+                    ToolpathPreview = true,
+                    ProgressTracking = true
+                },
+                Protocol = new ProtocolCapabilities
+                {
+                    Handshake = false,
+                    Acknowledgements = driverType == DriverType.Simulated,
+                    AlarmReporting = false,
+                    AlarmReset = false,
+                    StatusQuery = false,
+                    PositionQuery = false,
+                    MotorEnable = false,
+                    MotorDisable = false,
+                    SoftReset = false
+                },
                 Visualization = new VisualizationCapabilities { MachineVisualization = true, TopView2D = true, Perspective3D = true, KinematicsAnimation = true, RealTimePositionDisplay = true },
                 FileHandling = new FileHandlingCapabilities { LocalFileRun = true, StreamingExecution = true, GcodeValidation = true, MultipleFileFormats = true }
             },
