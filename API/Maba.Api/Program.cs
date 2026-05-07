@@ -41,14 +41,13 @@ builder.Services.AddSwaggerGen(options =>
 // Remove ASP.NET Core request body and multipart form size limits.
 builder.Services.Configure<FormOptions>(options =>
 {
-    // Keep reasonable limits for regular form endpoints.
-    // The desktop update publish endpoint uses MultipartReader directly
-    // and is not subject to these limits.
-    options.MultipartBodyLengthLimit = 32 * 1024 * 1024; // 32 MB for normal forms
+    // Must stay at MaxValue — MultipartBodyLengthLimit is enforced even when
+    // the endpoint uses MultipartReader directly (applied in middleware before
+    // the action runs). Other endpoints are unaffected because the limit only
+    // triggers when Request.Form is actually read.
+    options.MultipartBodyLengthLimit = long.MaxValue;
     options.ValueLengthLimit = int.MaxValue;
     options.MultipartHeadersLengthLimit = int.MaxValue;
-    // BufferBodyLengthLimit deliberately NOT set to MaxValue — avoids
-    // buffering large bodies to temp files for regular endpoints.
 });
 builder.WebHost.ConfigureKestrel(options =>
 {
