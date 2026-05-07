@@ -9,6 +9,9 @@ namespace MabaControlCenter.Services;
 public class MachineCatalogService : IMachineCatalogService
 {
     private static readonly JsonSerializerOptions JsonOptions = MachinePlatformJson.CreateOptions();
+    private static readonly Guid LocalCategoryId = Guid.Parse("7b2f1d90-c76b-4f54-a7d4-8d85e95af101");
+    private static readonly Guid LocalFamilyId = Guid.Parse("7b2f1d90-c76b-4f54-a7d4-8d85e95af102");
+    private static readonly Guid LocalDefinitionId = Guid.Parse("7b2f1d90-c76b-4f54-a7d4-8d85e95af103");
 
     private readonly ISettingsService _settingsService;
     private readonly string _cacheFilePath;
@@ -61,6 +64,7 @@ public class MachineCatalogService : IMachineCatalogService
                 LastSyncedAt = DateTime.UtcNow,
                 LastSyncStatus = $"Synced {definitions.Count} machine definition(s)."
             };
+            EnsureLocalFallbackEntries();
             SaveCache();
             PopulateCollections();
         }
@@ -69,6 +73,7 @@ public class MachineCatalogService : IMachineCatalogService
             _store.LastSyncStatus = CachedDefinitions.Count > 0
                 ? $"Backend unavailable. Using cached machine definitions. {ex.Message}"
                 : $"Backend unavailable and no machine definition cache exists. {ex.Message}";
+            EnsureLocalFallbackEntries();
             SaveCache();
             PopulateCollections();
         }
@@ -143,6 +148,7 @@ public class MachineCatalogService : IMachineCatalogService
             _store = new MachineDefinitionCacheStore { LastSyncStatus = "Machine definition cache could not be read." };
         }
 
+        EnsureLocalFallbackEntries();
         PopulateCollections();
     }
 
@@ -163,6 +169,7 @@ public class MachineCatalogService : IMachineCatalogService
 
     private void PopulateCollections()
     {
+        EnsureLocalFallbackEntries();
         NormalizeImageUrls(_store.DefinitionSummaries, _store.Definitions);
         Replace(Categories, _store.Categories.OrderBy(c => c.SortOrder).ThenBy(c => c.DisplayNameEn));
         Replace(Families, _store.Families.OrderBy(f => f.SortOrder).ThenBy(f => f.DisplayNameEn));
@@ -214,5 +221,233 @@ public class MachineCatalogService : IMachineCatalogService
 
         var baseUrl = _settingsService.Load().ApiBaseUrl?.TrimEnd('/') ?? "https://api.mabasol.com";
         return $"{baseUrl}/{value.TrimStart('/')}";
+    }
+
+    private void EnsureLocalFallbackEntries()
+    {
+        if (_store.Categories.All(c => c.Id != LocalCategoryId))
+        {
+            _store.Categories.Add(new MachineCategory
+            {
+                Id = LocalCategoryId,
+                Code = "LOCAL-CNC",
+                DisplayNameEn = "Local CNC",
+                DisplayNameAr = "ماكينة CNC محلية",
+                DescriptionEn = "Local fallback CNC category for the current Arduino-based machine.",
+                DescriptionAr = "فئة CNC محلية احتياطية للماكينة الحالية المعتمدة على أردوينو.",
+                SortOrder = -100,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        if (_store.Families.All(f => f.Id != LocalFamilyId))
+        {
+            _store.Families.Add(new MachineFamily
+            {
+                Id = LocalFamilyId,
+                CategoryId = LocalCategoryId,
+                CategoryDisplayNameEn = "Local CNC",
+                Code = "MABA-CNC-SERIES",
+                DisplayNameEn = "MABA CNC Series",
+                DisplayNameAr = "سلسلة MABA CNC",
+                DescriptionEn = "Fallback local machine family for the current Arduino CNC hardware.",
+                DescriptionAr = "عائلة محلية احتياطية للماكينة الحالية من نوع Arduino CNC.",
+                Manufacturer = "MABA",
+                IsActive = true,
+                SortOrder = -100,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        if (_store.Definitions.All(d => d.Id != LocalDefinitionId))
+            _store.Definitions.Add(BuildLocalFallbackDefinition());
+
+        if (_store.DefinitionSummaries.All(s => s.Id != LocalDefinitionId))
+            _store.DefinitionSummaries.Add(BuildLocalFallbackSummary());
+    }
+
+    private static MachineDefinitionSummary BuildLocalFallbackSummary()
+    {
+        return new MachineDefinitionSummary
+        {
+            Id = LocalDefinitionId,
+            Code = "MABA-ARDUINO-CNC",
+            Version = "1.0.0",
+            CategoryId = LocalCategoryId,
+            CategoryDisplayNameEn = "Local CNC",
+            FamilyId = LocalFamilyId,
+            FamilyDisplayNameEn = "MABA CNC Series",
+            DisplayNameEn = "MABA Arduino CNC - Current Machine",
+            DisplayNameAr = "ماكينة MABA Arduino CNC الحالية",
+            DescriptionEn = "Current Arduino-based CNC machine profile used for real hardware and simulation testing.",
+            DescriptionAr = "ملف تعريف الماكينة الحالية المعتمدة على أردوينو للاختبار الحقيقي والمحاكاة.",
+            Manufacturer = "MABA",
+            IsActive = true,
+            IsPublic = false,
+            IsDeprecated = false,
+            SortOrder = -100,
+            ReleasedAt = DateTime.UtcNow,
+            Tags = new List<string> { "CNC", "G-code", "3-axis", "Local" },
+            DefaultDriverType = DriverType.ArduinoSerial.ToString(),
+            SupportedSetupModes = new List<string> { SetupMode.RealOnly.ToString(), SetupMode.SimulationOnly.ToString() },
+            RuntimeUiVariant = "cnc-standard-v1",
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    private static MachineDefinition BuildLocalFallbackDefinition()
+    {
+        return new MachineDefinition
+        {
+            Id = LocalDefinitionId,
+            Code = "MABA-ARDUINO-CNC",
+            Version = "1.0.0",
+            CategoryId = LocalCategoryId,
+            CategoryDisplayNameEn = "Local CNC",
+            FamilyId = LocalFamilyId,
+            FamilyDisplayNameEn = "MABA CNC Series",
+            DisplayNameEn = "MABA Arduino CNC - Current Machine",
+            DisplayNameAr = "ماكينة MABA Arduino CNC الحالية",
+            DescriptionEn = "Current Arduino-based CNC machine profile used for real hardware and simulation testing.",
+            DescriptionAr = "ملف تعريف الماكينة الحالية المعتمدة على أردوينو للاختبار الحقيقي والمحاكاة.",
+            Manufacturer = "MABA",
+            Tags = new List<string> { "CNC", "G-code", "3-axis", "Local" },
+            IsActive = true,
+            IsPublic = false,
+            SortOrder = -100,
+            ReleasedAt = DateTime.UtcNow,
+            RuntimeBinding = new RuntimeBindingSection
+            {
+                DefaultDriverType = DriverType.ArduinoSerial,
+                SupportedDriverTypes = new List<DriverType> { DriverType.ArduinoSerial, DriverType.Simulated },
+                FirmwareProtocol = FirmwareProtocol.MabaProtocol,
+                SupportedSetupModes = new List<SetupMode> { SetupMode.RealOnly, SetupMode.SimulationOnly },
+                VisualizationType = VisualizationType.CncTopDown2D,
+                KinematicsType = KinematicsType.MovingGantryXY,
+                RuntimeUiVariant = "cnc-standard-v1"
+            },
+            AxisConfig = new AxisConfigSection
+            {
+                AxisCount = 3,
+                SupportedAxes = new List<AxisId> { AxisId.X, AxisId.Y, AxisId.Z },
+                AxisRoles = new Dictionary<string, AxisRole> { ["X"] = AxisRole.Primary, ["Y"] = AxisRole.Secondary, ["Z"] = AxisRole.Vertical },
+                AxisDirections = new Dictionary<string, Direction> { ["X"] = Direction.Normal, ["Y"] = Direction.Normal, ["Z"] = Direction.Normal },
+                HomingSupport = new Dictionary<string, bool> { ["X"] = true, ["Y"] = true, ["Z"] = false },
+                HomeOriginConvention = MachineHomeOriginConvention.FrontLeft,
+                WorkCoordinateSupport = true,
+                MachineCoordinateSupport = true,
+                RelativeMoveSupport = true,
+                AbsoluteMoveSupport = true
+            },
+            Workspace = new WorkspaceSection
+            {
+                MinTravelMm = new Dictionary<string, double> { ["X"] = 0, ["Y"] = 0, ["Z"] = 0 },
+                MaxTravelMm = new Dictionary<string, double> { ["X"] = 300, ["Y"] = 300, ["Z"] = 100 },
+                WorkAreaMm = new WorkAreaDimensions { Width = 300, Depth = 300, Height = 100 }
+            },
+            MotionDefaults = new MotionDefaultsSection
+            {
+                StepsPerMm = new Dictionary<string, double> { ["X"] = 80, ["Y"] = 80, ["Z"] = 400 },
+                MaxFeedMmMin = new Dictionary<string, double> { ["X"] = 1200, ["Y"] = 1200, ["Z"] = 300 },
+                JogPresets = new List<JogPreset>
+                {
+                    new() { Label = "0.1 mm", DistanceMm = 0.1, FeedMmMin = 300 },
+                    new() { Label = "1 mm", DistanceMm = 1, FeedMmMin = 600 },
+                    new() { Label = "10 mm", DistanceMm = 10, FeedMmMin = 900 }
+                }
+            },
+            ConnectionDefaults = new ConnectionDefaultsSection
+            {
+                DefaultBaudRate = 115200,
+                SupportedBaudRates = new List<int> { 115200 },
+                SupportedConnectionTypes = new List<ConnectionType> { ConnectionType.Serial, ConnectionType.Simulated },
+                RequiresHandshake = true,
+                CommandTerminator = "\n",
+                ResponseAckPattern = "OK",
+                ProtocolNotes = "Text protocol using ENABLE, DISABLE, STATUS, HOME/H, STOP and +/-step axis jog commands."
+            },
+            Capabilities = new CapabilitiesSection
+            {
+                Motion = new MotionCapabilities
+                {
+                    Homing = true,
+                    ZHoming = false,
+                    CombinedXYHoming = true,
+                    RelativeMoves = true,
+                    AbsoluteMoves = true,
+                    Pause = true,
+                    Resume = true,
+                    Stop = true,
+                    Park = false,
+                    CenterMove = true,
+                    WorkOffset = true,
+                    JogContinuous = false,
+                    JogStep = true
+                },
+                Execution = new ExecutionCapabilities
+                {
+                    RealExecution = true,
+                    Simulation = true,
+                    PreviewPlayback = true,
+                    DryRun = true,
+                    FileRun = true,
+                    Frame = true,
+                    BoundingBoxPreview = true,
+                    LiveReportedPosition = true,
+                    EstimatedPositionOnly = true,
+                    ToolpathPreview = true,
+                    ProgressTracking = true
+                },
+                Protocol = new ProtocolCapabilities
+                {
+                    Handshake = true,
+                    Acknowledgements = true,
+                    AlarmReporting = true,
+                    AlarmReset = true,
+                    StatusQuery = true,
+                    PositionQuery = true,
+                    MotorEnable = true,
+                    MotorDisable = true,
+                    FeedHold = false,
+                    SoftReset = true
+                },
+                Visualization = new VisualizationCapabilities
+                {
+                    MachineVisualization = true,
+                    TopView2D = true,
+                    Perspective3D = true,
+                    KinematicsAnimation = true,
+                    RealTimePositionDisplay = true
+                },
+                FileHandling = new FileHandlingCapabilities
+                {
+                    LocalFileRun = true,
+                    StreamingExecution = true,
+                    GcodeValidation = true,
+                    MultipleFileFormats = true
+                }
+            },
+            FileSupport = new FileSupportSection
+            {
+                SupportedInputFileTypes = new List<string> { ".gcode", ".nc", ".txt" },
+                GcodeDialect = GcodeDialect.MabaCustom,
+                SupportedOperationTypes = new List<OperationType> { OperationType.Milling, OperationType.Engraving, OperationType.Drilling, OperationType.Plotting }
+            },
+            Visualization = new VisualizationSection
+            {
+                VisualizationType = VisualizationType.CncTopDown2D,
+                KinematicsType = KinematicsType.MovingGantryXY,
+                CoordinatePresentationMode = CoordinateMode.TopLeft,
+                MachineShapeHint = MachineShapeHint.Rectangular,
+                DefaultViewMode = ViewMode.Top2D
+            },
+            ProfileRules = new ProfileRulesSection
+            {
+                AllowedOverrides = new List<OverrideField> { OverrideField.DriverType, OverrideField.BaudRate, OverrideField.StepsPerMm, OverrideField.JogPresets, OverrideField.Notes },
+                BuiltInProfileRules = new BuiltInProfileRules { IsEditable = false, IsDeletable = false, IsDuplicatable = true },
+                UserProfileRules = new UserProfileRules { IsEditable = true, IsDeletable = true, IsDuplicatable = true }
+            }
+        };
     }
 }
