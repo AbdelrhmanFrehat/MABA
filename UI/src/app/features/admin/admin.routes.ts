@@ -253,6 +253,11 @@ export const adminRoutes: Routes = [
         path: 'app-announcements',
         loadChildren: () => import('./app-announcements/app-announcements.routes').then(m => m.appAnnouncementsRoutes),
         canActivate: [authGuard]
+    },
+    {
+        path: 'desktop-updates',
+        loadComponent: () => import('./desktop-updates/desktop-updates.component').then(m => m.DesktopUpdatesComponent),
+        canActivate: [authGuard]
     }
 ];
 

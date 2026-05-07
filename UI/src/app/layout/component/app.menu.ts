@@ -159,7 +159,8 @@ export class AppMenu implements OnInit, OnDestroy {
                 {
                     label: this.translateService.instant('menu.controlCenterApp'),
                     items: [
-                        { label: this.translateService.instant('menu.appAnnouncements'), icon: 'pi pi-fw pi-megaphone', routerLink: ['/admin/app-announcements'] }
+                        { label: this.translateService.instant('menu.appAnnouncements'), icon: 'pi pi-fw pi-megaphone', routerLink: ['/admin/app-announcements'] },
+                        { label: 'Desktop Updates', icon: 'pi pi-fw pi-download', routerLink: ['/admin/desktop-updates'] }
                     ]
                 },
                 {

@@ -223,8 +223,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-// Serve uploaded files from wwwroot (e.g. /uploads/Image/xxx.png)
-app.UseStaticFiles();
+// Serve static files — uploads AND desktop update packages/manifest
+var mimeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+mimeProvider.Mappings[".zip"] = "application/zip";
+mimeProvider.Mappings[".json"] = "application/json";
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = mimeProvider });
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
