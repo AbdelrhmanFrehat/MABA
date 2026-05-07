@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpRequest, HttpHeaders } from '@angular/common/http';
+import { filter } from 'rxjs/operators';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -133,6 +134,20 @@ interface ChannelInfo {
                         placeholder="What's new in this release…"></textarea>
                 </div>
 
+                <!-- Upload progress bar -->
+                <div class="progress-section" *ngIf="uploadPct > 0 && uploadPct < 100">
+                    <div class="progress-label">
+                        <span>Uploading… {{ uploadPct }}%</span>
+                        <span class="progress-size">{{ uploadedMB }} / {{ totalMB }} MB</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" [style.width.%]="uploadPct"></div>
+                    </div>
+                </div>
+                <div class="progress-section processing" *ngIf="uploadPct === 100 && publishing()">
+                    <i class="pi pi-spin pi-spinner"></i> Writing to server…
+                </div>
+
                 <div class="pub-actions">
                     <div class="pub-hint" *ngIf="form.version && form.file">
                         <i class="pi pi-info-circle"></i>
@@ -143,7 +158,7 @@ interface ChannelInfo {
                         label="Publish Release"
                         icon="pi pi-cloud-upload"
                         [loading]="publishing()"
-                        [disabled]="!form.version || !form.file"
+                        [disabled]="!form.version || !form.file || publishing()"
                         (click)="publish()">
                     </p-button>
                 </div>
@@ -199,6 +214,12 @@ interface ChannelInfo {
         .file-drop { display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 0.85rem; border: 1.5px dashed #c7d2fe; border-radius: 8px; background: #fff; cursor: pointer; font-size: 0.85rem; color: #667eea; transition: background 0.15s; }
         .file-drop:hover { background: #eff2ff; }
         .pub-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+        .progress-section { padding: 0.6rem 0; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.82rem; color: #374151; margin-bottom: 0.35rem; }
+        .progress-size { color: #9ca3af; }
+        .progress-track { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 999px; transition: width 0.2s ease; }
+        .progress-section.processing { font-size: 0.85rem; color: #667eea; display: flex; align-items: center; gap: 0.5rem; }
         .pub-hint { font-size: 0.78rem; color: #6b7280; display: flex; align-items: center; gap: 0.35rem; }
         .pub-hint code { background: #f3f4f6; padding: 0.1rem 0.35rem; border-radius: 4px; font-family: monospace; }
     `]
@@ -214,6 +235,10 @@ export class DesktopUpdatesComponent implements OnInit {
     publishing = signal(false);
 
     form = { version: '', channel: 'stable', notes: '', file: null as File | null };
+
+    uploadPct = 0;
+    uploadedMB = '0';
+    totalMB = '0';
 
     ngOnInit() { this.load(); }
 
@@ -231,27 +256,52 @@ export class DesktopUpdatesComponent implements OnInit {
     }
 
     publish() {
-        if (!this.form.version.trim() || !this.form.file) return;
+        if (!this.form.version.trim() || !this.form.file || this.publishing()) return;
         this.publishing.set(true);
+        this.uploadPct = 0;
+        this.uploadedMB = '0';
+        this.totalMB = (this.form.file.size / (1024 * 1024)).toFixed(1);
 
+        // Fields must come BEFORE the file so the streaming server endpoint
+        // knows the channel/version when it starts writing the zip.
         const fd = new FormData();
-        fd.append('file', this.form.file);
         fd.append('version', this.form.version.trim());
         fd.append('channel', this.form.channel);
         if (this.form.notes.trim()) fd.append('notes', this.form.notes.trim());
+        fd.append('file', this.form.file);  // file last — server streams it directly to disk
 
-        this.http.post<DesktopUpdateManifest>(`${this.base}/publish`, fd).subscribe({
-            next: (manifest) => {
-                this.publishing.set(false);
-                this.form = { version: '', channel: 'stable', notes: '', file: null };
-                this.msg.add({ severity: 'success', summary: 'Published', detail: `v${manifest.version} is now live on the ${this.form.channel || 'stable'} channel.`, life: 5000 });
-                this.load();
-            },
-            error: (err) => {
-                this.publishing.set(false);
-                this.msg.add({ severity: 'error', summary: 'Error', detail: err?.error?.message || 'Publish failed.', life: 5000 });
-            }
+        const req = new HttpRequest('POST', `${this.base}/publish`, fd, {
+            reportProgress: true
         });
+
+        const channel = this.form.channel;
+        this.http.request(req)
+            .pipe(filter(e => e.type === HttpEventType.UploadProgress || e.type === HttpEventType.Response))
+            .subscribe({
+                next: (event: any) => {
+                    if (event.type === HttpEventType.UploadProgress && event.total) {
+                        this.uploadPct = Math.round(100 * event.loaded / event.total);
+                        this.uploadedMB = (event.loaded / (1024 * 1024)).toFixed(1);
+                    } else if (event.type === HttpEventType.Response) {
+                        const manifest = event.body as DesktopUpdateManifest;
+                        this.publishing.set(false);
+                        this.uploadPct = 0;
+                        this.form = { version: '', channel: 'stable', notes: '', file: null };
+                        this.msg.add({
+                            severity: 'success',
+                            summary: 'Published',
+                            detail: `v${manifest.version} is live on the ${channel} channel.`,
+                            life: 5000
+                        });
+                        this.load();
+                    }
+                },
+                error: (err) => {
+                    this.publishing.set(false);
+                    this.uploadPct = 0;
+                    this.msg.add({ severity: 'error', summary: 'Error', detail: err?.error?.message || 'Publish failed.', life: 5000 });
+                }
+            });
     }
 
     deletePackage(channel: string, pkg: string) {
