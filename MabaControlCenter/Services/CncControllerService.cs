@@ -610,6 +610,7 @@ public class CncControllerService : ICncControllerService
     private static bool IsErrorLikeResponse(string response)
     {
         return response.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase)
+               || response.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase)
                || response.Contains("LIMIT HIT", StringComparison.OrdinalIgnoreCase);
     }
 

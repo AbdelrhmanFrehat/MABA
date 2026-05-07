@@ -2440,7 +2440,7 @@ public class CncControlViewModel : ViewModelBase
             {
                 DefaultDriverType = driverType,
                 SupportedDriverTypes = new List<DriverType> { driverType },
-                FirmwareProtocol = FirmwareProtocol.Custom,
+                FirmwareProtocol = driverType == DriverType.Simulated ? FirmwareProtocol.Custom : FirmwareProtocol.MabaProtocol,
                 SupportedSetupModes = driverType == DriverType.Simulated ? new List<SetupMode> { SetupMode.SimulationOnly } : new List<SetupMode> { SetupMode.RealOnly },
                 VisualizationType = VisualizationType.CncTopDown2D,
                 KinematicsType = KinematicsType.MovingGantryXY,
@@ -2479,9 +2479,9 @@ public class CncControlViewModel : ViewModelBase
                 SupportedConnectionTypes = driverType == DriverType.Simulated ? new List<ConnectionType> { ConnectionType.Simulated } : new List<ConnectionType> { ConnectionType.Serial },
                 RequiresHandshake = false,
                 ResponseAckPattern = driverType == DriverType.Simulated ? "READY" : "HOME DONE",
-                ProtocolNotes = driverType == DriverType.Simulated
-                    ? "Simulation profile."
-                : "Legacy Arduino protocol using +stepsx/-stepsx, XY,signedX,signedY, and H for homing."
+                    ProtocolNotes = driverType == DriverType.Simulated
+                        ? "Simulation profile."
+                        : "MABA CNC motion firmware using ?, $H/$X, !, J jogs, G0/G1 linear moves, and G2/G3 arcs."
             },
             Capabilities = new CapabilitiesSection
             {
@@ -2491,10 +2491,10 @@ public class CncControlViewModel : ViewModelBase
                     ZHoming = profile.HomeZEnabled,
                     CombinedXYHoming = profile.HomeXEnabled && profile.HomeYEnabled,
                     RelativeMoves = true,
-                    AbsoluteMoves = driverType == DriverType.Simulated,
+                    AbsoluteMoves = true,
                     Pause = driverType == DriverType.Simulated,
                     Resume = driverType == DriverType.Simulated,
-                    Stop = driverType == DriverType.Simulated,
+                    Stop = true,
                     CenterMove = profile.SupportsXAxis && profile.SupportsYAxis,
                     WorkOffset = true,
                     JogStep = true
@@ -2507,20 +2507,20 @@ public class CncControlViewModel : ViewModelBase
                     FileRun = true,
                     Frame = true,
                     BoundingBoxPreview = true,
-                    EstimatedPositionOnly = true,
-                    LiveReportedPosition = false,
+                    EstimatedPositionOnly = driverType == DriverType.Simulated,
+                    LiveReportedPosition = true,
                     ToolpathPreview = true,
                     ProgressTracking = true
                 },
                 Protocol = new ProtocolCapabilities
                 {
                     Handshake = false,
-                    Acknowledgements = driverType == DriverType.Simulated,
-                    AlarmReporting = false,
-                    AlarmReset = false,
-                    StatusQuery = false,
-                    PositionQuery = false,
-                    MotorEnable = false,
+                    Acknowledgements = true,
+                    AlarmReporting = driverType != DriverType.Simulated,
+                    AlarmReset = driverType != DriverType.Simulated,
+                    StatusQuery = true,
+                    PositionQuery = true,
+                    MotorEnable = driverType != DriverType.Simulated,
                     MotorDisable = false,
                     SoftReset = false
                 },

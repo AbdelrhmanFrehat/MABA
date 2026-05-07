@@ -321,7 +321,7 @@ public class MachineCatalogService : IMachineCatalogService
             {
                 DefaultDriverType = DriverType.ArduinoSerial,
                 SupportedDriverTypes = new List<DriverType> { DriverType.ArduinoSerial, DriverType.Simulated },
-                FirmwareProtocol = FirmwareProtocol.Custom,
+                FirmwareProtocol = FirmwareProtocol.MabaProtocol,
                 SupportedSetupModes = new List<SetupMode> { SetupMode.RealOnly, SetupMode.SimulationOnly },
                 VisualizationType = VisualizationType.CncTopDown2D,
                 KinematicsType = KinematicsType.MovingGantryXY,
@@ -365,7 +365,7 @@ public class MachineCatalogService : IMachineCatalogService
                 RequiresHandshake = false,
                 CommandTerminator = "\n",
                 ResponseAckPattern = "HOME DONE",
-                    ProtocolNotes = "Legacy Arduino protocol using +stepsx/-stepsx, XY,signedX,signedY for coordinated XY moves, H for homing and B for square test."
+                    ProtocolNotes = "MABA CNC motion firmware using ?, $H/$X, !, JX/JY/JZ jogs, G0/G1 linear moves, G2/G3 arcs, and HOME:DONE / OK / ALARM responses."
             },
             Capabilities = new CapabilitiesSection
             {
@@ -375,10 +375,10 @@ public class MachineCatalogService : IMachineCatalogService
                     ZHoming = false,
                     CombinedXYHoming = true,
                     RelativeMoves = true,
-                    AbsoluteMoves = false,
+                    AbsoluteMoves = true,
                     Pause = false,
                     Resume = false,
-                    Stop = false,
+                    Stop = true,
                     Park = false,
                     CenterMove = true,
                     WorkOffset = true,
@@ -394,20 +394,20 @@ public class MachineCatalogService : IMachineCatalogService
                     FileRun = true,
                     Frame = true,
                     BoundingBoxPreview = true,
-                    LiveReportedPosition = false,
-                    EstimatedPositionOnly = true,
+                    LiveReportedPosition = true,
+                    EstimatedPositionOnly = false,
                     ToolpathPreview = true,
                     ProgressTracking = true
                 },
                 Protocol = new ProtocolCapabilities
                 {
                     Handshake = false,
-                    Acknowledgements = false,
-                    AlarmReporting = false,
-                    AlarmReset = false,
-                    StatusQuery = false,
-                    PositionQuery = false,
-                    MotorEnable = false,
+                    Acknowledgements = true,
+                    AlarmReporting = true,
+                    AlarmReset = true,
+                    StatusQuery = true,
+                    PositionQuery = true,
+                    MotorEnable = true,
                     MotorDisable = false,
                     FeedHold = false,
                     SoftReset = false

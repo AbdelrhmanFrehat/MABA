@@ -16,6 +16,9 @@ public class ArduinoSerialCncDriver : ICncDriver
     private string? _connectedPort;
     private bool _motorsEnabled;
     private CncMachineProfile _profile;
+    private decimal _estimatedX;
+    private decimal _estimatedY;
+    private decimal _estimatedZ;
 
     public ArduinoSerialCncDriver(ILoggingService loggingService, CncMachineProfile profile)
     {
@@ -69,14 +72,28 @@ public class ArduinoSerialCncDriver : ICncDriver
         _serialPort.DiscardInBuffer();
         _serialPort.DiscardOutBuffer();
         _connectedPort = portName.Trim();
-        _motorsEnabled = UsesSimpleFirmwareProtocol;
+        _motorsEnabled = false;
         ResetDeviceStatusForConnection();
         AddSerialLog("System", $"Connected to {_connectedPort} @ {_profile.BaudRate}", "Info");
         _loggingService.AddLog("CNC", $"Connected to {_connectedPort} @ {_profile.BaudRate}", "Info");
 
         try
         {
-            if (UsesSimpleFirmwareProtocol)
+            if (UsesMabaMotionFirmware)
+            {
+                Thread.Sleep(1800);
+                var startupBanner = DrainAvailableText();
+                DeviceStatus.DeviceState = CncDeviceState.Ready;
+                DeviceStatus.IsResponsive = true;
+                DeviceStatus.IsReady = true;
+                DeviceStatus.LastAcknowledgement = string.IsNullOrWhiteSpace(startupBanner) ? "MABA CNC FIRMWARE READY" : startupBanner;
+                DeviceStatus.LastStatusText = string.IsNullOrWhiteSpace(startupBanner)
+                    ? "MABA CNC FIRMWARE READY"
+                    : startupBanner;
+                AddProtocolLog("MABA motion firmware connected.", "Info");
+                RefreshStatus();
+            }
+            else if (UsesSimpleFirmwareProtocol)
             {
                 Thread.Sleep(1800);
                 var startupBanner = DrainAvailableText();
@@ -122,29 +139,56 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string EnableMotors()
     {
+        if (UsesMabaMotionFirmware)
+        {
+            var response = SendMabaCommandAwaiting("Unlock", "$X", new[] { "UNLOCKED", "OK" }, 5000);
+            _motorsEnabled = !IsErrorLikeText(response);
+            return response;
+        }
+
         if (UsesSimpleFirmwareProtocol)
             return UnsupportedResponse("Enable Motors", "This firmware keeps the CNC shield enabled directly and does not support ENABLE.");
 
-        var response = SendProtocolCommand(_commandFormatter.CreateEnableCommand());
-        _motorsEnabled = !response.IsError;
+        var protocolResponse = SendProtocolCommand(_commandFormatter.CreateEnableCommand());
+        _motorsEnabled = !protocolResponse.IsError;
         NotifyStateChanged();
-        return response.RawText;
+        return protocolResponse.RawText;
     }
 
     public string DisableMotors()
     {
+        if (UsesMabaMotionFirmware)
+            return UnsupportedResponse("Disable Motors", "This firmware does not expose a dedicated motor-disable command.");
+
         if (UsesSimpleFirmwareProtocol)
             return UnsupportedResponse("Disable Motors", "This firmware does not support DISABLE.");
 
-        var response = SendProtocolCommand(_commandFormatter.CreateDisableCommand());
-        if (!response.IsError)
+        var protocolResponse = SendProtocolCommand(_commandFormatter.CreateDisableCommand());
+        if (!protocolResponse.IsError)
             _motorsEnabled = false;
         NotifyStateChanged();
-        return response.RawText;
+        return protocolResponse.RawText;
     }
 
     public string AutoHome()
     {
+        if (UsesMabaMotionFirmware)
+        {
+            DeviceStatus.DeviceState = CncDeviceState.Homing;
+            DeviceStatus.IsReady = false;
+            NotifyStateChanged();
+            var response = SendMabaCommandAwaiting("Home", "$H", new[] { "HOME:DONE" }, 45000);
+            _estimatedX = 0m;
+            _estimatedY = 0m;
+            _estimatedZ = 0m;
+            DeviceStatus.ReportedX = 0m;
+            DeviceStatus.ReportedY = 0m;
+            DeviceStatus.ReportedZ = 0m;
+            DeviceStatus.HasReportedPosition = true;
+            _motorsEnabled = true;
+            return response;
+        }
+
         if (UsesSimpleFirmwareProtocol)
         {
             DeviceStatus.DeviceState = CncDeviceState.Homing;
@@ -158,6 +202,13 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string ResetAlarm()
     {
+        if (UsesMabaMotionFirmware)
+        {
+            var response = SendMabaCommandAwaiting("Unlock", "$X", new[] { "UNLOCKED", "OK" }, 5000);
+            _motorsEnabled = !IsErrorLikeText(response);
+            return response;
+        }
+
         if (UsesSimpleFirmwareProtocol)
             return UnsupportedResponse("Reset", "This firmware does not support alarm reset.");
 
@@ -166,6 +217,13 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string Stop()
     {
+        if (UsesMabaMotionFirmware)
+        {
+            var response = SendMabaCommandAwaiting("Stop", "!", new[] { "ALARM:", "ERR:" }, 5000);
+            _motorsEnabled = false;
+            return response;
+        }
+
         if (UsesSimpleFirmwareProtocol)
             return UnsupportedResponse("Stop", "This firmware does not support STOP.");
 
@@ -174,6 +232,9 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string RefreshStatus()
     {
+        if (UsesMabaMotionFirmware)
+            return SendMabaStatusCommand();
+
         if (UsesSimpleFirmwareProtocol)
         {
             DeviceStatus.IsResponsive = true;
@@ -189,27 +250,55 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     public string Jog(string axis, decimal deltaMm)
     {
-        var normalizedAxis = (axis ?? string.Empty).Trim().ToUpperInvariant();
-        var firmwareDelta = ApplyAxisDirection(normalizedAxis, deltaMm);
-        var stepsPerMm = normalizedAxis switch
+        if (UsesMabaMotionFirmware)
+        {
+            var normalizedAxis = (axis ?? string.Empty).Trim().ToUpperInvariant();
+            var firmwareDelta = ApplyAxisDirection(normalizedAxis, deltaMm);
+            var magnitude = Math.Abs(firmwareDelta);
+            if (magnitude <= 0m)
+                throw new InvalidOperationException("Jog distance must be greater than zero.");
+
+            var distanceText = magnitude.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            var command = normalizedAxis switch
+            {
+                "X" => $"JX{(firmwareDelta >= 0m ? distanceText : "-" + distanceText)}",
+                "Y" => $"JY{(firmwareDelta >= 0m ? distanceText : "-" + distanceText)}",
+                "Z" => $"JZ{(firmwareDelta >= 0m ? distanceText : "-" + distanceText)}",
+                _ => throw new InvalidOperationException("Unsupported jog axis.")
+            };
+
+            var response = SendMabaCommandAwaiting("Jog", command, new[] { "OK" }, 15000);
+            UpdateEstimatedPosition(
+                normalizedAxis == "X" ? deltaMm : 0m,
+                normalizedAxis == "Y" ? deltaMm : 0m,
+                normalizedAxis == "Z" ? deltaMm : 0m);
+            return response;
+        }
+
+        var legacyAxis = (axis ?? string.Empty).Trim().ToUpperInvariant();
+        var legacyFirmwareDelta = ApplyAxisDirection(legacyAxis, deltaMm);
+        var stepsPerMm = legacyAxis switch
         {
             "X" => _profile.XStepsPerMm,
             "Y" => _profile.YStepsPerMm,
             _ => _profile.ZStepsPerMm
         };
 
-        var steps = (int)Math.Round(Math.Abs(firmwareDelta * stepsPerMm), MidpointRounding.AwayFromZero);
+        var steps = (int)Math.Round(Math.Abs(legacyFirmwareDelta * stepsPerMm), MidpointRounding.AwayFromZero);
         if (steps <= 0)
             throw new InvalidOperationException("Jog step is too small for the current steps/mm configuration.");
 
         if (UsesSimpleFirmwareProtocol)
-            return SendLegacyJogCommand(normalizedAxis, steps, firmwareDelta >= 0m);
+            return SendLegacyJogCommand(legacyAxis, steps, legacyFirmwareDelta >= 0m);
 
-        return SendProtocolCommand(_commandFormatter.CreateJogCommand(normalizedAxis, steps, firmwareDelta >= 0m)).RawText;
+        return SendProtocolCommand(_commandFormatter.CreateJogCommand(legacyAxis, steps, legacyFirmwareDelta >= 0m)).RawText;
     }
 
     public string MoveLinear(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
     {
+        if (UsesMabaMotionFirmware)
+            return SendMabaLinearMove(deltaXmm, deltaYmm, deltaZmm);
+
         if (UsesSimpleFirmwareProtocol)
             return SendLegacyLinearMove(deltaXmm, deltaYmm, deltaZmm);
 
@@ -222,6 +311,21 @@ public class ArduinoSerialCncDriver : ICncDriver
             responses.Add(Jog("Z", deltaZmm));
 
         return string.Join(" | ", responses.Where(r => !string.IsNullOrWhiteSpace(r)));
+    }
+
+    private string SendMabaLinearMove(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
+    {
+        var firmwareDeltaX = ApplyAxisDirection("X", deltaXmm);
+        var firmwareDeltaY = ApplyAxisDirection("Y", deltaYmm);
+        var firmwareDeltaZ = ApplyAxisDirection("Z", deltaZmm);
+
+        var targetX = _estimatedX + firmwareDeltaX;
+        var targetY = _estimatedY + firmwareDeltaY;
+        var targetZ = _estimatedZ + firmwareDeltaZ;
+        var command = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"G1 X{targetX:0.###} Y{targetY:0.###} Z{targetZ:0.###} F300");
+        var response = SendMabaCommandAwaiting("Linear Move", command, new[] { "OK" }, 30000);
+        UpdateEstimatedPosition(deltaXmm, deltaYmm, deltaZmm);
+        return response;
     }
 
     private string SendLegacyLinearMove(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
@@ -651,12 +755,232 @@ public class ArduinoSerialCncDriver : ICncDriver
         }
     }
 
+    private string SendMabaStatusCommand()
+    {
+        EnsureConnected();
+        const string command = "?";
+        AddSerialLog("Sent", command, "Info");
+        _loggingService.AddLog("CNC Sent", command, "Info");
+
+        try
+        {
+            _serialPort!.WriteLine(command);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            HandleUnexpectedDisconnect("Serial connection lost while sending status query.");
+            throw new InvalidOperationException("Serial connection was lost.", ex);
+        }
+
+        var deadline = DateTime.UtcNow.AddMilliseconds(5000);
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                _serialPort!.ReadTimeout = Math.Max(120, (int)(deadline - DateTime.UtcNow).TotalMilliseconds);
+                var rawLine = _serialPort.ReadLine()?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(rawLine))
+                    continue;
+
+                AddSerialLog("Received", rawLine, rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) || rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase) ? "Error" : "Info");
+                _loggingService.AddLog("CNC Received", rawLine, "Info");
+
+                if (rawLine.StartsWith("<MABA:", StringComparison.OrdinalIgnoreCase))
+                {
+                    ApplyMabaStatusLine(rawLine);
+                    DeviceStatus.LastAcknowledgement = rawLine;
+                    DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+                    DeviceStatus.LastStatusText = rawLine;
+                    NotifyStateChanged();
+                    return rawLine;
+                }
+
+                if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) || rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.LastProtocolError = rawLine;
+                    DeviceStatus.DeviceState = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase)
+                        ? CncDeviceState.Alarm
+                        : CncDeviceState.Error;
+                    NotifyStateChanged();
+                    return rawLine;
+                }
+            }
+            catch (TimeoutException)
+            {
+                break;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+            {
+                HandleUnexpectedDisconnect("Serial connection lost while waiting for status.");
+                throw new InvalidOperationException("Serial connection was lost.", ex);
+            }
+        }
+
+        HandleProtocolFailure("Status timed out waiting for <MABA:...> response.");
+        throw new TimeoutException("Status timed out waiting for firmware response.");
+    }
+
+    private string SendMabaCommandAwaiting(string name, string command, IReadOnlyCollection<string> expectedTokens, int timeoutMs)
+    {
+        EnsureConnected();
+        AddSerialLog("Sent", command, "Info");
+        _loggingService.AddLog("CNC Sent", command, "Info");
+
+        try
+        {
+            _serialPort!.WriteLine(command);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            HandleUnexpectedDisconnect($"Serial connection lost while sending '{command}'.");
+            throw new InvalidOperationException("Serial connection was lost.", ex);
+        }
+
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                _serialPort!.ReadTimeout = Math.Max(120, (int)(deadline - DateTime.UtcNow).TotalMilliseconds);
+                var rawLine = _serialPort.ReadLine()?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(rawLine))
+                    continue;
+
+                var status = rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) || rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase)
+                    ? "Error"
+                    : "Info";
+                AddSerialLog("Received", rawLine, status);
+                _loggingService.AddLog("CNC Received", rawLine, status);
+
+                if (rawLine.StartsWith("<MABA:", StringComparison.OrdinalIgnoreCase))
+                {
+                    ApplyMabaStatusLine(rawLine);
+                    continue;
+                }
+
+                DeviceStatus.LastAcknowledgement = rawLine;
+                DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+                DeviceStatus.LastStatusText = rawLine;
+                DeviceStatus.IsResponsive = true;
+
+                if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.LastProtocolError = rawLine;
+                    DeviceStatus.DeviceState = CncDeviceState.Error;
+                    NotifyStateChanged();
+                    return rawLine;
+                }
+
+                if (rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.LastProtocolError = rawLine;
+                    DeviceStatus.DeviceState = CncDeviceState.Alarm;
+                    _motorsEnabled = false;
+                    NotifyStateChanged();
+                    return rawLine;
+                }
+
+                if (rawLine.Equals("UNLOCKED", StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.IsReady = true;
+                    DeviceStatus.DeviceState = CncDeviceState.Ready;
+                    _motorsEnabled = true;
+                }
+                else if (rawLine.Equals("HOME:DONE", StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.IsReady = true;
+                    DeviceStatus.DeviceState = CncDeviceState.Idle;
+                    _motorsEnabled = true;
+                }
+                else if (rawLine.Equals("OK", StringComparison.OrdinalIgnoreCase))
+                {
+                    DeviceStatus.IsReady = true;
+                    DeviceStatus.DeviceState = CncDeviceState.Idle;
+                }
+
+                NotifyStateChanged();
+
+                if (expectedTokens.Any(token => rawLine.Contains(token, StringComparison.OrdinalIgnoreCase)))
+                    return rawLine;
+            }
+            catch (TimeoutException)
+            {
+                break;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+            {
+                HandleUnexpectedDisconnect($"Serial connection lost while waiting for '{name}'.");
+                throw new InvalidOperationException("Serial connection was lost.", ex);
+            }
+        }
+
+        HandleProtocolFailure($"{name} timed out waiting for firmware acknowledgement.");
+        throw new TimeoutException($"{name} timed out waiting for firmware acknowledgement.");
+    }
+
+    private void ApplyMabaStatusLine(string rawLine)
+    {
+        var payload = rawLine.Trim().TrimStart('<').TrimEnd('>');
+        var segments = payload.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var segment in segments)
+        {
+            var colon = segment.IndexOf(':');
+            if (colon < 0)
+                continue;
+
+            values[segment[..colon]] = segment[(colon + 1)..];
+        }
+
+        var stateToken = values.TryGetValue("MABA", out var stateValue) ? stateValue : "LOCKED";
+        var alarmActive = values.TryGetValue("ALARM", out var alarmValue) && alarmValue == "1";
+        var x = values.TryGetValue("X", out var xValue) && decimal.TryParse(xValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedX) ? parsedX : _estimatedX;
+        var y = values.TryGetValue("Y", out var yValue) && decimal.TryParse(yValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedY) ? parsedY : _estimatedY;
+        var z = values.TryGetValue("Z", out var zValue) && decimal.TryParse(zValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedZ) ? parsedZ : _estimatedZ;
+
+        _estimatedX = ApplyAxisDirection("X", x);
+        _estimatedY = ApplyAxisDirection("Y", y);
+        _estimatedZ = ApplyAxisDirection("Z", z);
+
+        DeviceStatus.ReportedX = _estimatedX;
+        DeviceStatus.ReportedY = _estimatedY;
+        DeviceStatus.ReportedZ = _estimatedZ;
+        DeviceStatus.HasReportedPosition = true;
+        DeviceStatus.IsResponsive = true;
+        DeviceStatus.LastStatusText = rawLine;
+        DeviceStatus.LastProtocolError = alarmActive ? "ALARM:LIMIT_OR_ESTOP" : null;
+
+        if (alarmActive)
+        {
+            DeviceStatus.DeviceState = CncDeviceState.Alarm;
+            DeviceStatus.IsReady = false;
+            _motorsEnabled = false;
+            return;
+        }
+
+        if (stateToken.Equals("READY", StringComparison.OrdinalIgnoreCase))
+        {
+            DeviceStatus.DeviceState = CncDeviceState.Ready;
+            DeviceStatus.IsReady = true;
+            _motorsEnabled = true;
+            return;
+        }
+
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.IsReady = false;
+        _motorsEnabled = false;
+    }
+
     private bool UsesSimpleFirmwareProtocol
     {
         get
         {
             var definition = _profile.DefinitionSnapshot;
             if (definition == null)
+                return false;
+
+            if (definition.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.MabaProtocol)
                 return false;
 
             if (definition.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.Custom)
@@ -669,6 +993,9 @@ public class ArduinoSerialCncDriver : ICncDriver
                    && !protocol.Acknowledgements;
         }
     }
+
+    private bool UsesMabaMotionFirmware
+        => _profile.DefinitionSnapshot?.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.MabaProtocol;
 
     private static int CalculateLegacyMoveDelayMs(int steps)
     {
@@ -709,12 +1036,45 @@ public class ArduinoSerialCncDriver : ICncDriver
         return deltaMm;
     }
 
+    private void UpdateEstimatedPosition(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
+    {
+        _estimatedX += deltaXmm;
+        _estimatedY += deltaYmm;
+        _estimatedZ += deltaZmm;
+        DeviceStatus.ReportedX = _estimatedX;
+        DeviceStatus.ReportedY = _estimatedY;
+        DeviceStatus.ReportedZ = _estimatedZ;
+        DeviceStatus.HasReportedPosition = true;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        DeviceStatus.IsResponsive = true;
+        DeviceStatus.IsReady = true;
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.LastProtocolError = null;
+        NotifyStateChanged();
+    }
+
+    private static bool IsErrorLikeText(string text)
+    {
+        return text.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase)
+               || text.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void RefreshCapabilities()
     {
         Capabilities.SupportsZHoming = false;
         Capabilities.SupportsCombinedXyMove = false;
         Capabilities.SupportsWorkCoordinateSystem = true;
         Capabilities.VisualizationModelType = "Gantry3Axis";
+
+        if (UsesMabaMotionFirmware)
+        {
+            Capabilities.SupportsAcknowledgements = true;
+            Capabilities.SupportsLivePositionReporting = true;
+            Capabilities.SupportsCombinedXyMove = true;
+            Capabilities.SupportsPause = false;
+            Capabilities.SupportsAlarmReset = true;
+            return;
+        }
 
         if (UsesSimpleFirmwareProtocol)
         {

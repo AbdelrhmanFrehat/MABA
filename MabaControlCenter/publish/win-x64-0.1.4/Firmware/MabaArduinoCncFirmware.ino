@@ -1,3 +1,6 @@
+// MABA_FIRMWARE_VERSION: 1.1.0
+// TARGET_BOARD: Arduino Uno (arduino:avr:uno)
+
 const int X_STEP = 2;
 const int Y_STEP = 3;
 const int Z_STEP = 4;
