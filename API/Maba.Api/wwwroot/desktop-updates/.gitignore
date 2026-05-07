@@ -1,0 +1,6 @@
+# Desktop update packages are large binaries.
+# They are published directly to the server via the admin upload API,
+# not committed to git. Only manifest.json is tracked.
+*.zip
+*.exe
+*.msi
