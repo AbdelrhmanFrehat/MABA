@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
 using System.Text.Json;
+using Maba.Application.Common.Interfaces;
+using Maba.Domain.ControlCenter;
 
 namespace Maba.Api.Controllers;
 
@@ -24,6 +27,36 @@ public class DesktopChannelInfo
     public List<string> Packages { get; set; } = new();
 }
 
+public class AppRuntimeMetadataDto
+{
+    public Guid Id { get; set; }
+    public string Channel { get; set; } = "stable";
+    public string AppVersion { get; set; } = string.Empty;
+    public string FirmwareName { get; set; } = string.Empty;
+    public string FirmwareVersion { get; set; } = string.Empty;
+    public string TargetBoard { get; set; } = string.Empty;
+    public string ProtocolName { get; set; } = string.Empty;
+    public string? CommandSummary { get; set; }
+    public string? CompatibilityNotes { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? PublishedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class UpsertRuntimeMetadataRequest
+{
+    public string Channel { get; set; } = "stable";
+    public string AppVersion { get; set; } = string.Empty;
+    public string FirmwareName { get; set; } = string.Empty;
+    public string FirmwareVersion { get; set; } = string.Empty;
+    public string TargetBoard { get; set; } = string.Empty;
+    public string ProtocolName { get; set; } = string.Empty;
+    public string? CommandSummary { get; set; }
+    public string? CompatibilityNotes { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime? PublishedAt { get; set; }
+}
+
 // ─── Controller ──────────────────────────────────────────────────────────────
 
 /// <summary>
@@ -42,6 +75,7 @@ public class DesktopChannelInfo
 public class DesktopUpdatesController : ControllerBase
 {
     private readonly IWebHostEnvironment _env;
+    private readonly IApplicationDbContext _context;
     private readonly ILogger<DesktopUpdatesController> _logger;
 
     private static readonly JsonSerializerOptions _json = new()
@@ -50,9 +84,13 @@ public class DesktopUpdatesController : ControllerBase
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public DesktopUpdatesController(IWebHostEnvironment env, ILogger<DesktopUpdatesController> logger)
+    public DesktopUpdatesController(
+        IWebHostEnvironment env,
+        IApplicationDbContext context,
+        ILogger<DesktopUpdatesController> logger)
     {
         _env = env;
+        _context = context;
         _logger = logger;
     }
 
@@ -250,4 +288,101 @@ public class DesktopUpdatesController : ControllerBase
         _logger.LogInformation("Desktop package deleted: {Channel}/{File}", channel, fileName);
         return NoContent();
     }
+
+    // ── Runtime metadata: CRUD ────────────────────────────────────────────────
+
+    [HttpGet("runtime-metadata")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<List<AppRuntimeMetadataDto>>> GetRuntimeMetadata(CancellationToken ct)
+    {
+        var list = await _context.Set<AppRuntimeMetadata>()
+            .AsNoTracking()
+            .OrderByDescending(x => x.PublishedAt ?? x.CreatedAt)
+            .ToListAsync(ct);
+        return Ok(list.Select(ToDto).ToList());
+    }
+
+    [HttpGet("runtime-metadata/current/{channel}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<AppRuntimeMetadataDto>> GetCurrentRuntimeMetadata(
+        string channel = "stable", CancellationToken ct = default)
+    {
+        var entry = await _context.Set<AppRuntimeMetadata>()
+            .AsNoTracking()
+            .Where(x => x.Channel == channel && x.IsActive)
+            .OrderByDescending(x => x.PublishedAt ?? x.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+        if (entry == null) return NotFound();
+        return Ok(ToDto(entry));
+    }
+
+    [HttpPost("runtime-metadata")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<AppRuntimeMetadataDto>> CreateRuntimeMetadata(
+        [FromBody] UpsertRuntimeMetadataRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.AppVersion))
+            return BadRequest(new { message = "appVersion is required." });
+
+        var entity = new AppRuntimeMetadata
+        {
+            Channel = string.IsNullOrWhiteSpace(req.Channel) ? "stable" : req.Channel.Trim().ToLowerInvariant(),
+            AppVersion = req.AppVersion.Trim().TrimStart('v'),
+            FirmwareName = req.FirmwareName?.Trim() ?? string.Empty,
+            FirmwareVersion = req.FirmwareVersion?.Trim().TrimStart('v') ?? string.Empty,
+            TargetBoard = req.TargetBoard?.Trim() ?? string.Empty,
+            ProtocolName = req.ProtocolName?.Trim() ?? string.Empty,
+            CommandSummary = req.CommandSummary?.Trim(),
+            CompatibilityNotes = req.CompatibilityNotes?.Trim(),
+            IsActive = req.IsActive,
+            PublishedAt = req.PublishedAt ?? DateTime.UtcNow
+        };
+        _context.Set<AppRuntimeMetadata>().Add(entity);
+        await _context.SaveChangesAsync(ct);
+        return Ok(ToDto(entity));
+    }
+
+    [HttpPut("runtime-metadata/{id:guid}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<AppRuntimeMetadataDto>> UpdateRuntimeMetadata(
+        Guid id, [FromBody] UpsertRuntimeMetadataRequest req, CancellationToken ct)
+    {
+        var entity = await _context.Set<AppRuntimeMetadata>().FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (entity == null) return NotFound();
+
+        entity.Channel = string.IsNullOrWhiteSpace(req.Channel) ? "stable" : req.Channel.Trim().ToLowerInvariant();
+        entity.AppVersion = req.AppVersion?.Trim().TrimStart('v') ?? entity.AppVersion;
+        entity.FirmwareName = req.FirmwareName?.Trim() ?? entity.FirmwareName;
+        entity.FirmwareVersion = req.FirmwareVersion?.Trim().TrimStart('v') ?? entity.FirmwareVersion;
+        entity.TargetBoard = req.TargetBoard?.Trim() ?? entity.TargetBoard;
+        entity.ProtocolName = req.ProtocolName?.Trim() ?? entity.ProtocolName;
+        entity.CommandSummary = req.CommandSummary?.Trim();
+        entity.CompatibilityNotes = req.CompatibilityNotes?.Trim();
+        entity.IsActive = req.IsActive;
+        entity.PublishedAt = req.PublishedAt;
+
+        await _context.SaveChangesAsync(ct);
+        return Ok(ToDto(entity));
+    }
+
+    [HttpDelete("runtime-metadata/{id:guid}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult> DeleteRuntimeMetadata(Guid id, CancellationToken ct)
+    {
+        var entity = await _context.Set<AppRuntimeMetadata>().FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (entity == null) return NotFound();
+        _context.Set<AppRuntimeMetadata>().Remove(entity);
+        await _context.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
+    private static AppRuntimeMetadataDto ToDto(AppRuntimeMetadata e) => new()
+    {
+        Id = e.Id, Channel = e.Channel,
+        AppVersion = e.AppVersion, FirmwareName = e.FirmwareName,
+        FirmwareVersion = e.FirmwareVersion, TargetBoard = e.TargetBoard,
+        ProtocolName = e.ProtocolName, CommandSummary = e.CommandSummary,
+        CompatibilityNotes = e.CompatibilityNotes, IsActive = e.IsActive,
+        PublishedAt = e.PublishedAt, CreatedAt = e.CreatedAt
+    };
 }

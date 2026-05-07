@@ -227,6 +227,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     // Control Center
     public DbSet<ControlCenterInstance> ControlCenterInstances => Set<ControlCenterInstance>();
+    public DbSet<AppRuntimeMetadata> AppRuntimeMetadata => Set<AppRuntimeMetadata>();
     public DbSet<CcDevice> CcDevices => Set<CcDevice>();
     public DbSet<CcJobTemplate> CcJobTemplates => Set<CcJobTemplate>();
     public DbSet<CcJob> CcJobs => Set<CcJob>();
