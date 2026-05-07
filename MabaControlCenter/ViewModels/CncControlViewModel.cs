@@ -69,6 +69,7 @@ public class CncControlViewModel : ViewModelBase
     private bool _isMachineWizardOpen;
     private bool _isMachineSwitchOpen;
     private bool _isProfileManagerOpen;
+    private bool _isUploadingFirmware;
     private MachineWizardStep _wizardStep = MachineWizardStep.Catalog;
     private MachineWizardCard? _wizardSelectedFamilyCard;
     private MachineWizardCard? _wizardSelectedMachineCard;
@@ -152,7 +153,7 @@ public class CncControlViewModel : ViewModelBase
         ActivateRuntimeProfileCommand = new RelayCommand(_ => ActivateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
         DuplicateRuntimeProfileCommand = new RelayCommand(_ => DuplicateSelectedRuntimeProfile(), _ => SelectedRuntimeProfile != null);
         DeleteRuntimeProfileCommand = new RelayCommand(_ => DeleteSelectedRuntimeProfile(), _ => CanDeleteSelectedRuntimeProfile);
-        ExportArduinoFirmwareCommand = new RelayCommand(_ => ExportArduinoFirmwarePackage());
+        UploadArduinoFirmwareCommand = new RelayCommand(async _ => await UploadArduinoFirmwareAsync(), _ => CanUploadArduinoFirmware);
         BackToJobsCommand = new RelayCommand(_ => _navigationService.NavigateTo("Jobs"), _ => ActiveJob != null);
         JogXPositiveCommand = new RelayCommand(_ => Jog("X", SelectedJogStep), _ => CanJog);
         JogXNegativeCommand = new RelayCommand(_ => Jog("X", -SelectedJogStep), _ => CanJog);
@@ -444,7 +445,7 @@ public class CncControlViewModel : ViewModelBase
     public ICommand ActivateRuntimeProfileCommand { get; }
     public ICommand DuplicateRuntimeProfileCommand { get; }
     public ICommand DeleteRuntimeProfileCommand { get; }
-    public ICommand ExportArduinoFirmwareCommand { get; }
+    public ICommand UploadArduinoFirmwareCommand { get; }
     public ICommand BackToJobsCommand { get; }
     public ICommand JogXPositiveCommand { get; }
     public ICommand JogXNegativeCommand { get; }
@@ -537,6 +538,7 @@ public class CncControlViewModel : ViewModelBase
             if (_selectedPort == value) return;
             _selectedPort = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanUploadArduinoFirmware));
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -910,6 +912,11 @@ public class CncControlViewModel : ViewModelBase
     public bool CanDeleteSelectedProfile => SelectedProfile != null && SelectedProfile.IsEditable && !SelectedProfile.IsDefault && _cncProfileService.Profiles.Count > 1;
     public bool CanDeleteSelectedRuntimeProfile => SelectedRuntimeProfile?.ProfileType == RuntimeProfileType.User;
     public bool HasBundledArduinoFirmware => ArduinoFirmwarePackage.Exists();
+    public bool IsUploadingFirmware => _isUploadingFirmware;
+    public string BundledFirmwareVersion => ArduinoFirmwarePackage.FirmwareVersion;
+    public string BundledFirmwareTargetBoard => ArduinoFirmwarePackage.TargetBoardDisplay;
+    public string ArduinoFirmwareToolingStatus => ArduinoFirmwareUploader.ToolingStatus;
+    public bool CanUploadArduinoFirmware => HasBundledArduinoFirmware && ArduinoFirmwareUploader.CanUpload && !IsSimulationMode && !string.IsNullOrWhiteSpace(SelectedPort) && !_isUploadingFirmware;
     public string SelectedProfileKindDisplay => IsSelectedProfileBuiltIn ? "System profile / Read-only" : "User profile / Editable";
     public string ProfilePermissionHint => IsSelectedProfileBuiltIn
         ? "This system profile is protected. Duplicate it to create an editable copy."
@@ -2181,30 +2188,58 @@ public class CncControlViewModel : ViewModelBase
         LastError = "No current alarms.";
     }
 
-    private void ExportArduinoFirmwarePackage()
+    private async Task UploadArduinoFirmwareAsync()
     {
         try
         {
             if (!ArduinoFirmwarePackage.Exists())
                 throw new InvalidOperationException("The bundled Arduino firmware package is missing from this app build.");
+            if (IsSimulationMode)
+                throw new InvalidOperationException("Switch to the real hardware machine profile before uploading firmware.");
+            if (string.IsNullOrWhiteSpace(SelectedPort))
+                throw new InvalidOperationException("Select the Arduino COM port before uploading firmware.");
 
-            var dialog = new SaveFileDialog
+            var port = SelectedPort!;
+            var wasConnected = IsConnected;
+
+            _isUploadingFirmware = true;
+            OnPropertyChanged(nameof(IsUploadingFirmware));
+            OnPropertyChanged(nameof(CanUploadArduinoFirmware));
+            CommandManager.InvalidateRequerySuggested();
+
+            if (wasConnected)
             {
-                Filter = "Arduino sketch (*.ino)|*.ino|All files (*.*)|*.*",
-                FileName = ArduinoFirmwarePackage.BundledFileName,
-                Title = "Export Arduino CNC Firmware"
-            };
+                _cncControllerService.Disconnect();
+                LastFeedback = "Machine disconnected temporarily for firmware upload.";
+            }
 
-            if (dialog.ShowDialog(Application.Current.MainWindow) != true)
-                return;
+            LastFeedback = $"Uploading Arduino firmware v{BundledFirmwareVersion} to {port}...";
+            AddDiagnostic("Info", $"Firmware upload started on {port}.");
+            var result = await ArduinoFirmwareUploader.UploadBundledFirmwareAsync(port);
+            if (!result.Success)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.Output) ? result.Message : $"{result.Message}\n\n{result.Output}");
 
-            ArduinoFirmwarePackage.ExportTo(dialog.FileName);
-            LastFeedback = $"Arduino firmware exported to {dialog.FileName}. Upload it to the Uno to enable coordinated XY moves and machine framing.";
-            AddDiagnostic("Info", $"Bundled Arduino firmware exported: {dialog.FileName}");
+            LastFeedback = $"Firmware v{result.FirmwareVersion} uploaded successfully to {result.TargetBoard}.";
+            AddDiagnostic("Info", $"Firmware upload completed on {port}.");
+
+            if (wasConnected)
+            {
+                await Task.Delay(2200);
+                _cncControllerService.Connect(port);
+                LastFeedback = $"Firmware v{result.FirmwareVersion} uploaded and machine reconnected on {port}.";
+            }
         }
         catch (Exception ex)
         {
-            HandleUiError(ex.Message, "Export Arduino Firmware", logAsWarning: false);
+            HandleUiError(ex.Message, "Upload Arduino Firmware", logAsWarning: false);
+        }
+        finally
+        {
+            _isUploadingFirmware = false;
+            OnPropertyChanged(nameof(IsUploadingFirmware));
+            OnPropertyChanged(nameof(CanUploadArduinoFirmware));
+            OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
@@ -2667,6 +2702,11 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(DeviceReadyDisplay));
         OnPropertyChanged(nameof(DeviceStateDisplay));
         OnPropertyChanged(nameof(DriverCapabilitiesSummary));
+        OnPropertyChanged(nameof(BundledFirmwareVersion));
+        OnPropertyChanged(nameof(BundledFirmwareTargetBoard));
+        OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));
+        OnPropertyChanged(nameof(CanUploadArduinoFirmware));
+        OnPropertyChanged(nameof(IsUploadingFirmware));
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(ActiveProfileDriver));
         OnPropertyChanged(nameof(ActiveProfileBaudRateDisplay));
@@ -2726,10 +2766,17 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(WorkOffsetZ));
         OnPropertyChanged(nameof(MachineStateValue));
         OnPropertyChanged(nameof(CurrentMotionIndex));
+        OnPropertyChanged(nameof(CanUploadArduinoFirmware));
+        OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));
         OnPropertyChanged(nameof(CanStartProgram));
         OnPropertyChanged(nameof(CanPauseProgram));
         OnPropertyChanged(nameof(CanResumeProgram));
         OnPropertyChanged(nameof(CanStopExecution));
+        OnPropertyChanged(nameof(BundledFirmwareVersion));
+        OnPropertyChanged(nameof(BundledFirmwareTargetBoard));
+        OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));
+        OnPropertyChanged(nameof(CanUploadArduinoFirmware));
+        OnPropertyChanged(nameof(IsUploadingFirmware));
         OnPropertyChanged(nameof(CanResetState));
         OnPropertyChanged(nameof(CanApplySelectedProfile));
         RefreshProfilePermissionState();

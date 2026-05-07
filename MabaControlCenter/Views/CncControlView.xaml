@@ -1668,28 +1668,76 @@
                                       BorderBrush="{DynamicResource BorderBrush}"
                                       Margin="0,0,0,0">
                                 <StackPanel Margin="0,12,0,0">
-                                    <TextBlock Text="Arduino Firmware Package" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="Arduino Firmware" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                                     <Grid Margin="0,0,0,14">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="120"/>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="260"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
                                         <TextBlock Grid.Column="0"
-                                                   Text="Current Bundle"
+                                                   Grid.Row="0"
+                                                   Text="Bundled Version"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                                    VerticalAlignment="Center"/>
-                                        <Button Grid.Column="1"
-                                                Content="Export Firmware (.ino)"
-                                                Command="{Binding ExportArduinoFirmwareCommand}"
-                                                Style="{StaticResource SecondaryButtonStyle}"
-                                                Margin="0,0,12,0"/>
-                                        <TextBlock Grid.Column="2"
-                                                   Text="Use this bundled Arduino sketch when you want the real machine to support physical framing and smoother coordinated XY motion for circles and curved toolpaths."
+                                        <TextBlock Grid.Column="1"
+                                                   Grid.Row="0"
+                                                   Text="{Binding BundledFirmwareVersion}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0"
+                                                   Grid.Row="1"
+                                                   Text="Target Board"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,8,0,0"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Grid.Row="1"
+                                                   Text="{Binding BundledFirmwareTargetBoard}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,8,0,0"/>
+                                        <TextBlock Grid.Column="0"
+                                                   Grid.Row="2"
+                                                   Text="Tooling"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Top"
+                                                   Margin="0,8,0,0"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Grid.Row="2"
+                                                   Text="{Binding ArduinoFirmwareToolingStatus}"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                                    TextWrapping="Wrap"
-                                                   VerticalAlignment="Center"/>
+                                                   VerticalAlignment="Top"
+                                                   Margin="0,8,12,0"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Grid.RowSpan="3"
+                                                   Text="Upload the bundled firmware to the Arduino Uno to enable physical framing and smoother coordinated XY motion for circles and curved toolpaths."
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,12,0"/>
+                                        <StackPanel Grid.Column="3" Grid.RowSpan="3" VerticalAlignment="Center">
+                                            <Button Content="Upload Firmware"
+                                                    Command="{Binding UploadArduinoFirmwareCommand}"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Margin="0,0,0,8"/>
+                                            <TextBlock Text="Uploading firmware..."
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Margin="0,0,0,6"
+                                                       Visibility="{Binding IsUploadingFirmware, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <TextBlock Text="Uses the selected hardware COM port."
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Width="180"/>
+                                        </StackPanel>
                                     </Grid>
 
                                     <TextBlock Text="Create Custom Profile" FontSize="14" FontWeight="SemiBold"
