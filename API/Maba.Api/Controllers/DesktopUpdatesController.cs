@@ -108,6 +108,7 @@ public class DesktopUpdatesController : ControllerBase
     [HttpPost("publish")]
     [Authorize(Roles = "Admin,Manager")]
     [DisableRequestSizeLimit]
+    [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue, ValueLengthLimit = int.MaxValue)]
     public async Task<ActionResult<DesktopUpdateManifest>> Publish(CancellationToken cancellationToken = default)
     {
         if (!Request.HasFormContentType ||
