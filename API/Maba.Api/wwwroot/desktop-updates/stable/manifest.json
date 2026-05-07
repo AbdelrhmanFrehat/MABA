@@ -1,6 +1,6 @@
 {
-  "version": "0.1.5",
-  "packageUri": "MabaControlCenter-0.1.5-win-x64.zip",
-  "notes": "v0.1.5 — Real-machine frame execution, coordinated XY move path for smoother circles/curves, firmware management UI in CNC Setup, one-click Arduino firmware upload via Arduino CLI/IDE.",
-  "publishedAt": "2026-05-07T12:37:30.9817034Z"
+  "version": "0.1.7",
+  "packageUri": "MabaControlCenter-0.1.7-win-x64.zip",
+  "notes": "v0.1.7 — CNC execution streaming/planner architecture, planned controller-command model, streaming session state and diagnostics, controller-aware one-command-at-a-time pipeline, safer pause/stop/alarm handling, progress tracking via streamed commands, shared execution abstraction for simulation and real Arduino firmware.",
+  "publishedAt": "2026-05-07T16:13:41.0349062Z"
 }
