@@ -1322,6 +1322,8 @@ public class ArduinoSerialCncDriver : ICncDriver
             {
                 SupportsStatusQuery = true,
                 SupportsUnlock = true,
+                SupportsMotorEnable = false,
+                SupportsMotorDisable = false,
                 SupportsHoming = true,
                 SupportsJog = true,
                 SupportsG0G1 = true,
@@ -1369,6 +1371,8 @@ public class ArduinoSerialCncDriver : ICncDriver
             {
                 SupportsStatusQuery = false,
                 SupportsUnlock = false,
+                SupportsMotorEnable = false,
+                SupportsMotorDisable = false,
                 SupportsHoming = true,
                 SupportsJog = true,
                 SupportsG0G1 = false,
@@ -1413,6 +1417,8 @@ public class ArduinoSerialCncDriver : ICncDriver
             {
                 SupportsStatusQuery = true,
                 SupportsUnlock = true,
+                SupportsMotorEnable = true,
+                SupportsMotorDisable = true,
                 SupportsHoming = true,
                 SupportsJog = true,
                 SupportsG0G1 = true,
@@ -1504,6 +1510,12 @@ public class ArduinoSerialCncDriver : ICncDriver
                     break;
                 case "UNLOCK":
                     identity.Capabilities.SupportsUnlock = true;
+                    break;
+                case "MOTORENABLE":
+                    identity.Capabilities.SupportsMotorEnable = true;
+                    break;
+                case "MOTORDISABLE":
+                    identity.Capabilities.SupportsMotorDisable = true;
                     break;
                 case "HOME":
                     identity.Capabilities.SupportsHoming = true;

@@ -27,6 +27,8 @@ public class CncFirmwareCapabilities
 {
     public bool SupportsStatusQuery { get; set; }
     public bool SupportsUnlock { get; set; }
+    public bool SupportsMotorEnable { get; set; }
+    public bool SupportsMotorDisable { get; set; }
     public bool SupportsHoming { get; set; }
     public bool SupportsJog { get; set; }
     public bool SupportsG0G1 { get; set; }
@@ -50,6 +52,8 @@ public class CncFirmwareCapabilities
         {
             SupportsStatusQuery = SupportsStatusQuery,
             SupportsUnlock = SupportsUnlock,
+            SupportsMotorEnable = SupportsMotorEnable,
+            SupportsMotorDisable = SupportsMotorDisable,
             SupportsHoming = SupportsHoming,
             SupportsJog = SupportsJog,
             SupportsG0G1 = SupportsG0G1,

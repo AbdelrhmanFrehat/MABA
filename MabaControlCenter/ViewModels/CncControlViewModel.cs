@@ -129,7 +129,7 @@ public class CncControlViewModel : ViewModelBase
         RefreshPortsCommand = new RelayCommand(_ => RefreshPorts());
         ConnectCommand = new RelayCommand(_ => ConnectMachine(), _ => CanConnectMachine);
         DisconnectCommand = new RelayCommand(_ => DisconnectMachine(), _ => CanDisconnectMachine);
-        EnableMotorsCommand = new RelayCommand(_ => UnlockMachine(), _ => CanEnableMotors);
+        EnableMotorsCommand = new RelayCommand(_ => UnlockMachine(), _ => CanEnableOrUnlock);
         DisableMotorsCommand = new RelayCommand(_ => DisableMotors(), _ => CanDisableMotors);
         HomeCommand = new RelayCommand(_ => HomeMachine(), _ => CanHome);
         GoToCenterCommand = new RelayCommand(_ => MoveToCenter(), _ => CanGoToCenter);
@@ -278,6 +278,7 @@ public class CncControlViewModel : ViewModelBase
         private set { if (_machinePlatformStatus == value) return; _machinePlatformStatus = value; OnPropertyChanged(); }
     }
     private CapabilitiesSection EffectiveCapabilities => _activeMachineContextService.Current.EffectiveCapabilities;
+    private CncFirmwareCapabilities? ActiveFirmwareCapabilities => RuntimeStatus.FirmwareIdentity?.Capabilities;
     public CncRuntimeStatus RuntimeStatus => _runtimeCoordinator.Current;
     public string ActiveMachineContextText => _activeMachineContextService.Current.StatusText;
     public string EffectiveCapabilitiesSummary => BuildEffectiveCapabilitiesSummary();
@@ -537,7 +538,7 @@ public class CncControlViewModel : ViewModelBase
     public bool HasRecoveryControllerMessage => !string.IsNullOrWhiteSpace(RecoveryPlan.ControllerMessage);
     public string RecoveryControllerMessageText => RecoveryPlan.ControllerMessage ?? "No controller recovery message.";
     public bool CanRecoveryRefreshStatus => RecoveryPlan.Allows(CncRecoveryAction.RefreshStatus) && CanRefreshStatus;
-    public bool CanRecoveryUnlock => RecoveryPlan.Allows(CncRecoveryAction.UnlockController) && CanEnableMotors;
+    public bool CanRecoveryUnlock => RecoveryPlan.Allows(CncRecoveryAction.UnlockController) && CanEnableOrUnlock;
     public bool CanRecoveryReconnect => RecoveryPlan.Allows(CncRecoveryAction.Reconnect) && CanConnectMachine;
     public bool CanRecoveryClearAlarm => RecoveryPlan.Allows(CncRecoveryAction.ClearAlarm) && CanResetState;
     public bool CanRecoveryHome => RecoveryPlan.Allows(CncRecoveryAction.RehomeMachine) && CanHome;
@@ -751,6 +752,14 @@ public class CncControlViewModel : ViewModelBase
     public string MachineStateDisplay => FormatState(_cncControllerService.MachineState);
 
     public bool CanJog => RuntimeStatus.CanJog && EffectiveCapabilities.Motion.JogStep;
+    public bool HasUnlockCapability => ActiveFirmwareCapabilities?.SupportsUnlock == true;
+    public bool HasMotorEnableCapability => EffectiveCapabilities.Protocol.MotorEnable;
+    public bool HasMotorDisableCapability => EffectiveCapabilities.Protocol.MotorDisable;
+    public bool ShowEnableOrUnlockControl => HasMotorEnableCapability || HasUnlockCapability;
+    public bool ShowDisableMotorsControl => HasMotorDisableCapability;
+    public bool ShowStatusControl => EffectiveCapabilities.Protocol.StatusQuery;
+    public string EnableOrUnlockButtonText => HasMotorEnableCapability ? "Enable Motors" : "Unlock Controller";
+    public bool CanEnableOrUnlock => (HasMotorEnableCapability || HasUnlockCapability) && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
     public bool CanEnableMotors => EffectiveCapabilities.Protocol.MotorEnable && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
     public bool CanDisableMotors => EffectiveCapabilities.Protocol.MotorDisable && _runtimeCoordinator.CanExecute(CncRuntimeAction.DisableMotors, out _);
     public bool CanHome => EffectiveCapabilities.Motion.Homing && RuntimeStatus.CanHome;
@@ -2447,6 +2456,14 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasMachineVisualizationCapability));
         OnPropertyChanged(nameof(HasProgressTrackingCapability));
         OnPropertyChanged(nameof(HasLiveReportedPositionCapability));
+        OnPropertyChanged(nameof(HasUnlockCapability));
+        OnPropertyChanged(nameof(HasMotorEnableCapability));
+        OnPropertyChanged(nameof(HasMotorDisableCapability));
+        OnPropertyChanged(nameof(ShowEnableOrUnlockControl));
+        OnPropertyChanged(nameof(ShowDisableMotorsControl));
+        OnPropertyChanged(nameof(ShowStatusControl));
+        OnPropertyChanged(nameof(EnableOrUnlockButtonText));
+        OnPropertyChanged(nameof(CanEnableOrUnlock));
         OnPropertyChanged(nameof(CanEnableMotors));
         OnPropertyChanged(nameof(CanDisableMotors));
         OnPropertyChanged(nameof(CanHome));
@@ -3296,6 +3313,14 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(ProtocolErrorText));
         OnPropertyChanged(nameof(DeviceReportedPositionText));
         OnPropertyChanged(nameof(CanJog));
+        OnPropertyChanged(nameof(HasUnlockCapability));
+        OnPropertyChanged(nameof(HasMotorEnableCapability));
+        OnPropertyChanged(nameof(HasMotorDisableCapability));
+        OnPropertyChanged(nameof(ShowEnableOrUnlockControl));
+        OnPropertyChanged(nameof(ShowDisableMotorsControl));
+        OnPropertyChanged(nameof(ShowStatusControl));
+        OnPropertyChanged(nameof(EnableOrUnlockButtonText));
+        OnPropertyChanged(nameof(CanEnableOrUnlock));
         OnPropertyChanged(nameof(CanEnableMotors));
         OnPropertyChanged(nameof(CanDisableMotors));
         OnPropertyChanged(nameof(CanHome));

@@ -169,6 +169,8 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
         var supportsJog = hasFirmwareIdentity ? firmware!.SupportsJog : true;
         var supportsStatus = hasFirmwareIdentity ? firmware!.SupportsStatusQuery : true;
         var supportsUnlock = hasFirmwareIdentity ? firmware!.SupportsUnlock : true;
+        var supportsMotorEnable = hasFirmwareIdentity ? firmware!.SupportsMotorEnable : true;
+        var supportsMotorDisable = hasFirmwareIdentity ? firmware!.SupportsMotorDisable : true;
         var supportsStop = hasFirmwareIdentity ? firmware!.SupportsSoftwareStop : true;
         var supportsFeedHold = hasFirmwareIdentity ? firmware!.SupportsFeedHold : capabilities.SupportsPause;
         var supportsAlarmReset = hasFirmwareIdentity ? firmware!.SupportsUnlock : capabilities.SupportsAlarmReset;
@@ -216,8 +218,8 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
                 AlarmReset = supportsAlarmReset,
                 StatusQuery = supportsStatus,
                 PositionQuery = supportsLivePosition,
-                MotorEnable = supportsUnlock,
-                MotorDisable = supportsUnlock,
+                MotorEnable = supportsMotorEnable,
+                MotorDisable = supportsMotorDisable,
                 FeedHold = supportsFeedHold,
                 SoftReset = true
             },

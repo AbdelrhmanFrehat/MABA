@@ -2410,20 +2410,22 @@
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="0,0,0,10"/>
                         <WrapPanel>
-                            <Button Content="Enable Motors"
+                            <Button Content="{Binding EnableOrUnlockButtonText}"
                                     Command="{Binding EnableMotorsCommand}"
                                     Style="{StaticResource CncPrimaryButtonStyle}"
                                     MinWidth="112"
                                     MinHeight="34"
                                     Padding="10,6"
-                                    Margin="0,0,8,8"/>
+                                    Margin="0,0,8,8"
+                                    Visibility="{Binding ShowEnableOrUnlockControl, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             <Button Content="Disable Motors"
                                     Command="{Binding DisableMotorsCommand}"
                                     Style="{StaticResource CncPrimaryButtonStyle}"
                                     MinWidth="112"
                                     MinHeight="34"
                                     Padding="10,6"
-                                    Margin="0,0,8,8"/>
+                                    Margin="0,0,8,8"
+                                    Visibility="{Binding ShowDisableMotorsControl, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             <Button Content="Auto Home"
                                     Command="{Binding HomeCommand}"
                                     Style="{StaticResource CncPrimaryButtonStyle}"
@@ -2487,7 +2489,8 @@
                                     MinWidth="86"
                                     MinHeight="34"
                                     Padding="10,6"
-                                    Margin="0,0,8,8"/>
+                                    Margin="0,0,8,8"
+                                    Visibility="{Binding ShowStatusControl, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </WrapPanel>
                         <TextBlock Text="{Binding LastFeedback}"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
