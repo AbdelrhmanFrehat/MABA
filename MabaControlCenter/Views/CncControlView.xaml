@@ -1040,19 +1040,19 @@
                                                Margin="0,0,0,8"/>
                                     <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
                                         <Run Text="Firmware: "/>
-                                        <Run Text="{Binding RuntimeFirmwareNameText}"/>
+                                        <Run Text="{Binding RuntimeFirmwareNameText, Mode=OneWay}"/>
                                     </TextBlock>
                                     <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
                                         <Run Text="Version: "/>
-                                        <Run Text="{Binding RuntimeFirmwareVersionText}"/>
+                                        <Run Text="{Binding RuntimeFirmwareVersionText, Mode=OneWay}"/>
                                         <Run Text="  |  Protocol: "/>
-                                        <Run Text="{Binding RuntimeProtocolVersionText}"/>
+                                        <Run Text="{Binding RuntimeProtocolVersionText, Mode=OneWay}"/>
                                     </TextBlock>
                                     <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
                                         <Run Text="Confidence: "/>
-                                        <Run Text="{Binding RuntimeFirmwareConfidenceText}"/>
+                                        <Run Text="{Binding RuntimeFirmwareConfidenceText, Mode=OneWay}"/>
                                         <Run Text="  |  Compatibility: "/>
-                                        <Run Text="{Binding RuntimeCompatibilityStatusText}"/>
+                                        <Run Text="{Binding RuntimeCompatibilityStatusText, Mode=OneWay}"/>
                                     </TextBlock>
                                     <TextBlock Text="{Binding RuntimeCompatibilitySummaryText}"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
@@ -1729,9 +1729,9 @@
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Execution Ready" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
                                 <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CanStartProgram}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Firmware" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,8"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RuntimeFirmwareVersionText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RuntimeFirmwareVersionText, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Protocol" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"/>
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding RuntimeProtocolVersionText}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding RuntimeProtocolVersionText, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </Grid>
                         </StackPanel>
                     </Border>

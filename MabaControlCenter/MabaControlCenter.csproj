@@ -19,7 +19,7 @@
     <ApplicationIcon>Assets\maba.ico</ApplicationIcon>
     <RootNamespace>MabaControlCenter</RootNamespace>
     <AssemblyName>MabaControlCenter</AssemblyName>
-    <Version>0.1.10</Version>
+    <Version>0.1.11</Version>
   </PropertyGroup>
 
 </Project>
