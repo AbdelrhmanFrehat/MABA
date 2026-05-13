@@ -752,14 +752,18 @@ public class CncControlViewModel : ViewModelBase
     public string MachineStateDisplay => FormatState(_cncControllerService.MachineState);
 
     public bool CanJog => RuntimeStatus.CanJog && EffectiveCapabilities.Motion.JogStep;
-    public bool HasUnlockCapability => ActiveFirmwareCapabilities?.SupportsUnlock == true;
+    public bool HasUnlockCapability => ActiveFirmwareCapabilities?.SupportsUnlock == true
+                                       || (RuntimeStatus.IsConnected
+                                           && RuntimeStatus.ControllerMode == CncControllerMode.RealHardware
+                                           && (RuntimeStatus.IsLocked || RuntimeStatus.IsAlarmed));
     public bool HasMotorEnableCapability => EffectiveCapabilities.Protocol.MotorEnable;
     public bool HasMotorDisableCapability => EffectiveCapabilities.Protocol.MotorDisable;
     public bool ShowEnableOrUnlockControl => HasMotorEnableCapability || HasUnlockCapability;
     public bool ShowDisableMotorsControl => HasMotorDisableCapability;
     public bool ShowStatusControl => EffectiveCapabilities.Protocol.StatusQuery;
     public string EnableOrUnlockButtonText => HasMotorEnableCapability ? "Enable Motors" : "Unlock Controller";
-    public bool CanEnableOrUnlock => (HasMotorEnableCapability || HasUnlockCapability) && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
+    public bool CanEnableOrUnlock => (HasMotorEnableCapability || HasUnlockCapability)
+                                     && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
     public bool CanEnableMotors => EffectiveCapabilities.Protocol.MotorEnable && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
     public bool CanDisableMotors => EffectiveCapabilities.Protocol.MotorDisable && _runtimeCoordinator.CanExecute(CncRuntimeAction.DisableMotors, out _);
     public bool CanHome => EffectiveCapabilities.Motion.Homing && RuntimeStatus.CanHome;
@@ -769,7 +773,8 @@ public class CncControlViewModel : ViewModelBase
                                  && _runtimeCoordinator.CanExecute(CncRuntimeAction.GoToCenter, out _);
     public bool CanSetZero => EffectiveCapabilities.Motion.WorkOffset && _runtimeCoordinator.CanExecute(CncRuntimeAction.SetWorkZero, out _);
     public bool CanClearWorkZero => EffectiveCapabilities.Motion.WorkOffset && _runtimeCoordinator.CanExecute(CncRuntimeAction.ClearWorkZero, out _);
-    public bool CanRefreshStatus => EffectiveCapabilities.Protocol.StatusQuery && _runtimeCoordinator.CanExecute(CncRuntimeAction.RefreshStatus, out _);
+    public bool CanRefreshStatus => RuntimeStatus.IsConnected
+                                    && _runtimeCoordinator.CanExecute(CncRuntimeAction.RefreshStatus, out _);
 
     public string LastFeedback
     {

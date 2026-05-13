@@ -971,6 +971,18 @@ public class ArduinoSerialCncDriver : ICncDriver
 
                 if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) || rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase)
+                        && rawLine.Contains("UNKNOWN_COMMAND", StringComparison.OrdinalIgnoreCase))
+                    {
+                        DeviceStatus.IsResponsive = true;
+                        DeviceStatus.DeviceState = DeviceStatus.IsLocked ? CncDeviceState.Idle : CncDeviceState.Ready;
+                        DeviceStatus.LastProtocolError = rawLine;
+                        DeviceStatus.LastStatusText = "Firmware did not provide a status report. Using the last known controller state.";
+                        AddProtocolLog("Status query is unsupported by the connected firmware. Keeping the last known controller state.", "Warning");
+                        NotifyStateChanged();
+                        return rawLine;
+                    }
+
                     DeviceStatus.LastProtocolError = rawLine;
                     DeviceStatus.IsAlarmed = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase);
                     DeviceStatus.DeviceState = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase)
@@ -991,8 +1003,14 @@ public class ArduinoSerialCncDriver : ICncDriver
             }
         }
 
-        HandleProtocolFailure("Status timed out waiting for <MABA:...> response.");
-        throw new TimeoutException("Status timed out waiting for firmware response.");
+        DeviceStatus.IsResponsive = true;
+        DeviceStatus.LastProtocolError = "Status timed out waiting for <MABA:...> response.";
+        DeviceStatus.LastStatusText = "Status query timed out. Keeping the last known controller state.";
+        if (DeviceStatus.DeviceState == CncDeviceState.Unknown)
+            DeviceStatus.DeviceState = DeviceStatus.IsLocked ? CncDeviceState.Idle : CncDeviceState.Ready;
+        AddProtocolLog("Status query timed out. Keeping the last known controller state so recovery controls remain available.", "Warning");
+        NotifyStateChanged();
+        return "STATUS:TIMEOUT";
     }
 
     private string SendMabaCommandAwaiting(string name, string command, IReadOnlyCollection<string> expectedTokens, int timeoutMs)
