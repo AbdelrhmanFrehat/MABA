@@ -96,6 +96,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 DeviceStatus.ProtocolVersion = "MabaProtocol";
                 AddProtocolLog("MABA motion firmware connected.", "Info");
                 RefreshStatus();
+                UpdateFirmwareIdentityFromHandshake(startupBanner, verified: false);
             }
             else if (UsesSimpleFirmwareProtocol)
             {
@@ -112,6 +113,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                     : startupBanner;
                 DeviceStatus.ProtocolVersion = "LegacySimple";
                 AddProtocolLog("Simple firmware connected using legacy step-command mode.", "Info");
+                UpdateFirmwareIdentityFromHandshake(startupBanner, verified: false);
             }
             else
             {
@@ -124,6 +126,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
                 AddProtocolLog($"Handshake completed with {DeviceStatus.LastAcknowledgement}.", "Info");
+                UpdateFirmwareIdentityFromHandshake(DeviceStatus.LastAcknowledgement, verified: false);
             }
         }
         catch (Exception ex)
@@ -801,6 +804,8 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LastAcknowledgedAt = null;
         DeviceStatus.LastProtocolError = null;
         DeviceStatus.LastStatusText = null;
+        DeviceStatus.FirmwareIdentity = new CncFirmwareIdentity();
+        DeviceStatus.FirmwareCompatibility = new CncFirmwareCompatibilityResult();
     }
 
     private void ResetDeviceStatusForDisconnect(string? reason = null)
@@ -812,6 +817,8 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.DeviceState = CncDeviceState.Disconnected;
         DeviceStatus.LastProtocolError = reason;
         DeviceStatus.LastStatusText = reason ?? "Disconnected";
+        DeviceStatus.FirmwareIdentity = new CncFirmwareIdentity();
+        DeviceStatus.FirmwareCompatibility = new CncFirmwareCompatibilityResult();
     }
 
     private void HandleProtocolFailure(string message)
@@ -1132,6 +1139,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LastProtocolError = alarmActive ? "ALARM:LIMIT_OR_ESTOP" : null;
         DeviceStatus.IsAlarmed = alarmActive;
         DeviceStatus.IsLocked = !stateToken.Equals("READY", StringComparison.OrdinalIgnoreCase);
+        UpdateFirmwareIdentityFromHandshake(DeviceStatus.LastAcknowledgement ?? rawLine, verified: false);
 
         if (alarmActive)
         {
@@ -1277,5 +1285,260 @@ public class ArduinoSerialCncDriver : ICncDriver
         Capabilities.SupportsCombinedXyMove = false;
         Capabilities.SupportsPause = false;
         Capabilities.SupportsAlarmReset = true;
+    }
+
+    private void UpdateFirmwareIdentityFromHandshake(string? startupBanner, bool verified)
+    {
+        var identity = UsesMabaMotionFirmware
+            ? CreateMabaFirmwareIdentity(startupBanner, verified)
+            : UsesSimpleFirmwareProtocol
+                ? CreateLegacyFirmwareIdentity(startupBanner)
+                : CreateGenericFirmwareIdentity(startupBanner);
+
+        DeviceStatus.FirmwareIdentity = identity;
+        DeviceStatus.FirmwareVersion = identity.FirmwareVersion;
+        DeviceStatus.ProtocolVersion = identity.ProtocolVersion.RawVersion;
+    }
+
+    private CncFirmwareIdentity CreateMabaFirmwareIdentity(string? startupBanner, bool verified)
+    {
+        var definition = _profile.DefinitionSnapshot;
+        var axes = definition?.AxisConfig.SupportedAxes.Select(axis => axis.ToString()).ToList()
+                   ?? new List<string> { "X", "Y", "Z" };
+        var identity = new CncFirmwareIdentity
+        {
+            FirmwareName = "MABA CNC Motion Firmware",
+            FirmwareVersion = "2.0.0",
+            ProtocolName = "MABA",
+            ProtocolVersion = new CncProtocolVersion
+            {
+                ProtocolName = "MABA",
+                RawVersion = "MabaProtocol",
+                Major = 2,
+                Minor = 0
+            },
+            Confidence = verified ? CncCapabilityConfidence.Verified : CncCapabilityConfidence.Inferred,
+            Capabilities = new CncFirmwareCapabilities
+            {
+                SupportsStatusQuery = true,
+                SupportsUnlock = true,
+                SupportsHoming = true,
+                SupportsJog = true,
+                SupportsG0G1 = true,
+                SupportsG2G3 = true,
+                SupportsSpindleOnOff = true,
+                SupportsSpindleSpeed = false,
+                SupportsFeedHold = false,
+                SupportsSoftwareStop = true,
+                SupportsWorkOffsets = false,
+                SupportsLimitReporting = true,
+                SupportsPositionReporting = true,
+                SupportsFirmwareUpload = true,
+                SupportedAxes = axes,
+                WorkspaceLimitX = _profile.XLimitMm,
+                WorkspaceLimitY = _profile.YLimitMm,
+                WorkspaceLimitZ = _profile.ZLimitMm
+            }
+        };
+
+        if (!verified)
+            identity.FirmwareWarnings.Add("Firmware capabilities inferred from startup banner and MABA status behavior.");
+
+        if (!string.IsNullOrWhiteSpace(startupBanner) && !startupBanner.Contains("MABA", StringComparison.OrdinalIgnoreCase))
+            identity.FirmwareWarnings.Add("Startup banner did not explicitly identify the firmware as MABA.");
+
+        ApplyFutureIdentityPayloads(startupBanner, identity);
+
+        return identity;
+    }
+
+    private CncFirmwareIdentity CreateLegacyFirmwareIdentity(string? startupBanner)
+    {
+        var identity = new CncFirmwareIdentity
+        {
+            FirmwareName = "Legacy Step Firmware",
+            FirmwareVersion = "Unknown",
+            ProtocolName = "LegacySimple",
+            ProtocolVersion = new CncProtocolVersion
+            {
+                ProtocolName = "LegacySimple",
+                RawVersion = "LegacySimple"
+            },
+            Confidence = CncCapabilityConfidence.Inferred,
+            Capabilities = new CncFirmwareCapabilities
+            {
+                SupportsStatusQuery = false,
+                SupportsUnlock = false,
+                SupportsHoming = true,
+                SupportsJog = true,
+                SupportsG0G1 = false,
+                SupportsG2G3 = false,
+                SupportsSpindleOnOff = false,
+                SupportsSpindleSpeed = false,
+                SupportsFeedHold = false,
+                SupportsSoftwareStop = false,
+                SupportsWorkOffsets = false,
+                SupportsLimitReporting = false,
+                SupportsPositionReporting = false,
+                SupportsFirmwareUpload = true,
+                SupportedAxes = new List<string> { "X", "Y", "Z" },
+                WorkspaceLimitX = _profile.XLimitMm,
+                WorkspaceLimitY = _profile.YLimitMm,
+                WorkspaceLimitZ = _profile.ZLimitMm
+            },
+            FirmwareWarnings =
+            {
+                "Firmware capabilities inferred from the legacy serial profile.",
+                string.IsNullOrWhiteSpace(startupBanner) ? "No startup identity banner was detected." : $"Startup banner: {startupBanner}"
+            }
+        };
+        ApplyFutureIdentityPayloads(startupBanner, identity);
+        return identity;
+    }
+
+    private CncFirmwareIdentity CreateGenericFirmwareIdentity(string? startupBanner)
+    {
+        var identity = new CncFirmwareIdentity
+        {
+            FirmwareName = "Custom CNC Firmware",
+            FirmwareVersion = DeviceStatus.FirmwareVersion ?? "Unknown",
+            ProtocolName = "Custom",
+            ProtocolVersion = new CncProtocolVersion
+            {
+                ProtocolName = "Custom",
+                RawVersion = DeviceStatus.ProtocolVersion ?? "Custom"
+            },
+            Confidence = CncCapabilityConfidence.Inferred,
+            Capabilities = new CncFirmwareCapabilities
+            {
+                SupportsStatusQuery = true,
+                SupportsUnlock = true,
+                SupportsHoming = true,
+                SupportsJog = true,
+                SupportsG0G1 = true,
+                SupportsG2G3 = false,
+                SupportsSpindleOnOff = false,
+                SupportsSpindleSpeed = false,
+                SupportsFeedHold = Capabilities.SupportsPause,
+                SupportsSoftwareStop = true,
+                SupportsWorkOffsets = Capabilities.SupportsWorkCoordinateSystem,
+                SupportsLimitReporting = true,
+                SupportsPositionReporting = Capabilities.SupportsLivePositionReporting,
+                SupportsFirmwareUpload = true,
+                SupportedAxes = new List<string> { "X", "Y", "Z" },
+                WorkspaceLimitX = _profile.XLimitMm,
+                WorkspaceLimitY = _profile.YLimitMm,
+                WorkspaceLimitZ = _profile.ZLimitMm
+            },
+            FirmwareWarnings =
+            {
+                "Firmware capabilities inferred from custom driver assumptions."
+            }
+        };
+        ApplyFutureIdentityPayloads(startupBanner, identity);
+        return identity;
+    }
+
+    private static void ApplyFutureIdentityPayloads(string? text, CncFirmwareIdentity identity)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        var lines = text
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("$I", StringComparison.OrdinalIgnoreCase))
+                ApplyIdentityLine(line, identity);
+            else if (line.StartsWith("$VER", StringComparison.OrdinalIgnoreCase))
+                ApplyVersionLine(line, identity);
+            else if (line.StartsWith("$CAPS", StringComparison.OrdinalIgnoreCase))
+                ApplyCapabilitiesLine(line, identity);
+        }
+    }
+
+    private static void ApplyIdentityLine(string line, CncFirmwareIdentity identity)
+    {
+        var payload = line[(line.IndexOf(':') + 1)..];
+        foreach (var entry in payload.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = entry.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length != 2)
+                continue;
+
+            switch (parts[0].ToUpperInvariant())
+            {
+                case "NAME":
+                    identity.FirmwareName = parts[1];
+                    break;
+                case "MACHINE":
+                    identity.MachineId = parts[1];
+                    break;
+                case "BUILD":
+                    identity.BuildDate = parts[1];
+                    break;
+            }
+        }
+    }
+
+    private static void ApplyVersionLine(string line, CncFirmwareIdentity identity)
+    {
+        var payload = line[(line.IndexOf(':') + 1)..].Trim();
+        if (string.IsNullOrWhiteSpace(payload))
+            return;
+
+        identity.FirmwareVersion = payload;
+        identity.ProtocolVersion.RawVersion = payload;
+    }
+
+    private static void ApplyCapabilitiesLine(string line, CncFirmwareIdentity identity)
+    {
+        var payload = line[(line.IndexOf(':') + 1)..];
+        foreach (var token in payload.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            switch (token.ToUpperInvariant())
+            {
+                case "STATUS":
+                    identity.Capabilities.SupportsStatusQuery = true;
+                    break;
+                case "UNLOCK":
+                    identity.Capabilities.SupportsUnlock = true;
+                    break;
+                case "HOME":
+                    identity.Capabilities.SupportsHoming = true;
+                    break;
+                case "JOG":
+                    identity.Capabilities.SupportsJog = true;
+                    break;
+                case "G0G1":
+                    identity.Capabilities.SupportsG0G1 = true;
+                    break;
+                case "G2G3":
+                    identity.Capabilities.SupportsG2G3 = true;
+                    break;
+                case "SPINDLE":
+                    identity.Capabilities.SupportsSpindleOnOff = true;
+                    break;
+                case "SPINDLESPEED":
+                    identity.Capabilities.SupportsSpindleSpeed = true;
+                    break;
+                case "FEEDHOLD":
+                    identity.Capabilities.SupportsFeedHold = true;
+                    break;
+                case "STOP":
+                    identity.Capabilities.SupportsSoftwareStop = true;
+                    break;
+                case "WCO":
+                    identity.Capabilities.SupportsWorkOffsets = true;
+                    break;
+                case "LIMITS":
+                    identity.Capabilities.SupportsLimitReporting = true;
+                    break;
+                case "POSITION":
+                    identity.Capabilities.SupportsPositionReporting = true;
+                    break;
+            }
+        }
     }
 }

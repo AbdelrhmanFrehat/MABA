@@ -24,6 +24,9 @@ public class CncControlViewModel : ViewModelBase
     private readonly IRuntimeProfileService _runtimeProfileService;
     private readonly IActiveMachineContextService _activeMachineContextService;
     private readonly ICncRuntimeCoordinator _runtimeCoordinator;
+    private readonly ICncCoordinateTransformService _coordinateTransformService;
+    private string? _lastRecoverySignature;
+    private bool _hadRecoveryPlan;
 
     private string? _selectedPort;
     private decimal _selectedJogStep = 1m;
@@ -93,7 +96,8 @@ public class CncControlViewModel : ViewModelBase
         IMachineCatalogService machineCatalogService,
         IRuntimeProfileService runtimeProfileService,
         IActiveMachineContextService activeMachineContextService,
-        ICncRuntimeCoordinator runtimeCoordinator)
+        ICncRuntimeCoordinator runtimeCoordinator,
+        ICncCoordinateTransformService coordinateTransformService)
     {
         _cncControllerService = cncControllerService;
         _cncProfileService = cncProfileService;
@@ -109,6 +113,7 @@ public class CncControlViewModel : ViewModelBase
         _runtimeProfileService = runtimeProfileService;
         _activeMachineContextService = activeMachineContextService;
         _runtimeCoordinator = runtimeCoordinator;
+        _coordinateTransformService = coordinateTransformService;
 
         AvailablePorts = new ObservableCollection<string>();
         JogStepPresets = new ObservableCollection<decimal>();
@@ -129,10 +134,18 @@ public class CncControlViewModel : ViewModelBase
         HomeCommand = new RelayCommand(_ => HomeMachine(), _ => CanHome);
         GoToCenterCommand = new RelayCommand(_ => MoveToCenter(), _ => CanGoToCenter);
         SetZeroCommand = new RelayCommand(_ => SetWorkZero(), _ => CanSetZero);
+        SetZeroXCommand = new RelayCommand(_ => SetWorkZeroX(), _ => CanSetZero);
+        SetZeroYCommand = new RelayCommand(_ => SetWorkZeroY(), _ => CanSetZero);
+        SetZeroXyCommand = new RelayCommand(_ => SetWorkZeroXY(), _ => CanSetZero);
+        ClearWorkZeroCommand = new RelayCommand(_ => ClearWorkZero(), _ => CanClearWorkZero);
         ResetStateCommand = new RelayCommand(_ => ResetControllerState(), _ => CanResetState);
         ClearWarningCommand = new RelayCommand(_ => RunAction(_cncControllerService.ClearWarning), _ => HasWarning);
         StopCommand = new RelayCommand(async _ => await StopExecutionAsync(), _ => CanStopExecution);
         RefreshStatusCommand = new RelayCommand(_ => RefreshControllerStatus(), _ => CanRefreshStatus);
+        ReconnectRecoveryCommand = new RelayCommand(_ => ReconnectForRecovery(), _ => CanReconnectForRecovery);
+        RestartJobCommand = new RelayCommand(async _ => await RestartJobAsync(), _ => CanRestartJob);
+        AbortJobCommand = new RelayCommand(async _ => await AbortJobAsync(), _ => CanAbortJob);
+        CopyDiagnosticsCommand = new RelayCommand(_ => CopyFirmwareDiagnostics(), _ => CanCopyDiagnostics);
         SaveConfigCommand = new RelayCommand(_ => SaveConfig(), _ => CanSaveSelectedProfile);
         ApplyProfileCommand = new RelayCommand(_ => ApplySelectedProfile(), _ => CanApplySelectedProfile);
         DuplicateProfileCommand = new RelayCommand(_ => DuplicateSelectedProfile(), _ => SelectedProfile != null);
@@ -182,7 +195,11 @@ public class CncControlViewModel : ViewModelBase
         PauseProgramCommand = new RelayCommand(_ => PauseProgram(), _ => CanPauseProgram);
         ResumeProgramCommand = new RelayCommand(async _ => await ResumeProgramAsync(), _ => CanResumeProgram);
 
-        _cncControllerService.StateChanged += (_, _) => RefreshState();
+        _cncControllerService.StateChanged += (_, _) =>
+        {
+            RefreshActiveMachineContext();
+            RefreshState();
+        };
         _cncControllerService.ConnectionLost += (_, _) =>
         {
             _jobSessionService.InterruptSession(CompletedMotionCount, TotalMotionCount, MachineX, MachineY, MachineZ, "Execution interrupted by serial disconnect.");
@@ -423,10 +440,18 @@ public class CncControlViewModel : ViewModelBase
     public ICommand HomeCommand { get; }
     public ICommand GoToCenterCommand { get; }
     public ICommand SetZeroCommand { get; }
+    public ICommand SetZeroXCommand { get; }
+    public ICommand SetZeroYCommand { get; }
+    public ICommand SetZeroXyCommand { get; }
+    public ICommand ClearWorkZeroCommand { get; }
     public ICommand ResetStateCommand { get; }
     public ICommand ClearWarningCommand { get; }
     public ICommand StopCommand { get; }
     public ICommand RefreshStatusCommand { get; }
+    public ICommand ReconnectRecoveryCommand { get; }
+    public ICommand RestartJobCommand { get; }
+    public ICommand AbortJobCommand { get; }
+    public ICommand CopyDiagnosticsCommand { get; }
     public ICommand SaveConfigCommand { get; }
     public ICommand ApplyProfileCommand { get; }
     public ICommand DuplicateProfileCommand { get; }
@@ -500,10 +525,52 @@ public class CncControlViewModel : ViewModelBase
     public string RuntimeAlarmBannerText => RuntimeStatus.LastAlarmMessage;
     public bool HasRuntimeLockBanner => RuntimeStatus.IsLocked && !RuntimeStatus.IsAlarmed;
     public string RuntimeLockBannerText => RuntimeStatus.BlockingReason ?? "Machine locked — unlock or home required.";
+    public CncRecoveryPlan RecoveryPlan => RuntimeStatus.RecoveryPlan;
+    public bool HasRecoveryPlan => RecoveryPlan.HasRecovery;
+    public string RecoveryStateText => RecoveryPlan.StateDisplay;
+    public string RecoverySeverityText => RecoveryPlan.SeverityDisplay;
+    public string RecoverySummaryText => RecoveryPlan.Summary;
+    public string RecoveryRequiredActionText => RecoveryPlan.RequiredNextAction;
+    public int RecoveryFailedLineNumber => RecoveryPlan.FailedSourceLine ?? 0;
+    public string RecoveryFailedCommandText => string.IsNullOrWhiteSpace(RecoveryPlan.FailedCommandText) ? "No failed command captured." : RecoveryPlan.FailedCommandText!;
+    public bool HasRecoveryFailedLine => RecoveryPlan.FailedSourceLine.HasValue;
+    public bool HasRecoveryControllerMessage => !string.IsNullOrWhiteSpace(RecoveryPlan.ControllerMessage);
+    public string RecoveryControllerMessageText => RecoveryPlan.ControllerMessage ?? "No controller recovery message.";
+    public bool CanRecoveryRefreshStatus => RecoveryPlan.Allows(CncRecoveryAction.RefreshStatus) && CanRefreshStatus;
+    public bool CanRecoveryUnlock => RecoveryPlan.Allows(CncRecoveryAction.UnlockController) && CanEnableMotors;
+    public bool CanRecoveryReconnect => RecoveryPlan.Allows(CncRecoveryAction.Reconnect) && CanConnectMachine;
+    public bool CanRecoveryClearAlarm => RecoveryPlan.Allows(CncRecoveryAction.ClearAlarm) && CanResetState;
+    public bool CanRecoveryHome => RecoveryPlan.Allows(CncRecoveryAction.RehomeMachine) && CanHome;
+    public bool CanRecoveryClearJob => RecoveryPlan.Allows(CncRecoveryAction.ClearJob) && CanClearLoadedProgram;
+    public bool CanRecoveryResume => RecoveryPlan.Allows(CncRecoveryAction.ResumeJob) && CanResumeProgram;
+    public bool CanRecoveryRestart => RecoveryPlan.Allows(CncRecoveryAction.RestartJob) && CanRestartJob;
+    public bool CanRecoveryAbort => RecoveryPlan.Allows(CncRecoveryAction.AbortJob) && CanAbortJob;
+    public bool CanRecoveryResetWorkOffset => RecoveryPlan.Allows(CncRecoveryAction.ResetWorkOffset) && CanClearWorkZero;
     public bool HasRuntimeBlockingReason => !string.IsNullOrWhiteSpace(RuntimeStatus.BlockingReason);
     public string RuntimeBlockingReasonText => RuntimeStatus.BlockingReason ?? "No blocking issues.";
     public string RuntimeFirmwareVersionText => RuntimeStatus.FirmwareVersion ?? "Unknown";
     public string RuntimeProtocolVersionText => RuntimeStatus.ProtocolVersion ?? "Unknown";
+    public string RuntimeFirmwareNameText => RuntimeStatus.FirmwareIdentity.FirmwareName;
+    public string RuntimeFirmwareConfidenceText => RuntimeStatus.FirmwareIdentity.Confidence.ToString();
+    public string RuntimeCompatibilityStatusText => RuntimeStatus.FirmwareCompatibility.Status.ToString();
+    public string RuntimeCompatibilitySummaryText
+    {
+        get
+        {
+            if (RuntimeStatus.FirmwareCompatibility.Errors.Count > 0)
+                return RuntimeStatus.FirmwareCompatibility.Errors[0];
+            if (RuntimeStatus.FirmwareCompatibility.Warnings.Count > 0)
+                return RuntimeStatus.FirmwareCompatibility.Warnings[0];
+            if (RuntimeStatus.FirmwareIdentity.FirmwareWarnings.Count > 0)
+                return RuntimeStatus.FirmwareIdentity.FirmwareWarnings[0];
+            return "No firmware compatibility warnings.";
+        }
+    }
+    public bool HasRuntimeCompatibilityNotes =>
+        RuntimeStatus.FirmwareCompatibility.Errors.Count > 0
+        || RuntimeStatus.FirmwareCompatibility.Warnings.Count > 0
+        || RuntimeStatus.FirmwareIdentity.FirmwareWarnings.Count > 0;
+    public bool CanCopyDiagnostics => HasDiagnostics || HasRuntimeCompatibilityNotes;
     public string RuntimeProgressPercentText => $"{RuntimeStatus.ProgressPercent:0.#}%";
     public CncLoadedJobInfo? LoadedJobInfo => _jobSessionService.LoadedJob;
     public CncJobSession? CurrentJobSession => _jobSessionService.CurrentSession;
@@ -692,6 +759,7 @@ public class CncControlViewModel : ViewModelBase
                                  && SupportsYAxis
                                  && _runtimeCoordinator.CanExecute(CncRuntimeAction.GoToCenter, out _);
     public bool CanSetZero => EffectiveCapabilities.Motion.WorkOffset && _runtimeCoordinator.CanExecute(CncRuntimeAction.SetWorkZero, out _);
+    public bool CanClearWorkZero => EffectiveCapabilities.Motion.WorkOffset && _runtimeCoordinator.CanExecute(CncRuntimeAction.ClearWorkZero, out _);
     public bool CanRefreshStatus => EffectiveCapabilities.Protocol.StatusQuery && _runtimeCoordinator.CanExecute(CncRuntimeAction.RefreshStatus, out _);
 
     public string LastFeedback
@@ -740,6 +808,11 @@ public class CncControlViewModel : ViewModelBase
     public decimal WorkOffsetX => _cncControllerService.WorkOffsetX;
     public decimal WorkOffsetY => _cncControllerService.WorkOffsetY;
     public decimal WorkOffsetZ => _cncControllerService.WorkOffsetZ;
+    public decimal PlacementOffsetZ => 0m;
+    public decimal AppliedPlacementOffsetZ => 0m;
+    public string ReferenceStatusText => RuntimeStatus.ReferenceStatusDisplay;
+    public string ReferenceWarningText => RuntimeStatus.ReferenceWarningText ?? "Machine reference is valid.";
+    public bool HasReferenceWarning => !string.IsNullOrWhiteSpace(RuntimeStatus.ReferenceWarningText);
     public CncMachineState MachineStateValue => _cncControllerService.MachineState;
     public CncExecutionState ExecutionStateValue => _executionQueueService.ExecutionState;
 
@@ -934,6 +1007,9 @@ public class CncControlViewModel : ViewModelBase
     public bool CanPauseProgram => RuntimeStatus.CanPause;
     public bool CanResumeProgram => RuntimeStatus.CanResume;
     public bool CanStopExecution => EffectiveCapabilities.Motion.Stop && RuntimeStatus.CanStop;
+    public bool CanReconnectForRecovery => CanConnectMachine;
+    public bool CanRestartJob => HasLoadedProgram && !RuntimeStatus.IsBusy && !RuntimeStatus.IsAlarmed && RuntimeStatus.HasValidReference;
+    public bool CanAbortJob => HasLoadedProgram && !IsUploadingFirmware;
     public bool CanResetState => (EffectiveCapabilities.Protocol.AlarmReset || EffectiveCapabilities.Protocol.SoftReset)
                                  && _runtimeCoordinator.CanExecute(CncRuntimeAction.ResetAlarm, out _);
     public bool CanApplySelectedProfile => SelectedProfile != null && SelectedProfile.ProfileId != _cncProfileService.ActiveProfile.ProfileId;
@@ -1110,7 +1186,27 @@ public class CncControlViewModel : ViewModelBase
 
     private void SetWorkZero()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZero(), "Set Work Zero");
+        SetWorkZeroXY();
+    }
+
+    private void SetWorkZeroX()
+    {
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZeroX(), "Set Work Zero X");
+    }
+
+    private void SetWorkZeroY()
+    {
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZeroY(), "Set Work Zero Y");
+    }
+
+    private void SetWorkZeroXY()
+    {
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZeroXY(), "Set Work Zero XY");
+    }
+
+    private void ClearWorkZero()
+    {
+        RunRuntimeResponseAction(CncRuntimeAction.ClearWorkZero, () => _cncControllerService.ClearWorkOffset(), "Clear Work Zero");
     }
 
     private void ResetControllerState()
@@ -1348,6 +1444,7 @@ public class CncControlViewModel : ViewModelBase
             _jobPlacement = new CncJobPlacement();
             PlacementOffsetX = 0m;
             PlacementOffsetY = 0m;
+            _runtimeCoordinator.SetJobPlacementOffset(new CncJobPlacementOffset());
             _jobSessionService.LoadJob(parsed, ActiveProfileName, RuntimeModeText, ActiveJob?.Title, ActiveJob?.JobReference);
             _runtimeCoordinator.SetJobLoaded(parsed.FileName, true);
             RevalidateLoadedProgram();
@@ -1384,6 +1481,7 @@ public class CncControlViewModel : ViewModelBase
         _jobPlacement = new CncJobPlacement();
         PlacementOffsetX = 0m;
         PlacementOffsetY = 0m;
+        _runtimeCoordinator.SetJobPlacementOffset(new CncJobPlacementOffset());
         PlacementStatus = "Placement offsets are zeroed.";
         ClearDiagnostics();
         _executionQueueService.Load(Array.Empty<GcodeMotionCommand>(), LoadedProgram?.FileName, Array.Empty<GcodeInterpretedCommand>());
@@ -1494,6 +1592,90 @@ public class CncControlViewModel : ViewModelBase
             _runtimeCoordinator.SetStopRequested(false);
             RefreshState();
         }
+    }
+
+    private void ReconnectForRecovery()
+    {
+        AddDiagnostic("Warning", "Recovery action selected: reconnect controller.");
+        ConnectMachine();
+    }
+
+    private async Task RestartJobAsync()
+    {
+        try
+        {
+            if (!CanRecoveryRestart)
+                throw new InvalidOperationException(RecoveryPlan.RequiredNextAction);
+
+            AddDiagnostic("Warning", "Recovery action selected: restart job from beginning.");
+            _executionQueueService.ResetToLoadedState("Preparing job restart from the beginning.");
+            await StartProgramAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleUiError(ex.Message, "Restart CNC Job", logAsWarning: false);
+        }
+        finally
+        {
+            RefreshState();
+        }
+    }
+
+    private async Task AbortJobAsync()
+    {
+        try
+        {
+            AddDiagnostic("Warning", "Recovery action selected: abort job.");
+
+            if (_executionQueueService.ExecutionState is CncExecutionState.Running or CncExecutionState.Paused or CncExecutionState.Stopping)
+            {
+                _runtimeCoordinator.SetStopRequested(true);
+                await _executionQueueService.StopAsync(_cncControllerService);
+                _runtimeCoordinator.SetStopRequested(false);
+            }
+
+            _executionQueueService.ResetToLoadedState("Job aborted. Loaded program remains available for restart or clear.");
+            if (JobSessionState is not CncJobLifecycleState.Completed and not CncJobLifecycleState.Stopped)
+            {
+                _jobSessionService.StopSession(CompletedMotionCount, TotalMotionCount, MachineX, MachineY, MachineZ, "Operator aborted the CNC job session.");
+            }
+
+            LastFeedback = "Job aborted. Loaded program remains available.";
+        }
+        catch (Exception ex)
+        {
+            HandleUiError(ex.Message, "Abort CNC Job", logAsWarning: false);
+        }
+        finally
+        {
+            _runtimeCoordinator.SetStopRequested(false);
+            RefreshState();
+        }
+    }
+
+    private void CopyFirmwareDiagnostics()
+    {
+        var lines = new List<string>
+        {
+            $"Firmware: {RuntimeFirmwareNameText}",
+            $"Version: {RuntimeFirmwareVersionText}",
+            $"Protocol: {RuntimeProtocolVersionText}",
+            $"Confidence: {RuntimeFirmwareConfidenceText}",
+            $"Compatibility: {RuntimeCompatibilityStatusText}",
+            $"Summary: {RuntimeCompatibilitySummaryText}"
+        };
+
+        if (RuntimeStatus.FirmwareCompatibility.Errors.Count > 0)
+            lines.AddRange(RuntimeStatus.FirmwareCompatibility.Errors.Select(error => $"Error: {error}"));
+        if (RuntimeStatus.FirmwareCompatibility.Warnings.Count > 0)
+            lines.AddRange(RuntimeStatus.FirmwareCompatibility.Warnings.Select(warning => $"Warning: {warning}"));
+        if (RuntimeStatus.FirmwareIdentity.FirmwareWarnings.Count > 0)
+            lines.AddRange(RuntimeStatus.FirmwareIdentity.FirmwareWarnings.Select(warning => $"Firmware warning: {warning}"));
+        if (DiagnosticsMessages.Count > 0)
+            lines.AddRange(DiagnosticsMessages);
+
+        Clipboard.SetText(string.Join(Environment.NewLine, lines.Distinct()));
+        LastFeedback = "Firmware and diagnostics copied to clipboard.";
     }
 
     private void ApplySelectedProfile()
@@ -2254,7 +2436,10 @@ public class CncControlViewModel : ViewModelBase
         }
 
         var liveDefinition = runtimeProfile.MachineDefinitionId is Guid id ? _machineCatalogService.GetCachedDefinition(id, runtimeProfile.MachineDefinitionVersion) : null;
-        _activeMachineContextService.Resolve(runtimeProfile, liveDefinition);
+        var firmwareIdentity = _cncControllerService.DeviceStatus.FirmwareIdentity.IsKnown
+            ? _cncControllerService.DeviceStatus.FirmwareIdentity
+            : null;
+        _activeMachineContextService.Resolve(runtimeProfile, liveDefinition, firmwareIdentity);
         _runtimeCoordinator.Refresh();
         OnPropertyChanged(nameof(ActiveMachineContextText));
         OnPropertyChanged(nameof(EffectiveCapabilitiesSummary));
@@ -2337,18 +2522,23 @@ public class CncControlViewModel : ViewModelBase
         _placedInterpretedCommands.Clear();
         _placedMotions.AddRange(_jobPlacementService.ApplyPlacement(LoadedProgram.Motions.ToList(), _jobPlacement));
         _placedInterpretedCommands.AddRange(_jobPlacementService.ApplyPlacement(LoadedProgram.InterpretedCommands.ToList(), _jobPlacement));
-        _frameBounds = _jobPlacementService.CalculateBounds(_placedMotions);
+        _frameBounds = _coordinateTransformService.ComputeFrameBounds(_placedMotions);
 
         foreach (var motion in _placedMotions)
         {
             motion.IsValid = true;
             motion.ValidationMessage = null;
 
-            var boundsMessage = _cncControllerService.ValidateWorkPosition(motion.EndX, motion.EndY, motion.EndZ);
+            var transform = _coordinateTransformService.WorkToMachine(
+                motion.EndX,
+                motion.EndY,
+                motion.EndZ,
+                _cncControllerService.CoordinateState);
+            var boundsMessage = _cncControllerService.ValidateMachinePosition(transform.FinalMachineX, transform.FinalMachineY, transform.FinalMachineZ);
             if (boundsMessage != null)
             {
                 motion.IsValid = false;
-                motion.ValidationMessage = $"Line {motion.LineNumber}: {boundsMessage}";
+                motion.ValidationMessage = $"Line {motion.LineNumber}: {boundsMessage} {transform.ExplainTransform()}";
             }
 
             if (!motion.IsValid && motion.ValidationMessage != null)
@@ -2376,6 +2566,7 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(DiagnosticsSummary));
+        OnPropertyChanged(nameof(CanCopyDiagnostics));
         LastError = "No current alarms.";
     }
 
@@ -2474,6 +2665,7 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(DiagnosticsSummary));
+        OnPropertyChanged(nameof(CanCopyDiagnostics));
     }
 
     private void SyncWorkflowContext()
@@ -2519,6 +2711,34 @@ public class CncControlViewModel : ViewModelBase
         if (LoadedProgram != null && LoadedProgram.UnsupportedCommandCount > 0)
             failures.Add("Unsupported G-code commands or planes are blocking execution.");
 
+        if (RuntimeStatus.FirmwareCompatibility.Status == CncFirmwareCompatibilityStatus.Incompatible)
+            failures.Add(RuntimeStatus.FirmwareCompatibility.Errors.FirstOrDefault() ?? "Connected firmware is incompatible with the selected machine profile.");
+
+        if (_placedInterpretedCommands.Any(command => command.IsSpindleChange)
+            && RuntimeStatus.FirmwareIdentity.IsKnown
+            && !RuntimeStatus.FirmwareIdentity.Capabilities.SupportsSpindleOnOff)
+        {
+            failures.Add("Loaded job requests spindle commands, but the connected firmware does not support M3/M5.");
+        }
+
+        if (!IsSimulationMode && !RuntimeStatus.HasValidReference)
+            failures.Add(RuntimeStatus.ReferenceWarningText ?? "Machine reference is unknown.");
+
+        if (LoadedProgram != null && _placedMotions.Count > 0)
+        {
+            var invalidBounds = _placedMotions
+                .Select(motion =>
+                {
+                    var result = _coordinateTransformService.WorkToMachine(motion.EndX, motion.EndY, motion.EndZ, _cncControllerService.CoordinateState);
+                    result.BoundsMessage = _cncControllerService.ValidateMachinePosition(result.FinalMachineX, result.FinalMachineY, result.FinalMachineZ);
+                    return result;
+                })
+                .FirstOrDefault(result => !string.IsNullOrWhiteSpace(result.BoundsMessage));
+
+            if (invalidBounds != null)
+                failures.Add(invalidBounds.BoundsMessage ?? "Transformed job bounds exceed the machine workspace.");
+        }
+
         return failures
             .Where(message => !string.IsNullOrWhiteSpace(message))
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -2536,7 +2756,16 @@ public class CncControlViewModel : ViewModelBase
             OffsetY = PlacementOffsetY
         };
 
-        var validationMessage = _jobPlacementService.ValidatePlacement(LoadedProgram.Motions.ToList(), proposedPlacement, XMinMm, XLimitMm, YMinMm, YLimitMm);
+        var validationMessage = LoadedProgram.Motions
+            .Where(m => m.IsExecutable)
+            .Select(motion =>
+            {
+                var state = _cncControllerService.CoordinateState;
+                state.JobPlacementOffset = new CncJobPlacementOffset { X = proposedPlacement.OffsetX, Y = proposedPlacement.OffsetY, Z = 0m };
+                var result = _coordinateTransformService.WorkToMachine(motion.EndX, motion.EndY, motion.EndZ, state);
+                return _cncControllerService.ValidateMachinePosition(result.FinalMachineX, result.FinalMachineY, result.FinalMachineZ);
+            })
+            .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
         if (validationMessage != null)
         {
             HandleUiError(validationMessage, "Apply Job Placement", logAsWarning: true);
@@ -2544,6 +2773,12 @@ public class CncControlViewModel : ViewModelBase
         }
 
         _jobPlacement = proposedPlacement;
+        _runtimeCoordinator.SetJobPlacementOffset(new CncJobPlacementOffset
+        {
+            X = proposedPlacement.OffsetX,
+            Y = proposedPlacement.OffsetY,
+            Z = 0m
+        });
         PlacementStatus = $"Placed at X {AppliedPlacementOffsetX:0.###} mm / Y {AppliedPlacementOffsetY:0.###} mm.";
         RevalidateLoadedProgram();
         LastFeedback = "Job placement updated.";
@@ -2896,22 +3131,81 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(LastJobSessionSummary));
     }
 
+    private void LogRecoveryPlanChanges()
+    {
+        var plan = RuntimeStatus.RecoveryPlan;
+        var signature = $"{plan.State}|{plan.RequiredNextAction}|{plan.FailedSourceLine}|{plan.FailedCommandText}";
+        if (signature == _lastRecoverySignature)
+            return;
+
+        if (_hadRecoveryPlan && !plan.HasRecovery)
+            AddDiagnostic("Info", "Recovery complete. Machine state is back in a non-recovery state.");
+
+        _lastRecoverySignature = signature;
+        _hadRecoveryPlan = plan.HasRecovery;
+        if (!plan.HasRecovery)
+            return;
+
+        var severity = plan.Severity switch
+        {
+            CncRecoverySeverity.Critical => "Error",
+            CncRecoverySeverity.Warning => "Warning",
+            _ => "Info"
+        };
+
+        AddDiagnostic(severity, $"Recovery: {plan.Summary}");
+        if (!string.IsNullOrWhiteSpace(plan.RequiredNextAction))
+            AddDiagnostic("Info", $"Next recovery step: {plan.RequiredNextAction}");
+    }
+
     private void RefreshRuntimeStatus()
     {
+        LogRecoveryPlanChanges();
         OnPropertyChanged(nameof(RuntimeStatus));
         OnPropertyChanged(nameof(RuntimeStateDisplay));
         OnPropertyChanged(nameof(RuntimeModeDisplay));
+        OnPropertyChanged(nameof(RecoveryPlan));
+        OnPropertyChanged(nameof(HasRecoveryPlan));
+        OnPropertyChanged(nameof(RecoveryStateText));
+        OnPropertyChanged(nameof(RecoverySeverityText));
+        OnPropertyChanged(nameof(RecoverySummaryText));
+        OnPropertyChanged(nameof(RecoveryRequiredActionText));
+        OnPropertyChanged(nameof(RecoveryFailedLineNumber));
+        OnPropertyChanged(nameof(RecoveryFailedCommandText));
+        OnPropertyChanged(nameof(HasRecoveryFailedLine));
+        OnPropertyChanged(nameof(HasRecoveryControllerMessage));
+        OnPropertyChanged(nameof(RecoveryControllerMessageText));
+        OnPropertyChanged(nameof(CanRecoveryRefreshStatus));
+        OnPropertyChanged(nameof(CanRecoveryUnlock));
+        OnPropertyChanged(nameof(CanRecoveryReconnect));
+        OnPropertyChanged(nameof(CanRecoveryClearAlarm));
+        OnPropertyChanged(nameof(CanRecoveryHome));
+        OnPropertyChanged(nameof(CanRecoveryClearJob));
+        OnPropertyChanged(nameof(CanRecoveryResume));
+        OnPropertyChanged(nameof(CanRecoveryRestart));
+        OnPropertyChanged(nameof(CanRecoveryAbort));
+        OnPropertyChanged(nameof(CanRecoveryResetWorkOffset));
+        OnPropertyChanged(nameof(ReferenceStatusText));
+        OnPropertyChanged(nameof(ReferenceWarningText));
+        OnPropertyChanged(nameof(HasReferenceWarning));
         OnPropertyChanged(nameof(HasRuntimeAlarmBanner));
         OnPropertyChanged(nameof(RuntimeAlarmBannerText));
         OnPropertyChanged(nameof(HasRuntimeLockBanner));
         OnPropertyChanged(nameof(RuntimeLockBannerText));
         OnPropertyChanged(nameof(HasRuntimeBlockingReason));
         OnPropertyChanged(nameof(RuntimeBlockingReasonText));
+        OnPropertyChanged(nameof(RuntimeFirmwareNameText));
         OnPropertyChanged(nameof(RuntimeFirmwareVersionText));
         OnPropertyChanged(nameof(RuntimeProtocolVersionText));
+        OnPropertyChanged(nameof(RuntimeFirmwareConfidenceText));
+        OnPropertyChanged(nameof(RuntimeCompatibilityStatusText));
+        OnPropertyChanged(nameof(RuntimeCompatibilitySummaryText));
+        OnPropertyChanged(nameof(HasRuntimeCompatibilityNotes));
+        OnPropertyChanged(nameof(CanCopyDiagnostics));
         OnPropertyChanged(nameof(RuntimeProgressPercentText));
         OnPropertyChanged(nameof(CanConnectMachine));
         OnPropertyChanged(nameof(CanDisconnectMachine));
+        OnPropertyChanged(nameof(CanReconnectForRecovery));
     }
 
     private void RefreshState()
@@ -2957,8 +3251,14 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(RuntimeLockBannerText));
         OnPropertyChanged(nameof(HasRuntimeBlockingReason));
         OnPropertyChanged(nameof(RuntimeBlockingReasonText));
+        OnPropertyChanged(nameof(RuntimeFirmwareNameText));
         OnPropertyChanged(nameof(RuntimeFirmwareVersionText));
         OnPropertyChanged(nameof(RuntimeProtocolVersionText));
+        OnPropertyChanged(nameof(RuntimeFirmwareConfidenceText));
+        OnPropertyChanged(nameof(RuntimeCompatibilityStatusText));
+        OnPropertyChanged(nameof(RuntimeCompatibilitySummaryText));
+        OnPropertyChanged(nameof(HasRuntimeCompatibilityNotes));
+        OnPropertyChanged(nameof(CanCopyDiagnostics));
         OnPropertyChanged(nameof(RuntimeProgressPercentText));
         OnPropertyChanged(nameof(LoadedJobInfo));
         OnPropertyChanged(nameof(HasLoadedJobInfo));
@@ -3001,6 +3301,7 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanHome));
         OnPropertyChanged(nameof(CanGoToCenter));
         OnPropertyChanged(nameof(CanSetZero));
+        OnPropertyChanged(nameof(CanClearWorkZero));
         OnPropertyChanged(nameof(CanRefreshStatus));
         OnPropertyChanged(nameof(CanLoadGcode));
         OnPropertyChanged(nameof(CanClearLoadedProgram));
@@ -3017,6 +3318,11 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(WorkOffsetX));
         OnPropertyChanged(nameof(WorkOffsetY));
         OnPropertyChanged(nameof(WorkOffsetZ));
+        OnPropertyChanged(nameof(PlacementOffsetZ));
+        OnPropertyChanged(nameof(AppliedPlacementOffsetZ));
+        OnPropertyChanged(nameof(ReferenceStatusText));
+        OnPropertyChanged(nameof(ReferenceWarningText));
+        OnPropertyChanged(nameof(HasReferenceWarning));
         OnPropertyChanged(nameof(MachineStateValue));
         OnPropertyChanged(nameof(CurrentMotionIndex));
         OnPropertyChanged(nameof(CurrentLineNumber));
@@ -3035,6 +3341,8 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanPauseProgram));
         OnPropertyChanged(nameof(CanResumeProgram));
         OnPropertyChanged(nameof(CanStopExecution));
+        OnPropertyChanged(nameof(CanRestartJob));
+        OnPropertyChanged(nameof(CanAbortJob));
         OnPropertyChanged(nameof(BundledFirmwareVersion));
         OnPropertyChanged(nameof(BundledFirmwareTargetBoard));
         OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));

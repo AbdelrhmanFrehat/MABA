@@ -69,6 +69,45 @@ public class SimulatedCncDriver : ICncDriver
         DeviceStatus.LastStatusText = "STATUS:IDLE";
         DeviceStatus.FirmwareVersion = "SIM-1.0";
         DeviceStatus.ProtocolVersion = "SIMULATION";
+        DeviceStatus.FirmwareIdentity = new CncFirmwareIdentity
+        {
+            FirmwareName = "MABA Simulation Firmware",
+            FirmwareVersion = "SIM-1.0",
+            ProtocolName = "SIMULATION",
+            ProtocolVersion = new CncProtocolVersion
+            {
+                ProtocolName = "SIMULATION",
+                RawVersion = "SIMULATION",
+                Major = 1,
+                Minor = 0
+            },
+            Confidence = CncCapabilityConfidence.Verified,
+            Capabilities = new CncFirmwareCapabilities
+            {
+                SupportsStatusQuery = true,
+                SupportsUnlock = true,
+                SupportsHoming = true,
+                SupportsJog = true,
+                SupportsG0G1 = true,
+                SupportsG2G3 = true,
+                SupportsSpindleOnOff = true,
+                SupportsSpindleSpeed = false,
+                SupportsFeedHold = true,
+                SupportsSoftwareStop = true,
+                SupportsWorkOffsets = true,
+                SupportsLimitReporting = true,
+                SupportsPositionReporting = true,
+                SupportsFirmwareUpload = false,
+                SupportedAxes = new List<string> { "X", "Y", "Z" },
+                WorkspaceLimitX = _profile.XLimitMm,
+                WorkspaceLimitY = _profile.YLimitMm,
+                WorkspaceLimitZ = _profile.ZLimitMm
+            }
+        };
+        DeviceStatus.FirmwareCompatibility = new CncFirmwareCompatibilityResult
+        {
+            Status = CncFirmwareCompatibilityStatus.Compatible
+        };
         DeviceStatus.ReportedX = _profile.XMinMm;
         DeviceStatus.ReportedY = _profile.YMinMm;
         DeviceStatus.ReportedZ = _profile.ZMinMm;
@@ -338,6 +377,8 @@ public class SimulatedCncDriver : ICncDriver
         DeviceStatus.LastAcknowledgedAt = null;
         DeviceStatus.FirmwareVersion = "SIM-1.0";
         DeviceStatus.ProtocolVersion = "SIMULATION";
+        DeviceStatus.FirmwareIdentity = new CncFirmwareIdentity();
+        DeviceStatus.FirmwareCompatibility = new CncFirmwareCompatibilityResult();
         DeviceStatus.LimitXTriggered = false;
         DeviceStatus.LimitYTriggered = false;
         DeviceStatus.LimitZTriggered = false;

@@ -598,7 +598,7 @@ public class CncMachineViewportControl : FrameworkElement
         if (!IsFramePreviewActive)
             return;
 
-        var frameTool = ProjectMachine(topLeft, topRight, bottomLeft, PreviewToolX - MachineMinX, PreviewToolY - MachineMinY);
+        var frameTool = ProjectMachine(topLeft, topRight, bottomLeft, (PreviewToolX + WorkOffsetX) - MachineMinX, (PreviewToolY + WorkOffsetY) - MachineMinY);
         var toolPen = new Pen(new SolidColorBrush(Color.FromRgb(0x5B, 0xE0, 0xFF)), 1.4);
         dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x40, 0x5B, 0xE0, 0xFF)), toolPen, frameTool, 6, 6);
         dc.DrawLine(toolPen, new Point(frameTool.X - 7, frameTool.Y), new Point(frameTool.X + 7, frameTool.Y));
@@ -644,8 +644,8 @@ public class CncMachineViewportControl : FrameworkElement
         var stateColor = GetStateColor();
         DrawLabel(dc, stateText, new Point(frame.Right - 174, frame.Top + 4), stateColor, 12, FontWeights.SemiBold);
 
-        var displayX = UsePreviewPlayback ? PreviewToolX : _animatedX;
-        var displayY = UsePreviewPlayback ? PreviewToolY : _animatedY;
+        var displayX = UsePreviewPlayback ? PreviewToolX + WorkOffsetX : _animatedX;
+        var displayY = UsePreviewPlayback ? PreviewToolY + WorkOffsetY : _animatedY;
         DrawLabel(dc, $"Tool: X {displayX:0.##}  Y {displayY:0.##}  Z {_animatedZ:0.##} mm", new Point(frame.Left + 8, frame.Bottom - 28), ThemeColor("TextPrimary", Color.FromRgb(0xE2, 0xE8, 0xF0)), 12, FontWeights.Medium);
         DrawLabel(dc, $"Envelope: {worldWidth:0.#} x {worldHeight:0.#} mm", new Point(frame.Left + 8, frame.Top + 4), ThemeColor("TextSecondary", Color.FromRgb(0x94, 0xA3, 0xB8)), 11, FontWeights.Medium);
 
@@ -666,8 +666,8 @@ public class CncMachineViewportControl : FrameworkElement
     {
         EnsureAnimationInitialized();
 
-        var targetX = UsePreviewPlayback ? PreviewToolX : CurrentX;
-        var targetY = UsePreviewPlayback ? PreviewToolY : CurrentY;
+        var targetX = UsePreviewPlayback ? PreviewToolX + WorkOffsetX : CurrentX;
+        var targetY = UsePreviewPlayback ? PreviewToolY + WorkOffsetY : CurrentY;
         var nextX = MoveToward(_animatedX, targetX);
         var nextY = MoveToward(_animatedY, targetY);
         var nextZ = MoveToward(_animatedZ, CurrentZ);

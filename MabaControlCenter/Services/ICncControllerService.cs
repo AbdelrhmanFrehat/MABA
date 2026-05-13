@@ -11,6 +11,8 @@ public interface ICncControllerService
     bool MotorsEnabled { get; }
     bool IsHomed { get; }
     bool HasValidMachineReference { get; }
+    CncMachineReferenceState ReferenceState { get; }
+    CncCoordinateSystemState CoordinateState { get; }
     CncMachineState MachineState { get; }
     CncDeviceStatusSnapshot DeviceStatus { get; }
     CncDriverCapabilities DriverCapabilities { get; }
@@ -38,6 +40,12 @@ public interface ICncControllerService
     string AutoHome();
     string GoToCenter();
     string SetWorkZero();
+    string SetWorkZeroX();
+    string SetWorkZeroY();
+    string SetWorkZeroZ();
+    string SetWorkZeroXY();
+    string SetWorkZeroXYZ();
+    string ClearWorkOffset();
     string ResetState();
     string Stop();
     string RefreshStatus();

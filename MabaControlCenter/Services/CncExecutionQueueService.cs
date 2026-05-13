@@ -154,7 +154,7 @@ public class CncExecutionQueueService : ICncExecutionQueueService
             ArcCenterZ = motion.ArcCenterZ,
             ArcRadiusMm = motion.ArcRadiusMm,
             ArcLengthMm = motion.ArcLengthMm,
-            CoordinateSpace = GcodeCoordinateSpace.JobPreview
+            CoordinateSpace = GcodeCoordinateSpace.Work
         }).ToList();
     }
 
@@ -229,6 +229,34 @@ public class CncExecutionQueueService : ICncExecutionQueueService
         SetState(_currentStreamingSession?.State == CncStreamingState.Alarmed
             ? CncExecutionState.Alarmed
             : CncExecutionState.Stopped);
+    }
+
+    public void ResetToLoadedState(string? message = null)
+    {
+        _pauseRequested = false;
+        _stopRequested = false;
+        _currentMotionIndex = -1;
+        _completedCount = 0;
+        _streamedDistanceMm = 0m;
+        _plannedDistanceMm = 0m;
+        _lastInterruptionReason = message;
+
+        Diagnostics.Events.Clear();
+        _currentStreamingSession = _loadedMotions.Count == 0
+            ? null
+            : new CncStreamingSession
+            {
+                ActiveJobName = _activeJobName ?? "Loaded CNC Job",
+                State = CncStreamingState.Idle,
+                LastMessage = string.IsNullOrWhiteSpace(message)
+                    ? "Execution session reset. Job is loaded and ready for a new run."
+                    : message
+            };
+
+        if (_currentStreamingSession != null)
+            _currentStreamingSession.Diagnostics.AddEvent(_currentStreamingSession.LastMessage ?? "Execution session reset.");
+
+        SetState(_loadedMotions.Count == 0 ? CncExecutionState.Idle : CncExecutionState.JobLoaded);
     }
 
     private async Task RunStreamingAsync(ICncControllerService controllerService, int startIndex)
@@ -338,6 +366,9 @@ public class CncExecutionQueueService : ICncExecutionQueueService
             return controllerService.LastFaultReason ?? controllerService.DeviceStatus.LastProtocolError ?? "Controller alarm blocks execution.";
         if (!controllerService.MotorsEnabled)
             return "Unlock or enable the machine before starting execution.";
+        if (!string.Equals(controllerService.ConnectedPort, "SIMULATION", StringComparison.OrdinalIgnoreCase)
+            && !controllerService.HasValidMachineReference)
+            return controllerService.ReferenceState.WarningText ?? "Machine reference is not valid for execution.";
 
         return null;
     }

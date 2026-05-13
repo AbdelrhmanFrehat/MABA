@@ -19,7 +19,7 @@ public class CncControllerStateMachine : ICncControllerStateMachine
         [CncRuntimeAction.Home] = new() { CncRuntimeState.Locked, CncRuntimeState.Ready, CncRuntimeState.Recovering },
         [CncRuntimeAction.Jog] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete },
         [CncRuntimeAction.LoadJob] = new() { CncRuntimeState.Disconnected, CncRuntimeState.Locked, CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete, CncRuntimeState.Error },
-        [CncRuntimeAction.ClearLoadedJob] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete, CncRuntimeState.Locked, CncRuntimeState.Disconnected, CncRuntimeState.Error },
+        [CncRuntimeAction.ClearLoadedJob] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete, CncRuntimeState.Locked, CncRuntimeState.Disconnected, CncRuntimeState.Error, CncRuntimeState.Alarm, CncRuntimeState.Recovering },
         [CncRuntimeAction.Frame] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete },
         [CncRuntimeAction.Run] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete },
         [CncRuntimeAction.Pause] = new() { CncRuntimeState.Running },
@@ -28,6 +28,7 @@ public class CncControllerStateMachine : ICncControllerStateMachine
         [CncRuntimeAction.ResetAlarm] = new() { CncRuntimeState.Alarm, CncRuntimeState.Error, CncRuntimeState.Recovering, CncRuntimeState.Locked },
         [CncRuntimeAction.RefreshStatus] = new() { CncRuntimeState.Locked, CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete, CncRuntimeState.Alarm, CncRuntimeState.Error, CncRuntimeState.Recovering, CncRuntimeState.Booting, CncRuntimeState.Connecting },
         [CncRuntimeAction.SetWorkZero] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete },
+        [CncRuntimeAction.ClearWorkZero] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete, CncRuntimeState.Recovering },
         [CncRuntimeAction.GoToCenter] = new() { CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete },
         [CncRuntimeAction.UploadFirmware] = new() { CncRuntimeState.Disconnected, CncRuntimeState.Locked, CncRuntimeState.Ready, CncRuntimeState.JobLoaded, CncRuntimeState.ProgramComplete, CncRuntimeState.Error }
     };
@@ -93,6 +94,12 @@ public class CncControllerStateMachine : ICncControllerStateMachine
         if (status.IsAlarmed && action is not (CncRuntimeAction.ResetAlarm or CncRuntimeAction.Unlock or CncRuntimeAction.Disconnect or CncRuntimeAction.RefreshStatus))
         {
             reason = status.LastAlarmMessage;
+            return false;
+        }
+
+        if (action is CncRuntimeAction.SetWorkZero or CncRuntimeAction.GoToCenter && !status.HasValidReference)
+        {
+            reason = status.ReferenceWarningText ?? "Machine reference is not valid.";
             return false;
         }
 

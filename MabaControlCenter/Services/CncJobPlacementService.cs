@@ -63,26 +63,27 @@ public class CncJobPlacementService : ICncJobPlacementService
                     SpindleState = command.SpindleState,
                     SpindleSpeed = command.SpindleSpeed,
                     ToolNumber = command.ToolNumber,
-                    StartX = command.StartX + placement.OffsetX,
-                    StartY = command.StartY + placement.OffsetY,
+                    StartX = command.StartX,
+                    StartY = command.StartY,
                     StartZ = command.StartZ,
-                    EndX = command.EndX + placement.OffsetX,
-                    EndY = command.EndY + placement.OffsetY,
+                    EndX = command.EndX,
+                    EndY = command.EndY,
                     EndZ = command.EndZ,
                     FeedRateMmPerMinute = command.FeedRateMmPerMinute,
                     ArcOffsetI = command.ArcOffsetI,
                     ArcOffsetJ = command.ArcOffsetJ,
                     ArcOffsetK = command.ArcOffsetK,
-                    ArcCenterX = command.ArcCenterX.HasValue ? command.ArcCenterX + placement.OffsetX : null,
-                    ArcCenterY = command.ArcCenterY.HasValue ? command.ArcCenterY + placement.OffsetY : null,
+                    ArcCenterX = command.ArcCenterX,
+                    ArcCenterY = command.ArcCenterY,
                     ArcCenterZ = command.ArcCenterZ,
                     ArcRadiusMm = command.ArcRadiusMm,
                     ArcLengthMm = command.ArcLengthMm,
-                    CoordinateSpace = GcodeCoordinateSpace.JobPreview,
+                    CoordinateSpace = GcodeCoordinateSpace.Work,
                     ModalStateAfterLine = command.ModalStateAfterLine.Clone()
                 };
                 clone.ModalStateAfterLine.Coordinates.PlacementOffsetX = placement.OffsetX;
                 clone.ModalStateAfterLine.Coordinates.PlacementOffsetY = placement.OffsetY;
+                clone.ModalStateAfterLine.Coordinates.PlacementOffsetZ = 0m;
                 return clone;
             })
             .ToList();

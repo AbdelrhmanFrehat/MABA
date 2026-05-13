@@ -20,6 +20,8 @@ public class CncDeviceStatusSnapshot
     public string? LastStatusText { get; set; }
     public string? FirmwareVersion { get; set; }
     public string? ProtocolVersion { get; set; }
+    public CncFirmwareIdentity FirmwareIdentity { get; set; } = new();
+    public CncFirmwareCompatibilityResult FirmwareCompatibility { get; set; } = new();
 
     public string PositionTrackingMode => HasReportedPosition
         ? "Device-reported position"

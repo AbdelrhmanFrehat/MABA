@@ -46,6 +46,7 @@ public enum CncRuntimeAction
     ResetAlarm,
     RefreshStatus,
     SetWorkZero,
+    ClearWorkZero,
     GoToCenter,
     UploadFirmware
 }
@@ -59,6 +60,7 @@ public class CncRuntimeStatus
     public bool IsLocked { get; set; }
     public bool IsAlarmed { get; set; }
     public bool IsHomed { get; set; }
+    public bool HasValidReference { get; set; }
     public bool IsBusy { get; set; }
     public bool CanJog { get; set; }
     public bool CanHome { get; set; }
@@ -75,6 +77,13 @@ public class CncRuntimeStatus
     public decimal WorkX { get; set; }
     public decimal WorkY { get; set; }
     public decimal WorkZ { get; set; }
+    public decimal WorkOffsetX { get; set; }
+    public decimal WorkOffsetY { get; set; }
+    public decimal WorkOffsetZ { get; set; }
+    public decimal PlacementOffsetX { get; set; }
+    public decimal PlacementOffsetY { get; set; }
+    public decimal PlacementOffsetZ { get; set; }
+    public CncMachineReferenceState ReferenceState { get; set; } = new();
     public string ActiveJobName { get; set; } = "No job loaded";
     public double ProgressPercent { get; set; }
     public string LastControllerMessage { get; set; } = "No controller message yet.";
@@ -84,8 +93,11 @@ public class CncRuntimeStatus
     public bool LimitZTriggered { get; set; }
     public string? FirmwareVersion { get; set; }
     public string? ProtocolVersion { get; set; }
+    public CncFirmwareIdentity FirmwareIdentity { get; set; } = new();
+    public CncFirmwareCompatibilityResult FirmwareCompatibility { get; set; } = new();
     public string? BlockingReason { get; set; }
     public IReadOnlyList<string> BlockingReasons { get; set; } = Array.Empty<string>();
+    public CncRecoveryPlan RecoveryPlan { get; set; } = new();
 
     public string RuntimeStateDisplay => RuntimeState switch
     {
@@ -99,4 +111,7 @@ public class CncRuntimeStatus
     public string ControllerModeDisplay => ControllerMode == CncControllerMode.Simulation
         ? "Simulation mode"
         : "Real hardware mode";
+
+    public string ReferenceStatusDisplay => ReferenceState.StatusText;
+    public string? ReferenceWarningText => ReferenceState.WarningText;
 }

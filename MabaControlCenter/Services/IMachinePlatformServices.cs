@@ -35,7 +35,8 @@ public interface IRuntimeProfileService
 
 public interface IEffectiveCapabilitiesResolver
 {
-    CapabilitiesSection Resolve(MachineDefinition definition, CncDriverCapabilities driverCapabilities, DriverType driverType);
+    CapabilitiesSection Resolve(MachineDefinition definition, CncDriverCapabilities driverCapabilities, DriverType driverType, CncFirmwareIdentity? firmwareIdentity = null);
+    CncFirmwareCompatibilityResult EvaluateCompatibility(MachineDefinition definition, CncDriverCapabilities driverCapabilities, DriverType driverType, CncFirmwareIdentity? firmwareIdentity = null);
     CncDriverCapabilities ToDriverCapabilities(DriverType driverType);
     CncDriverType ToCncDriverType(DriverType driverType);
     DriverType FromCncDriverType(CncDriverType driverType);
@@ -46,5 +47,5 @@ public interface IActiveMachineContextService
     ActiveMachineContext Current { get; }
     event EventHandler? ContextChanged;
 
-    ActiveMachineContext Resolve(RuntimeProfile? profile, MachineDefinition? liveDefinition = null);
+    ActiveMachineContext Resolve(RuntimeProfile? profile, MachineDefinition? liveDefinition = null, CncFirmwareIdentity? firmwareIdentity = null);
 }

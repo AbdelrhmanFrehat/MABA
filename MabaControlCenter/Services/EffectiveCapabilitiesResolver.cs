@@ -4,9 +4,9 @@ namespace MabaControlCenter.Services;
 
 public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
 {
-    public CapabilitiesSection Resolve(MachineDefinition definition, CncDriverCapabilities driverCapabilities, DriverType driverType)
+    public CapabilitiesSection Resolve(MachineDefinition definition, CncDriverCapabilities driverCapabilities, DriverType driverType, CncFirmwareIdentity? firmwareIdentity = null)
     {
-        var driver = ToContractCapabilities(driverCapabilities, driverType);
+        var driver = ToContractCapabilities(driverCapabilities, driverType, firmwareIdentity);
         var machine = definition.Capabilities;
 
         return new CapabilitiesSection
@@ -72,6 +72,57 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
         };
     }
 
+    public CncFirmwareCompatibilityResult EvaluateCompatibility(MachineDefinition definition, CncDriverCapabilities driverCapabilities, DriverType driverType, CncFirmwareIdentity? firmwareIdentity = null)
+    {
+        var result = new CncFirmwareCompatibilityResult();
+
+        if (driverType == DriverType.Simulated)
+        {
+            result.Status = CncFirmwareCompatibilityStatus.Compatible;
+            return result;
+        }
+
+        if (firmwareIdentity == null || !firmwareIdentity.IsKnown)
+        {
+            result.Status = CncFirmwareCompatibilityStatus.Unknown;
+            result.Warnings.Add("Firmware identity is not available yet. Capabilities are being inferred from the machine profile and driver.");
+            return result;
+        }
+
+        if (firmwareIdentity.Confidence != CncCapabilityConfidence.Verified)
+            result.Warnings.Add("Firmware capabilities are inferred, not fully verified by the controller.");
+
+        if (definition.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.MabaProtocol
+            && !firmwareIdentity.ProtocolName.Contains("MABA", StringComparison.OrdinalIgnoreCase)
+            && !firmwareIdentity.FirmwareName.Contains("MABA", StringComparison.OrdinalIgnoreCase))
+        {
+            result.Errors.Add("Selected machine expects MABA CNC firmware, but the connected firmware did not identify as MABA.");
+        }
+
+        if (definition.Capabilities.Protocol.StatusQuery && !firmwareIdentity.Capabilities.SupportsStatusQuery)
+            result.Warnings.Add("Connected firmware cannot verify status queries. Runtime monitoring is limited.");
+
+        if (definition.Capabilities.Execution.LiveReportedPosition && !firmwareIdentity.Capabilities.SupportsPositionReporting)
+            result.Warnings.Add("Connected firmware does not provide live position reporting. Position will be app-estimated.");
+
+        if (definition.Capabilities.Protocol.FeedHold && !firmwareIdentity.Capabilities.SupportsFeedHold)
+            result.Warnings.Add("Firmware does not support true feed hold. Pause remains app-side only.");
+
+        if (definition.Capabilities.Motion.Homing && !firmwareIdentity.Capabilities.SupportsHoming)
+            result.Errors.Add("Connected firmware does not support homing required by this machine profile.");
+
+        if (result.Errors.Count > 0)
+        {
+            result.Status = CncFirmwareCompatibilityStatus.Incompatible;
+            return result;
+        }
+
+        result.Status = result.Warnings.Count > 0
+            ? CncFirmwareCompatibilityStatus.CompatibleWithWarnings
+            : CncFirmwareCompatibilityStatus.Compatible;
+        return result;
+    }
+
     public CncDriverCapabilities ToDriverCapabilities(DriverType driverType)
     {
         return driverType == DriverType.Simulated
@@ -109,23 +160,37 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
         return driverType == CncDriverType.Simulated ? DriverType.Simulated : DriverType.ArduinoSerial;
     }
 
-    private static CapabilitiesSection ToContractCapabilities(CncDriverCapabilities capabilities, DriverType driverType)
+    private static CapabilitiesSection ToContractCapabilities(CncDriverCapabilities capabilities, DriverType driverType, CncFirmwareIdentity? firmwareIdentity)
     {
+        var firmware = firmwareIdentity?.Capabilities;
+        var hasFirmwareIdentity = firmwareIdentity?.IsKnown == true;
+
+        var supportsHoming = hasFirmwareIdentity ? firmware!.SupportsHoming : true;
+        var supportsJog = hasFirmwareIdentity ? firmware!.SupportsJog : true;
+        var supportsStatus = hasFirmwareIdentity ? firmware!.SupportsStatusQuery : true;
+        var supportsUnlock = hasFirmwareIdentity ? firmware!.SupportsUnlock : true;
+        var supportsStop = hasFirmwareIdentity ? firmware!.SupportsSoftwareStop : true;
+        var supportsFeedHold = hasFirmwareIdentity ? firmware!.SupportsFeedHold : capabilities.SupportsPause;
+        var supportsAlarmReset = hasFirmwareIdentity ? firmware!.SupportsUnlock : capabilities.SupportsAlarmReset;
+        var supportsLivePosition = hasFirmwareIdentity ? firmware!.SupportsPositionReporting : capabilities.SupportsLivePositionReporting;
+        var supportsWorkOffset = hasFirmwareIdentity ? firmware!.SupportsWorkOffsets || capabilities.SupportsWorkCoordinateSystem : capabilities.SupportsWorkCoordinateSystem;
+        var supportsLimitReporting = hasFirmwareIdentity ? firmware!.SupportsLimitReporting : true;
+
         return new CapabilitiesSection
         {
             Motion = new MotionCapabilities
             {
-                Homing = true,
+                Homing = supportsHoming,
                 ZHoming = capabilities.SupportsZHoming,
                 CombinedXYHoming = true,
-                RelativeMoves = true,
-                AbsoluteMoves = true,
-                Pause = capabilities.SupportsPause,
-                Resume = capabilities.SupportsPause,
-                Stop = true,
+                RelativeMoves = supportsJog,
+                AbsoluteMoves = supportsJog,
+                Pause = true,
+                Resume = true,
+                Stop = supportsStop,
                 Park = true,
                 CenterMove = true,
-                WorkOffset = capabilities.SupportsWorkCoordinateSystem,
+                WorkOffset = supportsWorkOffset,
                 JogStep = true,
                 JogContinuous = false
             },
@@ -138,8 +203,8 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
                 FileRun = true,
                 Frame = true,
                 BoundingBoxPreview = true,
-                LiveReportedPosition = capabilities.SupportsLivePositionReporting,
-                EstimatedPositionOnly = !capabilities.SupportsLivePositionReporting,
+                LiveReportedPosition = supportsLivePosition,
+                EstimatedPositionOnly = !supportsLivePosition,
                 ToolpathPreview = true,
                 ProgressTracking = true
             },
@@ -147,13 +212,13 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
             {
                 Handshake = true,
                 Acknowledgements = capabilities.SupportsAcknowledgements,
-                AlarmReporting = true,
-                AlarmReset = capabilities.SupportsAlarmReset,
-                StatusQuery = true,
-                PositionQuery = capabilities.SupportsLivePositionReporting,
-                MotorEnable = true,
-                MotorDisable = true,
-                FeedHold = capabilities.SupportsPause,
+                AlarmReporting = supportsLimitReporting,
+                AlarmReset = supportsAlarmReset,
+                StatusQuery = supportsStatus,
+                PositionQuery = supportsLivePosition,
+                MotorEnable = supportsUnlock,
+                MotorDisable = supportsUnlock,
+                FeedHold = supportsFeedHold,
                 SoftReset = true
             },
             Visualization = new VisualizationCapabilities

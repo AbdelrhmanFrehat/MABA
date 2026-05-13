@@ -26,16 +26,18 @@ public partial class MainWindow : Window
         var activeMachineContextService = new ActiveMachineContextService(effectiveCapabilitiesResolver);
         var cncProfileService = new CncProfileService();
         var cncDriverFactory = new CncDriverFactory(loggingService);
-        var cncControllerService = new CncControllerService(loggingService, cncProfileService, cncDriverFactory);
+        var cncCoordinateTransformService = new CncCoordinateTransformService();
+        var cncControllerService = new CncControllerService(loggingService, cncProfileService, cncDriverFactory, cncCoordinateTransformService);
         var gcodeParserService = new GcodeParserService();
-        var cncExecutionPlannerService = new CncExecutionPlannerService(activeMachineContextService);
+        var cncExecutionPlannerService = new CncExecutionPlannerService(activeMachineContextService, cncCoordinateTransformService);
         var cncExecutionQueueService = new CncExecutionQueueService(cncExecutionPlannerService);
         var cncJobSessionService = new CncJobSessionService();
         var cncPreviewPlaybackService = new CncPreviewPlaybackService();
         var cncFramePathService = new CncFramePathService();
         var cncJobPlacementService = new CncJobPlacementService();
         var cncControllerStateMachine = new CncControllerStateMachine();
-        var cncRuntimeCoordinator = new CncRuntimeCoordinator(cncControllerService, cncExecutionQueueService, cncJobSessionService, activeMachineContextService, cncControllerStateMachine);
+        var cncRecoveryPlannerService = new CncRecoveryPlannerService();
+        var cncRuntimeCoordinator = new CncRuntimeCoordinator(cncControllerService, cncExecutionQueueService, cncJobSessionService, activeMachineContextService, cncControllerStateMachine, cncRecoveryPlannerService);
         var localizationService = (ILocalizationService)Application.Current.Resources["LocalizationService"];
 
         // Load saved settings and apply theme + language on startup
@@ -43,7 +45,7 @@ public partial class MainWindow : Window
         themeService.ApplyTheme(settings.Theme);
         localizationService.SetCulture(settings.Language);
 
-        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, cncRuntimeCoordinator, authSessionService);
+        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, cncRuntimeCoordinator, cncCoordinateTransformService, authSessionService);
         DataContext = new MainViewModel(nav, authSessionService);
         if (settings.CheckForUpdatesAutomatically)
             _ = updateService.CheckForUpdatesAsync(userInitiated: false);

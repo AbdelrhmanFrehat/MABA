@@ -917,12 +917,159 @@
                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                            TextWrapping="Wrap"/>
                             </Border>
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="12"
+                                    Margin="0,0,0,8"
+                                    Visibility="{Binding HasRecoveryPlan, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel>
+                                    <WrapPanel Margin="0,0,0,8">
+                                        <Border Background="{DynamicResource BackgroundLightBrush}"
+                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="10,5"
+                                                Margin="0,0,8,8">
+                                            <TextBlock Text="{Binding RecoveryStateText}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <Border Background="{DynamicResource BackgroundLightBrush}"
+                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="10,5"
+                                                Margin="0,0,0,8">
+                                            <TextBlock Text="{Binding RecoverySeverityText}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </Border>
+                                    </WrapPanel>
+                                    <TextBlock Text="{Binding RecoverySummaryText}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding RecoveryRequiredActionText}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,6,0,0"/>
+                                    <TextBlock Text="{Binding RecoveryControllerMessageText, StringFormat=Controller: {0}}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,6,0,0"
+                                               Visibility="{Binding HasRecoveryControllerMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Text="{Binding RecoveryFailedLineNumber, StringFormat=Failed line: {0}}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Margin="0,6,0,0"
+                                               Visibility="{Binding HasRecoveryFailedLine, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Text="{Binding RecoveryFailedCommandText, StringFormat=Failed command: {0}}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0"
+                                               Visibility="{Binding HasRecoveryFailedLine, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <WrapPanel Margin="0,10,0,0">
+                                        <Button Content="Refresh Status"
+                                                Command="{Binding RefreshStatusCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryRefreshStatus, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Reconnect"
+                                                Command="{Binding ReconnectRecoveryCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryReconnect, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Unlock"
+                                                Command="{Binding EnableMotorsCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryUnlock, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Clear Alarm"
+                                                Command="{Binding ResetStateCommand}"
+                                                Style="{StaticResource CncDangerButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryClearAlarm, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Home"
+                                                Command="{Binding HomeCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryHome, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Clear Job"
+                                                Command="{Binding ClearLoadedProgramCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryClearJob, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Resume Job"
+                                                Command="{Binding ResumeProgramCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryResume, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Restart Job"
+                                                Command="{Binding RestartJobCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryRestart, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Abort Job"
+                                                Command="{Binding AbortJobCommand}"
+                                                Style="{StaticResource CncDangerButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryAbort, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <Button Content="Reset Work Zero"
+                                                Command="{Binding ClearWorkZeroCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,8"
+                                                Visibility="{Binding CanRecoveryResetWorkOffset, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
                             <TextBlock Text="{Binding RuntimeModeText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                             <TextBlock Text="{Binding ActiveProfileBaudRateDisplay, StringFormat=Baud rate: {0}}" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             <TextBlock Text="{Binding RuntimeBlockingReasonText}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasRuntimeBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12"
+                                    Margin="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Firmware Runtime"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               Margin="0,0,0,8"/>
+                                    <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
+                                        <Run Text="Firmware: "/>
+                                        <Run Text="{Binding RuntimeFirmwareNameText}"/>
+                                    </TextBlock>
+                                    <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
+                                        <Run Text="Version: "/>
+                                        <Run Text="{Binding RuntimeFirmwareVersionText}"/>
+                                        <Run Text="  |  Protocol: "/>
+                                        <Run Text="{Binding RuntimeProtocolVersionText}"/>
+                                    </TextBlock>
+                                    <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
+                                        <Run Text="Confidence: "/>
+                                        <Run Text="{Binding RuntimeFirmwareConfidenceText}"/>
+                                        <Run Text="  |  Compatibility: "/>
+                                        <Run Text="{Binding RuntimeCompatibilityStatusText}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding RuntimeCompatibilitySummaryText}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,6,0,0"
+                                               Visibility="{Binding HasRuntimeCompatibilityNotes, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <WrapPanel Margin="0,10,0,0">
+                                        <Button Content="Refresh Firmware Info"
+                                                Command="{Binding RefreshStatusCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0,0,8,0"/>
+                                        <Button Content="Copy Diagnostics"
+                                                Command="{Binding CopyDiagnosticsCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
@@ -1383,7 +1530,7 @@
                                 Command="{Binding ResumeProgramCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Margin="0,0,8,8"/>
-                        <Button Content="Stop"
+                        <Button Content="Software Stop"
                                 Command="{Binding StopCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Margin="0,0,8,8"/>
@@ -1630,6 +1777,23 @@
                         <StackPanel>
                             <TextBlock Text="Position" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="10,8"
+                                    Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ReferenceStatusText}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding ReferenceWarningText}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,4,0,0"
+                                               Visibility="{Binding HasReferenceWarning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </Border>
                             <TextBlock Text="Machine Position (mm)" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                             <UniformGrid Columns="3" Margin="0,0,0,12">
                                 <StackPanel>
@@ -1647,7 +1811,7 @@
                             </UniformGrid>
 
                             <TextBlock Text="Work Position (mm)" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
-                            <UniformGrid Columns="3">
+                            <UniformGrid Columns="3" Margin="0,0,0,12">
                                 <StackPanel>
                                     <TextBlock Text="X" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     <TextBlock Text="{Binding WorkX, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
@@ -1659,6 +1823,38 @@
                                 <StackPanel>
                                     <TextBlock Text="Z" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     <TextBlock Text="{Binding WorkZ, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </UniformGrid>
+
+                            <TextBlock Text="Work Offset (mm)" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                            <UniformGrid Columns="3" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="X" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding WorkOffsetX, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Y" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding WorkOffsetY, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Z" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding WorkOffsetZ, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </UniformGrid>
+
+                            <TextBlock Text="Placement Offset (mm)" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                            <UniformGrid Columns="3">
+                                <StackPanel>
+                                    <TextBlock Text="X" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding AppliedPlacementOffsetX, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Y" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding AppliedPlacementOffsetY, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Z" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding AppliedPlacementOffsetZ, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </UniformGrid>
                         </StackPanel>
@@ -2242,10 +2438,31 @@
                                     MinHeight="34"
                                     Padding="10,6"
                                     Margin="0,0,8,8"/>
-                            <Button Content="Set Zero"
-                                    Command="{Binding SetZeroCommand}"
+                            <Button Content="Set Zero X"
+                                    Command="{Binding SetZeroXCommand}"
                                     Style="{StaticResource CncPrimaryButtonStyle}"
                                     MinWidth="94"
+                                    MinHeight="34"
+                                    Padding="10,6"
+                                    Margin="0,0,8,8"/>
+                            <Button Content="Set Zero Y"
+                                    Command="{Binding SetZeroYCommand}"
+                                    Style="{StaticResource CncPrimaryButtonStyle}"
+                                    MinWidth="94"
+                                    MinHeight="34"
+                                    Padding="10,6"
+                                    Margin="0,0,8,8"/>
+                            <Button Content="Set Zero XY"
+                                    Command="{Binding SetZeroXyCommand}"
+                                    Style="{StaticResource CncPrimaryButtonStyle}"
+                                    MinWidth="98"
+                                    MinHeight="34"
+                                    Padding="10,6"
+                                    Margin="0,0,8,8"/>
+                            <Button Content="Clear Work Zero"
+                                    Command="{Binding ClearWorkZeroCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinWidth="120"
                                     MinHeight="34"
                                     Padding="10,6"
                                     Margin="0,0,8,8"/>

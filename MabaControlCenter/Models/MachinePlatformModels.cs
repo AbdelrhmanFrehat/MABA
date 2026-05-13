@@ -281,6 +281,8 @@ public class ActiveMachineContext
     public DriverType DriverType { get; set; } = DriverType.Unknown;
     public CncDriverType CncDriverType { get; set; } = CncDriverType.ArduinoSerial;
     public CncDriverCapabilities DriverCapabilities { get; set; } = new();
+    public CncFirmwareIdentity FirmwareIdentity { get; set; } = new();
+    public CncFirmwareCompatibilityResult FirmwareCompatibility { get; set; } = new();
     public CapabilitiesSection EffectiveCapabilities { get; set; } = new();
     public string RuntimeUiVariant { get; set; } = "generic-v1";
     public bool IsOfflineSnapshot { get; set; }

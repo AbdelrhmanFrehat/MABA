@@ -15,7 +15,7 @@ public class ActiveMachineContextService : IActiveMachineContextService
     public ActiveMachineContext Current { get; private set; }
     public event EventHandler? ContextChanged;
 
-    public ActiveMachineContext Resolve(RuntimeProfile? profile, MachineDefinition? liveDefinition = null)
+    public ActiveMachineContext Resolve(RuntimeProfile? profile, MachineDefinition? liveDefinition = null, CncFirmwareIdentity? firmwareIdentity = null)
     {
         if (profile == null)
         {
@@ -38,6 +38,7 @@ public class ActiveMachineContextService : IActiveMachineContextService
 
         var driverType = ResolveDriverType(profile, definition);
         var driverCapabilities = _capabilitiesResolver.ToDriverCapabilities(driverType);
+        var compatibility = _capabilitiesResolver.EvaluateCompatibility(definition, driverCapabilities, driverType, firmwareIdentity);
         Current = new ActiveMachineContext
         {
             RuntimeProfile = profile,
@@ -45,7 +46,9 @@ public class ActiveMachineContextService : IActiveMachineContextService
             DriverType = driverType,
             CncDriverType = _capabilitiesResolver.ToCncDriverType(driverType),
             DriverCapabilities = driverCapabilities,
-            EffectiveCapabilities = _capabilitiesResolver.Resolve(definition, driverCapabilities, driverType),
+            FirmwareIdentity = firmwareIdentity?.Clone() ?? new CncFirmwareIdentity(),
+            FirmwareCompatibility = compatibility,
+            EffectiveCapabilities = _capabilitiesResolver.Resolve(definition, driverCapabilities, driverType, firmwareIdentity),
             RuntimeUiVariant = string.IsNullOrWhiteSpace(definition.RuntimeBinding.RuntimeUiVariant) ? "generic-v1" : definition.RuntimeBinding.RuntimeUiVariant,
             IsOfflineSnapshot = liveDefinition == null,
             StatusText = liveDefinition == null

@@ -9,26 +9,23 @@ public class CncControllerService : ICncControllerService
     private readonly ILoggingService _loggingService;
     private readonly ICncProfileService _profileService;
     private readonly ICncDriverFactory _driverFactory;
+    private readonly ICncCoordinateTransformService _coordinateTransformService;
     private ICncDriver _driver;
     private CncMachineState _machineState = CncMachineState.Disconnected;
-    private decimal _machineX;
-    private decimal _machineY;
-    private decimal _machineZ;
-    private decimal _workOffsetX;
-    private decimal _workOffsetY;
-    private decimal _workOffsetZ;
-    private bool _isHomed;
+    private readonly CncCoordinateSystemState _coordinateState = new();
     private string? _lastFaultReason;
     private string? _lastWarning;
 
     public CncControllerService(
         ILoggingService loggingService,
         ICncProfileService profileService,
-        ICncDriverFactory driverFactory)
+        ICncDriverFactory driverFactory,
+        ICncCoordinateTransformService coordinateTransformService)
     {
         _loggingService = loggingService;
         _profileService = profileService;
         _driverFactory = driverFactory;
+        _coordinateTransformService = coordinateTransformService;
         _driver = CreateDriver(_profileService.ActiveProfile);
 
         _profileService.ActiveProfileChanged += (_, _) => HandleActiveProfileChanged();
@@ -39,21 +36,23 @@ public class CncControllerService : ICncControllerService
     public bool IsConnected => _driver.IsConnected;
     public string? ConnectedPort => _driver.ConnectedPort;
     public bool MotorsEnabled => _driver.MotorsEnabled;
-    public bool IsHomed => _isHomed;
-    public bool HasValidMachineReference => _isHomed;
+    public bool IsHomed => _coordinateState.ReferenceState.IsHomed;
+    public bool HasValidMachineReference => _coordinateState.ReferenceState.ReferenceValid;
+    public CncMachineReferenceState ReferenceState => _coordinateState.ReferenceState;
+    public CncCoordinateSystemState CoordinateState => _coordinateState.Clone();
     public CncMachineState MachineState => _machineState;
     public CncDeviceStatusSnapshot DeviceStatus => _driver.DeviceStatus;
     public CncDriverCapabilities DriverCapabilities => _driver.Capabilities;
     public CncMachineBounds Bounds => Config.Bounds;
-    public decimal MachineX => _machineX;
-    public decimal MachineY => _machineY;
-    public decimal MachineZ => _machineZ;
-    public decimal WorkX => _machineX - _workOffsetX;
-    public decimal WorkY => _machineY - _workOffsetY;
-    public decimal WorkZ => _machineZ - _workOffsetZ;
-    public decimal WorkOffsetX => _workOffsetX;
-    public decimal WorkOffsetY => _workOffsetY;
-    public decimal WorkOffsetZ => _workOffsetZ;
+    public decimal MachineX => _coordinateState.MachineX;
+    public decimal MachineY => _coordinateState.MachineY;
+    public decimal MachineZ => _coordinateState.MachineZ;
+    public decimal WorkX => _coordinateState.WorkX;
+    public decimal WorkY => _coordinateState.WorkY;
+    public decimal WorkZ => _coordinateState.WorkZ;
+    public decimal WorkOffsetX => _coordinateState.ActiveWorkOffset.X;
+    public decimal WorkOffsetY => _coordinateState.ActiveWorkOffset.Y;
+    public decimal WorkOffsetZ => _coordinateState.ActiveWorkOffset.Z;
     public string? LastFaultReason => _lastFaultReason;
     public string? LastWarning => _lastWarning;
     public CncMachineConfig Config => _profileService.ActiveProfile.ToMachineConfig();
@@ -65,20 +64,25 @@ public class CncControllerService : ICncControllerService
     public void Connect(string portName)
     {
         _driver.Connect(portName);
-        _isHomed = false;
         _lastFaultReason = null;
         _lastWarning = null;
+        SyncMachinePositionFromDevice();
+        InitializeReferenceAfterConnect();
         UpdateState(MapDeviceStateToMachineState(DeviceStatus.DeviceState));
+        SyncCoordinateState();
+        NotifyStateChanged();
         AddControllerLog($"Profile '{_profileService.ActiveProfile.ProfileName}' connected on {portName}.", "Info");
     }
 
     public void Disconnect()
     {
         _driver.Disconnect();
-        _isHomed = false;
         _lastFaultReason = null;
         _lastWarning = null;
+        MarkReferenceUnknown(CncReferenceLostReason.Disconnect);
         UpdateState(CncMachineState.Disconnected);
+        SyncCoordinateState();
+        NotifyStateChanged();
         AddControllerLog("Machine disconnected.", "Info");
     }
 
@@ -86,7 +90,12 @@ public class CncControllerService : ICncControllerService
     {
         var response = _driver.EnableMotors();
         if (!IsErrorLikeResponse(response))
+        {
+            if (!HasValidMachineReference)
+                MarkReferenceUnknown(CncReferenceLostReason.UnlockWithoutReference);
             UpdateState(CncMachineState.Idle);
+        }
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -94,6 +103,7 @@ public class CncControllerService : ICncControllerService
     public string DisableMotors()
     {
         var response = _driver.DisableMotors();
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -112,22 +122,19 @@ public class CncControllerService : ICncControllerService
         if (!IsErrorLikeResponse(response))
         {
             if (Config.HomeXEnabled)
-                _machineX = Bounds.XMin;
+                _coordinateState.MachineX = Bounds.XMin;
             if (Config.HomeYEnabled)
-                _machineY = Bounds.YMin;
+                _coordinateState.MachineY = Bounds.YMin;
+            if (Config.HomeZEnabled)
+                _coordinateState.MachineZ = Bounds.ZMin;
 
-            if (DeviceStatus.HasReportedPosition)
-            {
-                _machineX = DeviceStatus.ReportedX ?? _machineX;
-                _machineY = DeviceStatus.ReportedY ?? _machineY;
-                _machineZ = DeviceStatus.ReportedZ ?? _machineZ;
-            }
-
-            _isHomed = true;
+            SyncMachinePositionFromDevice();
+            MarkReferenceHomed();
             AddControllerLog("Machine reference established by homing.", "Info");
             UpdateState(CncMachineState.Idle);
         }
 
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -158,9 +165,9 @@ public class CncControllerService : ICncControllerService
                 throw new InvalidOperationException($"Center move aborted because homing failed: {homeResponse}");
         }
 
-        var centerX = Bounds.XMax / 2m;
-        var centerY = Bounds.YMax / 2m;
-        var currentZ = _machineZ;
+        var centerX = (Bounds.XMin + Bounds.XMax) / 2m;
+        var centerY = (Bounds.YMin + Bounds.YMax) / 2m;
+        var currentZ = _coordinateState.MachineZ;
         var boundsMessage = ValidateMachinePosition(centerX, centerY, currentZ);
         if (boundsMessage != null)
             throw new InvalidOperationException(boundsMessage);
@@ -178,11 +185,41 @@ public class CncControllerService : ICncControllerService
 
     public string SetWorkZero()
     {
+        return SetWorkZeroXY();
+    }
+
+    public string SetWorkZeroX()
+    {
+        return SetWorkZeroInternal(updateX: true, updateY: false, updateZ: false, "Work zero X updated to current machine position.");
+    }
+
+    public string SetWorkZeroY()
+    {
+        return SetWorkZeroInternal(updateX: false, updateY: true, updateZ: false, "Work zero Y updated to current machine position.");
+    }
+
+    public string SetWorkZeroZ()
+    {
+        return SetWorkZeroInternal(updateX: false, updateY: false, updateZ: true, "Work zero Z updated to current machine position.");
+    }
+
+    public string SetWorkZeroXY()
+    {
+        return SetWorkZeroInternal(updateX: true, updateY: true, updateZ: false, "Work zero XY updated to current machine position.");
+    }
+
+    public string SetWorkZeroXYZ()
+    {
+        return SetWorkZeroInternal(updateX: true, updateY: true, updateZ: true, "Work zero XYZ updated to current machine position.");
+    }
+
+    public string ClearWorkOffset()
+    {
         EnsureConnected();
-        _workOffsetX = _machineX;
-        _workOffsetY = _machineY;
-        _workOffsetZ = _machineZ;
-        AddControllerLog("Work zero updated to current machine position.", "Info");
+        _coordinateState.ActiveWorkOffset = new CncWorkOffset();
+        _coordinateState.ReferenceState.LastZeroedAt = DateTime.UtcNow;
+        SyncCoordinateState();
+        AddControllerLog("Work zero cleared back to machine zero.", "Info");
         NotifyStateChanged();
         return "OK";
     }
@@ -207,9 +244,11 @@ public class CncControllerService : ICncControllerService
         {
             _lastFaultReason = null;
             _lastWarning = null;
+            MarkReferenceUnknown(CncReferenceLostReason.Reset);
             UpdateState(CncMachineState.Idle);
         }
 
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -219,6 +258,9 @@ public class CncControllerService : ICncControllerService
         var response = _driver.Stop();
         if (!IsErrorLikeResponse(response))
             UpdateState(CncMachineState.Stopped);
+        else
+            MarkReferenceLost(CncReferenceLostReason.Alarm);
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -238,9 +280,9 @@ public class CncControllerService : ICncControllerService
         EnsureAxisSupported(axis);
 
         var normalizedAxis = (axis ?? string.Empty).Trim().ToUpperInvariant();
-        var targetX = _machineX;
-        var targetY = _machineY;
-        var targetZ = _machineZ;
+        var targetX = _coordinateState.MachineX;
+        var targetY = _coordinateState.MachineY;
+        var targetZ = _coordinateState.MachineZ;
 
         switch (normalizedAxis)
         {
@@ -271,21 +313,22 @@ public class CncControllerService : ICncControllerService
         {
             if (DeviceStatus.HasReportedPosition)
             {
-                _machineX = DeviceStatus.ReportedX ?? targetX;
-                _machineY = DeviceStatus.ReportedY ?? targetY;
-                _machineZ = DeviceStatus.ReportedZ ?? targetZ;
+                _coordinateState.MachineX = DeviceStatus.ReportedX ?? targetX;
+                _coordinateState.MachineY = DeviceStatus.ReportedY ?? targetY;
+                _coordinateState.MachineZ = DeviceStatus.ReportedZ ?? targetZ;
             }
             else
             {
-                _machineX = targetX;
-                _machineY = targetY;
-                _machineZ = targetZ;
+                _coordinateState.MachineX = targetX;
+                _coordinateState.MachineY = targetY;
+                _coordinateState.MachineZ = targetZ;
             }
 
             if (_machineState != CncMachineState.Stopped && _machineState != CncMachineState.Warning)
                 UpdateState(CncMachineState.Idle);
         }
 
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -296,9 +339,9 @@ public class CncControllerService : ICncControllerService
         EnsureMotorsEnabled();
         EnsureNoAlarmBlocking();
 
-        var targetX = _machineX + deltaXmm;
-        var targetY = _machineY + deltaYmm;
-        var targetZ = _machineZ + deltaZmm;
+        var targetX = _coordinateState.MachineX + deltaXmm;
+        var targetY = _coordinateState.MachineY + deltaYmm;
+        var targetZ = _coordinateState.MachineZ + deltaZmm;
 
         var limitError = ValidateMachinePosition(targetX, targetY, targetZ);
         if (limitError != null)
@@ -323,21 +366,22 @@ public class CncControllerService : ICncControllerService
         {
             if (DeviceStatus.HasReportedPosition)
             {
-                _machineX = DeviceStatus.ReportedX ?? targetX;
-                _machineY = DeviceStatus.ReportedY ?? targetY;
-                _machineZ = DeviceStatus.ReportedZ ?? targetZ;
+                _coordinateState.MachineX = DeviceStatus.ReportedX ?? targetX;
+                _coordinateState.MachineY = DeviceStatus.ReportedY ?? targetY;
+                _coordinateState.MachineZ = DeviceStatus.ReportedZ ?? targetZ;
             }
             else
             {
-                _machineX = targetX;
-                _machineY = targetY;
-                _machineZ = targetZ;
+                _coordinateState.MachineX = targetX;
+                _coordinateState.MachineY = targetY;
+                _coordinateState.MachineZ = targetZ;
             }
 
             if (_machineState != CncMachineState.Stopped && _machineState != CncMachineState.Warning)
                 UpdateState(CncMachineState.Idle);
         }
 
+        SyncCoordinateState();
         NotifyStateChanged();
         return response;
     }
@@ -441,22 +485,24 @@ public class CncControllerService : ICncControllerService
         if (limitError != null)
             throw new InvalidOperationException(limitError);
 
-        var deltaX = targetX - _machineX;
-        var deltaY = targetY - _machineY;
-        var deltaZ = targetZ - _machineZ;
+        var deltaX = targetX - _coordinateState.MachineX;
+        var deltaY = targetY - _coordinateState.MachineY;
+        var deltaZ = targetZ - _coordinateState.MachineZ;
         UpdateState(CncMachineState.Running);
 
         if (deltaX != 0m)
-            ExecuteAxisMove("X", deltaX, targetX, _machineY, _machineZ);
+            ExecuteAxisMove("X", deltaX, targetX, _coordinateState.MachineY, _coordinateState.MachineZ);
 
         if (deltaY != 0m)
-            ExecuteAxisMove("Y", deltaY, _machineX, targetY, _machineZ);
+            ExecuteAxisMove("Y", deltaY, _coordinateState.MachineX, targetY, _coordinateState.MachineZ);
 
         if (deltaZ != 0m)
-            ExecuteAxisMove("Z", deltaZ, _machineX, _machineY, targetZ);
+            ExecuteAxisMove("Z", deltaZ, _coordinateState.MachineX, _coordinateState.MachineY, targetZ);
 
         if (_machineState != CncMachineState.Stopped && _machineState != CncMachineState.Warning)
             UpdateState(CncMachineState.Idle);
+
+        SyncCoordinateState();
     }
 
     private void ExecuteAxisMove(string axis, decimal deltaMm, decimal targetX, decimal targetY, decimal targetZ)
@@ -467,43 +513,29 @@ public class CncControllerService : ICncControllerService
 
         if (DeviceStatus.HasReportedPosition)
         {
-            _machineX = DeviceStatus.ReportedX ?? targetX;
-            _machineY = DeviceStatus.ReportedY ?? targetY;
-            _machineZ = DeviceStatus.ReportedZ ?? targetZ;
+            _coordinateState.MachineX = DeviceStatus.ReportedX ?? targetX;
+            _coordinateState.MachineY = DeviceStatus.ReportedY ?? targetY;
+            _coordinateState.MachineZ = DeviceStatus.ReportedZ ?? targetZ;
         }
         else
         {
-            _machineX = targetX;
-            _machineY = targetY;
-            _machineZ = targetZ;
+            _coordinateState.MachineX = targetX;
+            _coordinateState.MachineY = targetY;
+            _coordinateState.MachineZ = targetZ;
         }
+
+        SyncCoordinateState();
     }
 
     public string? ValidateMachinePosition(decimal machineX, decimal machineY, decimal machineZ)
     {
-        if (Config.SoftLimitsEnabled && HasValidMachineReference)
-        {
-            if (machineX < Bounds.XMin || machineX > Bounds.XMax)
-                return $"Bounds violation: X {machineX:0.###} mm is outside [{Bounds.XMin:0.###}, {Bounds.XMax:0.###}] mm.";
-            if (machineY < Bounds.YMin || machineY > Bounds.YMax)
-                return $"Bounds violation: Y {machineY:0.###} mm is outside [{Bounds.YMin:0.###}, {Bounds.YMax:0.###}] mm.";
-            if (machineZ < Bounds.ZMin || machineZ > Bounds.ZMax)
-                return $"Bounds violation: Z {machineZ:0.###} mm is outside [{Bounds.ZMin:0.###}, {Bounds.ZMax:0.###}] mm.";
-        }
-
-        if (!Config.SupportsXAxis && machineX != _machineX)
-            return "The active machine profile does not support X axis motion.";
-        if (!Config.SupportsYAxis && machineY != _machineY)
-            return "The active machine profile does not support Y axis motion.";
-        if (!Config.SupportsZAxis && machineZ != _machineZ)
-            return "The active machine profile does not support Z axis motion.";
-
-        return null;
+        return _coordinateTransformService.ValidateBounds(machineX, machineY, machineZ, Bounds, Config);
     }
 
     public string? ValidateWorkPosition(decimal workX, decimal workY, decimal workZ)
     {
-        return ValidateMachinePosition(workX + _workOffsetX, workY + _workOffsetY, workZ + _workOffsetZ);
+        var machine = _coordinateTransformService.WorkToMachine(workX, workY, workZ, _coordinateState);
+        return ValidateMachinePosition(machine.FinalMachineX, machine.FinalMachineY, machine.FinalMachineZ);
     }
 
     public void ClearWarning()
@@ -519,7 +551,10 @@ public class CncControllerService : ICncControllerService
         if (state == CncMachineState.Warning)
             _lastWarning = reason;
         else if (state is CncMachineState.Alarm or CncMachineState.Error)
+        {
             _lastFaultReason = reason;
+            MarkReferenceLost(CncReferenceLostReason.Alarm);
+        }
         else if (state is CncMachineState.Idle or CncMachineState.Completed or CncMachineState.Stopped)
         {
             _lastWarning = null;
@@ -527,6 +562,7 @@ public class CncControllerService : ICncControllerService
         }
 
         UpdateState(state);
+        SyncCoordinateState();
         if (!string.IsNullOrWhiteSpace(reason))
             AddControllerLog(reason, state is CncMachineState.Warning ? "Warning" : "Error");
     }
@@ -549,7 +585,8 @@ public class CncControllerService : ICncControllerService
         _driver.ConnectionLost -= OnDriverConnectionLost;
         _driver = CreateDriver(_profileService.ActiveProfile);
 
-        _isHomed = false;
+        ResetCoordinateState();
+        MarkReferenceUnknown(CncReferenceLostReason.Disconnect);
         _lastWarning = null;
         _lastFaultReason = null;
         UpdateState(CncMachineState.Disconnected);
@@ -568,7 +605,8 @@ public class CncControllerService : ICncControllerService
             _driver.StateChanged -= OnDriverStateChanged;
             _driver.ConnectionLost -= OnDriverConnectionLost;
             _driver = CreateDriver(_profileService.ActiveProfile);
-            _isHomed = false;
+            ResetCoordinateState();
+            MarkReferenceUnknown(CncReferenceLostReason.Disconnect);
             _lastWarning = null;
             _lastFaultReason = null;
             UpdateState(CncMachineState.Disconnected);
@@ -589,26 +627,26 @@ public class CncControllerService : ICncControllerService
 
     private void OnDriverConnectionLost(object? sender, EventArgs e)
     {
-        _isHomed = false;
+        MarkReferenceLost(CncReferenceLostReason.Disconnect);
         _lastFaultReason = _driver.DeviceStatus.LastProtocolError ?? "Execution interrupted by serial disconnect.";
         UpdateState(CncMachineState.Alarm);
+        SyncCoordinateState();
         RunOnUiThread(() => ConnectionLost?.Invoke(this, EventArgs.Empty));
         NotifyStateChanged();
     }
 
     private void ApplyDeviceSnapshot()
     {
-        if (DeviceStatus.HasReportedPosition)
-        {
-            _machineX = DeviceStatus.ReportedX ?? _machineX;
-            _machineY = DeviceStatus.ReportedY ?? _machineY;
-            _machineZ = DeviceStatus.ReportedZ ?? _machineZ;
-        }
+        SyncMachinePositionFromDevice();
 
         if (!string.IsNullOrWhiteSpace(DeviceStatus.LastProtocolError))
+        {
             _lastFaultReason = DeviceStatus.LastProtocolError;
+            MarkReferenceLost(CncReferenceLostReason.Alarm);
+        }
 
         UpdateState(MapDeviceStateToMachineState(DeviceStatus.DeviceState));
+        SyncCoordinateState();
         NotifyStateChanged();
     }
 
@@ -616,18 +654,127 @@ public class CncControllerService : ICncControllerService
     {
         if (DeviceStatus.HasReportedPosition)
         {
-            _machineX = DeviceStatus.ReportedX ?? _machineX;
-            _machineY = DeviceStatus.ReportedY ?? _machineY;
-            _machineZ = DeviceStatus.ReportedZ ?? _machineZ;
+            SyncMachinePositionFromDevice();
             return;
         }
 
         if (command.ExpectedEndX.HasValue)
-            _machineX = command.ExpectedEndX.Value + _workOffsetX;
+            _coordinateState.MachineX = command.ExpectedEndX.Value;
         if (command.ExpectedEndY.HasValue)
-            _machineY = command.ExpectedEndY.Value + _workOffsetY;
+            _coordinateState.MachineY = command.ExpectedEndY.Value;
         if (command.ExpectedEndZ.HasValue)
-            _machineZ = command.ExpectedEndZ.Value + _workOffsetZ;
+            _coordinateState.MachineZ = command.ExpectedEndZ.Value;
+
+        SyncCoordinateState();
+    }
+
+    private string SetWorkZeroInternal(bool updateX, bool updateY, bool updateZ, string successMessage)
+    {
+        EnsureConnected();
+        if (!HasValidMachineReference)
+            throw new InvalidOperationException("Machine reference is not valid. Home the machine before setting work zero.");
+
+        if (updateX)
+            _coordinateState.ActiveWorkOffset.X = _coordinateState.MachineX;
+        if (updateY)
+            _coordinateState.ActiveWorkOffset.Y = _coordinateState.MachineY;
+        if (updateZ)
+            _coordinateState.ActiveWorkOffset.Z = _coordinateState.MachineZ;
+
+        _coordinateState.ReferenceState.LastZeroedAt = DateTime.UtcNow;
+        SyncCoordinateState();
+        AddControllerLog(successMessage, "Info");
+        NotifyStateChanged();
+        return "OK";
+    }
+
+    private void InitializeReferenceAfterConnect()
+    {
+        if (_driver.DriverType == CncDriverType.Simulated)
+        {
+            _coordinateState.ReferenceState.IsHomed = true;
+            _coordinateState.ReferenceState.ReferenceValid = true;
+            _coordinateState.ReferenceState.ReferenceLostReason = CncReferenceLostReason.None;
+            _coordinateState.ReferenceState.HomedAxes = GetSupportedReferenceAxes();
+            _coordinateState.ReferenceState.LastHomedAt ??= DateTime.UtcNow;
+            return;
+        }
+
+        MarkReferenceUnknown(CncReferenceLostReason.UnknownOnConnect);
+    }
+
+    private void MarkReferenceHomed()
+    {
+        _coordinateState.ReferenceState.IsHomed = true;
+        _coordinateState.ReferenceState.ReferenceValid = true;
+        _coordinateState.ReferenceState.ReferenceLostReason = CncReferenceLostReason.None;
+        _coordinateState.ReferenceState.HomedAxes = GetSupportedReferenceAxes();
+        _coordinateState.ReferenceState.LastHomedAt = DateTime.UtcNow;
+    }
+
+    private void MarkReferenceUnknown(CncReferenceLostReason reason)
+    {
+        _coordinateState.ReferenceState.IsHomed = false;
+        _coordinateState.ReferenceState.ReferenceValid = false;
+        _coordinateState.ReferenceState.HomedAxes = CncHomedAxes.None;
+        _coordinateState.ReferenceState.ReferenceLostReason = reason;
+    }
+
+    private void MarkReferenceLost(CncReferenceLostReason reason)
+    {
+        _coordinateState.ReferenceState.ReferenceValid = false;
+        _coordinateState.ReferenceState.IsHomed = false;
+        _coordinateState.ReferenceState.ReferenceLostReason = reason;
+        _coordinateState.ReferenceState.HomedAxes = CncHomedAxes.None;
+    }
+
+    private void ResetCoordinateState()
+    {
+        _coordinateState.MachineX = Bounds.XMin;
+        _coordinateState.MachineY = Bounds.YMin;
+        _coordinateState.MachineZ = Bounds.ZMin;
+        _coordinateState.ActiveWorkOffset = new CncWorkOffset();
+        _coordinateState.JobPlacementOffset = new CncJobPlacementOffset();
+        SyncCoordinateState();
+    }
+
+    private void SyncMachinePositionFromDevice()
+    {
+        if (!DeviceStatus.HasReportedPosition)
+            return;
+
+        _coordinateState.MachineX = DeviceStatus.ReportedX ?? _coordinateState.MachineX;
+        _coordinateState.MachineY = DeviceStatus.ReportedY ?? _coordinateState.MachineY;
+        _coordinateState.MachineZ = DeviceStatus.ReportedZ ?? _coordinateState.MachineZ;
+        SyncCoordinateState();
+    }
+
+    private void SyncCoordinateState()
+    {
+        var refreshed = _coordinateTransformService.CreateState(
+            _coordinateState.MachineX,
+            _coordinateState.MachineY,
+            _coordinateState.MachineZ,
+            _coordinateState.ActiveWorkOffset,
+            _coordinateState.JobPlacementOffset,
+            _coordinateState.ReferenceState,
+            _coordinateState.CoordinateMode);
+
+        _coordinateState.WorkX = refreshed.WorkX;
+        _coordinateState.WorkY = refreshed.WorkY;
+        _coordinateState.WorkZ = refreshed.WorkZ;
+    }
+
+    private CncHomedAxes GetSupportedReferenceAxes()
+    {
+        var axes = CncHomedAxes.None;
+        if (Config.HomeXEnabled)
+            axes |= CncHomedAxes.X;
+        if (Config.HomeYEnabled)
+            axes |= CncHomedAxes.Y;
+        if (Config.HomeZEnabled)
+            axes |= CncHomedAxes.Z;
+        return axes;
     }
 
     private void EnsureConnected()

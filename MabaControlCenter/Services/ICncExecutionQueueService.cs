@@ -19,4 +19,5 @@ public interface ICncExecutionQueueService : ICncExecutionPlanner, ICncCommandSt
     void Pause();
     Task ResumeAsync(ICncControllerService controllerService);
     Task StopAsync(ICncControllerService controllerService);
+    void ResetToLoadedState(string? message = null);
 }

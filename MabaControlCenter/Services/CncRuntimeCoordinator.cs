@@ -9,6 +9,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     private readonly ICncJobSessionService _jobSessionService;
     private readonly IActiveMachineContextService _activeMachineContextService;
     private readonly ICncControllerStateMachine _stateMachine;
+    private readonly ICncRecoveryPlannerService _recoveryPlannerService;
 
     private bool _isConnecting;
     private bool _isBooting;
@@ -17,19 +18,22 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     private bool _isRecovering;
     private bool _isStopping;
     private string? _activeJobName;
+    private CncJobPlacementOffset _jobPlacementOffset = new();
 
     public CncRuntimeCoordinator(
         ICncControllerService controllerService,
         ICncExecutionQueueService executionQueueService,
         ICncJobSessionService jobSessionService,
         IActiveMachineContextService activeMachineContextService,
-        ICncControllerStateMachine stateMachine)
+        ICncControllerStateMachine stateMachine,
+        ICncRecoveryPlannerService recoveryPlannerService)
     {
         _controllerService = controllerService;
         _executionQueueService = executionQueueService;
         _jobSessionService = jobSessionService;
         _activeMachineContextService = activeMachineContextService;
         _stateMachine = stateMachine;
+        _recoveryPlannerService = recoveryPlannerService;
         Current = new CncRuntimeStatus();
 
         _controllerService.StateChanged += (_, _) => Refresh();
@@ -39,6 +43,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     }
 
     public CncRuntimeStatus Current { get; private set; }
+    public CncRecoveryPlan CurrentRecoveryPlan => Current.RecoveryPlan;
     public event EventHandler? StatusChanged;
 
     public CncRuntimeStatus Refresh()
@@ -48,7 +53,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             : CncControllerMode.RealHardware;
 
         var blockingReasons = BuildBlockingReasons(controllerMode);
-        var runtimeState = ResolveRuntimeState(blockingReasons.Count > 0);
+        var runtimeState = ResolveRuntimeState();
         if (!_stateMachine.CanTransition(Current.RuntimeState, runtimeState))
             runtimeState = Current.RuntimeState == CncRuntimeState.Disconnected && runtimeState == CncRuntimeState.Ready
                 ? CncRuntimeState.Ready
@@ -68,6 +73,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             IsLocked = _controllerService.DeviceStatus.IsLocked,
             IsAlarmed = _controllerService.DeviceStatus.IsAlarmed || _controllerService.MachineState is CncMachineState.Alarm or CncMachineState.Error,
             IsHomed = _controllerService.IsHomed,
+            HasValidReference = _controllerService.HasValidMachineReference,
             IsBusy = runtimeState is CncRuntimeState.Connecting or CncRuntimeState.Booting or CncRuntimeState.Homing or CncRuntimeState.Jogging or CncRuntimeState.Framing or CncRuntimeState.Running or CncRuntimeState.FeedHold or CncRuntimeState.Paused or CncRuntimeState.Stopping or CncRuntimeState.Recovering,
             MachineX = _controllerService.MachineX,
             MachineY = _controllerService.MachineY,
@@ -78,9 +84,14 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             WorkX = _controllerService.WorkX,
             WorkY = _controllerService.WorkY,
             WorkZ = _controllerService.WorkZ,
-            ActiveJobName = _activeJobName
-                ?? _jobSessionService.LoadedJob?.JobTitle
-                ?? "No job loaded",
+            WorkOffsetX = _controllerService.WorkOffsetX,
+            WorkOffsetY = _controllerService.WorkOffsetY,
+            WorkOffsetZ = _controllerService.WorkOffsetZ,
+            PlacementOffsetX = _jobPlacementOffset.X,
+            PlacementOffsetY = _jobPlacementOffset.Y,
+            PlacementOffsetZ = _jobPlacementOffset.Z,
+            ReferenceState = _controllerService.ReferenceState.Clone(),
+            ActiveJobName = _activeJobName ?? _jobSessionService.LoadedJob?.JobTitle ?? "No job loaded",
             ProgressPercent = progressPercent,
             LastControllerMessage = _controllerService.DeviceStatus.LastStatusText
                                     ?? _controllerService.DeviceStatus.LastAcknowledgement
@@ -92,11 +103,15 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             LimitYTriggered = _controllerService.DeviceStatus.LimitYTriggered,
             LimitZTriggered = _controllerService.DeviceStatus.LimitZTriggered,
             FirmwareVersion = _controllerService.DeviceStatus.FirmwareVersion,
+            FirmwareIdentity = _controllerService.DeviceStatus.FirmwareIdentity.Clone(),
+            FirmwareCompatibility = _activeMachineContextService.Current.FirmwareCompatibility.Clone(),
             ProtocolVersion = _controllerService.DeviceStatus.ProtocolVersion
                               ?? _activeMachineContextService.Current.MachineDefinition?.RuntimeBinding.FirmwareProtocol.ToString(),
             BlockingReasons = blockingReasons,
             BlockingReason = blockingReasons.FirstOrDefault()
         };
+
+        status.RecoveryPlan = _recoveryPlannerService.BuildPlan(status, _executionQueueService, _jobSessionService);
 
         status.CanJog = _stateMachine.CanExecute(status, CncRuntimeAction.Jog, out _);
         status.CanHome = _stateMachine.CanExecute(status, CncRuntimeAction.Home, out _);
@@ -116,7 +131,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         if (!_stateMachine.CanExecute(status, action, out reason))
             return false;
 
-        if (action == CncRuntimeAction.Run && status.BlockingReasons.Count > 0)
+        if (action is CncRuntimeAction.Run or CncRuntimeAction.Frame && status.BlockingReasons.Count > 0)
         {
             reason = status.BlockingReason;
             return false;
@@ -156,6 +171,12 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         Refresh();
     }
 
+    public void SetJobPlacementOffset(CncJobPlacementOffset placementOffset)
+    {
+        _jobPlacementOffset = placementOffset?.Clone() ?? new CncJobPlacementOffset();
+        Refresh();
+    }
+
     public void SetFraming(bool isFraming)
     {
         _isFraming = isFraming;
@@ -174,7 +195,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         Refresh();
     }
 
-    private CncRuntimeState ResolveRuntimeState(bool hasBlockingReasons)
+    private CncRuntimeState ResolveRuntimeState()
     {
         if (_isConnecting)
             return CncRuntimeState.Connecting;
@@ -230,7 +251,10 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             reasons.Add(_controllerService.LastFaultReason ?? _controllerService.DeviceStatus.LastProtocolError ?? "Machine alarm is active.");
 
         if (_controllerService.DeviceStatus.IsLocked)
-            reasons.Add("Machine locked — unlock or home required.");
+            reasons.Add("Machine locked - unlock or home required.");
+
+        if (controllerMode == CncControllerMode.RealHardware && !_controllerService.HasValidMachineReference)
+            reasons.Add(_controllerService.ReferenceState.WarningText ?? "Machine reference is unknown.");
 
         if (_jobSessionService.LoadedJob == null && _executionQueueService.LoadedMotions.Count == 0)
             reasons.Add("Load a CNC job before running.");
@@ -247,6 +271,9 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         var compatibility = _activeMachineContextService.Current.RuntimeProfile?.CompatibilityState;
         if (compatibility is DefinitionCompatibilityState.DefinitionIncompatible or DefinitionCompatibilityState.DefinitionMissing)
             reasons.Add("Selected machine profile is missing or incompatible.");
+
+        if (_activeMachineContextService.Current.FirmwareCompatibility.Status == CncFirmwareCompatibilityStatus.Incompatible)
+            reasons.Add(_activeMachineContextService.Current.FirmwareCompatibility.Errors.FirstOrDefault() ?? "Connected firmware is incompatible with the selected machine profile.");
 
         return reasons.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
