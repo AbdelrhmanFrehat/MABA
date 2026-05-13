@@ -17,6 +17,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     private bool _isFraming;
     private bool _isRecovering;
     private bool _isStopping;
+    private bool _isRefreshing;
     private string? _activeJobName;
     private CncJobPlacementOffset _jobPlacementOffset = new();
 
@@ -47,7 +48,16 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     public event EventHandler? StatusChanged;
 
     public CncRuntimeStatus Refresh()
+        => RefreshCore(notify: true);
+
+    private CncRuntimeStatus RefreshCore(bool notify)
     {
+        if (_isRefreshing)
+            return Current;
+
+        _isRefreshing = true;
+        try
+        {
         var controllerMode = _activeMachineContextService.Current.DriverType == DriverType.Simulated
             ? CncControllerMode.Simulation
             : CncControllerMode.RealHardware;
@@ -121,13 +131,19 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         status.CanStop = _stateMachine.CanExecute(status, CncRuntimeAction.Stop, out _);
 
         Current = status;
-        StatusChanged?.Invoke(this, EventArgs.Empty);
+        if (notify)
+            StatusChanged?.Invoke(this, EventArgs.Empty);
         return Current;
+        }
+        finally
+        {
+            _isRefreshing = false;
+        }
     }
 
     public bool CanExecute(CncRuntimeAction action, out string? reason)
     {
-        var status = Refresh();
+        var status = RefreshCore(notify: false);
         if (!_stateMachine.CanExecute(status, action, out reason))
             return false;
 
