@@ -19,6 +19,14 @@ public class CncDeviceStatusSnapshot
     public DateTime? LastVerifiedStatusAt { get; set; }
     public string? LastProtocolError { get; set; }
     public string? LastStatusText { get; set; }
+    public string? LastMotionCommandText { get; set; }
+    public decimal? LastMotionTargetX { get; set; }
+    public decimal? LastMotionTargetY { get; set; }
+    public decimal? LastMotionTargetZ { get; set; }
+    public decimal? LastMotionDistanceMm { get; set; }
+    public decimal? LastMotionFeedRateMmPerMinute { get; set; }
+    public double? LastMotionEstimatedDurationMs { get; set; }
+    public int? LastMotionTimeoutMs { get; set; }
     public string? FirmwareVersion { get; set; }
     public string? ProtocolVersion { get; set; }
     public CncControllerStatusConfidence StatusConfidence { get; set; } = CncControllerStatusConfidence.Unknown;

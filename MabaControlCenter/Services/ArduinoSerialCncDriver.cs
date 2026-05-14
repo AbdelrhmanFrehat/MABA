@@ -348,9 +348,10 @@ public class ArduinoSerialCncDriver : ICncDriver
             throw new ArgumentNullException(nameof(command));
 
         var startedAt = DateTime.UtcNow;
+        RecordPlannedCommandDiagnostics(command);
         try
         {
-            var response = ExecuteCommandText(command.CommandText, command.RequiresAck);
+            var response = ExecuteCommandText(command);
             return new CncControllerAckResult
             {
                 Success = !IsErrorLikeText(response),
@@ -391,10 +392,12 @@ public class ArduinoSerialCncDriver : ICncDriver
         }
     }
 
-    private string ExecuteCommandText(string commandText, bool requiresAck)
+    private string ExecuteCommandText(CncPlannedCommand command)
     {
+        var commandText = command.CommandText;
+        var requiresAck = command.RequiresAck;
         if (UsesMabaMotionFirmware)
-            return SendMabaPlannerCommand(commandText, requiresAck);
+            return SendMabaPlannerCommand(command);
 
         if (UsesSimpleFirmwareProtocol)
             return SendLegacyPlannerCommand(commandText, requiresAck);
@@ -417,8 +420,10 @@ public class ArduinoSerialCncDriver : ICncDriver
         return response;
     }
 
-    private string SendMabaPlannerCommand(string commandText, bool requiresAck)
+    private string SendMabaPlannerCommand(CncPlannedCommand command)
     {
+        var commandText = command.CommandText;
+        var requiresAck = command.RequiresAck;
         if (!requiresAck)
         {
             EnsureConnected();
@@ -445,8 +450,74 @@ public class ArduinoSerialCncDriver : ICncDriver
                             ? new[] { "SPINDLE:OFF" }
                     : new[] { "OK" };
 
-        var timeoutMs = commandText.StartsWith("G", StringComparison.OrdinalIgnoreCase) ? 30000 : 15000;
+        var timeoutMs = EstimatePlannerTimeoutMilliseconds(command);
+        DeviceStatus.LastMotionTimeoutMs = timeoutMs;
+        AddProtocolLog(BuildMotionTimingDiagnostic(command, timeoutMs), "Info");
         return SendMabaCommandAwaiting("Stream", commandText, expected, timeoutMs);
+    }
+
+    private void RecordPlannedCommandDiagnostics(CncPlannedCommand command)
+    {
+        DeviceStatus.LastMotionCommandText = command.CommandText;
+        DeviceStatus.LastMotionTargetX = command.ExpectedEndX;
+        DeviceStatus.LastMotionTargetY = command.ExpectedEndY;
+        DeviceStatus.LastMotionTargetZ = command.ExpectedEndZ;
+        DeviceStatus.LastMotionDistanceMm = command.EstimatedDistanceMm > 0m ? command.EstimatedDistanceMm : null;
+        DeviceStatus.LastMotionFeedRateMmPerMinute = command.FeedRateMmPerMinute;
+        DeviceStatus.LastMotionEstimatedDurationMs = EstimatePlannerDurationMilliseconds(command);
+    }
+
+    private int EstimatePlannerTimeoutMilliseconds(CncPlannedCommand command)
+    {
+        if (command.SafetyCategory != CncCommandSafetyCategory.Motion)
+            return 15000;
+
+        var estimatedDurationMs = EstimatePlannerDurationMilliseconds(command);
+        if (estimatedDurationMs <= 0d)
+            return 30000;
+
+        var safetyMarginMs = Math.Max(10000d, estimatedDurationMs * 1.25d);
+        return (int)Math.Clamp(Math.Ceiling(estimatedDurationMs + safetyMarginMs), 12000d, 300000d);
+    }
+
+    private double EstimatePlannerDurationMilliseconds(CncPlannedCommand command)
+    {
+        if (command.SafetyCategory != CncCommandSafetyCategory.Motion)
+            return 0d;
+
+        var distanceMm = command.EstimatedDistanceMm > 0m
+            ? (double)command.EstimatedDistanceMm
+            : EstimateDistanceFromTargets(command);
+        var feedMmPerMinute = command.FeedRateMmPerMinute.GetValueOrDefault(0m);
+        if (distanceMm <= 0d || feedMmPerMinute <= 0m)
+            return 0d;
+
+        return distanceMm / (double)feedMmPerMinute * 60000d;
+    }
+
+    private double EstimateDistanceFromTargets(CncPlannedCommand command)
+    {
+        var startX = (double)_estimatedX;
+        var startY = (double)_estimatedY;
+        var startZ = (double)_estimatedZ;
+        var endX = (double)(command.ExpectedEndX ?? _estimatedX);
+        var endY = (double)(command.ExpectedEndY ?? _estimatedY);
+        var endZ = (double)(command.ExpectedEndZ ?? _estimatedZ);
+        var dx = endX - startX;
+        var dy = endY - startY;
+        var dz = endZ - startZ;
+        return Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz));
+    }
+
+    private string BuildMotionTimingDiagnostic(CncPlannedCommand command, int timeoutMs)
+    {
+        var durationMs = DeviceStatus.LastMotionEstimatedDurationMs ?? EstimatePlannerDurationMilliseconds(command);
+        var targetX = command.ExpectedEndX?.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) ?? "-";
+        var targetY = command.ExpectedEndY?.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) ?? "-";
+        var targetZ = command.ExpectedEndZ?.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) ?? "-";
+        var distance = command.EstimatedDistanceMm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        var feed = command.FeedRateMmPerMinute?.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) ?? "-";
+        return $"Planner motion: cmd='{command.CommandText}' target=({targetX},{targetY},{targetZ}) dist={distance}mm feed={feed}mm/min est={durationMs:0.#}ms timeout={timeoutMs}ms";
     }
 
     private string SendLegacyPlannerCommand(string commandText, bool requiresAck)
@@ -1314,14 +1385,22 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     private decimal ApplyAxisDirection(string axis, decimal deltaMm)
     {
-        var definition = _profile.DefinitionSnapshot;
-        if (definition?.AxisConfig.AxisDirections == null)
-            return deltaMm;
-
-        if (definition.AxisConfig.AxisDirections.TryGetValue(axis, out var direction) && direction == Direction.Inverted)
+        if (GetEffectiveAxisDirection(axis) == Direction.Inverted)
             return -deltaMm;
 
         return deltaMm;
+    }
+
+    private Direction GetEffectiveAxisDirection(string axis)
+    {
+        var definition = _profile.DefinitionSnapshot;
+        if (definition?.AxisConfig.AxisDirections == null)
+            return Direction.Normal;
+
+        if (!definition.AxisConfig.AxisDirections.TryGetValue(axis, out var direction))
+            return Direction.Normal;
+
+        return direction;
     }
 
     private void UpdateEstimatedPosition(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)

@@ -139,7 +139,9 @@ public class CncControlViewModel : ViewModelBase
         SetZeroCommand = new RelayCommand(_ => SetWorkZero(), _ => CanSetZero);
         SetZeroXCommand = new RelayCommand(_ => SetWorkZeroX(), _ => CanSetZero);
         SetZeroYCommand = new RelayCommand(_ => SetWorkZeroY(), _ => CanSetZero);
+        SetZeroZCommand = new RelayCommand(_ => SetWorkZeroZ(), _ => CanSetZZero);
         SetZeroXyCommand = new RelayCommand(_ => SetWorkZeroXY(), _ => CanSetZero);
+        ClearZZeroCommand = new RelayCommand(_ => ClearZZero(), _ => CanClearZZero);
         ClearWorkZeroCommand = new RelayCommand(_ => ClearWorkZero(), _ => CanClearWorkZero);
         ResetStateCommand = new RelayCommand(_ => ResetControllerState(), _ => CanResetState);
         ClearWarningCommand = new RelayCommand(_ => RunAction(_cncControllerService.ClearWarning), _ => HasWarning);
@@ -446,7 +448,9 @@ public class CncControlViewModel : ViewModelBase
     public ICommand SetZeroCommand { get; }
     public ICommand SetZeroXCommand { get; }
     public ICommand SetZeroYCommand { get; }
+    public ICommand SetZeroZCommand { get; }
     public ICommand SetZeroXyCommand { get; }
+    public ICommand ClearZZeroCommand { get; }
     public ICommand ClearWorkZeroCommand { get; }
     public ICommand ResetStateCommand { get; }
     public ICommand ClearWarningCommand { get; }
@@ -773,6 +777,8 @@ public class CncControlViewModel : ViewModelBase
                                  && SupportsYAxis
                                  && GetActionDescriptor(CncRuntimeAction.GoToCenter).IsAllowed;
     public bool CanSetZero => EffectiveCapabilities.Motion.WorkOffset && GetActionDescriptor(CncRuntimeAction.SetWorkZero).IsAllowed;
+    public bool CanSetZZero => CanSetZero && SupportsZAxis;
+    public bool CanClearZZero => CanClearWorkZero && SupportsZAxis;
     public bool CanClearWorkZero => EffectiveCapabilities.Motion.WorkOffset && GetActionDescriptor(CncRuntimeAction.ClearWorkZero).IsAllowed;
     public bool CanRefreshStatus => RuntimeStatus.IsConnected
                                     && GetActionDescriptor(CncRuntimeAction.RefreshStatus).IsAllowed;
@@ -829,6 +835,9 @@ public class CncControlViewModel : ViewModelBase
     public string ReferenceStatusText => RuntimeStatus.ReferenceStatusDisplay;
     public string ReferenceWarningText => RuntimeStatus.ReferenceWarningText ?? "Machine reference is valid.";
     public bool HasReferenceWarning => !string.IsNullOrWhiteSpace(RuntimeStatus.ReferenceWarningText);
+    public string ZReferenceStatusText => RuntimeStatus.ZReferenceStatusDisplay;
+    public string ZReferenceWarningText => RuntimeStatus.ZReferenceWarningText ?? "Manual Z zero is valid.";
+    public bool HasZReferenceWarning => !string.IsNullOrWhiteSpace(RuntimeStatus.ZReferenceWarningText);
     public CncMachineState MachineStateValue => _cncControllerService.MachineState;
     public CncExecutionState ExecutionStateValue => _executionQueueService.ExecutionState;
 
@@ -1215,9 +1224,19 @@ public class CncControlViewModel : ViewModelBase
         RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncManagerService.SetWorkZeroY(), "Set Work Zero Y");
     }
 
+    private void SetWorkZeroZ()
+    {
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncManagerService.SetWorkZeroZ(), "Set Manual Z Zero");
+    }
+
     private void SetWorkZeroXY()
     {
         RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncManagerService.SetWorkZeroXY(), "Set Work Zero XY");
+    }
+
+    private void ClearZZero()
+    {
+        RunRuntimeResponseAction(CncRuntimeAction.ClearWorkZero, () => _cncManagerService.ClearZZero(), "Clear Manual Z Zero");
     }
 
     private void ClearWorkZero()
@@ -3186,6 +3205,9 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(ReferenceStatusText));
         OnPropertyChanged(nameof(ReferenceWarningText));
         OnPropertyChanged(nameof(HasReferenceWarning));
+        OnPropertyChanged(nameof(ZReferenceStatusText));
+        OnPropertyChanged(nameof(ZReferenceWarningText));
+        OnPropertyChanged(nameof(HasZReferenceWarning));
         OnPropertyChanged(nameof(HasRuntimeAlarmBanner));
         OnPropertyChanged(nameof(RuntimeAlarmBannerText));
         OnPropertyChanged(nameof(HasRuntimeLockBanner));
@@ -3307,6 +3329,8 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanHome));
         OnPropertyChanged(nameof(CanGoToCenter));
         OnPropertyChanged(nameof(CanSetZero));
+        OnPropertyChanged(nameof(CanSetZZero));
+        OnPropertyChanged(nameof(CanClearZZero));
         OnPropertyChanged(nameof(CanClearWorkZero));
         OnPropertyChanged(nameof(CanRefreshStatus));
         OnPropertyChanged(nameof(CanLoadGcode));
@@ -3329,6 +3353,9 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(ReferenceStatusText));
         OnPropertyChanged(nameof(ReferenceWarningText));
         OnPropertyChanged(nameof(HasReferenceWarning));
+        OnPropertyChanged(nameof(ZReferenceStatusText));
+        OnPropertyChanged(nameof(ZReferenceWarningText));
+        OnPropertyChanged(nameof(HasZReferenceWarning));
         OnPropertyChanged(nameof(MachineStateValue));
         OnPropertyChanged(nameof(CurrentMotionIndex));
         OnPropertyChanged(nameof(CurrentLineNumber));

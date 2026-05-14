@@ -20,6 +20,23 @@ public enum CncReferenceLostReason
     FaultRecoveryRequired
 }
 
+public enum ZReferenceState
+{
+    Unknown,
+    ManualZeroSet,
+    LostAfterAlarm,
+    LostAfterDisconnect,
+    NotSupported
+}
+
+public enum ZReferenceSource
+{
+    None,
+    Manual,
+    ProbeFuture,
+    HomingFuture
+}
+
 public enum CncCoordinateMode
 {
     Machine,
@@ -68,8 +85,14 @@ public class CncMachineReferenceState
     public CncHomedAxes HomedAxes { get; set; } = CncHomedAxes.None;
     public bool ReferenceValid { get; set; }
     public CncReferenceLostReason ReferenceLostReason { get; set; } = CncReferenceLostReason.None;
+    public bool ZReferenceValid { get; set; }
+    public ZReferenceState ZReferenceState { get; set; } = ZReferenceState.Unknown;
+    public ZReferenceSource ZReferenceSource { get; set; } = ZReferenceSource.None;
     public DateTime? LastHomedAt { get; set; }
     public DateTime? LastZeroedAt { get; set; }
+    public DateTime? LastZZeroedAt { get; set; }
+
+    public bool XyReferenceValid => ReferenceValid && HomedAxes.HasFlag(CncHomedAxes.X | CncHomedAxes.Y);
 
     public string StatusText => ReferenceLostReason switch
     {
@@ -97,6 +120,24 @@ public class CncMachineReferenceState
         _ => "Machine reference is not valid."
     };
 
+    public string ZStatusText => ZReferenceState switch
+    {
+        ZReferenceState.ManualZeroSet when ZReferenceValid => "Manual Zero Set",
+        ZReferenceState.LostAfterAlarm => "Lost After Alarm",
+        ZReferenceState.LostAfterDisconnect => "Lost After Disconnect",
+        ZReferenceState.NotSupported => "Not Supported",
+        _ => "Not Set"
+    };
+
+    public string? ZWarningText => ZReferenceState switch
+    {
+        ZReferenceState.ManualZeroSet when ZReferenceValid => null,
+        ZReferenceState.NotSupported => "Z reference is not managed on this machine profile.",
+        ZReferenceState.LostAfterAlarm => "Z manual zero was lost after alarm/fault. Re-jog to the material surface and set Z zero again.",
+        ZReferenceState.LostAfterDisconnect => "Z manual zero became untrusted after disconnect. Re-confirm or set Z zero again before cutting.",
+        _ => "Z is not calibrated. Manually jog the tool to the material surface and press Set Z Zero before running."
+    };
+
     public CncMachineReferenceState Clone()
     {
         return new CncMachineReferenceState
@@ -105,8 +146,12 @@ public class CncMachineReferenceState
             HomedAxes = HomedAxes,
             ReferenceValid = ReferenceValid,
             ReferenceLostReason = ReferenceLostReason,
+            ZReferenceValid = ZReferenceValid,
+            ZReferenceState = ZReferenceState,
+            ZReferenceSource = ZReferenceSource,
             LastHomedAt = LastHomedAt,
-            LastZeroedAt = LastZeroedAt
+            LastZeroedAt = LastZeroedAt,
+            LastZZeroedAt = LastZZeroedAt
         };
     }
 }

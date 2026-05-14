@@ -16,6 +16,7 @@ public class CncExecutionPreflightService : ICncExecutionPreflightService
         var result = new CncExecutionPreflightResult();
         var action = request.Intent == CncExecutionIntent.Run ? CncRuntimeAction.Run : CncRuntimeAction.Frame;
         var descriptor = request.RuntimeStatus.GetActionDescriptor(action);
+        var safeTravelZ = request.MachineConfig.SafeTravelZMm > 0m ? request.MachineConfig.SafeTravelZMm : 5m;
 
         if (!descriptor.IsAllowed)
             result.Failures.Add(descriptor.Reason ?? $"{action} is blocked right now.");
@@ -43,7 +44,18 @@ public class CncExecutionPreflightService : ICncExecutionPreflightService
 
             if (!request.RuntimeStatus.HasValidReference)
                 result.Failures.Add(request.RuntimeStatus.ReferenceWarningText ?? "Machine reference is unknown.");
+
+            if (request.MachineConfig.SupportsZAxis
+                && request.MachineConfig.RequireManualZZeroForCutting
+                && RequiresZReference(request.InterpretedCommands, safeTravelZ)
+                && !request.RuntimeStatus.ReferenceState.ZReferenceValid)
+            {
+                result.Failures.Add("Z is not calibrated. Manually jog the tool to the material surface and press Set Z Zero before running.");
+            }
         }
+
+        if (!request.MachineConfig.SupportsZAxis && RequiresZMotion(request.InterpretedCommands))
+            result.Failures.Add("This job requires Z motion or safe Z travel, but the active machine profile does not support Z.");
 
         if (request.InterpretedCommands.Any(command => command.IsSpindleChange)
             && request.RuntimeStatus.FirmwareIdentity.IsKnown
@@ -72,5 +84,19 @@ public class CncExecutionPreflightService : ICncExecutionPreflightService
         }
 
         return result;
+    }
+
+    private static bool RequiresZMotion(IReadOnlyList<GcodeInterpretedCommand> commands)
+    {
+        return commands.Any(command =>
+            command.HasMotion
+            && (command.StartZ != command.EndZ || command.StartZ != 0m || command.EndZ != 0m));
+    }
+
+    private static bool RequiresZReference(IReadOnlyList<GcodeInterpretedCommand> commands, decimal safeTravelZ)
+    {
+        return commands.Any(command =>
+            command.HasMotion
+            && (command.StartZ != command.EndZ || command.StartZ != 0m || command.EndZ != 0m));
     }
 }

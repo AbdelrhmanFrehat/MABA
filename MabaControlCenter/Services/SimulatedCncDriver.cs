@@ -313,10 +313,7 @@ public class SimulatedCncDriver : ICncDriver
                 var targetX = command.ExpectedEndX ?? (_profile.XMinMm + (decimal)(DeviceStatus.ReportedX ?? 0m));
                 var targetY = command.ExpectedEndY ?? (_profile.YMinMm + (decimal)(DeviceStatus.ReportedY ?? 0m));
                 var targetZ = command.ExpectedEndZ ?? (_profile.ZMinMm + (decimal)(DeviceStatus.ReportedZ ?? 0m));
-                var currentX = DeviceStatus.ReportedX ?? _profile.XMinMm;
-                var currentY = DeviceStatus.ReportedY ?? _profile.YMinMm;
-                var currentZ = DeviceStatus.ReportedZ ?? _profile.ZMinMm;
-                response = MoveLinear(targetX - currentX, targetY - currentY, targetZ - currentZ);
+                response = ExecuteSimulatedLinear(command, targetX, targetY, targetZ);
             }
             else if (command.CommandText.StartsWith("G2", StringComparison.OrdinalIgnoreCase)
                      || command.CommandText.StartsWith("G3", StringComparison.OrdinalIgnoreCase))
@@ -536,7 +533,7 @@ public class SimulatedCncDriver : ICncDriver
         DeviceStatus.LastStatusText = "STATUS:RUNNING";
         NotifyStateChanged();
 
-        var duration = 120 + (int)Math.Min(1600m, command.EstimatedDistanceMm * 24m);
+        var duration = EstimateMotionDurationMs(command.EstimatedDistanceMm, command.FeedRateMmPerMinute, isRapid: false);
         SimulateDelay(duration);
 
         DeviceStatus.ReportedX = command.ExpectedEndX ?? DeviceStatus.ReportedX;
@@ -550,5 +547,48 @@ public class SimulatedCncDriver : ICncDriver
         AddDriverLog($"Simulated arc completed with {command.EstimatedDistanceMm:0.###} mm of travel.", "Info");
         NotifyStateChanged();
         return DeviceStatus.LastStatusText;
+    }
+
+    private string ExecuteSimulatedLinear(CncPlannedCommand command, decimal targetX, decimal targetY, decimal targetZ)
+    {
+        EnsureConnected();
+        EnsureMotorsEnabled();
+
+        DeviceStatus.DeviceState = CncDeviceState.Running;
+        DeviceStatus.LastStatusText = "STATUS:RUNNING";
+        NotifyStateChanged();
+
+        var currentX = DeviceStatus.ReportedX ?? _profile.XMinMm;
+        var currentY = DeviceStatus.ReportedY ?? _profile.YMinMm;
+        var currentZ = DeviceStatus.ReportedZ ?? _profile.ZMinMm;
+        var deltaX = targetX - currentX;
+        var deltaY = targetY - currentY;
+        var deltaZ = targetZ - currentZ;
+        var distance = (decimal)Math.Sqrt((double)((deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ)));
+        var duration = EstimateMotionDurationMs(distance, command.FeedRateMmPerMinute, command.MotionType == GcodeMotionType.Rapid);
+        SimulateDelay(duration);
+
+        DeviceStatus.ReportedX = targetX;
+        DeviceStatus.ReportedY = targetY;
+        DeviceStatus.ReportedZ = targetZ;
+        DeviceStatus.HasReportedPosition = true;
+        DeviceStatus.DeviceState = CncDeviceState.Idle;
+        DeviceStatus.LastStatusText = $"POS:{DeviceStatus.ReportedX ?? 0m:0.###},{DeviceStatus.ReportedY ?? 0m:0.###},{DeviceStatus.ReportedZ ?? 0m:0.###}";
+        DeviceStatus.LastAcknowledgement = DeviceStatus.LastStatusText;
+        DeviceStatus.LastAcknowledgedAt = DateTime.Now;
+        AddDriverLog($"Simulated {command.MotionClass} completed with {distance:0.###} mm of travel.", "Info");
+        NotifyStateChanged();
+        return DeviceStatus.LastStatusText;
+    }
+
+    private static int EstimateMotionDurationMs(decimal distanceMm, decimal? feedRateMmPerMinute, bool isRapid)
+    {
+        var effectiveFeed = feedRateMmPerMinute.GetValueOrDefault(isRapid ? 1200m : 300m);
+        if (effectiveFeed <= 0m)
+            effectiveFeed = isRapid ? 1200m : 300m;
+
+        var durationMinutes = distanceMm <= 0m ? 0m : distanceMm / effectiveFeed;
+        var durationMs = (int)Math.Ceiling((double)(durationMinutes * 60_000m));
+        return Math.Clamp(durationMs + 80, 80, 4000);
     }
 }

@@ -131,6 +131,8 @@ public class GcodeInterpretedCommand
     public decimal? ArcRadiusMm { get; set; }
     public decimal? ArcLengthMm { get; set; }
     public GcodeCoordinateSpace CoordinateSpace { get; set; } = GcodeCoordinateSpace.Work;
+    public CncMotionExecutionClass PlannedMotionClass { get; set; } = CncMotionExecutionClass.None;
+    public bool IsSynthetic { get; set; }
     public GcodeModalState ModalStateAfterLine { get; set; } = new();
 
     public GcodeMotionType? MotionType => MotionMode switch

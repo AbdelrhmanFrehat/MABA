@@ -102,10 +102,22 @@ public class CncManagerService : ICncManagerService
         return _controllerService.SetWorkZeroY();
     }
 
+    public string SetWorkZeroZ()
+    {
+        EnsureAllowed(CncRuntimeAction.SetWorkZero);
+        return _controllerService.SetWorkZeroZ();
+    }
+
     public string SetWorkZeroXY()
     {
         EnsureAllowed(CncRuntimeAction.SetWorkZero);
         return _controllerService.SetWorkZeroXY();
+    }
+
+    public string ClearZZero()
+    {
+        EnsureAllowed(CncRuntimeAction.ClearWorkZero);
+        return _controllerService.ClearZZero();
     }
 
     public string ClearWorkZero()
@@ -165,18 +177,25 @@ public class CncManagerService : ICncManagerService
         {
             var coordinateState = _controllerService.CoordinateState.Clone();
             coordinateState.JobPlacementOffset = new CncJobPlacementOffset();
+            var isSimulation = _controllerService.Config.DriverType == CncDriverType.Simulated;
+            var canUseSafeTravelZ = _controllerService.Config.SupportsZAxis
+                && (!_controllerService.Config.RequireManualZZeroForCutting || _controllerService.ReferenceState.ZReferenceValid || isSimulation);
+            var safeTravelZ = canUseSafeTravelZ
+                ? Math.Clamp(_controllerService.Config.SafeTravelZMm > 0m ? _controllerService.Config.SafeTravelZMm : 5m, _controllerService.Config.ZMinMm, _controllerService.Config.ZLimitMm)
+                : 0m;
             var currentLine = 0;
             foreach (var motion in frameMotions.Where(motion => motion.IsExecutable))
             {
                 currentLine++;
-                var transformed = _coordinateTransformService.FlattenForFirmware(motion.EndX, motion.EndY, motion.EndZ, coordinateState);
+                var frameZ = canUseSafeTravelZ ? safeTravelZ : coordinateState.WorkZ;
+                var transformed = _coordinateTransformService.FlattenForFirmware(motion.EndX, motion.EndY, frameZ, coordinateState);
                 transformed = _coordinateTransformService.Validate(transformed, _controllerService.Bounds, _controllerService.Config);
                 if (!string.IsNullOrWhiteSpace(transformed.BoundsMessage))
                     throw new InvalidOperationException(transformed.BoundsMessage);
 
                 var planned = new CncPlannedCommand
                 {
-                    CommandText = $"G1 X{transformed.FinalMachineX:0.###} Y{transformed.FinalMachineY:0.###} Z{transformed.FinalMachineZ:0.###} F600",
+                    CommandText = $"G0 X{transformed.FinalMachineX:0.###} Y{transformed.FinalMachineY:0.###} Z{transformed.FinalMachineZ:0.###} F{_controllerService.Config.MaxRapidXyMmPerMinute:0.###}",
                     SourceLineNumber = motion.LineNumber > 0 ? motion.LineNumber : currentLine,
                     MotionType = motion.MotionType,
                     ExpectedEndX = transformed.FinalMachineX,
@@ -185,6 +204,7 @@ public class CncManagerService : ICncManagerService
                     EstimatedDistanceMm = motion.LengthMm,
                     RequiresAck = true,
                     SafetyCategory = CncCommandSafetyCategory.Motion,
+                    MotionClass = CncMotionExecutionClass.FrameMove,
                     CoordinateSpace = GcodeCoordinateSpace.Machine,
                     OriginalRawLine = motion.RawText
                 };

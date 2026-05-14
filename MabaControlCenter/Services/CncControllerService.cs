@@ -176,7 +176,32 @@ public class CncControllerService : ICncControllerService
         AddControllerLog(movingMessage, "Info");
         feedbackMessages.Add(movingMessage);
 
-        MoveToMachineCoordinates(centerX, centerY, currentZ);
+        var deltaX = centerX - _coordinateState.MachineX;
+        var deltaY = centerY - _coordinateState.MachineY;
+        var distance = (decimal)Math.Sqrt((double)((deltaX * deltaX) + (deltaY * deltaY)));
+        var planned = new CncPlannedCommand
+        {
+            CommandText = string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"G0 X{centerX:0.###} Y{centerY:0.###} F{Config.MaxRapidXyMmPerMinute:0.###}"),
+            SourceLineNumber = 0,
+            MotionType = GcodeMotionType.Rapid,
+            ExpectedEndX = centerX,
+            ExpectedEndY = centerY,
+            ExpectedEndZ = currentZ,
+            EstimatedDistanceMm = distance,
+            RequiresAck = true,
+            SafetyCategory = CncCommandSafetyCategory.Motion,
+            CoordinateSpace = GcodeCoordinateSpace.Machine,
+            FeedRateMmPerMinute = Config.MaxRapidXyMmPerMinute,
+            MotionClass = CncMotionExecutionClass.RapidTravel,
+            OriginalRawLine = "Go To Center"
+        };
+
+        var ack = ExecutePlannedCommand(planned);
+        if (!ack.Success)
+            throw new InvalidOperationException(ack.ErrorMessage ?? ack.ResponseText ?? "Center move failed.");
+
         AddControllerLog($"Machine center reached at X {centerX:0.###} mm, Y {centerY:0.###} mm.", "Info");
         feedbackMessages.Add($"Machine center reached at X {centerX:0.###} mm, Y {centerY:0.###} mm.");
         NotifyStateChanged();
@@ -200,7 +225,21 @@ public class CncControllerService : ICncControllerService
 
     public string SetWorkZeroZ()
     {
-        return SetWorkZeroInternal(updateX: false, updateY: false, updateZ: true, "Work zero Z updated to current machine position.");
+        EnsureConnected();
+        EnsureAxisSupported("Z");
+        if (!HasValidMachineReference && _driver.DriverType != CncDriverType.Simulated)
+            throw new InvalidOperationException("XY reference is not valid. Home the machine before setting manual Z zero.");
+
+        _coordinateState.ActiveWorkOffset.Z = _coordinateState.MachineZ;
+        _coordinateState.ReferenceState.LastZeroedAt = DateTime.UtcNow;
+        _coordinateState.ReferenceState.LastZZeroedAt = DateTime.UtcNow;
+        _coordinateState.ReferenceState.ZReferenceValid = true;
+        _coordinateState.ReferenceState.ZReferenceState = ZReferenceState.ManualZeroSet;
+        _coordinateState.ReferenceState.ZReferenceSource = ZReferenceSource.Manual;
+        SyncCoordinateState();
+        AddControllerLog("Manual Z zero set at the current machine position.", "Info");
+        NotifyStateChanged();
+        return "OK";
     }
 
     public string SetWorkZeroXY()
@@ -218,8 +257,21 @@ public class CncControllerService : ICncControllerService
         EnsureConnected();
         _coordinateState.ActiveWorkOffset = new CncWorkOffset();
         _coordinateState.ReferenceState.LastZeroedAt = DateTime.UtcNow;
+        ClearManualZReference();
         SyncCoordinateState();
         AddControllerLog("Work zero cleared back to machine zero.", "Info");
+        NotifyStateChanged();
+        return "OK";
+    }
+
+    public string ClearZZero()
+    {
+        EnsureConnected();
+        _coordinateState.ActiveWorkOffset.Z = 0m;
+        _coordinateState.ReferenceState.LastZeroedAt = DateTime.UtcNow;
+        ClearManualZReference();
+        SyncCoordinateState();
+        AddControllerLog("Manual Z zero cleared.", "Info");
         NotifyStateChanged();
         return "OK";
     }
@@ -466,6 +518,7 @@ public class CncControllerService : ICncControllerService
         profile.SupportsXAxis = config.SupportsXAxis;
         profile.SupportsYAxis = config.SupportsYAxis;
         profile.SupportsZAxis = config.SupportsZAxis;
+        profile.RequireManualZZeroForCutting = config.RequireManualZZeroForCutting;
         profile.SoftLimitsEnabled = config.SoftLimitsEnabled;
         profile.DriverType = config.DriverType;
         profile.JogPresets = config.JogPresets.ToList();
@@ -679,7 +732,13 @@ public class CncControllerService : ICncControllerService
         if (updateY)
             _coordinateState.ActiveWorkOffset.Y = _coordinateState.MachineY;
         if (updateZ)
+        {
             _coordinateState.ActiveWorkOffset.Z = _coordinateState.MachineZ;
+            _coordinateState.ReferenceState.ZReferenceValid = true;
+            _coordinateState.ReferenceState.ZReferenceState = ZReferenceState.ManualZeroSet;
+            _coordinateState.ReferenceState.ZReferenceSource = ZReferenceSource.Manual;
+            _coordinateState.ReferenceState.LastZZeroedAt = DateTime.UtcNow;
+        }
 
         _coordinateState.ReferenceState.LastZeroedAt = DateTime.UtcNow;
         SyncCoordinateState();
@@ -697,6 +756,10 @@ public class CncControllerService : ICncControllerService
             _coordinateState.ReferenceState.ReferenceLostReason = CncReferenceLostReason.None;
             _coordinateState.ReferenceState.HomedAxes = GetSupportedReferenceAxes();
             _coordinateState.ReferenceState.LastHomedAt ??= DateTime.UtcNow;
+            _coordinateState.ReferenceState.ZReferenceValid = Config.SupportsZAxis;
+            _coordinateState.ReferenceState.ZReferenceState = Config.SupportsZAxis ? ZReferenceState.ManualZeroSet : ZReferenceState.NotSupported;
+            _coordinateState.ReferenceState.ZReferenceSource = Config.SupportsZAxis ? ZReferenceSource.Manual : ZReferenceSource.None;
+            _coordinateState.ReferenceState.LastZZeroedAt ??= Config.SupportsZAxis ? DateTime.UtcNow : null;
             return;
         }
 
@@ -718,6 +781,7 @@ public class CncControllerService : ICncControllerService
         _coordinateState.ReferenceState.ReferenceValid = false;
         _coordinateState.ReferenceState.HomedAxes = CncHomedAxes.None;
         _coordinateState.ReferenceState.ReferenceLostReason = reason;
+        MarkZReferenceLost(reason);
     }
 
     private void MarkReferenceLost(CncReferenceLostReason reason)
@@ -726,6 +790,7 @@ public class CncControllerService : ICncControllerService
         _coordinateState.ReferenceState.IsHomed = false;
         _coordinateState.ReferenceState.ReferenceLostReason = reason;
         _coordinateState.ReferenceState.HomedAxes = CncHomedAxes.None;
+        MarkZReferenceLost(reason);
     }
 
     private void ResetCoordinateState()
@@ -772,9 +837,37 @@ public class CncControllerService : ICncControllerService
             axes |= CncHomedAxes.X;
         if (Config.HomeYEnabled)
             axes |= CncHomedAxes.Y;
-        if (Config.HomeZEnabled)
-            axes |= CncHomedAxes.Z;
         return axes;
+    }
+
+    private void ClearManualZReference()
+    {
+        _coordinateState.ReferenceState.ZReferenceValid = false;
+        _coordinateState.ReferenceState.ZReferenceState = Config.SupportsZAxis ? ZReferenceState.Unknown : ZReferenceState.NotSupported;
+        _coordinateState.ReferenceState.ZReferenceSource = ZReferenceSource.None;
+    }
+
+    private void MarkZReferenceLost(CncReferenceLostReason reason)
+    {
+        if (!Config.SupportsZAxis)
+        {
+            _coordinateState.ReferenceState.ZReferenceValid = false;
+            _coordinateState.ReferenceState.ZReferenceState = ZReferenceState.NotSupported;
+            _coordinateState.ReferenceState.ZReferenceSource = ZReferenceSource.None;
+            return;
+        }
+
+        _coordinateState.ReferenceState.ZReferenceValid = false;
+        _coordinateState.ReferenceState.ZReferenceSource = _coordinateState.ReferenceState.ZReferenceSource == ZReferenceSource.None
+            ? ZReferenceSource.Manual
+            : _coordinateState.ReferenceState.ZReferenceSource;
+        _coordinateState.ReferenceState.ZReferenceState = reason switch
+        {
+            CncReferenceLostReason.Disconnect => ZReferenceState.LostAfterDisconnect,
+            CncReferenceLostReason.Alarm => ZReferenceState.LostAfterAlarm,
+            CncReferenceLostReason.FaultRecoveryRequired => ZReferenceState.LostAfterAlarm,
+            _ => ZReferenceState.Unknown
+        };
     }
 
     private void EnsureConnected()
@@ -890,8 +983,17 @@ public class CncControllerService : ICncControllerService
             SupportsXAxis = profile.SupportsXAxis,
             SupportsYAxis = profile.SupportsYAxis,
             SupportsZAxis = profile.SupportsZAxis,
+            RequireManualZZeroForCutting = profile.RequireManualZZeroForCutting,
             SoftLimitsEnabled = profile.SoftLimitsEnabled,
             JogPresets = profile.JogPresets.ToList(),
+            SafeTravelZMm = profile.SafeTravelZMm,
+            MaxFeedXyMmPerMinute = profile.MaxFeedXyMmPerMinute,
+            MaxRapidXyMmPerMinute = profile.MaxRapidXyMmPerMinute,
+            MaxFeedZMmPerMinute = profile.MaxFeedZMmPerMinute,
+            MaxPlungeZMmPerMinute = profile.MaxPlungeZMmPerMinute,
+            ParkXMm = profile.ParkXMm,
+            ParkYMm = profile.ParkYMm,
+            ParkZMm = profile.ParkZMm,
             VisualizationWidthMm = profile.VisualizationWidthMm,
             VisualizationHeightMm = profile.VisualizationHeightMm,
             VisualizationDepthMm = profile.VisualizationDepthMm

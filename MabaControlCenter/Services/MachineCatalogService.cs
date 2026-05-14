@@ -344,7 +344,9 @@ public class MachineCatalogService : IMachineCatalogService
             {
                 MinTravelMm = new Dictionary<string, double> { ["X"] = 0, ["Y"] = 0, ["Z"] = 0 },
                 MaxTravelMm = new Dictionary<string, double> { ["X"] = 300, ["Y"] = 300, ["Z"] = 100 },
-                WorkAreaMm = new WorkAreaDimensions { Width = 300, Depth = 300, Height = 100 }
+                WorkAreaMm = new WorkAreaDimensions { Width = 300, Depth = 300, Height = 100 },
+                SafeZHeightMm = 5,
+                ParkPositionMm = new Dictionary<string, double> { ["X"] = 0, ["Y"] = 0, ["Z"] = 5 }
             },
             MotionDefaults = new MotionDefaultsSection
             {

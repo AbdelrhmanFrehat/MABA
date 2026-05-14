@@ -320,6 +320,16 @@ public class CncProfileService : ICncProfileService
             SupportsYAxis = definition.AxisConfig.SupportedAxes.Contains(AxisId.Y),
             SupportsZAxis = definition.AxisConfig.SupportedAxes.Contains(AxisId.Z),
             SoftLimitsEnabled = true,
+            SafeTravelZMm = definition.Workspace.SafeZHeightMm.HasValue && definition.Workspace.SafeZHeightMm.Value > 0
+                ? (decimal)definition.Workspace.SafeZHeightMm.Value
+                : 5m,
+            MaxFeedXyMmPerMinute = ResolveMaxFeed(definition.MotionDefaults.MaxFeedMmMin, new[] { "X", "Y" }, 1200m),
+            MaxRapidXyMmPerMinute = ResolveMaxFeed(definition.MotionDefaults.MaxFeedMmMin, new[] { "X", "Y" }, 1200m),
+            MaxFeedZMmPerMinute = ResolveMaxFeed(definition.MotionDefaults.MaxFeedMmMin, new[] { "Z" }, 300m),
+            MaxPlungeZMmPerMinute = ResolveMaxFeed(definition.MotionDefaults.MaxFeedMmMin, new[] { "Z" }, 200m),
+            ParkXMm = TryGetCoordinate(definition.Workspace.ParkPositionMm, "X"),
+            ParkYMm = TryGetCoordinate(definition.Workspace.ParkPositionMm, "Y"),
+            ParkZMm = TryGetCoordinate(definition.Workspace.ParkPositionMm, "Z"),
             VisualizationWidthMm = definition.Workspace.WorkAreaMm.Width > 0 ? (decimal)definition.Workspace.WorkAreaMm.Width : ToDecimal(max, "X", 300m),
             VisualizationHeightMm = definition.Workspace.WorkAreaMm.Depth > 0 ? (decimal)definition.Workspace.WorkAreaMm.Depth : ToDecimal(max, "Y", 300m),
             VisualizationDepthMm = definition.Workspace.WorkAreaMm.Height > 0 ? (decimal)definition.Workspace.WorkAreaMm.Height : ToDecimal(max, "Z", 100m),
@@ -339,6 +349,20 @@ public class CncProfileService : ICncProfileService
 
     private static decimal ToDecimal(IReadOnlyDictionary<string, double> values, string key, decimal fallback)
         => values.TryGetValue(key, out var value) ? (decimal)value : fallback;
+
+    private static decimal ResolveMaxFeed(IReadOnlyDictionary<string, double> values, IEnumerable<string> keys, decimal fallback)
+    {
+        var matches = keys
+            .Where(values.ContainsKey)
+            .Select(key => (decimal)values[key])
+            .Where(value => value > 0m)
+            .ToList();
+
+        return matches.Count > 0 ? matches.Min() : fallback;
+    }
+
+    private static decimal? TryGetCoordinate(IReadOnlyDictionary<string, double>? values, string key)
+        => values != null && values.TryGetValue(key, out var value) ? (decimal)value : null;
 
     private static MachineDefinition CloneDefinition(MachineDefinition definition)
         => JsonSerializer.Deserialize<MachineDefinition>(JsonSerializer.Serialize(definition, JsonOptions), JsonOptions) ?? definition;

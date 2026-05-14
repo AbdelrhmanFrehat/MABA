@@ -45,6 +45,7 @@ public interface ICncControllerService
     string SetWorkZeroZ();
     string SetWorkZeroXY();
     string SetWorkZeroXYZ();
+    string ClearZZero();
     string ClearWorkOffset();
     string ResetState();
     string Stop();

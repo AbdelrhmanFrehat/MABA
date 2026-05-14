@@ -26,6 +26,20 @@ public enum CncCommandSafetyCategory
     System
 }
 
+public enum CncMotionExecutionClass
+{
+    None,
+    RapidTravel,
+    SafeZLift,
+    SafeZLower,
+    CuttingMove,
+    DrillPlunge,
+    Retract,
+    FrameMove,
+    RecoveryMove,
+    SpindleCommand
+}
+
 public class CncPlannedCommand
 {
     public string CommandText { get; set; } = string.Empty;
@@ -44,6 +58,8 @@ public class CncPlannedCommand
     public decimal? FeedRateMmPerMinute { get; set; }
     public GcodeSpindleState? SpindleState { get; set; }
     public string? OriginalRawLine { get; set; }
+    public CncMotionExecutionClass MotionClass { get; set; } = CncMotionExecutionClass.None;
+    public bool IsSynthetic { get; set; }
     public string ProgressLabel => $"Line {SourceLineNumber}";
 }
 

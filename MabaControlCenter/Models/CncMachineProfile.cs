@@ -32,10 +32,19 @@ public class CncMachineProfile
     public bool SupportsXAxis { get; set; } = true;
     public bool SupportsYAxis { get; set; } = true;
     public bool SupportsZAxis { get; set; } = true;
+    public bool RequireManualZZeroForCutting { get; set; } = true;
     public bool SoftLimitsEnabled { get; set; } = true;
     public decimal VisualizationWidthMm { get; set; } = 300m;
     public decimal VisualizationHeightMm { get; set; } = 300m;
     public decimal VisualizationDepthMm { get; set; } = 100m;
+    public decimal SafeTravelZMm { get; set; } = 5m;
+    public decimal MaxFeedXyMmPerMinute { get; set; } = 1200m;
+    public decimal MaxRapidXyMmPerMinute { get; set; } = 1200m;
+    public decimal MaxFeedZMmPerMinute { get; set; } = 300m;
+    public decimal MaxPlungeZMmPerMinute { get; set; } = 200m;
+    public decimal? ParkXMm { get; set; }
+    public decimal? ParkYMm { get; set; }
+    public decimal? ParkZMm { get; set; }
     public List<decimal> JogPresets { get; set; } = new() { 0.1m, 1m, 10m };
 
     public CncMachineConfig ToMachineConfig()
@@ -59,9 +68,18 @@ public class CncMachineProfile
             SupportsXAxis = SupportsXAxis,
             SupportsYAxis = SupportsYAxis,
             SupportsZAxis = SupportsZAxis,
+            RequireManualZZeroForCutting = RequireManualZZeroForCutting,
             SoftLimitsEnabled = SoftLimitsEnabled,
             DriverType = DriverType,
             JogPresets = JogPresets.ToList(),
+            SafeTravelZMm = SafeTravelZMm,
+            MaxFeedXyMmPerMinute = MaxFeedXyMmPerMinute,
+            MaxRapidXyMmPerMinute = MaxRapidXyMmPerMinute,
+            MaxFeedZMmPerMinute = MaxFeedZMmPerMinute,
+            MaxPlungeZMmPerMinute = MaxPlungeZMmPerMinute,
+            ParkXMm = ParkXMm,
+            ParkYMm = ParkYMm,
+            ParkZMm = ParkZMm,
             VisualizationWidthMm = VisualizationWidthMm,
             VisualizationHeightMm = VisualizationHeightMm,
             VisualizationDepthMm = VisualizationDepthMm
@@ -95,8 +113,17 @@ public class CncMachineProfile
             SupportsXAxis = config.SupportsXAxis,
             SupportsYAxis = config.SupportsYAxis,
             SupportsZAxis = config.SupportsZAxis,
+            RequireManualZZeroForCutting = config.RequireManualZZeroForCutting,
             SoftLimitsEnabled = config.SoftLimitsEnabled,
             JogPresets = config.JogPresets.ToList(),
+            SafeTravelZMm = config.SafeTravelZMm,
+            MaxFeedXyMmPerMinute = config.MaxFeedXyMmPerMinute,
+            MaxRapidXyMmPerMinute = config.MaxRapidXyMmPerMinute,
+            MaxFeedZMmPerMinute = config.MaxFeedZMmPerMinute,
+            MaxPlungeZMmPerMinute = config.MaxPlungeZMmPerMinute,
+            ParkXMm = config.ParkXMm,
+            ParkYMm = config.ParkYMm,
+            ParkZMm = config.ParkZMm,
             VisualizationWidthMm = config.VisualizationWidthMm,
             VisualizationHeightMm = config.VisualizationHeightMm,
             VisualizationDepthMm = config.VisualizationDepthMm

@@ -61,6 +61,7 @@ public class CncRuntimeStatus
     public bool IsAlarmed { get; set; }
     public bool IsHomed { get; set; }
     public bool HasValidReference { get; set; }
+    public bool HasValidZReference { get; set; }
     public bool IsBusy { get; set; }
     public bool CanJog { get; set; }
     public bool CanHome { get; set; }
@@ -116,6 +117,8 @@ public class CncRuntimeStatus
 
     public string ReferenceStatusDisplay => ReferenceState.StatusText;
     public string? ReferenceWarningText => ReferenceState.WarningText;
+    public string ZReferenceStatusDisplay => ReferenceState.ZStatusText;
+    public string? ZReferenceWarningText => ReferenceState.ZWarningText;
     public string? ControllerStatusWarningText => ControllerStatusConfidence switch
     {
         CncControllerStatusConfidence.LastKnown => "Controller status is based on the last known response. Refresh status before running.",

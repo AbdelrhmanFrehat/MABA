@@ -19,9 +19,18 @@ public class CncMachineConfig
     public bool SupportsXAxis { get; set; } = true;
     public bool SupportsYAxis { get; set; } = true;
     public bool SupportsZAxis { get; set; } = true;
+    public bool RequireManualZZeroForCutting { get; set; } = true;
     public bool SoftLimitsEnabled { get; set; } = true;
     public CncDriverType DriverType { get; set; } = CncDriverType.ArduinoSerial;
     public List<decimal> JogPresets { get; set; } = new() { 0.1m, 1m, 10m };
+    public decimal SafeTravelZMm { get; set; } = 5m;
+    public decimal MaxFeedXyMmPerMinute { get; set; } = 1200m;
+    public decimal MaxRapidXyMmPerMinute { get; set; } = 1200m;
+    public decimal MaxFeedZMmPerMinute { get; set; } = 300m;
+    public decimal MaxPlungeZMmPerMinute { get; set; } = 200m;
+    public decimal? ParkXMm { get; set; }
+    public decimal? ParkYMm { get; set; }
+    public decimal? ParkZMm { get; set; }
     public decimal VisualizationWidthMm { get; set; } = 300m;
     public decimal VisualizationHeightMm { get; set; } = 300m;
     public decimal VisualizationDepthMm { get; set; } = 100m;

@@ -381,7 +381,7 @@ public class CncExecutionQueueService : ICncExecutionQueueService
         _currentStreamingSession.CurrentCommandIndex = index;
         _currentStreamingSession.CurrentCommand = command;
         _currentMotionIndex = ResolveMotionIndex(command.SourceLineNumber, index);
-        _currentStreamingSession.LastMessage = $"Streaming {command.ProgressLabel}: {command.CommandText}";
+        _currentStreamingSession.LastMessage = $"Streaming {command.ProgressLabel} [{command.MotionClass}]: {command.CommandText}";
         _currentStreamingSession.Diagnostics.AddEvent(_currentStreamingSession.LastMessage);
         NotifyChanged();
     }
@@ -394,7 +394,7 @@ public class CncExecutionQueueService : ICncExecutionQueueService
         _currentStreamingSession.CompletedCommands = _completedCount;
         _currentStreamingSession.StreamedDistanceMm = _streamedDistanceMm;
         _currentStreamingSession.ProgressPercent = CalculateProgressPercent();
-        _currentStreamingSession.LastMessage = $"Acknowledged {command.ProgressLabel}: {responseText}";
+        _currentStreamingSession.LastMessage = $"Acknowledged {command.ProgressLabel} [{command.MotionClass}]: {responseText}";
         _currentStreamingSession.Diagnostics.AddEvent(_currentStreamingSession.LastMessage);
         NotifyChanged();
     }

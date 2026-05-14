@@ -1857,6 +1857,37 @@
                                     <TextBlock Text="{Binding AppliedPlacementOffsetZ, StringFormat={}{0:0.###}}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="16" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </UniformGrid>
+
+                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="10,8"
+                                    Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Manual Z Setup"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding ZReferenceStatusText}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               Margin="0,6,0,0"/>
+                                    <TextBlock Text="{Binding ZReferenceWarningText}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,4,0,0"
+                                               Visibility="{Binding HasZReferenceWarning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <WrapPanel Margin="0,8,0,0">
+                                        <TextBlock Text="Current Z:"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding WorkZ, StringFormat={}{0:0.###} mm}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                         </StackPanel>
@@ -2458,6 +2489,20 @@
                                     Command="{Binding SetZeroXyCommand}"
                                     Style="{StaticResource CncPrimaryButtonStyle}"
                                     MinWidth="98"
+                                    MinHeight="34"
+                                    Padding="10,6"
+                                    Margin="0,0,8,8"/>
+                            <Button Content="Set Z Zero"
+                                    Command="{Binding SetZeroZCommand}"
+                                    Style="{StaticResource CncPrimaryButtonStyle}"
+                                    MinWidth="98"
+                                    MinHeight="34"
+                                    Padding="10,6"
+                                    Margin="0,0,8,8"/>
+                            <Button Content="Clear Z Zero"
+                                    Command="{Binding ClearZZeroCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinWidth="104"
                                     MinHeight="34"
                                     Padding="10,6"
                                     Margin="0,0,8,8"/>

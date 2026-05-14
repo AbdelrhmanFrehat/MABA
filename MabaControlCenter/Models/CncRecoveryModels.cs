@@ -65,6 +65,7 @@ public class CncRecoveryPlan
     public bool ResumeAllowed { get; set; }
     public bool RequiresRehome { get; set; }
     public bool CanTrustWorkOffset { get; set; } = true;
+    public bool IsZReferenceTrusted { get; set; }
     public bool PreferRestartOverResume { get; set; }
     public bool IsConnectionVerified { get; set; }
     public bool IsFirmwareVerified { get; set; }

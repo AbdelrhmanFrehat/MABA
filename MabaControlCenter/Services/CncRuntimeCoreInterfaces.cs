@@ -69,7 +69,9 @@ public interface ICncManagerService
     string Jog(string axis, decimal deltaMm);
     string SetWorkZeroX();
     string SetWorkZeroY();
+    string SetWorkZeroZ();
     string SetWorkZeroXY();
+    string ClearZZero();
     string ClearWorkZero();
     CncExecutionPreflightResult EvaluatePreflight(CncExecutionPreflightRequest request);
     Task<CncManagerOperationResult> RunAsync(CncExecutionPreflightRequest request, IReadOnlyList<GcodeMotionCommand> motions, IReadOnlyList<GcodeInterpretedCommand> commands, string? activeJobName, int totalMotionCount);

@@ -16,7 +16,8 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
             IsStatusFresh = status.ControllerStatusConfidence == CncControllerStatusConfidence.VerifiedFresh,
             IsReferenceTrusted = status.HasValidReference,
             IsPositionTrusted = status.ControllerStatusConfidence == CncControllerStatusConfidence.VerifiedFresh && status.HasValidReference,
-            IsCapabilityVerified = status.FirmwareIdentity.Confidence == CncCapabilityConfidence.Verified
+            IsCapabilityVerified = status.FirmwareIdentity.Confidence == CncCapabilityConfidence.Verified,
+            IsZReferenceTrusted = status.HasValidZReference
         };
 
         var hasLoadedJob = jobSessionService.LoadedJob != null || executionQueueService.LoadedMotions.Count > 0;
@@ -59,6 +60,7 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
 
             plan.RequiresRehome = status.ControllerMode == CncControllerMode.RealHardware;
             plan.CanTrustWorkOffset = false;
+            plan.IsZReferenceTrusted = false;
             plan.PreferRestartOverResume = true;
             plan.ResumeBlockedReason = "Resume is blocked after disconnect until reconnect, reference validation, and homing are completed.";
             return plan;
@@ -84,6 +86,7 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
 
             plan.RequiresRehome = true;
             plan.CanTrustWorkOffset = false;
+            plan.IsZReferenceTrusted = false;
             plan.PreferRestartOverResume = true;
             plan.BlockedActions.Add(CncRecoveryAction.ResumeJob);
             plan.ResumeBlockedReason = "Resume is blocked while an alarm is active.";
@@ -113,6 +116,7 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
 
             plan.RequiresRehome = true;
             plan.CanTrustWorkOffset = false;
+            plan.IsZReferenceTrusted = false;
             plan.AllowedActions.Add(CncRecoveryAction.ResetWorkOffset);
             plan.PreferRestartOverResume = true;
             plan.BlockedActions.Add(CncRecoveryAction.ResumeJob);
@@ -165,6 +169,7 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
                 plan.AllowedActions.Add(CncRecoveryAction.RestartJob);
             plan.ResumeAllowed = true;
             plan.CanTrustWorkOffset = true;
+            plan.IsZReferenceTrusted = status.HasValidZReference;
             return plan;
         }
 
@@ -190,6 +195,7 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
             plan.ResumeAllowed = false;
             plan.PreferRestartOverResume = true;
             plan.CanTrustWorkOffset = status.HasValidReference;
+            plan.IsZReferenceTrusted = status.HasValidZReference;
             plan.RequiresRehome = !status.HasValidReference;
             plan.BlockedActions.Add(CncRecoveryAction.ResumeJob);
             plan.ResumeBlockedReason = "Safe resume from the last line is not available yet. Restart is safer.";

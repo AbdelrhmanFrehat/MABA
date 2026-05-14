@@ -87,6 +87,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             IsAlarmed = _controllerService.DeviceStatus.IsAlarmed || _controllerService.MachineState is CncMachineState.Alarm or CncMachineState.Error,
             IsHomed = _controllerService.IsHomed,
             HasValidReference = _controllerService.HasValidMachineReference,
+            HasValidZReference = _controllerService.ReferenceState.ZReferenceValid,
             IsBusy = runtimeState is CncRuntimeState.Connecting or CncRuntimeState.Booting or CncRuntimeState.Homing or CncRuntimeState.Jogging or CncRuntimeState.Framing or CncRuntimeState.Running or CncRuntimeState.FeedHold or CncRuntimeState.Paused or CncRuntimeState.Stopping or CncRuntimeState.Recovering,
             MachineX = _controllerService.MachineX,
             MachineY = _controllerService.MachineY,
