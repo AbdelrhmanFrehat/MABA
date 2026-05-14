@@ -22,7 +22,8 @@ function Get-ProjectVersion {
 function Find-InnoCompiler {
     $candidates = @(
         "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-        "C:\Program Files\Inno Setup 6\ISCC.exe"
+        "C:\Program Files\Inno Setup 6\ISCC.exe",
+        (Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe")
     )
 
     foreach ($candidate in $candidates) {
@@ -69,4 +70,3 @@ else {
 }
 
 $result | ConvertTo-Json
-

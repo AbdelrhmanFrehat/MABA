@@ -233,6 +233,7 @@ app.UseCors("AllowAll");
 var mimeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
 mimeProvider.Mappings[".zip"] = "application/zip";
 mimeProvider.Mappings[".json"] = "application/json";
+mimeProvider.Mappings[".exe"] = "application/octet-stream";
 app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = mimeProvider });
 app.UseRouting();
 app.UseRateLimiter();

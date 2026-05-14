@@ -147,6 +147,73 @@ interface AppRuntimeMetadataDto {
             <p-button label="Add Entry" icon="pi pi-plus" size="small" (click)="openRuntimeDialog(null)" />
         </div>
 
+        <div class="section-head">
+            <span class="section-title"><i class="pi pi-download"></i> Windows Installer Downloads</span>
+        </div>
+        <div class="channels-grid">
+            @for (ch of installerChannels(); track ch.channel) {
+                <div class="channel-card installer-card">
+                    <div class="ch-head">
+                        <span class="ch-name">{{ ch.channel | titlecase }} Installer</span>
+                        <p-tag *ngIf="ch.latestManifest" [value]="'v' + ch.latestManifest.version" severity="info" />
+                        <p-tag *ngIf="!ch.latestManifest" value="No installer" severity="secondary" />
+                    </div>
+
+                    @if (ch.latestManifest) {
+                        <div class="ch-info">
+                            <div class="ch-row"><span class="ch-lbl">Installer Version</span><code class="ch-code">{{ ch.latestManifest.version }}</code></div>
+                            <div class="ch-row"><span class="ch-lbl">Installer File</span><code class="ch-code">{{ ch.latestManifest.packageUri }}</code></div>
+                            <div class="ch-row"><span class="ch-lbl">Published</span><span class="ch-val">{{ ch.latestManifest.publishedAt | date:'medium' }}</span></div>
+                            <div class="ch-row"><span class="ch-lbl">Notes</span><span class="ch-val notes-text">{{ ch.latestManifest.notes }}</span></div>
+                        </div>
+
+                        <div class="installer-actions">
+                            <a class="dl-btn" [href]="buildPackageUrl(ch)" target="_blank" rel="noopener noreferrer">
+                                <i class="pi pi-download"></i>
+                                <span>Download Installer</span>
+                            </a>
+                            <button class="secondary-link-btn" (click)="copy(buildPackageUrl(ch))">
+                                <i class="pi pi-copy"></i>
+                                <span>Copy Download URL</span>
+                            </button>
+                        </div>
+
+                        <div class="ch-urls">
+                            <div class="url-row">
+                                <span class="url-lbl">Manifest URL</span>
+                                <div class="url-val-row">
+                                    <code class="url-val">{{ ch.manifestUrl }}</code>
+                                    <button class="copy-btn" (click)="copy(ch.manifestUrl)" title="Copy"><i class="pi pi-copy"></i></button>
+                                </div>
+                            </div>
+                            <div class="url-row">
+                                <span class="url-lbl">Installer URL</span>
+                                <div class="url-val-row">
+                                    <code class="url-val">{{ buildPackageUrl(ch) }}</code>
+                                    <button class="copy-btn" (click)="copy(buildPackageUrl(ch))" title="Copy"><i class="pi pi-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (ch.packages.length > 0) {
+                        <div class="packages-section">
+                            <span class="pkg-title">Hosted installers ({{ ch.packages.length }})</span>
+                            @for (pkg of ch.packages; track pkg) {
+                                <div class="pkg-row">
+                                    <i class="pi pi-desktop"></i>
+                                    <a class="pkg-link" [href]="buildDirectPackageUrl(ch.manifestUrl, pkg)" target="_blank" rel="noopener noreferrer">{{ pkg }}</a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @if (installerChannels().length === 0 && !loading()) {
+                <div class="empty-state"><i class="pi pi-download"></i><p>No installer releases yet. Publish an installer to make direct downloads available here.</p></div>
+            }
+        </div>
+
         <div class="runtime-table">
             <div class="rt-head">
                 <div class="rt-c ch">Channel</div>
@@ -318,6 +385,13 @@ interface AppRuntimeMetadataDto {
         .notes-text { white-space: pre-wrap; line-height: 1.5; }
         .ch-code { font-family: monospace; font-size: 0.82rem; color: #4338ca; background: #f0f2ff; padding: 0.1rem 0.3rem; border-radius: 3px; }
         .ch-urls { background: #f8f9ff; border-radius: 8px; padding: 0.65rem 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .installer-card { border-color: #dbeafe; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); }
+        .installer-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 0.5rem 0 0.85rem; }
+        .dl-btn, .secondary-link-btn { display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 8px; padding: 0.55rem 0.85rem; font-size: 0.84rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .dl-btn { background: linear-gradient(135deg, #4338ca, #6366f1); color: #fff; border: none; }
+        .dl-btn:hover { opacity: 0.95; }
+        .secondary-link-btn { background: #fff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .secondary-link-btn:hover { background: #eef2ff; }
         .url-row { display: flex; flex-direction: column; gap: 0.2rem; }
         .url-lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; }
         .url-val-row { display: flex; align-items: center; gap: 0.4rem; }
@@ -328,6 +402,8 @@ interface AppRuntimeMetadataDto {
         .pkg-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; display: block; margin-bottom: 0.35rem; }
         .pkg-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; font-size: 0.82rem; color: #374151; }
         .pkg-name { flex: 1; font-family: monospace; font-size: 0.78rem; }
+        .pkg-link { flex: 1; font-family: monospace; font-size: 0.78rem; color: #4338ca; text-decoration: none; }
+        .pkg-link:hover { text-decoration: underline; }
         .pkg-del-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.2rem; border-radius: 4px; opacity: 0.6; }
         .pkg-del-btn:hover { opacity: 1; background: #fee2e2; }
 
@@ -391,6 +467,7 @@ export class DesktopUpdatesComponent implements OnInit {
     private readonly base = `${environment.apiUrl}/desktop-updates`;
 
     channels = signal<ChannelInfo[]>([]);
+    installerChannels = signal<ChannelInfo[]>([]);
     runtimeMetadata = signal<AppRuntimeMetadataDto[]>([]);
     currentRuntime = signal<AppRuntimeMetadataDto | null>(null);
     loading = signal(false);
@@ -411,6 +488,10 @@ export class DesktopUpdatesComponent implements OnInit {
         this.http.get<ChannelInfo[]>(`${this.base}/channels`).subscribe({
             next: c => { this.channels.set(c); this.loading.set(false); },
             error: () => this.loading.set(false)
+        });
+        this.http.get<ChannelInfo[]>(`${this.base}/installer-channels`).subscribe({
+            next: c => this.installerChannels.set(c),
+            error: () => this.installerChannels.set([])
         });
         this.http.get<AppRuntimeMetadataDto[]>(`${this.base}/runtime-metadata`).subscribe({
             next: r => {
@@ -516,6 +597,14 @@ export class DesktopUpdatesComponent implements OnInit {
         navigator.clipboard.writeText(url).then(() =>
             this.msg.add({ severity: 'info', summary: 'Copied', detail: 'URL copied to clipboard.', life: 2000 })
         );
+    }
+
+    buildPackageUrl(ch: ChannelInfo): string {
+        return ch.latestManifest ? this.buildDirectPackageUrl(ch.manifestUrl, ch.latestManifest.packageUri) : ch.manifestUrl;
+    }
+
+    buildDirectPackageUrl(manifestUrl: string, packageName: string): string {
+        return manifestUrl.replace('manifest.json', packageName);
     }
 
     formatSize(bytes: number): string {

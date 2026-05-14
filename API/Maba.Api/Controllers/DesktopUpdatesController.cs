@@ -65,9 +65,12 @@ public class UpsertRuntimeMetadataRequest
 /// Public endpoints (no auth):
 ///   GET /desktop-updates/{channel}/manifest.json  → served as static file by UseStaticFiles
 ///   GET /desktop-updates/{channel}/{filename}      → served as static file by UseStaticFiles
+///   GET /desktop-installers/{channel}/manifest.json → served as static file by UseStaticFiles
+///   GET /desktop-installers/{channel}/{filename}    → served as static file by UseStaticFiles
 ///
 /// Admin endpoints:
 ///   POST /api/v1/desktop-updates/publish           → upload new zip + update manifest
+///   POST /api/v1/desktop-updates/publish-installer → upload new installer + update manifest
 ///   GET  /api/v1/desktop-updates/channels          → list available channels + current versions
 /// </summary>
 [ApiController]
@@ -161,15 +164,67 @@ public class DesktopUpdatesController : ControllerBase
         return Ok(manifest);
     }
 
+    [HttpPost("publish-installer")]
+    [Authorize(Roles = "Admin,Manager")]
+    [Consumes("multipart/form-data")]
+    [DisableRequestSizeLimit]
+    [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue, ValueLengthLimit = int.MaxValue)]
+    public async Task<ActionResult<DesktopUpdateManifest>> PublishInstaller(
+        IFormFile file,
+        [FromForm] string version,
+        [FromForm] string? notes,
+        [FromForm] string channel = "stable",
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file provided." });
+
+        if (!file.FileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Only .exe installer packages are supported." });
+
+        if (string.IsNullOrWhiteSpace(version))
+            return BadRequest(new { message = "Version is required (e.g. 0.1.20)." });
+
+        version = version.Trim().TrimStart('v');
+        channel = (channel?.Trim().ToLowerInvariant()) switch { "beta" => "beta", _ => "stable" };
+
+        var manifest = new DesktopUpdateManifest
+        {
+            Version = version,
+            PackageUri = Path.GetFileName(file.FileName.Trim()),
+            Notes = string.IsNullOrWhiteSpace(notes) ? $"Installer release {version}" : notes.Trim(),
+            PublishedAt = DateTime.UtcNow
+        };
+
+        await SaveReleaseArtifactAsync("desktop-installers", channel, file, manifest, cancellationToken);
+
+        _logger.LogInformation("Desktop installer published: channel={Channel} v={Version} file={File}",
+            channel, version, manifest.PackageUri);
+
+        return Ok(manifest);
+    }
+
     // ── Admin: list channels ──────────────────────────────────────────────────
 
     [HttpGet("channels")]
     [Authorize(Roles = "Admin,Manager")]
     public ActionResult<List<DesktopChannelInfo>> GetChannels()
     {
-        var baseDir = Path.Combine(_env.WebRootPath, "desktop-updates");
+        return Ok(GetChannelsFromRoot("desktop-updates"));
+    }
+
+    [HttpGet("installer-channels")]
+    [Authorize(Roles = "Admin,Manager")]
+    public ActionResult<List<DesktopChannelInfo>> GetInstallerChannels()
+    {
+        return Ok(GetChannelsFromRoot("desktop-installers"));
+    }
+
+    private List<DesktopChannelInfo> GetChannelsFromRoot(string rootFolderName)
+    {
+        var baseDir = Path.Combine(_env.WebRootPath, rootFolderName);
         if (!Directory.Exists(baseDir))
-            return Ok(new List<DesktopChannelInfo>());
+            return new List<DesktopChannelInfo>();
 
         var request = HttpContext.Request;
         var baseUrl = $"{request.Scheme}://{request.Host}";
@@ -191,7 +246,8 @@ public class DesktopUpdatesController : ControllerBase
                 catch { /* ignore malformed manifest */ }
             }
 
-            var packages = Directory.GetFiles(channelDir, "*.zip")
+            var pattern = rootFolderName == "desktop-installers" ? "*.exe" : "*.zip";
+            var packages = Directory.GetFiles(channelDir, pattern)
                 .Select(Path.GetFileName)
                 .Where(f => f != null)
                 .Cast<string>()
@@ -202,12 +258,12 @@ public class DesktopUpdatesController : ControllerBase
             {
                 Channel = channelName,
                 LatestManifest = manifest,
-                ManifestUrl = $"{baseUrl}/desktop-updates/{channelName}/manifest.json",
+                ManifestUrl = $"{baseUrl}/{rootFolderName}/{channelName}/manifest.json",
                 Packages = packages
             });
         }
 
-        return Ok(result);
+        return result;
     }
 
     // ── Admin: delete a specific package ─────────────────────────────────────
@@ -229,6 +285,60 @@ public class DesktopUpdatesController : ControllerBase
         System.IO.File.Delete(filePath);
         _logger.LogInformation("Desktop package deleted: {Channel}/{File}", channel, fileName);
         return NoContent();
+    }
+
+    [HttpDelete("installer-channels/{channel}/packages/{fileName}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public IActionResult DeleteInstallerPackage(string channel, string fileName)
+    {
+        channel = channel.Trim().ToLowerInvariant();
+        fileName = Path.GetFileName(fileName.Trim());
+
+        if (!fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Only .exe files can be deleted." });
+
+        var filePath = Path.Combine(_env.WebRootPath, "desktop-installers", channel, fileName);
+        if (!System.IO.File.Exists(filePath))
+            return NotFound();
+
+        System.IO.File.Delete(filePath);
+        _logger.LogInformation("Desktop installer deleted: {Channel}/{File}", channel, fileName);
+        return NoContent();
+    }
+
+    private async Task SaveReleaseArtifactAsync(
+        string rootFolderName,
+        string channel,
+        IFormFile file,
+        DesktopUpdateManifest manifest,
+        CancellationToken cancellationToken)
+    {
+        var channelDir = Path.Combine(_env.WebRootPath, rootFolderName, channel);
+        Directory.CreateDirectory(channelDir);
+
+        var finalPath = Path.Combine(channelDir, manifest.PackageUri);
+        var tmpArtifact = finalPath + ".uploading";
+        try
+        {
+            await using (var fs = new FileStream(tmpArtifact, FileMode.Create, FileAccess.Write,
+                       FileShare.None, bufferSize: 65536, useAsync: true))
+            {
+                await file.CopyToAsync(fs, cancellationToken);
+            }
+
+            System.IO.File.Move(tmpArtifact, finalPath, overwrite: true);
+        }
+        catch
+        {
+            if (System.IO.File.Exists(tmpArtifact))
+                System.IO.File.Delete(tmpArtifact);
+            throw;
+        }
+
+        var manifestPath = Path.Combine(channelDir, "manifest.json");
+        var tmpManifest = manifestPath + ".tmp";
+        await System.IO.File.WriteAllTextAsync(tmpManifest, JsonSerializer.Serialize(manifest, _json), cancellationToken);
+        System.IO.File.Move(tmpManifest, manifestPath, overwrite: true);
     }
 
     // ── Runtime metadata: CRUD ────────────────────────────────────────────────
