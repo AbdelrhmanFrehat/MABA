@@ -4,7 +4,9 @@ param(
     [string]$Configuration = "Release",
     [string]$Version = "",
     [string]$InstallerScriptPath = "C:\Users\PC\Desktop\maba\installer\MabaControlCenter.iss",
-    [string]$InstallerArtifactsDirectory = "C:\Users\PC\Desktop\maba\artifacts\desktop-installer\stable"
+    [string]$InstallerArtifactsDirectory = "C:\Users\PC\Desktop\maba\artifacts\desktop-installer\stable",
+    [switch]$SignArtifacts,
+    [string]$SignScriptPath = "C:\Users\PC\Desktop\maba\scripts\sign-maba-release.ps1"
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,6 +55,7 @@ $result = [ordered]@{
     installerOutputDirectory = $InstallerArtifactsDirectory
     installerCompilerFound = [bool]$innoCompiler
     installerPath = $null
+    signed = $false
     note = $null
 }
 
@@ -67,6 +70,24 @@ if ($innoCompiler) {
 }
 else {
     $result.note = "Inno Setup compiler was not found on this machine. Publish output is ready; install Inno Setup 6 to build the installer executable."
+}
+
+if ($SignArtifacts) {
+    if (-not (Test-Path $SignScriptPath)) {
+        throw "Signing script not found at $SignScriptPath"
+    }
+
+    $filesToSign = @(
+        (Join-Path $publishDirectory "MabaControlCenter.exe"),
+        (Join-Path $publishDirectory "Updater\MabaUpdater.exe")
+    )
+
+    if ($result.installerPath) {
+        $filesToSign += $result.installerPath
+    }
+
+    powershell -ExecutionPolicy Bypass -File $SignScriptPath -Files $filesToSign
+    $result.signed = $true
 }
 
 $result | ConvertTo-Json

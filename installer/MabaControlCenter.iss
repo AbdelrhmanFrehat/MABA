@@ -1,5 +1,8 @@
 #define MyAppName "Maba Control Center"
 #define MyAppPublisher "MABA"
+#define MyAppPublisherUrl "https://mabasol.com"
+#define MyAppSupportUrl "https://mabasol.com"
+#define MyAppUpdatesUrl "https://api.mabasol.com/desktop-updates/stable/manifest.json"
 #define MyAppExeName "MabaControlCenter.exe"
 #define MyAppAssocName MyAppName + " Desktop App"
 #define MyAppId "{{8D225A92-59B6-4627-A099-9A0C5F0E8D69}}"
@@ -22,6 +25,14 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppPublisherUrl}
+AppSupportURL={#MyAppSupportUrl}
+AppUpdatesURL={#MyAppUpdatesUrl}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoDescription={#MyAppName} Installer
+VersionInfoTextVersion={#MyAppVersion}
 DefaultDirName={localappdata}\Programs\Maba Control Center
 DefaultGroupName=Maba Control Center
 AllowNoIcons=yes
@@ -41,6 +52,7 @@ CloseApplications=yes
 CloseApplicationsFilter={#MyAppExeName}
 RestartApplications=yes
 UsedUserAreasWarning=no
+SetupLogging=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
