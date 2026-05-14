@@ -393,130 +393,104 @@ public class CncMachineViewportControl : FrameworkElement
 
         EnsureAnimationInitialized();
 
-        var frame = new Rect(14, 14, Math.Max(0, ActualWidth - 28), Math.Max(0, ActualHeight - 28));
-        if (frame.Width <= 0 || frame.Height <= 0)
-            return;
-
-        var worldWidth = Math.Max(1d, MachineMaxX - MachineMinX);
-        var worldHeight = Math.Max(1d, MachineMaxY - MachineMinY);
-        var worldDepth = Math.Max(1d, MachineMaxZ - MachineMinZ);
-
-        var surfaceWidth = frame.Width * 0.68;
-        var surfaceHeight = frame.Height * 0.50;
-        var skew = Math.Min(frame.Width, frame.Height) * 0.14;
-        var topLeft = new Point(frame.Left + 70, frame.Top + 56);
-        var topRight = new Point(topLeft.X + surfaceWidth, topLeft.Y);
-        var bottomLeft = new Point(topLeft.X - skew, topLeft.Y + surfaceHeight);
-        var bottomRight = new Point(topRight.X - skew, topRight.Y + surfaceHeight);
-        var thickness = Math.Max(16, frame.Height * 0.05);
-
-        var sideRightBottom = new Point(bottomRight.X, bottomRight.Y + thickness);
-        var sideLeftBottom = new Point(bottomLeft.X, bottomLeft.Y + thickness);
-        var frontLeftBottom = new Point(bottomLeft.X, bottomLeft.Y + thickness);
-        var frontRightBottom = new Point(bottomRight.X, bottomRight.Y + thickness);
-
-        DrawBed(dc, topLeft, topRight, bottomLeft, bottomRight, frontLeftBottom, frontRightBottom, sideRightBottom);
-        DrawGrid(dc, worldWidth, worldHeight, topLeft, topRight, bottomLeft);
-
+        var frame = new Rect(12, 12, Math.Max(0, ActualWidth - 24), Math.Max(0, ActualHeight - 24));
+        var transform = new CncViewportTransform(frame, MachineMinX, MachineMaxX, MachineMinY, MachineMaxY);
         var motions = (Motions ?? Enumerable.Empty<GcodeMotionCommand>()).Where(m => m.IsExecutable).ToList();
-        DrawPaths(dc, motions, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft);
-        DrawFrameOverlay(dc, worldWidth, worldHeight, topLeft, topRight, bottomLeft);
-        DrawWorkZero(dc, worldWidth, worldHeight, topLeft, topRight, bottomLeft);
-        DrawGantry(dc, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft);
-        DrawOverlays(dc, frame, worldWidth, worldHeight);
+
+        DrawViewportChrome(dc, transform);
+        DrawPaths(dc, transform, motions);
+        DrawFrameOverlay(dc, transform);
+        DrawWorkZero(dc, transform);
+        DrawToolMarker(dc, transform);
+        DrawOverlayText(dc, transform, motions.Count);
     }
 
-    private void DrawBed(
-        DrawingContext dc,
-        Point topLeft,
-        Point topRight,
-        Point bottomLeft,
-        Point bottomRight,
-        Point frontLeftBottom,
-        Point frontRightBottom,
-        Point sideRightBottom)
+    private void DrawViewportChrome(DrawingContext dc, CncViewportTransform transform)
     {
-        var topSurface = new StreamGeometry();
-        using (var ctx = topSurface.Open())
-        {
-            ctx.BeginFigure(topLeft, true, true);
-            ctx.LineTo(topRight, true, false);
-            ctx.LineTo(bottomRight, true, false);
-            ctx.LineTo(bottomLeft, true, false);
-        }
-        topSurface.Freeze();
+        var bedFill = new SolidColorBrush(WithAlpha(ThemeColor("BackgroundMedium", Color.FromRgb(0x0D, 0x15, 0x20)), 0xC8));
+        var bedPen = new Pen(new SolidColorBrush(ThemeColor("BorderColor", Color.FromRgb(0x51, 0x63, 0x78))), 1.1);
+        dc.DrawRectangle(bedFill, bedPen, transform.BedRect);
 
-        var frontFace = new StreamGeometry();
-        using (var ctx = frontFace.Open())
-        {
-            ctx.BeginFigure(bottomLeft, true, true);
-            ctx.LineTo(bottomRight, true, false);
-            ctx.LineTo(frontRightBottom, true, false);
-            ctx.LineTo(frontLeftBottom, true, false);
-        }
-        frontFace.Freeze();
+        DrawGridAndRulers(dc, transform);
+        DrawOriginAndAxes(dc, transform);
 
-        var sideFace = new StreamGeometry();
-        using (var ctx = sideFace.Open())
-        {
-            ctx.BeginFigure(topRight, true, true);
-            ctx.LineTo(bottomRight, true, false);
-            ctx.LineTo(sideRightBottom, true, false);
-            ctx.LineTo(new Point(topRight.X, topRight.Y + (sideRightBottom.Y - bottomRight.Y)), true, false);
-        }
-        sideFace.Freeze();
-
-        var backgroundLight = ThemeColor("BackgroundLight", Color.FromRgb(0x2A, 0x35, 0x46));
-        var backgroundMedium = ThemeColor("BackgroundMedium", Color.FromRgb(0x1C, 0x25, 0x33));
-        var backgroundDark = ThemeColor("BackgroundDark", Color.FromRgb(0x11, 0x18, 0x24));
-        var border = ThemeColor("BorderColor", Color.FromRgb(0x65, 0x74, 0x84));
-        var framePen = new Pen(new SolidColorBrush(border), 1.2);
-        dc.DrawGeometry(new LinearGradientBrush(backgroundLight, backgroundMedium, 75), framePen, topSurface);
-        dc.DrawGeometry(new SolidColorBrush(WithAlpha(backgroundMedium, 0xEE)), null, frontFace);
-        dc.DrawGeometry(new SolidColorBrush(WithAlpha(backgroundDark, 0xEE)), null, sideFace);
-
-        dc.DrawLine(new Pen(new SolidColorBrush(WithAlpha(ThemeColor("TextPrimary", Color.FromRgb(0xF8, 0xFA, 0xFC)), 0x40)), 2), topLeft, topRight);
-        dc.DrawLine(new Pen(new SolidColorBrush(WithAlpha(ThemeColor("TextPrimary", Color.FromRgb(0xF8, 0xFA, 0xFC)), 0x28)), 1), topLeft, bottomLeft);
+        DrawLabel(
+            dc,
+            $"Workspace: {transform.WorkspaceWidthMm:0.#} x {transform.WorkspaceHeightMm:0.#} mm",
+            new Point(transform.BedRect.Left, transform.BedRect.Top - 20),
+            ThemeColor("TextPrimary", Color.FromRgb(0xE2, 0xE8, 0xF0)),
+            11.5,
+            FontWeights.SemiBold);
     }
 
-    private void DrawGrid(DrawingContext dc, double worldWidth, double worldHeight, Point topLeft, Point topRight, Point bottomLeft)
+    private void DrawGridAndRulers(DrawingContext dc, CncViewportTransform transform)
     {
-        var gridPen = new Pen(new SolidColorBrush(WithAlpha(ThemeColor("BorderColor", Color.FromRgb(0x94, 0xA3, 0xB8)), 0x80)), 0.8);
+        var minorSpacing = transform.GetMinorSpacingMm();
+        var majorSpacing = transform.GetMajorSpacingMm();
+        var minorPen = new Pen(new SolidColorBrush(WithAlpha(ThemeColor("BorderColor", Color.FromRgb(0xBD, 0xC8, 0xD4)), 0x2E)), 0.6);
+        var majorPen = new Pen(new SolidColorBrush(WithAlpha(ThemeColor("BorderColor", Color.FromRgb(0xBD, 0xC8, 0xD4)), 0x66)), 0.95);
 
-        for (var i = 1; i < 8; i++)
+        if (minorSpacing > 0d)
         {
-            var ratio = i / 8d;
-            var xStart = Lerp(ProjectNormalized(topLeft, topRight, bottomLeft, 0, 0), ProjectNormalized(topLeft, topRight, bottomLeft, 1, 0), ratio);
-            var xEnd = Lerp(ProjectNormalized(topLeft, topRight, bottomLeft, 0, 1), ProjectNormalized(topLeft, topRight, bottomLeft, 1, 1), ratio);
-            dc.DrawLine(gridPen, xStart, xEnd);
+            for (var x = transform.MinX + minorSpacing; x < transform.MaxX; x += minorSpacing)
+            {
+                var p = transform.Map(x, transform.MinY);
+                dc.DrawLine(minorPen, new Point(p.X, transform.BedRect.Top), new Point(p.X, transform.BedRect.Bottom));
+            }
+
+            for (var y = transform.MinY + minorSpacing; y < transform.MaxY; y += minorSpacing)
+            {
+                var p = transform.Map(transform.MinX, y);
+                dc.DrawLine(minorPen, new Point(transform.BedRect.Left, p.Y), new Point(transform.BedRect.Right, p.Y));
+            }
         }
 
-        for (var i = 1; i < 7; i++)
+        var firstMajorX = Math.Ceiling(transform.MinX / majorSpacing) * majorSpacing;
+        for (var x = firstMajorX; x <= transform.MaxX + 0.001d; x += majorSpacing)
         {
-            var ratio = i / 7d;
-            var yStart = Lerp(ProjectNormalized(topLeft, topRight, bottomLeft, 0, 0), ProjectNormalized(topLeft, topRight, bottomLeft, 0, 1), ratio);
-            var yEnd = Lerp(ProjectNormalized(topLeft, topRight, bottomLeft, 1, 0), ProjectNormalized(topLeft, topRight, bottomLeft, 1, 1), ratio);
-            dc.DrawLine(gridPen, yStart, yEnd);
+            var p = transform.Map(x, transform.MinY);
+            dc.DrawLine(majorPen, new Point(p.X, transform.BedRect.Top), new Point(p.X, transform.BedRect.Bottom));
+            DrawLabel(dc, $"{x:0}", new Point(p.X - 10, transform.BedRect.Bottom + 6), ThemeColor("TextSecondary", Color.FromRgb(0x94, 0xA3, 0xB8)), 10.5, FontWeights.Medium);
+        }
+
+        var firstMajorY = Math.Ceiling(transform.MinY / majorSpacing) * majorSpacing;
+        for (var y = firstMajorY; y <= transform.MaxY + 0.001d; y += majorSpacing)
+        {
+            var p = transform.Map(transform.MinX, y);
+            dc.DrawLine(majorPen, new Point(transform.BedRect.Left, p.Y), new Point(transform.BedRect.Right, p.Y));
+            DrawLabel(dc, $"{y:0}", new Point(transform.BedRect.Left - 34, p.Y - 7), ThemeColor("TextSecondary", Color.FromRgb(0x94, 0xA3, 0xB8)), 10.5, FontWeights.Medium);
         }
     }
 
-    private void DrawPaths(
-        DrawingContext dc,
-        IReadOnlyList<GcodeMotionCommand> motions,
-        double worldWidth,
-        double worldHeight,
-        double worldDepth,
-        Point topLeft,
-        Point topRight,
-        Point bottomLeft)
+    private void DrawOriginAndAxes(DrawingContext dc, CncViewportTransform transform)
+    {
+        var origin = transform.Map(transform.MinX, transform.MinY);
+        var originPen = new Pen(new SolidColorBrush(Color.FromRgb(0xFB, 0x71, 0x71)), 1.5);
+        dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x40, 0xFB, 0x71, 0x71)), originPen, origin, 5.5, 5.5);
+        dc.DrawLine(originPen, new Point(origin.X - 8, origin.Y), new Point(origin.X + 8, origin.Y));
+        dc.DrawLine(originPen, new Point(origin.X, origin.Y - 8), new Point(origin.X, origin.Y + 8));
+
+        var xArrowEnd = new Point(Math.Min(transform.BedRect.Right, origin.X + 36), origin.Y);
+        var yArrowEnd = new Point(origin.X, Math.Max(transform.BedRect.Top, origin.Y - 36));
+        var axisPen = new Pen(new SolidColorBrush(Color.FromRgb(0x93, 0xC5, 0xFD)), 1.4);
+        dc.DrawLine(axisPen, origin, xArrowEnd);
+        dc.DrawLine(axisPen, origin, yArrowEnd);
+        DrawArrowHead(dc, axisPen, xArrowEnd, new Vector(1, 0));
+        DrawArrowHead(dc, axisPen, yArrowEnd, new Vector(0, -1));
+        DrawLabel(dc, "X", new Point(xArrowEnd.X + 6, xArrowEnd.Y - 10), Color.FromRgb(0x93, 0xC5, 0xFD), 10.5, FontWeights.SemiBold);
+        DrawLabel(dc, "Y", new Point(yArrowEnd.X + 6, yArrowEnd.Y - 10), Color.FromRgb(0x93, 0xC5, 0xFD), 10.5, FontWeights.SemiBold);
+    }
+
+    private void DrawPaths(DrawingContext dc, CncViewportTransform transform, IReadOnlyList<GcodeMotionCommand> motions)
     {
         if (motions.Count == 0)
             return;
 
-        var completedPen = new Pen(new SolidColorBrush(Color.FromRgb(0x34, 0xD3, 0x99)), 2.1);
-        var remainingPen = new Pen(new SolidColorBrush(Color.FromRgb(0x60, 0x7D, 0xF9)), 1.4);
-        var currentPen = new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)), 3.0);
-        var shadowPen = new Pen(new SolidColorBrush(Color.FromArgb(0x35, 0x00, 0x00, 0x00)), 3.6);
+        var completedCutPen = new Pen(new SolidColorBrush(Color.FromRgb(0x94, 0xFF, 0xC8)), 2.4) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+        var completedRapidPen = new Pen(new SolidColorBrush(Color.FromRgb(0xFF, 0xAA, 0xAA)), 1.4) { DashStyle = DashStyles.Dash, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+        var remainingCutPen = new Pen(new SolidColorBrush(Color.FromArgb(0x77, 0x35, 0xC0, 0x86)), 1.45) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+        var remainingRapidPen = new Pen(new SolidColorBrush(Color.FromArgb(0x99, 0xE2, 0x6C, 0x6C)), 0.9) { DashStyle = DashStyles.Dot, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+        var currentPen = new Pen(new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x49)), 2.8) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
 
         var activeIndex = UsePreviewPlayback
             ? PreviewCurrentSegmentIndex
@@ -524,141 +498,117 @@ public class CncMachineViewportControl : FrameworkElement
                 ? -1
                 : CurrentMotionIndex;
 
-        var activeProgress = UsePreviewPlayback ? PreviewSegmentProgress : 0d;
+        var progress = UsePreviewPlayback ? PreviewSegmentProgress : 1d;
 
         for (var i = 0; i < motions.Count; i++)
         {
             var motion = motions[i];
-            var pen = ExecutionState == CncExecutionState.Completed || i < activeIndex
-                ? completedPen
-                : i == activeIndex
-                    ? currentPen
-                    : remainingPen;
 
-            DrawMotion(dc, motion, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft, shadowPen, 1.5);
-            DrawMotion(dc, motion, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft, pen, 0d);
-
-            if (i == activeIndex)
+            Pen pen;
+            if (activeIndex >= 0 && i < activeIndex)
             {
-                var activeToolPoint = GcodeMotionGeometry.GetPointAtProgress(motion, UsePreviewPlayback ? PreviewSegmentProgress : 1d);
-                var end = ProjectMotion(
-                    topLeft,
-                    topRight,
-                    bottomLeft,
-                    worldWidth,
-                    worldHeight,
-                    worldDepth,
-                    (double)activeToolPoint.X + WorkOffsetX,
-                    (double)activeToolPoint.Y + WorkOffsetY,
-                    (double)activeToolPoint.Z + WorkOffsetZ);
-                dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x55, 0xF5, 0x9E, 0x0B)), null, end, 7, 7);
-                dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)), new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)), 1.4), end, 4.2, 4.2);
+                pen = motion.IsRapidMove ? completedRapidPen : completedCutPen;
+            }
+            else if (i == activeIndex)
+            {
+                pen = currentPen;
+            }
+            else
+            {
+                pen = motion.IsRapidMove ? remainingRapidPen : remainingCutPen;
+            }
 
-                if (UsePreviewPlayback && activeProgress > 0d && activeProgress < 1d)
-                {
-                    DrawPartialMotion(dc, motion, activeProgress, worldWidth, worldHeight, worldDepth, topLeft, topRight, bottomLeft, currentPen);
-                    dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x55, 0xF5, 0x9E, 0x0B)), null, end, 7, 7);
-                    dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7)), new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)), 1.4), end, 4.2, 4.2);
-                }
+            DrawMotion(dc, motion, transform, pen);
+
+            if (i == activeIndex && progress > 0d && progress < 1d)
+            {
+                DrawPartialMotion(dc, motion, transform, currentPen, progress);
             }
         }
     }
 
-    private void DrawWorkZero(DrawingContext dc, double worldWidth, double worldHeight, Point topLeft, Point topRight, Point bottomLeft)
-    {
-        if (WorkOffsetX < MachineMinX || WorkOffsetX > MachineMaxX || WorkOffsetY < MachineMinY || WorkOffsetY > MachineMaxY)
-            return;
-
-        var originPoint = ProjectMachine(topLeft, topRight, bottomLeft, WorkOffsetX - MachineMinX, WorkOffsetY - MachineMinY);
-        var crossPen = new Pen(new SolidColorBrush(Color.FromRgb(0xFB, 0x71, 0x71)), 1.4);
-        dc.DrawLine(crossPen, new Point(originPoint.X - 7, originPoint.Y), new Point(originPoint.X + 7, originPoint.Y));
-        dc.DrawLine(crossPen, new Point(originPoint.X, originPoint.Y - 7), new Point(originPoint.X, originPoint.Y + 7));
-
-        DrawLabel(dc, "WORK ZERO", new Point(originPoint.X + 10, originPoint.Y - 18), Color.FromRgb(0xFB, 0x71, 0x71), 11, FontWeights.SemiBold);
-    }
-
-    private void DrawFrameOverlay(DrawingContext dc, double worldWidth, double worldHeight, Point topLeft, Point topRight, Point bottomLeft)
+    private void DrawFrameOverlay(DrawingContext dc, CncViewportTransform transform)
     {
         if (!HasFrameBounds || FrameMaxX <= FrameMinX || FrameMaxY <= FrameMinY)
             return;
 
-        var p1 = ProjectMachine(topLeft, topRight, bottomLeft, FrameMinX - MachineMinX, FrameMinY - MachineMinY);
-        var p2 = ProjectMachine(topLeft, topRight, bottomLeft, FrameMaxX - MachineMinX, FrameMinY - MachineMinY);
-        var p3 = ProjectMachine(topLeft, topRight, bottomLeft, FrameMaxX - MachineMinX, FrameMaxY - MachineMinY);
-        var p4 = ProjectMachine(topLeft, topRight, bottomLeft, FrameMinX - MachineMinX, FrameMaxY - MachineMinY);
-
+        var p1 = transform.Map(FrameMinX, FrameMinY);
+        var p2 = transform.Map(FrameMaxX, FrameMinY);
+        var p3 = transform.Map(FrameMaxX, FrameMaxY);
+        var p4 = transform.Map(FrameMinX, FrameMaxY);
         var framePen = new Pen(new SolidColorBrush(Color.FromRgb(0x5B, 0xE0, 0xFF)), 1.8) { DashStyle = DashStyles.Dash };
+
         dc.DrawLine(framePen, p1, p2);
         dc.DrawLine(framePen, p2, p3);
         dc.DrawLine(framePen, p3, p4);
         dc.DrawLine(framePen, p4, p1);
 
-        DrawLabel(dc, "FRAME", new Point(p1.X + 10, p1.Y - 18), Color.FromRgb(0x5B, 0xE0, 0xFF), 11, FontWeights.SemiBold);
+        DrawLabel(dc, "FRAME", new Point(p1.X + 8, p1.Y - 18), Color.FromRgb(0x5B, 0xE0, 0xFF), 11, FontWeights.SemiBold);
 
         if (!IsFramePreviewActive)
             return;
 
-        var frameTool = ProjectMachine(topLeft, topRight, bottomLeft, (PreviewToolX + WorkOffsetX) - MachineMinX, (PreviewToolY + WorkOffsetY) - MachineMinY);
+        var frameTool = transform.Map(PreviewToolX + WorkOffsetX, PreviewToolY + WorkOffsetY);
         var toolPen = new Pen(new SolidColorBrush(Color.FromRgb(0x5B, 0xE0, 0xFF)), 1.4);
         dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x40, 0x5B, 0xE0, 0xFF)), toolPen, frameTool, 6, 6);
         dc.DrawLine(toolPen, new Point(frameTool.X - 7, frameTool.Y), new Point(frameTool.X + 7, frameTool.Y));
         dc.DrawLine(toolPen, new Point(frameTool.X, frameTool.Y - 7), new Point(frameTool.X, frameTool.Y + 7));
     }
 
-    private void DrawGantry(DrawingContext dc, double worldWidth, double worldHeight, double worldDepth, Point topLeft, Point topRight, Point bottomLeft)
+    private void DrawWorkZero(DrawingContext dc, CncViewportTransform transform)
     {
-        var clampedX = Clamp(_animatedX, MachineMinX, MachineMaxX);
-        var clampedY = Clamp(_animatedY, MachineMinY, MachineMaxY);
-        var clampedZ = Clamp(_animatedZ, MachineMinZ, MachineMaxZ);
+        if (WorkOffsetX < MachineMinX || WorkOffsetX > MachineMaxX || WorkOffsetY < MachineMinY || WorkOffsetY > MachineMaxY)
+            return;
 
-        var localX = clampedX - MachineMinX;
-        var localY = clampedY - MachineMinY;
-
-        var leftBase = ProjectMachine(topLeft, topRight, bottomLeft, 0, localY);
-        var rightBase = ProjectMachine(topLeft, topRight, bottomLeft, worldWidth, localY);
-        var gantryLift = Math.Max(22, ActualHeight * 0.08);
-        var leftTop = new Point(leftBase.X, leftBase.Y - gantryLift);
-        var rightTop = new Point(rightBase.X, rightBase.Y - gantryLift);
-
-        var carriageT = worldWidth <= 0 ? 0 : localX / worldWidth;
-        var carriage = Lerp(leftTop, rightTop, carriageT);
-        var toolTip = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, clampedX, clampedY, clampedZ);
-        var toolColor = GetStateColor();
-
-        var railPen = new Pen(new SolidColorBrush(Color.FromRgb(0xB8, 0xC5, 0xD2)), 3);
-        var gantryPen = new Pen(new SolidColorBrush(Color.FromRgb(0xD4, 0xDE, 0xE8)), 4);
-        var toolPen = new Pen(new SolidColorBrush(toolColor), 2.4);
-
-        dc.DrawLine(railPen, leftBase, leftTop);
-        dc.DrawLine(railPen, rightBase, rightTop);
-        dc.DrawLine(gantryPen, leftTop, rightTop);
-        dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xE5, 0xE7, 0xEB)), new Pen(new SolidColorBrush(Color.FromRgb(0x7C, 0x8A, 0x99)), 1), carriage, 7, 7);
-        dc.DrawLine(toolPen, carriage, toolTip);
-        dc.DrawEllipse(new SolidColorBrush(toolColor), new Pen(new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC)), 1.2), toolTip, 5.5, 5.5);
-        dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x30, toolColor.R, toolColor.G, toolColor.B)), null, toolTip, 10, 10);
+        var originPoint = transform.Map(WorkOffsetX, WorkOffsetY);
+        var crossPen = new Pen(new SolidColorBrush(Color.FromRgb(0xFB, 0x71, 0x71)), 1.4);
+        dc.DrawLine(crossPen, new Point(originPoint.X - 7, originPoint.Y), new Point(originPoint.X + 7, originPoint.Y));
+        dc.DrawLine(crossPen, new Point(originPoint.X, originPoint.Y - 7), new Point(originPoint.X, originPoint.Y + 7));
+        DrawLabel(dc, "WORK ZERO", new Point(originPoint.X + 10, originPoint.Y - 18), Color.FromRgb(0xFB, 0x71, 0x71), 11, FontWeights.SemiBold);
     }
 
-    private void DrawOverlays(DrawingContext dc, Rect frame, double worldWidth, double worldHeight)
+    private void DrawToolMarker(DrawingContext dc, CncViewportTransform transform)
     {
-        var stateText = $"{FormatMachineState(MachineState)} / {FormatExecutionState(ExecutionState)}";
-        var stateColor = GetStateColor();
-        DrawLabel(dc, stateText, new Point(frame.Right - 174, frame.Top + 4), stateColor, 12, FontWeights.SemiBold);
+        var displayX = UsePreviewPlayback ? PreviewToolX + WorkOffsetX : _animatedX;
+        var displayY = UsePreviewPlayback ? PreviewToolY + WorkOffsetY : _animatedY;
+        var point = transform.Map(displayX, displayY);
+        var toolColor = GetStateColor();
+        var toolPen = new Pen(new SolidColorBrush(toolColor), 1.8);
+        dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(0x40, toolColor.R, toolColor.G, toolColor.B)), toolPen, point, 7, 7);
+        dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC)), toolPen, point, 4.5, 4.5);
+        dc.DrawLine(toolPen, new Point(point.X - 8, point.Y), new Point(point.X + 8, point.Y));
+        dc.DrawLine(toolPen, new Point(point.X, point.Y - 8), new Point(point.X, point.Y + 8));
+    }
+
+    private void DrawOverlayText(DrawingContext dc, CncViewportTransform transform, int motionCount)
+    {
+        DrawLabel(
+            dc,
+            $"{FormatMachineState(MachineState)} / {FormatExecutionState(ExecutionState)}",
+            new Point(transform.BedRect.Right - 166, transform.BedRect.Top - 20),
+            GetStateColor(),
+            12,
+            FontWeights.SemiBold);
 
         var displayX = UsePreviewPlayback ? PreviewToolX + WorkOffsetX : _animatedX;
         var displayY = UsePreviewPlayback ? PreviewToolY + WorkOffsetY : _animatedY;
-        DrawLabel(dc, $"Tool: X {displayX:0.##}  Y {displayY:0.##}  Z {_animatedZ:0.##} mm", new Point(frame.Left + 8, frame.Bottom - 28), ThemeColor("TextPrimary", Color.FromRgb(0xE2, 0xE8, 0xF0)), 12, FontWeights.Medium);
-        DrawLabel(dc, $"Envelope: {worldWidth:0.#} x {worldHeight:0.#} mm", new Point(frame.Left + 8, frame.Top + 4), ThemeColor("TextSecondary", Color.FromRgb(0x94, 0xA3, 0xB8)), 11, FontWeights.Medium);
+        DrawLabel(
+            dc,
+            $"Tool: X {displayX:0.###}  Y {displayY:0.###}  Z {_animatedZ:0.###} mm",
+            new Point(transform.BedRect.Left, transform.BedRect.Bottom + 28),
+            ThemeColor("TextPrimary", Color.FromRgb(0xE2, 0xE8, 0xF0)),
+            12,
+            FontWeights.Medium);
 
-        var legendY = frame.Bottom - 52;
-        DrawLegendSwatch(dc, new Point(frame.Right - 238, legendY), Color.FromRgb(0x34, 0xD3, 0x99), "Executed");
-        DrawLegendSwatch(dc, new Point(frame.Right - 156, legendY), Color.FromRgb(0xF5, 0x9E, 0x0B), "Active");
-        DrawLegendSwatch(dc, new Point(frame.Right - 82, legendY), Color.FromRgb(0x60, 0x7D, 0xF9), "Remaining");
-
-        if (MachineState == CncMachineState.Disconnected)
+        if (motionCount == 0)
         {
-            var overlay = new Rect(frame.Left + 20, frame.Top + 32, 150, 28);
-            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x90, 0x7F, 0x1D, 0x1D)), new Pen(new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71)), 1), overlay, 8, 8);
-            DrawLabel(dc, "LIVE CONTROL OFFLINE", new Point(overlay.Left + 10, overlay.Top + 6), Color.FromRgb(0xFE, 0xF2, 0xF2), 11, FontWeights.Bold);
+            DrawLabel(
+                dc,
+                "No job loaded. Bed, grid, origin, and tool position are shown using live machine dimensions.",
+                new Point(transform.BedRect.Left, transform.BedRect.Top + 10),
+                ThemeColor("TextSecondary", Color.FromRgb(0x94, 0xA3, 0xB8)),
+                11,
+                FontWeights.Medium);
         }
     }
 
@@ -711,60 +661,43 @@ public class CncMachineViewportControl : FrameworkElement
 
     private static void OnVisualInputChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not CncMachineViewportControl control)
-            return;
-
-        control.InvalidateVisual();
+        if (d is CncMachineViewportControl control)
+            control.InvalidateVisual();
     }
 
-    private Point ProjectMotion(Point topLeft, Point topRight, Point bottomLeft, double worldWidth, double worldHeight, double worldDepth, double machineX, double machineY, double machineZ)
+    private static void DrawMotion(DrawingContext dc, GcodeMotionCommand motion, CncViewportTransform transform, Pen pen)
     {
-        var localX = machineX - MachineMinX;
-        var localY = machineY - MachineMinY;
-        var localZ = machineZ - MachineMinZ;
-        var basePoint = ProjectMachine(topLeft, topRight, bottomLeft, localX, localY);
-        var zRatio = worldDepth <= 0 ? 0 : (localZ / worldDepth);
-        var verticalLift = zRatio * Math.Max(18, ActualHeight * 0.11);
-        var depthShift = zRatio * Math.Max(8, ActualWidth * 0.02);
-        return new Point(basePoint.X + depthShift, basePoint.Y - verticalLift);
+        var points = GcodeMotionGeometry.SamplePath(motion);
+        for (var i = 0; i < points.Count - 1; i++)
+        {
+            dc.DrawLine(
+                pen,
+                transform.Map((double)points[i].X, (double)points[i].Y),
+                transform.Map((double)points[i + 1].X, (double)points[i + 1].Y));
+        }
     }
 
-    private static Point ProjectNormalized(Point topLeft, Point topRight, Point bottomLeft, double x, double y)
+    private static void DrawPartialMotion(DrawingContext dc, GcodeMotionCommand motion, CncViewportTransform transform, Pen pen, double progress)
     {
-        var xVector = topRight - topLeft;
-        var yVector = bottomLeft - topLeft;
-        return new Point(topLeft.X + xVector.X * x + yVector.X * y, topLeft.Y + xVector.Y * x + yVector.Y * y);
+        var sampled = GcodeMotionGeometry.SamplePath(motion);
+        var visibleSegments = Math.Clamp((int)Math.Ceiling((sampled.Count - 1) * progress), 1, sampled.Count - 1);
+        for (var i = 0; i < visibleSegments; i++)
+        {
+            dc.DrawLine(
+                pen,
+                transform.Map((double)sampled[i].X, (double)sampled[i].Y),
+                transform.Map((double)sampled[i + 1].X, (double)sampled[i + 1].Y));
+        }
     }
 
-    private Point ProjectMachine(Point topLeft, Point topRight, Point bottomLeft, double localX, double localY)
+    private static void DrawArrowHead(DrawingContext dc, Pen pen, Point tip, Vector direction)
     {
-        var normalizedX = Normalize(localX, 0, Math.Max(1d, MachineMaxX - MachineMinX));
-        var normalizedY = Normalize(localY, 0, Math.Max(1d, MachineMaxY - MachineMinY));
-        return ProjectNormalized(topLeft, topRight, bottomLeft, normalizedX, normalizedY);
-    }
-
-    private static double Normalize(double value, double min, double max)
-    {
-        if (Math.Abs(max - min) < 0.0001)
-            return 0;
-
-        return (value - min) / (max - min);
-    }
-
-    private static double Clamp(double value, double min, double max)
-    {
-        return Math.Max(min, Math.Min(max, value));
-    }
-
-    private static Point Lerp(Point start, Point end, double amount)
-    {
-        return new Point(start.X + ((end.X - start.X) * amount), start.Y + ((end.Y - start.Y) * amount));
-    }
-
-    private void DrawLegendSwatch(DrawingContext dc, Point position, Color color, string label)
-    {
-        dc.DrawRectangle(new SolidColorBrush(color), null, new Rect(position.X, position.Y + 5, 16, 3));
-        DrawLabel(dc, label, new Point(position.X + 22, position.Y), ThemeColor("TextPrimary", Color.FromRgb(0xCF, 0xD8, 0xE3)), 10.5, FontWeights.Medium);
+        direction.Normalize();
+        var left = new Vector(-direction.Y, direction.X);
+        var back = -direction * 8d;
+        var wing = left * 4d;
+        dc.DrawLine(pen, tip, tip + back + wing);
+        dc.DrawLine(pen, tip, tip + back - wing);
     }
 
     private void DrawLabel(DrawingContext dc, string text, Point position, Color color, double fontSize, FontWeight weight)
@@ -795,55 +728,6 @@ public class CncMachineViewportControl : FrameworkElement
     private static Color WithAlpha(Color color, byte alpha)
     {
         return Color.FromArgb(alpha, color.R, color.G, color.B);
-    }
-
-    private void DrawMotion(
-        DrawingContext dc,
-        GcodeMotionCommand motion,
-        double worldWidth,
-        double worldHeight,
-        double worldDepth,
-        Point topLeft,
-        Point topRight,
-        Point bottomLeft,
-        Pen pen,
-        double offset)
-    {
-        var points = GcodeMotionGeometry.SamplePath(motion);
-        for (var i = 0; i < points.Count - 1; i++)
-        {
-            var start = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)points[i].X + WorkOffsetX, (double)points[i].Y + WorkOffsetY, (double)points[i].Z + WorkOffsetZ);
-            var end = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)points[i + 1].X + WorkOffsetX, (double)points[i + 1].Y + WorkOffsetY, (double)points[i + 1].Z + WorkOffsetZ);
-            if (Math.Abs(offset) > 0.001d)
-            {
-                start = new Point(start.X + offset, start.Y + offset);
-                end = new Point(end.X + offset, end.Y + offset);
-            }
-
-            dc.DrawLine(pen, start, end);
-        }
-    }
-
-    private void DrawPartialMotion(
-        DrawingContext dc,
-        GcodeMotionCommand motion,
-        double progress,
-        double worldWidth,
-        double worldHeight,
-        double worldDepth,
-        Point topLeft,
-        Point topRight,
-        Point bottomLeft,
-        Pen pen)
-    {
-        var sampled = GcodeMotionGeometry.SamplePath(motion);
-        var visibleSegments = Math.Clamp((int)Math.Ceiling((sampled.Count - 1) * progress), 1, sampled.Count - 1);
-        for (var i = 0; i < visibleSegments; i++)
-        {
-            var start = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)sampled[i].X + WorkOffsetX, (double)sampled[i].Y + WorkOffsetY, (double)sampled[i].Z + WorkOffsetZ);
-            var end = ProjectMotion(topLeft, topRight, bottomLeft, worldWidth, worldHeight, worldDepth, (double)sampled[i + 1].X + WorkOffsetX, (double)sampled[i + 1].Y + WorkOffsetY, (double)sampled[i + 1].Z + WorkOffsetZ);
-            dc.DrawLine(pen, start, end);
-        }
     }
 
     private Color GetStateColor()

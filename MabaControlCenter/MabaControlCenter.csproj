@@ -19,7 +19,21 @@
     <ApplicationIcon>Assets\maba.ico</ApplicationIcon>
     <RootNamespace>MabaControlCenter</RootNamespace>
     <AssemblyName>MabaControlCenter</AssemblyName>
-    <Version>0.1.18</Version>
+    <Version>0.1.20</Version>
   </PropertyGroup>
+
+  <Target Name="PublishMabaUpdaterForBuild" AfterTargets="Build">
+    <MSBuild Projects="..\MabaUpdater\MabaUpdater.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);OutDir=$(OutDir)Updater\"
+             BuildInParallel="false" />
+  </Target>
+
+  <Target Name="PublishMabaUpdaterForPublish" AfterTargets="Publish">
+    <MSBuild Projects="..\MabaUpdater\MabaUpdater.csproj"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);PublishDir=$(PublishDir)Updater\;SelfContained=false"
+             BuildInParallel="false" />
+  </Target>
 
 </Project>

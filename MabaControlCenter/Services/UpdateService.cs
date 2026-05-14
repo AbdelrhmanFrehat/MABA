@@ -132,25 +132,13 @@ public class UpdateService : IUpdateService
             var exeName = Path.GetFileName(currentExePath);
             var extractedAppDirectory = FindExtractedAppDirectory(extractRoot, exeName);
             var relaunchPath = Path.Combine(installDirectory, exeName);
-            var scriptPath = Path.Combine(updateRoot, "install-update.cmd");
+            var launch = PrepareUpdaterLaunch(updateRoot, installDirectory, extractedAppDirectory, relaunchPath, _latestManifest.Version);
 
-            File.WriteAllText(
-                scriptPath,
-                BuildInstallerScript(Environment.ProcessId, extractedAppDirectory, installDirectory, relaunchPath),
-                Encoding.ASCII);
+            UpdateInfo(info => info.StatusMessage = launch.UsingNativeUpdater
+                ? "Launching native updater and restarting..."
+                : "Installing update, closing the app, and restarting...");
 
-            UpdateInfo(info => info.StatusMessage = "Installing update and restarting...");
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c start \"\" \"{scriptPath}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                WorkingDirectory = updateRoot
-            };
-
-            Process.Start(startInfo);
+            Process.Start(launch.StartInfo);
             Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
                 App.RestartRequested = false;
@@ -246,23 +234,101 @@ public class UpdateService : IUpdateService
         return Path.GetDirectoryName(nestedCandidate) ?? extractRoot;
     }
 
+    private static PreparedUpdaterLaunch PrepareUpdaterLaunch(
+        string updateRoot,
+        string installDirectory,
+        string extractedAppDirectory,
+        string relaunchPath,
+        string version)
+    {
+        var installedHelper = Path.Combine(installDirectory, "Updater", "MabaUpdater.exe");
+        if (File.Exists(installedHelper))
+        {
+            var helperTempDirectory = Path.Combine(updateRoot, "updater");
+            CopyDirectory(Path.GetDirectoryName(installedHelper)!, helperTempDirectory);
+            var helperExe = Path.Combine(helperTempDirectory, "MabaUpdater.exe");
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = helperExe,
+                Arguments = BuildUpdaterArguments(Environment.ProcessId, extractedAppDirectory, installDirectory, relaunchPath, version),
+                UseShellExecute = true,
+                WorkingDirectory = helperTempDirectory
+            };
+            return new PreparedUpdaterLaunch(startInfo, true);
+        }
+
+        var scriptPath = Path.Combine(updateRoot, "install-update.ps1");
+        File.WriteAllText(
+            scriptPath,
+            BuildInstallerScript(Environment.ProcessId, extractedAppDirectory, installDirectory, relaunchPath),
+            Encoding.UTF8);
+
+        var fallback = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
+            CreateNoWindow = true,
+            UseShellExecute = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = updateRoot
+        };
+        return new PreparedUpdaterLaunch(fallback, false);
+    }
+
+    private static string BuildUpdaterArguments(int pid, string sourceDirectory, string targetDirectory, string relaunchPath, string version)
+    {
+        return $"--pid {pid} --source \"{sourceDirectory}\" --target \"{targetDirectory}\" --relaunch \"{relaunchPath}\" --version \"{version}\"";
+    }
+
     private static string BuildInstallerScript(int pid, string sourceDirectory, string targetDirectory, string relaunchPath)
     {
-        return $@"@echo off
-setlocal
-set ""PID={pid}""
+        var source = EscapePowerShellLiteral(sourceDirectory);
+        var target = EscapePowerShellLiteral(targetDirectory);
+        var relaunch = EscapePowerShellLiteral(relaunchPath);
 
-:waitloop
-tasklist /FI ""PID eq %PID%"" 2>NUL | find ""%PID%"" >NUL
-if not errorlevel 1 (
-    timeout /t 1 /nobreak >NUL
-    goto waitloop
-)
+        return $@"$ErrorActionPreference = 'Stop'
+$pidToWait = {pid}
+$sourceDirectory = '{source}'
+$targetDirectory = '{target}'
+$relaunchPath = '{relaunch}'
 
-robocopy ""{sourceDirectory}"" ""{targetDirectory}"" /E /PURGE /R:2 /W:1 /NFL /NDL /NJH /NJS /NP >NUL
-start """" ""{relaunchPath}""
-endlocal
+while (Get-Process -Id $pidToWait -ErrorAction SilentlyContinue) {{
+    Start-Sleep -Milliseconds 500
+}}
+
+$null = New-Item -ItemType Directory -Force -Path $targetDirectory
+& robocopy $sourceDirectory $targetDirectory /E /PURGE /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+$robocopyExitCode = $LASTEXITCODE
+if ($robocopyExitCode -ge 8) {{
+    throw ""robocopy failed with exit code $robocopyExitCode.""
+}}
+
+Start-Process -FilePath $relaunchPath -WorkingDirectory (Split-Path -Path $relaunchPath -Parent) -WindowStyle Normal
 ";
+    }
+
+    private static string EscapePowerShellLiteral(string value)
+    {
+        return value.Replace("'", "''", StringComparison.Ordinal);
+    }
+
+    private static void CopyDirectory(string sourceDirectory, string targetDirectory)
+    {
+        Directory.CreateDirectory(targetDirectory);
+
+        foreach (var directory in Directory.GetDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(sourceDirectory, directory);
+            Directory.CreateDirectory(Path.Combine(targetDirectory, relative));
+        }
+
+        foreach (var file in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(sourceDirectory, file);
+            var targetPath = Path.Combine(targetDirectory, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+            File.Copy(file, targetPath, overwrite: true);
+        }
     }
 
     private void UpdateInfo(Action<AppUpdateInfo> mutate)
@@ -323,4 +389,6 @@ endlocal
         uri = null;
         return false;
     }
+
+    private sealed record PreparedUpdaterLaunch(ProcessStartInfo StartInfo, bool UsingNativeUpdater);
 }
