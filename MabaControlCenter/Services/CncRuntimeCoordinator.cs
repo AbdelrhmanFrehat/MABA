@@ -10,6 +10,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     private readonly IActiveMachineContextService _activeMachineContextService;
     private readonly ICncControllerStateMachine _stateMachine;
     private readonly ICncRecoveryPlannerService _recoveryPlannerService;
+    private readonly ICncRuntimeActionPolicy _actionPolicy;
 
     private bool _isConnecting;
     private bool _isBooting;
@@ -27,7 +28,8 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         ICncJobSessionService jobSessionService,
         IActiveMachineContextService activeMachineContextService,
         ICncControllerStateMachine stateMachine,
-        ICncRecoveryPlannerService recoveryPlannerService)
+        ICncRecoveryPlannerService recoveryPlannerService,
+        ICncRuntimeActionPolicy actionPolicy)
     {
         _controllerService = controllerService;
         _executionQueueService = executionQueueService;
@@ -35,6 +37,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         _activeMachineContextService = activeMachineContextService;
         _stateMachine = stateMachine;
         _recoveryPlannerService = recoveryPlannerService;
+        _actionPolicy = actionPolicy;
         Current = new CncRuntimeStatus();
 
         _controllerService.StateChanged += (_, _) => Refresh();
@@ -113,6 +116,7 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
             LimitYTriggered = _controllerService.DeviceStatus.LimitYTriggered,
             LimitZTriggered = _controllerService.DeviceStatus.LimitZTriggered,
             FirmwareVersion = _controllerService.DeviceStatus.FirmwareVersion,
+            ControllerStatusConfidence = _controllerService.DeviceStatus.StatusConfidence,
             FirmwareIdentity = _controllerService.DeviceStatus.FirmwareIdentity.Clone(),
             FirmwareCompatibility = _activeMachineContextService.Current.FirmwareCompatibility.Clone(),
             ProtocolVersion = _controllerService.DeviceStatus.ProtocolVersion
@@ -122,13 +126,14 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         };
 
         status.RecoveryPlan = _recoveryPlannerService.BuildPlan(status, _executionQueueService, _jobSessionService);
+        status.ActionPolicy = _actionPolicy.Build(status);
 
-        status.CanJog = _stateMachine.CanExecute(status, CncRuntimeAction.Jog, out _);
-        status.CanHome = _stateMachine.CanExecute(status, CncRuntimeAction.Home, out _);
-        status.CanRun = _stateMachine.CanExecute(status, CncRuntimeAction.Run, out _) && blockingReasons.Count == 0;
-        status.CanPause = _stateMachine.CanExecute(status, CncRuntimeAction.Pause, out _);
-        status.CanResume = _stateMachine.CanExecute(status, CncRuntimeAction.Resume, out _);
-        status.CanStop = _stateMachine.CanExecute(status, CncRuntimeAction.Stop, out _);
+        status.CanJog = status.GetActionDescriptor(CncRuntimeAction.Jog).IsAllowed;
+        status.CanHome = status.GetActionDescriptor(CncRuntimeAction.Home).IsAllowed;
+        status.CanRun = status.GetActionDescriptor(CncRuntimeAction.Run).IsAllowed;
+        status.CanPause = status.GetActionDescriptor(CncRuntimeAction.Pause).IsAllowed;
+        status.CanResume = status.GetActionDescriptor(CncRuntimeAction.Resume).IsAllowed;
+        status.CanStop = status.GetActionDescriptor(CncRuntimeAction.Stop).IsAllowed;
 
         Current = status;
         if (notify)
@@ -144,17 +149,9 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
     public bool CanExecute(CncRuntimeAction action, out string? reason)
     {
         var status = RefreshCore(notify: false);
-        if (!_stateMachine.CanExecute(status, action, out reason))
-            return false;
-
-        if (action is CncRuntimeAction.Run or CncRuntimeAction.Frame && status.BlockingReasons.Count > 0)
-        {
-            reason = status.BlockingReason;
-            return false;
-        }
-
-        reason = null;
-        return true;
+        var descriptor = status.GetActionDescriptor(action);
+        reason = descriptor.Reason;
+        return descriptor.IsAllowed;
     }
 
     public void SetConnectionInProgress(bool isConnecting)
@@ -290,6 +287,14 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
 
         if (_activeMachineContextService.Current.FirmwareCompatibility.Status == CncFirmwareCompatibilityStatus.Incompatible)
             reasons.Add(_activeMachineContextService.Current.FirmwareCompatibility.Errors.FirstOrDefault() ?? "Connected firmware is incompatible with the selected machine profile.");
+
+        if (controllerMode == CncControllerMode.RealHardware
+            && _controllerService.DeviceStatus.StatusConfidence is CncControllerStatusConfidence.Unknown or CncControllerStatusConfidence.Stale)
+        {
+            reasons.Add(_controllerService.DeviceStatus.StatusConfidence == CncControllerStatusConfidence.Stale
+                ? "Controller status is stale. Refresh is required before motion."
+                : "Controller status is not verified yet.");
+        }
 
         return reasons.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }

@@ -94,7 +94,7 @@ public class CncExecutionPlannerService : ICncExecutionPlanner
         if (!command.HasMotion || command.MotionType == null)
             yield break;
 
-        var coordinateState = controllerService.CoordinateState;
+        var coordinateState = controllerService.CoordinateState.Clone();
         coordinateState.JobPlacementOffset = new CncJobPlacementOffset
         {
             X = command.ModalStateAfterLine.Coordinates.PlacementOffsetX,

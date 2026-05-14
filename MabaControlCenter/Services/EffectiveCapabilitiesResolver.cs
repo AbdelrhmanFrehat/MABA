@@ -162,21 +162,86 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
 
     private static CapabilitiesSection ToContractCapabilities(CncDriverCapabilities capabilities, DriverType driverType, CncFirmwareIdentity? firmwareIdentity)
     {
+        if (driverType == DriverType.Simulated)
+        {
+            return new CapabilitiesSection
+            {
+                Motion = new MotionCapabilities
+                {
+                    Homing = true,
+                    ZHoming = capabilities.SupportsZHoming,
+                    CombinedXYHoming = true,
+                    RelativeMoves = true,
+                    AbsoluteMoves = true,
+                    Pause = true,
+                    Resume = true,
+                    Stop = true,
+                    Park = true,
+                    CenterMove = true,
+                    WorkOffset = true,
+                    JogStep = true,
+                    JogContinuous = false
+                },
+                Execution = new ExecutionCapabilities
+                {
+                    RealExecution = false,
+                    Simulation = true,
+                    PreviewPlayback = true,
+                    DryRun = true,
+                    FileRun = true,
+                    Frame = true,
+                    BoundingBoxPreview = true,
+                    LiveReportedPosition = true,
+                    EstimatedPositionOnly = false,
+                    ToolpathPreview = true,
+                    ProgressTracking = true
+                },
+                Protocol = new ProtocolCapabilities
+                {
+                    Handshake = true,
+                    Acknowledgements = true,
+                    AlarmReporting = true,
+                    AlarmReset = true,
+                    StatusQuery = true,
+                    PositionQuery = true,
+                    MotorEnable = true,
+                    MotorDisable = true,
+                    FeedHold = true,
+                    SoftReset = true
+                },
+                Visualization = new VisualizationCapabilities
+                {
+                    MachineVisualization = true,
+                    TopView2D = true,
+                    Perspective3D = true,
+                    KinematicsAnimation = true,
+                    RealTimePositionDisplay = true
+                },
+                FileHandling = new FileHandlingCapabilities
+                {
+                    LocalFileRun = true,
+                    StreamingExecution = true,
+                    GcodeValidation = true,
+                    MultipleFileFormats = true
+                }
+            };
+        }
+
         var firmware = firmwareIdentity?.Capabilities;
         var hasFirmwareIdentity = firmwareIdentity?.IsKnown == true;
 
-        var supportsHoming = hasFirmwareIdentity ? firmware!.SupportsHoming : true;
-        var supportsJog = hasFirmwareIdentity ? firmware!.SupportsJog : true;
-        var supportsStatus = hasFirmwareIdentity ? firmware!.SupportsStatusQuery : true;
-        var supportsUnlock = hasFirmwareIdentity ? firmware!.SupportsUnlock : true;
-        var supportsMotorEnable = hasFirmwareIdentity ? firmware!.SupportsMotorEnable : true;
-        var supportsMotorDisable = hasFirmwareIdentity ? firmware!.SupportsMotorDisable : true;
-        var supportsStop = hasFirmwareIdentity ? firmware!.SupportsSoftwareStop : true;
-        var supportsFeedHold = hasFirmwareIdentity ? firmware!.SupportsFeedHold : capabilities.SupportsPause;
-        var supportsAlarmReset = hasFirmwareIdentity ? firmware!.SupportsUnlock : capabilities.SupportsAlarmReset;
-        var supportsLivePosition = hasFirmwareIdentity ? firmware!.SupportsPositionReporting : capabilities.SupportsLivePositionReporting;
-        var supportsWorkOffset = hasFirmwareIdentity ? firmware!.SupportsWorkOffsets || capabilities.SupportsWorkCoordinateSystem : capabilities.SupportsWorkCoordinateSystem;
-        var supportsLimitReporting = hasFirmwareIdentity ? firmware!.SupportsLimitReporting : true;
+        var supportsHoming = hasFirmwareIdentity && firmware!.SupportsHoming;
+        var supportsJog = hasFirmwareIdentity && firmware!.SupportsJog;
+        var supportsStatus = hasFirmwareIdentity && firmware!.SupportsStatusQuery;
+        var supportsUnlock = hasFirmwareIdentity && firmware!.SupportsUnlock;
+        var supportsMotorEnable = hasFirmwareIdentity && firmware!.SupportsMotorEnable;
+        var supportsMotorDisable = hasFirmwareIdentity && firmware!.SupportsMotorDisable;
+        var supportsStop = hasFirmwareIdentity && firmware!.SupportsSoftwareStop;
+        var supportsFeedHold = hasFirmwareIdentity && firmware!.SupportsFeedHold;
+        var supportsAlarmReset = hasFirmwareIdentity && firmware!.SupportsUnlock;
+        var supportsLivePosition = hasFirmwareIdentity && firmware!.SupportsPositionReporting;
+        var supportsWorkOffset = capabilities.SupportsWorkCoordinateSystem;
+        var supportsLimitReporting = hasFirmwareIdentity && firmware!.SupportsLimitReporting;
 
         return new CapabilitiesSection
         {
@@ -187,19 +252,19 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
                 CombinedXYHoming = true,
                 RelativeMoves = supportsJog,
                 AbsoluteMoves = supportsJog,
-                Pause = true,
-                Resume = true,
+                Pause = supportsFeedHold || supportsStop,
+                Resume = supportsFeedHold || supportsJog,
                 Stop = supportsStop,
-                Park = true,
-                CenterMove = true,
+                Park = supportsJog,
+                CenterMove = supportsJog && supportsHoming,
                 WorkOffset = supportsWorkOffset,
-                JogStep = true,
+                JogStep = supportsJog,
                 JogContinuous = false
             },
             Execution = new ExecutionCapabilities
             {
                 RealExecution = driverType != DriverType.Simulated,
-                Simulation = driverType == DriverType.Simulated,
+                Simulation = false,
                 PreviewPlayback = true,
                 DryRun = true,
                 FileRun = true,
@@ -212,7 +277,7 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
             },
             Protocol = new ProtocolCapabilities
             {
-                Handshake = true,
+                Handshake = hasFirmwareIdentity,
                 Acknowledgements = capabilities.SupportsAcknowledgements,
                 AlarmReporting = supportsLimitReporting,
                 AlarmReset = supportsAlarmReset,
@@ -221,7 +286,7 @@ public class EffectiveCapabilitiesResolver : IEffectiveCapabilitiesResolver
                 MotorEnable = supportsMotorEnable,
                 MotorDisable = supportsMotorDisable,
                 FeedHold = supportsFeedHold,
-                SoftReset = true
+                SoftReset = supportsStop
             },
             Visualization = new VisualizationCapabilities
             {

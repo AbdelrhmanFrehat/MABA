@@ -33,6 +33,7 @@ public class SimulatedCncDriver : ICncDriver
     public CncDriverType DriverType => CncDriverType.Simulated;
     public CncDriverCapabilities Capabilities { get; }
     public CncDeviceStatusSnapshot DeviceStatus { get; }
+    public CncSimulationMode SimulationMode { get; set; } = CncSimulationMode.NormalSimulation;
     public bool IsConnected => _isConnected;
     public string? ConnectedPort => _isConnected ? "SIMULATION" : null;
     public bool MotorsEnabled => _motorsEnabled;
@@ -63,6 +64,7 @@ public class SimulatedCncDriver : ICncDriver
         DeviceStatus.IsReady = true;
         DeviceStatus.IsLocked = true;
         DeviceStatus.IsAlarmed = false;
+        MarkVerifiedStatus();
         DeviceStatus.DeviceState = CncDeviceState.Ready;
         DeviceStatus.LastAcknowledgement = "READY";
         DeviceStatus.LastAcknowledgedAt = DateTime.Now;
@@ -126,6 +128,7 @@ public class SimulatedCncDriver : ICncDriver
         _motorsEnabled = false;
         DeviceStatus.IsResponsive = false;
         DeviceStatus.IsReady = false;
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.Unknown;
         DeviceStatus.DeviceState = CncDeviceState.Disconnected;
         DeviceStatus.LastStatusText = "Disconnected";
         AddDriverLog("Simulated driver disconnected.", "Info");
@@ -354,6 +357,7 @@ public class SimulatedCncDriver : ICncDriver
     {
         DeviceStatus.IsResponsive = true;
         DeviceStatus.IsReady = true;
+        MarkVerifiedStatus();
         if (!response.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase) && !response.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase))
             DeviceStatus.IsAlarmed = false;
         DeviceStatus.LastAcknowledgement = response;
@@ -370,6 +374,8 @@ public class SimulatedCncDriver : ICncDriver
         DeviceStatus.IsReady = false;
         DeviceStatus.IsLocked = false;
         DeviceStatus.IsAlarmed = false;
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.Unknown;
+        DeviceStatus.LastVerifiedStatusAt = null;
         DeviceStatus.DeviceState = CncDeviceState.Unknown;
         DeviceStatus.LastProtocolError = null;
         DeviceStatus.LastStatusText = null;
@@ -382,6 +388,12 @@ public class SimulatedCncDriver : ICncDriver
         DeviceStatus.LimitXTriggered = false;
         DeviceStatus.LimitYTriggered = false;
         DeviceStatus.LimitZTriggered = false;
+    }
+
+    private void MarkVerifiedStatus()
+    {
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.VerifiedFresh;
+        DeviceStatus.LastVerifiedStatusAt = DateTime.UtcNow;
     }
 
     private void EnsureConnected()

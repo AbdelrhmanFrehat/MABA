@@ -4,20 +4,33 @@ namespace MabaControlCenter.Services;
 
 public class CncJobPlacementService : ICncJobPlacementService
 {
+    private readonly ICncCoordinateTransformService _coordinateTransformService;
+
+    public CncJobPlacementService(ICncCoordinateTransformService coordinateTransformService)
+    {
+        _coordinateTransformService = coordinateTransformService;
+    }
+
     public IReadOnlyList<GcodeMotionCommand> ApplyPlacement(IReadOnlyList<GcodeMotionCommand> motions, CncJobPlacement placement)
     {
+        var state = _coordinateTransformService.CreateState(
+            machineX: 0m,
+            machineY: 0m,
+            machineZ: 0m,
+            placementOffset: new CncJobPlacementOffset { X = placement.OffsetX, Y = placement.OffsetY, Z = 0m });
+
         return motions
             .Select(m => new GcodeMotionCommand
             {
                 LineNumber = m.LineNumber,
                 RawText = m.RawText,
                 MotionType = m.MotionType,
-                StartX = m.StartX + placement.OffsetX,
-                StartY = m.StartY + placement.OffsetY,
-                StartZ = m.StartZ,
-                EndX = m.EndX + placement.OffsetX,
-                EndY = m.EndY + placement.OffsetY,
-                EndZ = m.EndZ,
+                StartX = _coordinateTransformService.ApplyJobPlacement(m.StartX, m.StartY, m.StartZ, state).WorkTargetX,
+                StartY = _coordinateTransformService.ApplyJobPlacement(m.StartX, m.StartY, m.StartZ, state).WorkTargetY,
+                StartZ = _coordinateTransformService.ApplyJobPlacement(m.StartX, m.StartY, m.StartZ, state).WorkTargetZ,
+                EndX = _coordinateTransformService.ApplyJobPlacement(m.EndX, m.EndY, m.EndZ, state).WorkTargetX,
+                EndY = _coordinateTransformService.ApplyJobPlacement(m.EndX, m.EndY, m.EndZ, state).WorkTargetY,
+                EndZ = _coordinateTransformService.ApplyJobPlacement(m.EndX, m.EndY, m.EndZ, state).WorkTargetZ,
                 IsAbsoluteMode = m.IsAbsoluteMode,
                 FeedRate = m.FeedRate,
                 Units = m.Units,
@@ -26,8 +39,8 @@ public class CncJobPlacementService : ICncJobPlacementService
                 ArcOffsetI = m.ArcOffsetI,
                 ArcOffsetJ = m.ArcOffsetJ,
                 ArcOffsetK = m.ArcOffsetK,
-                ArcCenterX = m.ArcCenterX.HasValue ? m.ArcCenterX + placement.OffsetX : null,
-                ArcCenterY = m.ArcCenterY.HasValue ? m.ArcCenterY + placement.OffsetY : null,
+                ArcCenterX = m.ArcCenterX.HasValue ? _coordinateTransformService.ApplyJobPlacement(m.ArcCenterX.Value, m.ArcCenterY ?? 0m, m.ArcCenterZ ?? 0m, state).WorkTargetX : null,
+                ArcCenterY = m.ArcCenterY.HasValue ? _coordinateTransformService.ApplyJobPlacement(m.ArcCenterX ?? 0m, m.ArcCenterY.Value, m.ArcCenterZ ?? 0m, state).WorkTargetY : null,
                 ArcCenterZ = m.ArcCenterZ,
                 ArcRadiusMm = m.ArcRadiusMm,
                 ArcLengthMm = m.ArcLengthMm,
@@ -91,25 +104,7 @@ public class CncJobPlacementService : ICncJobPlacementService
 
     public CncFrameBounds CalculateBounds(IReadOnlyList<GcodeMotionCommand> motions)
     {
-        var executable = motions.Where(m => m.IsExecutable).ToList();
-        if (executable.Count == 0)
-            return new CncFrameBounds();
-
-        var points = executable
-            .SelectMany(m => new[]
-            {
-                new { X = m.StartX, Y = m.StartY },
-                new { X = m.EndX, Y = m.EndY }
-            })
-            .ToList();
-
-        return new CncFrameBounds
-        {
-            MinX = points.Min(p => p.X),
-            MaxX = points.Max(p => p.X),
-            MinY = points.Min(p => p.Y),
-            MaxY = points.Max(p => p.Y)
-        };
+        return _coordinateTransformService.ComputeFrameBounds(motions);
     }
 
     public string? ValidatePlacement(IReadOnlyList<GcodeMotionCommand> originalMotions, CncJobPlacement placement, decimal machineMinX, decimal machineMaxX, decimal machineMinY, decimal machineMaxY)

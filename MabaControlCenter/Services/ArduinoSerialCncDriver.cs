@@ -9,6 +9,14 @@ namespace MabaControlCenter.Services;
 
 public class ArduinoSerialCncDriver : ICncDriver
 {
+    private enum DetectedFirmwareMode
+    {
+        Unknown,
+        Maba,
+        LegacySimple,
+        Custom
+    }
+
     private readonly ILoggingService _loggingService;
     private readonly CncProtocolCommandFormatter _commandFormatter = new();
     private readonly CncProtocolResponseParser _responseParser = new();
@@ -19,6 +27,7 @@ public class ArduinoSerialCncDriver : ICncDriver
     private decimal _estimatedX;
     private decimal _estimatedY;
     private decimal _estimatedZ;
+    private DetectedFirmwareMode _detectedFirmwareMode = DetectedFirmwareMode.Unknown;
 
     public ArduinoSerialCncDriver(ILoggingService loggingService, CncMachineProfile profile)
     {
@@ -73,16 +82,20 @@ public class ArduinoSerialCncDriver : ICncDriver
         _serialPort.DiscardOutBuffer();
         _connectedPort = portName.Trim();
         _motorsEnabled = false;
+        _detectedFirmwareMode = DetectedFirmwareMode.Unknown;
         ResetDeviceStatusForConnection();
         AddSerialLog("System", $"Connected to {_connectedPort} @ {_profile.BaudRate}", "Info");
         _loggingService.AddLog("CNC", $"Connected to {_connectedPort} @ {_profile.BaudRate}", "Info");
 
         try
         {
+            Thread.Sleep(1800);
+            var startupBanner = DrainAvailableText();
+            _detectedFirmwareMode = DetectFirmwareMode(startupBanner);
+            RefreshCapabilities();
+
             if (UsesMabaMotionFirmware)
             {
-                Thread.Sleep(1800);
-                var startupBanner = DrainAvailableText();
                 DeviceStatus.DeviceState = CncDeviceState.Ready;
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
@@ -94,14 +107,13 @@ public class ArduinoSerialCncDriver : ICncDriver
                     : startupBanner;
                 DeviceStatus.FirmwareVersion = "2.0.0";
                 DeviceStatus.ProtocolVersion = "MabaProtocol";
+                MarkVerifiedStatus();
                 AddProtocolLog("MABA motion firmware connected.", "Info");
                 RefreshStatus();
-                UpdateFirmwareIdentityFromHandshake(startupBanner, verified: false);
+                UpdateFirmwareIdentityFromHandshake(TryEnhanceFirmwareIdentity(startupBanner), verified: false);
             }
             else if (UsesSimpleFirmwareProtocol)
             {
-                Thread.Sleep(1800);
-                var startupBanner = DrainAvailableText();
                 DeviceStatus.DeviceState = CncDeviceState.Ready;
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
@@ -112,6 +124,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                     ? "Simple firmware connected."
                     : startupBanner;
                 DeviceStatus.ProtocolVersion = "LegacySimple";
+                DeviceStatus.StatusConfidence = CncControllerStatusConfidence.LastKnown;
                 AddProtocolLog("Simple firmware connected using legacy step-command mode.", "Info");
                 UpdateFirmwareIdentityFromHandshake(startupBanner, verified: false);
             }
@@ -125,8 +138,9 @@ public class ArduinoSerialCncDriver : ICncDriver
                 SendProtocolCommand(_commandFormatter.CreateStatusCommand());
                 DeviceStatus.IsResponsive = true;
                 DeviceStatus.IsReady = true;
+                MarkVerifiedStatus();
                 AddProtocolLog($"Handshake completed with {DeviceStatus.LastAcknowledgement}.", "Info");
-                UpdateFirmwareIdentityFromHandshake(DeviceStatus.LastAcknowledgement, verified: false);
+                UpdateFirmwareIdentityFromHandshake(TryEnhanceFirmwareIdentity(DeviceStatus.LastAcknowledgement), verified: false);
             }
         }
         catch (Exception ex)
@@ -145,6 +159,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         CloseSerialPort();
         _connectedPort = null;
         _motorsEnabled = false;
+        _detectedFirmwareMode = DetectedFirmwareMode.Unknown;
         ResetDeviceStatusForDisconnect();
         AddSerialLog("System", "Disconnected.", "Info");
         NotifyStateChanged();
@@ -190,7 +205,7 @@ public class ArduinoSerialCncDriver : ICncDriver
             DeviceStatus.DeviceState = CncDeviceState.Homing;
             DeviceStatus.IsReady = false;
             NotifyStateChanged();
-            var response = SendMabaCommandAwaiting("Home", "$H", new[] { "HOME:DONE" }, 45000);
+            var response = SendMabaCommandAwaiting("Home", "$H", new[] { "HOME:DONE", "HOME DONE" }, 90000);
             _estimatedX = 0m;
             _estimatedY = 0m;
             _estimatedZ = 0m;
@@ -207,7 +222,7 @@ public class ArduinoSerialCncDriver : ICncDriver
             DeviceStatus.DeviceState = CncDeviceState.Homing;
             DeviceStatus.IsReady = false;
             NotifyStateChanged();
-            return SendLegacyCommandAwaiting("Home", "H", "HOME DONE", 30000);
+            return SendLegacyCommandAwaiting("Home", "H", new[] { "HOME:DONE", "HOME DONE" }, 90000);
         }
 
         return SendProtocolCommand(_commandFormatter.CreateHomeCommand()).RawText;
@@ -252,6 +267,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         {
             DeviceStatus.IsResponsive = true;
             DeviceStatus.IsReady = true;
+            MarkLastKnownStatus();
             DeviceStatus.DeviceState = CncDeviceState.Idle;
             DeviceStatus.LastStatusText = "Legacy firmware has no STATUS command.";
             NotifyStateChanged();
@@ -418,7 +434,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         }
 
         var expected = commandText.StartsWith("$H", StringComparison.OrdinalIgnoreCase) || commandText.Equals("H", StringComparison.OrdinalIgnoreCase)
-            ? new[] { "HOME:DONE" }
+            ? new[] { "HOME:DONE", "HOME DONE" }
             : commandText.Equals("$X", StringComparison.OrdinalIgnoreCase)
                 ? new[] { "UNLOCKED", "OK" }
                 : commandText.Equals("!", StringComparison.OrdinalIgnoreCase)
@@ -459,7 +475,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         }
 
         if (requiresAck)
-            return SendLegacyCommandAwaiting("Legacy Stream", commandText, "OK", 15000);
+            return SendLegacyCommandAwaiting("Legacy Stream", commandText, new[] { "OK" }, 15000);
 
         EnsureConnected();
         AddSerialLog("Sent", commandText, "Info");
@@ -583,7 +599,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         return command;
     }
 
-    private string SendLegacyCommandAwaiting(string name, string command, string expectedLine, int timeoutMs)
+    private string SendLegacyCommandAwaiting(string name, string command, IReadOnlyCollection<string> expectedTokens, int timeoutMs)
     {
         EnsureConnected();
         AddSerialLog("Sent", command, "Info");
@@ -612,7 +628,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 AddSerialLog("Received", rawLine, "Info");
                 _loggingService.AddLog("CNC Received", rawLine, "Info");
 
-                if (rawLine.Contains(expectedLine, StringComparison.OrdinalIgnoreCase))
+                if (expectedTokens.Any(token => rawLine.Contains(token, StringComparison.OrdinalIgnoreCase)))
                 {
                     DeviceStatus.IsResponsive = true;
                     DeviceStatus.IsReady = true;
@@ -636,7 +652,7 @@ public class ArduinoSerialCncDriver : ICncDriver
             }
         }
 
-        HandleProtocolFailure($"{name} timed out waiting for {expectedLine}.");
+        HandleProtocolFailure($"{name} timed out waiting for {string.Join(" or ", expectedTokens)}.");
         throw new TimeoutException($"{name} timed out after {timeoutMs} ms.");
     }
 
@@ -792,6 +808,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.IsReady = false;
         DeviceStatus.IsLocked = false;
         DeviceStatus.IsAlarmed = false;
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.Unknown;
         DeviceStatus.DeviceState = CncDeviceState.Unknown;
         DeviceStatus.HasReportedPosition = false;
         DeviceStatus.ReportedX = null;
@@ -802,6 +819,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LimitZTriggered = false;
         DeviceStatus.LastAcknowledgement = null;
         DeviceStatus.LastAcknowledgedAt = null;
+        DeviceStatus.LastVerifiedStatusAt = null;
         DeviceStatus.LastProtocolError = null;
         DeviceStatus.LastStatusText = null;
         DeviceStatus.FirmwareIdentity = new CncFirmwareIdentity();
@@ -814,7 +832,9 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.IsReady = false;
         DeviceStatus.IsLocked = false;
         DeviceStatus.IsAlarmed = false;
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.Unknown;
         DeviceStatus.DeviceState = CncDeviceState.Disconnected;
+        DeviceStatus.LastVerifiedStatusAt = null;
         DeviceStatus.LastProtocolError = reason;
         DeviceStatus.LastStatusText = reason ?? "Disconnected";
         DeviceStatus.FirmwareIdentity = new CncFirmwareIdentity();
@@ -826,9 +846,26 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LastProtocolError = message;
         DeviceStatus.IsReady = false;
         DeviceStatus.IsAlarmed = true;
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.Stale;
         DeviceStatus.DeviceState = CncDeviceState.Error;
         AddProtocolLog(message, "Error");
         NotifyStateChanged();
+    }
+
+    private void MarkVerifiedStatus()
+    {
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.VerifiedFresh;
+        DeviceStatus.LastVerifiedStatusAt = DateTime.UtcNow;
+    }
+
+    private void MarkLastKnownStatus()
+    {
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.LastKnown;
+    }
+
+    private void MarkStaleStatus()
+    {
+        DeviceStatus.StatusConfidence = CncControllerStatusConfidence.Stale;
     }
 
     private void EnsureConnected()
@@ -965,6 +1002,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                     DeviceStatus.LastAcknowledgement = rawLine;
                     DeviceStatus.LastAcknowledgedAt = DateTime.Now;
                     DeviceStatus.LastStatusText = rawLine;
+                    MarkVerifiedStatus();
                     NotifyStateChanged();
                     return rawLine;
                 }
@@ -978,6 +1016,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                         DeviceStatus.DeviceState = DeviceStatus.IsLocked ? CncDeviceState.Idle : CncDeviceState.Ready;
                         DeviceStatus.LastProtocolError = rawLine;
                         DeviceStatus.LastStatusText = "Firmware did not provide a status report. Using the last known controller state.";
+                        MarkLastKnownStatus();
                         AddProtocolLog("Status query is unsupported by the connected firmware. Keeping the last known controller state.", "Warning");
                         NotifyStateChanged();
                         return rawLine;
@@ -985,6 +1024,7 @@ public class ArduinoSerialCncDriver : ICncDriver
 
                     DeviceStatus.LastProtocolError = rawLine;
                     DeviceStatus.IsAlarmed = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase);
+                    MarkVerifiedStatus();
                     DeviceStatus.DeviceState = rawLine.StartsWith("ALARM:", StringComparison.OrdinalIgnoreCase)
                         ? CncDeviceState.Alarm
                         : CncDeviceState.Error;
@@ -1005,10 +1045,11 @@ public class ArduinoSerialCncDriver : ICncDriver
 
         DeviceStatus.IsResponsive = true;
         DeviceStatus.LastProtocolError = "Status timed out waiting for <MABA:...> response.";
-        DeviceStatus.LastStatusText = "Status query timed out. Keeping the last known controller state.";
+        DeviceStatus.LastStatusText = "Status query timed out. Controller status is now stale until refreshed.";
+        MarkStaleStatus();
         if (DeviceStatus.DeviceState == CncDeviceState.Unknown)
             DeviceStatus.DeviceState = DeviceStatus.IsLocked ? CncDeviceState.Idle : CncDeviceState.Ready;
-        AddProtocolLog("Status query timed out. Keeping the last known controller state so recovery controls remain available.", "Warning");
+        AddProtocolLog("Status query timed out. Dangerous actions are now blocked until status is refreshed.", "Warning");
         NotifyStateChanged();
         return "STATUS:TIMEOUT";
     }
@@ -1055,6 +1096,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 DeviceStatus.LastAcknowledgedAt = DateTime.Now;
                 DeviceStatus.LastStatusText = rawLine;
                 DeviceStatus.IsResponsive = true;
+                MarkVerifiedStatus();
 
                 if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1186,6 +1228,11 @@ public class ArduinoSerialCncDriver : ICncDriver
     {
         get
         {
+            if (_detectedFirmwareMode == DetectedFirmwareMode.LegacySimple)
+                return true;
+            if (_detectedFirmwareMode == DetectedFirmwareMode.Maba)
+                return false;
+
             var definition = _profile.DefinitionSnapshot;
             if (definition == null)
                 return false;
@@ -1205,7 +1252,38 @@ public class ArduinoSerialCncDriver : ICncDriver
     }
 
     private bool UsesMabaMotionFirmware
-        => _profile.DefinitionSnapshot?.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.MabaProtocol;
+    {
+        get
+        {
+            if (_detectedFirmwareMode == DetectedFirmwareMode.Maba)
+                return true;
+            if (_detectedFirmwareMode == DetectedFirmwareMode.LegacySimple)
+                return false;
+
+            return _profile.DefinitionSnapshot?.RuntimeBinding.FirmwareProtocol == FirmwareProtocol.MabaProtocol;
+        }
+    }
+
+    private static DetectedFirmwareMode DetectFirmwareMode(string? startupBanner)
+    {
+        if (string.IsNullOrWhiteSpace(startupBanner))
+            return DetectedFirmwareMode.Unknown;
+
+        if (startupBanner.Contains("MABA CNC FIRMWARE READY", StringComparison.OrdinalIgnoreCase)
+            || startupBanner.Contains("LOCKED: SEND $H", StringComparison.OrdinalIgnoreCase)
+            || startupBanner.Contains("<MABA:", StringComparison.OrdinalIgnoreCase))
+        {
+            return DetectedFirmwareMode.Maba;
+        }
+
+        if (startupBanner.Contains("Ready: +100x", StringComparison.OrdinalIgnoreCase)
+            || startupBanner.Contains("HOME DONE", StringComparison.OrdinalIgnoreCase))
+        {
+            return DetectedFirmwareMode.LegacySimple;
+        }
+
+        return DetectedFirmwareMode.Custom;
+    }
 
     private static int CalculateLegacyMoveDelayMs(int steps)
     {
@@ -1307,8 +1385,12 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     private void UpdateFirmwareIdentityFromHandshake(string? startupBanner, bool verified)
     {
+        var hasIdentityPayload = !string.IsNullOrWhiteSpace(startupBanner)
+                                 && (startupBanner.Contains("$I", StringComparison.OrdinalIgnoreCase)
+                                     || startupBanner.Contains("$VER", StringComparison.OrdinalIgnoreCase)
+                                     || startupBanner.Contains("$CAPS", StringComparison.OrdinalIgnoreCase));
         var identity = UsesMabaMotionFirmware
-            ? CreateMabaFirmwareIdentity(startupBanner, verified)
+            ? CreateMabaFirmwareIdentity(startupBanner, verified || hasIdentityPayload)
             : UsesSimpleFirmwareProtocol
                 ? CreateLegacyFirmwareIdentity(startupBanner)
                 : CreateGenericFirmwareIdentity(startupBanner);
@@ -1420,6 +1502,10 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     private CncFirmwareIdentity CreateGenericFirmwareIdentity(string? startupBanner)
     {
+        var hasIdentityPayload = !string.IsNullOrWhiteSpace(startupBanner)
+                                 && (startupBanner.Contains("$I", StringComparison.OrdinalIgnoreCase)
+                                     || startupBanner.Contains("$VER", StringComparison.OrdinalIgnoreCase)
+                                     || startupBanner.Contains("$CAPS", StringComparison.OrdinalIgnoreCase));
         var identity = new CncFirmwareIdentity
         {
             FirmwareName = "Custom CNC Firmware",
@@ -1430,7 +1516,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 ProtocolName = "Custom",
                 RawVersion = DeviceStatus.ProtocolVersion ?? "Custom"
             },
-            Confidence = CncCapabilityConfidence.Inferred,
+            Confidence = hasIdentityPayload ? CncCapabilityConfidence.Verified : CncCapabilityConfidence.Inferred,
             Capabilities = new CncFirmwareCapabilities
             {
                 SupportsStatusQuery = true,
@@ -1461,6 +1547,54 @@ public class ArduinoSerialCncDriver : ICncDriver
         };
         ApplyFutureIdentityPayloads(startupBanner, identity);
         return identity;
+    }
+
+    private string? TryEnhanceFirmwareIdentity(string? startupBanner)
+    {
+        if (!IsConnected || _serialPort == null || UsesSimpleFirmwareProtocol)
+            return startupBanner;
+
+        var handshakeLines = new List<string>();
+        foreach (var command in new[] { "$I", "$VER", "$CAPS" })
+        {
+            try
+            {
+                _serialPort.WriteLine(command);
+                var deadline = DateTime.UtcNow.AddMilliseconds(400);
+                while (DateTime.UtcNow < deadline)
+                {
+                    _serialPort.ReadTimeout = Math.Max(80, (int)(deadline - DateTime.UtcNow).TotalMilliseconds);
+                    var rawLine = _serialPort.ReadLine()?.Trim();
+                    if (string.IsNullOrWhiteSpace(rawLine))
+                        continue;
+
+                    if (rawLine.StartsWith("$I", StringComparison.OrdinalIgnoreCase)
+                        || rawLine.StartsWith("$VER", StringComparison.OrdinalIgnoreCase)
+                        || rawLine.StartsWith("$CAPS", StringComparison.OrdinalIgnoreCase))
+                    {
+                        handshakeLines.Add(rawLine);
+                    }
+                    else if (rawLine.StartsWith("ERR:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (TimeoutException)
+            {
+                // Future hook: older firmware simply won't answer.
+            }
+            catch (Exception)
+            {
+                break;
+            }
+        }
+
+        if (handshakeLines.Count == 0)
+            return startupBanner;
+
+        MarkVerifiedStatus();
+        return string.Join(Environment.NewLine, new[] { startupBanner ?? string.Empty }.Concat(handshakeLines).Where(line => !string.IsNullOrWhiteSpace(line)));
     }
 
     private static void ApplyFutureIdentityPayloads(string? text, CncFirmwareIdentity identity)

@@ -10,7 +10,13 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
         {
             ControllerMessage = status.LastControllerMessage,
             FailedSourceLine = executionQueueService.FailedPlannedCommand?.SourceLineNumber ?? executionQueueService.Diagnostics.FailedSourceLine,
-            FailedCommandText = executionQueueService.FailedPlannedCommand?.CommandText ?? executionQueueService.Diagnostics.FailedCommandText
+            FailedCommandText = executionQueueService.FailedPlannedCommand?.CommandText ?? executionQueueService.Diagnostics.FailedCommandText,
+            IsConnectionVerified = status.IsConnected,
+            IsFirmwareVerified = status.FirmwareIdentity.Confidence == CncCapabilityConfidence.Verified,
+            IsStatusFresh = status.ControllerStatusConfidence == CncControllerStatusConfidence.VerifiedFresh,
+            IsReferenceTrusted = status.HasValidReference,
+            IsPositionTrusted = status.ControllerStatusConfidence == CncControllerStatusConfidence.VerifiedFresh && status.HasValidReference,
+            IsCapabilityVerified = status.FirmwareIdentity.Confidence == CncCapabilityConfidence.Verified
         };
 
         var hasLoadedJob = jobSessionService.LoadedJob != null || executionQueueService.LoadedMotions.Count > 0;
@@ -19,8 +25,10 @@ public class CncRecoveryPlannerService : ICncRecoveryPlannerService
         var canSafelyResume = status.IsConnected
                               && !status.IsAlarmed
                               && status.HasValidReference
+                              && status.ControllerStatusConfidence == CncControllerStatusConfidence.VerifiedFresh
                               && executionQueueService.ExecutionState == CncExecutionState.Paused
                               && jobSessionService.SessionState == CncJobLifecycleState.Paused;
+        plan.IsResumeSafe = canSafelyResume;
 
         if (status.RuntimeState == CncRuntimeState.Recovering)
         {

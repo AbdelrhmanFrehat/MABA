@@ -16,10 +16,12 @@ public class CncDeviceStatusSnapshot
     public bool LimitZTriggered { get; set; }
     public string? LastAcknowledgement { get; set; }
     public DateTime? LastAcknowledgedAt { get; set; }
+    public DateTime? LastVerifiedStatusAt { get; set; }
     public string? LastProtocolError { get; set; }
     public string? LastStatusText { get; set; }
     public string? FirmwareVersion { get; set; }
     public string? ProtocolVersion { get; set; }
+    public CncControllerStatusConfidence StatusConfidence { get; set; } = CncControllerStatusConfidence.Unknown;
     public CncFirmwareIdentity FirmwareIdentity { get; set; } = new();
     public CncFirmwareCompatibilityResult FirmwareCompatibility { get; set; } = new();
 

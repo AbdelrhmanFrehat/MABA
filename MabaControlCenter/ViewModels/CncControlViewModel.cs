@@ -25,6 +25,7 @@ public class CncControlViewModel : ViewModelBase
     private readonly IActiveMachineContextService _activeMachineContextService;
     private readonly ICncRuntimeCoordinator _runtimeCoordinator;
     private readonly ICncCoordinateTransformService _coordinateTransformService;
+    private readonly ICncManagerService _cncManagerService;
     private string? _lastRecoverySignature;
     private bool _hadRecoveryPlan;
 
@@ -97,7 +98,8 @@ public class CncControlViewModel : ViewModelBase
         IRuntimeProfileService runtimeProfileService,
         IActiveMachineContextService activeMachineContextService,
         ICncRuntimeCoordinator runtimeCoordinator,
-        ICncCoordinateTransformService coordinateTransformService)
+        ICncCoordinateTransformService coordinateTransformService,
+        ICncManagerService cncManagerService)
     {
         _cncControllerService = cncControllerService;
         _cncProfileService = cncProfileService;
@@ -114,6 +116,7 @@ public class CncControlViewModel : ViewModelBase
         _activeMachineContextService = activeMachineContextService;
         _runtimeCoordinator = runtimeCoordinator;
         _coordinateTransformService = coordinateTransformService;
+        _cncManagerService = cncManagerService;
 
         AvailablePorts = new ObservableCollection<string>();
         JogStepPresets = new ObservableCollection<decimal>();
@@ -744,37 +747,35 @@ public class CncControlViewModel : ViewModelBase
     public bool HasDiagnostics => DiagnosticsMessages.Count > 0;
     public bool CanConnectMachine => !IsConnected
                                      && (IsSimulationMode || !string.IsNullOrWhiteSpace(SelectedPort))
-                                     && _runtimeCoordinator.CanExecute(CncRuntimeAction.Connect, out _);
-    public bool CanDisconnectMachine => IsConnected && _runtimeCoordinator.CanExecute(CncRuntimeAction.Disconnect, out _);
+                                     && GetActionDescriptor(CncRuntimeAction.Connect).IsAllowed;
+    public bool CanDisconnectMachine => IsConnected && GetActionDescriptor(CncRuntimeAction.Disconnect).IsAllowed;
     public string ConnectionStatusText => IsConnected
         ? $"Connected on {_cncControllerService.ConnectedPort}"
         : "Disconnected";
     public string MachineStateDisplay => FormatState(_cncControllerService.MachineState);
 
-    public bool CanJog => RuntimeStatus.CanJog && EffectiveCapabilities.Motion.JogStep;
+    public bool CanJog => GetActionDescriptor(CncRuntimeAction.Jog).IsAllowed && EffectiveCapabilities.Motion.JogStep;
     public bool HasUnlockCapability => ActiveFirmwareCapabilities?.SupportsUnlock == true
-                                       || (RuntimeStatus.IsConnected
-                                           && RuntimeStatus.ControllerMode == CncControllerMode.RealHardware
-                                           && (RuntimeStatus.IsLocked || RuntimeStatus.IsAlarmed));
+                                       || RecoveryPlan.Allows(CncRecoveryAction.UnlockController);
     public bool HasMotorEnableCapability => EffectiveCapabilities.Protocol.MotorEnable;
     public bool HasMotorDisableCapability => EffectiveCapabilities.Protocol.MotorDisable;
     public bool ShowEnableOrUnlockControl => HasMotorEnableCapability || HasUnlockCapability;
     public bool ShowDisableMotorsControl => HasMotorDisableCapability;
-    public bool ShowStatusControl => EffectiveCapabilities.Protocol.StatusQuery;
+    public bool ShowStatusControl => RuntimeStatus.IsConnected || EffectiveCapabilities.Protocol.StatusQuery;
     public string EnableOrUnlockButtonText => HasMotorEnableCapability ? "Enable Motors" : "Unlock Controller";
     public bool CanEnableOrUnlock => (HasMotorEnableCapability || HasUnlockCapability)
-                                     && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
-    public bool CanEnableMotors => EffectiveCapabilities.Protocol.MotorEnable && _runtimeCoordinator.CanExecute(CncRuntimeAction.Unlock, out _);
-    public bool CanDisableMotors => EffectiveCapabilities.Protocol.MotorDisable && _runtimeCoordinator.CanExecute(CncRuntimeAction.DisableMotors, out _);
-    public bool CanHome => EffectiveCapabilities.Motion.Homing && RuntimeStatus.CanHome;
+                                     && GetActionDescriptor(CncRuntimeAction.Unlock).IsAllowed;
+    public bool CanEnableMotors => EffectiveCapabilities.Protocol.MotorEnable && GetActionDescriptor(CncRuntimeAction.Unlock).IsAllowed;
+    public bool CanDisableMotors => EffectiveCapabilities.Protocol.MotorDisable && GetActionDescriptor(CncRuntimeAction.DisableMotors).IsAllowed;
+    public bool CanHome => EffectiveCapabilities.Motion.Homing && GetActionDescriptor(CncRuntimeAction.Home).IsAllowed;
     public bool CanGoToCenter => EffectiveCapabilities.Motion.CenterMove
                                  && SupportsXAxis
                                  && SupportsYAxis
-                                 && _runtimeCoordinator.CanExecute(CncRuntimeAction.GoToCenter, out _);
-    public bool CanSetZero => EffectiveCapabilities.Motion.WorkOffset && _runtimeCoordinator.CanExecute(CncRuntimeAction.SetWorkZero, out _);
-    public bool CanClearWorkZero => EffectiveCapabilities.Motion.WorkOffset && _runtimeCoordinator.CanExecute(CncRuntimeAction.ClearWorkZero, out _);
+                                 && GetActionDescriptor(CncRuntimeAction.GoToCenter).IsAllowed;
+    public bool CanSetZero => EffectiveCapabilities.Motion.WorkOffset && GetActionDescriptor(CncRuntimeAction.SetWorkZero).IsAllowed;
+    public bool CanClearWorkZero => EffectiveCapabilities.Motion.WorkOffset && GetActionDescriptor(CncRuntimeAction.ClearWorkZero).IsAllowed;
     public bool CanRefreshStatus => RuntimeStatus.IsConnected
-                                    && _runtimeCoordinator.CanExecute(CncRuntimeAction.RefreshStatus, out _);
+                                    && GetActionDescriptor(CncRuntimeAction.RefreshStatus).IsAllowed;
 
     public string LastFeedback
     {
@@ -809,6 +810,7 @@ public class CncControlViewModel : ViewModelBase
     public string LastAcknowledgementText => _cncControllerService.DeviceStatus.LastAcknowledgement ?? "No acknowledgement received yet.";
     public string ProtocolStatusText => _cncControllerService.DeviceStatus.LastStatusText ?? "No protocol status received yet.";
     public string ProtocolErrorText => _cncControllerService.DeviceStatus.LastProtocolError ?? "No active protocol error.";
+    public string ControllerStatusConfidenceText => RuntimeStatus.ControllerStatusConfidence.ToString();
     public string DeviceReportedPositionText => _cncControllerService.DeviceStatus.HasReportedPosition
         ? $"X {_cncControllerService.DeviceStatus.ReportedX:0.###}, Y {_cncControllerService.DeviceStatus.ReportedY:0.###}, Z {_cncControllerService.DeviceStatus.ReportedZ:0.###}"
         : "No device-reported position yet.";
@@ -975,7 +977,7 @@ public class CncControlViewModel : ViewModelBase
     public bool HasMachineVisualizationCapability => EffectiveCapabilities.Visualization.MachineVisualization;
     public bool HasProgressTrackingCapability => EffectiveCapabilities.Execution.ProgressTracking;
     public bool HasLiveReportedPositionCapability => EffectiveCapabilities.Protocol.PositionQuery || EffectiveCapabilities.Execution.LiveReportedPosition;
-    public bool CanFramePreview => HasLoadedProgram && HasFrameBounds && EffectiveCapabilities.Execution.Frame && _runtimeCoordinator.CanExecute(CncRuntimeAction.Frame, out _);
+    public bool CanFramePreview => HasLoadedProgram && HasFrameBounds && EffectiveCapabilities.Execution.Frame && GetActionDescriptor(CncRuntimeAction.Frame).IsAllowed;
     public decimal PlacementOffsetX
     {
         get => _placementOffsetX;
@@ -1009,7 +1011,7 @@ public class CncControlViewModel : ViewModelBase
         }
     }
     public bool CanApplyPlacement => HasLoadedProgram && _executionQueueService.ExecutionState is not (CncExecutionState.PreflightChecking or CncExecutionState.ReadyToRun or CncExecutionState.Running or CncExecutionState.Paused or CncExecutionState.Stopping);
-    public bool CanLoadGcode => EffectiveCapabilities.FileHandling.LocalFileRun && _runtimeCoordinator.CanExecute(CncRuntimeAction.LoadJob, out _);
+    public bool CanLoadGcode => EffectiveCapabilities.FileHandling.LocalFileRun && GetActionDescriptor(CncRuntimeAction.LoadJob).IsAllowed;
     public bool CanPlayPreview => HasLoadedProgram && MotionCommands.Any() && EffectiveCapabilities.Execution.ToolpathPreview && EffectiveCapabilities.Execution.PreviewPlayback && PreviewSimulationState is CncPreviewSimulationState.Ready or CncPreviewSimulationState.Paused or CncPreviewSimulationState.Completed;
     public bool CanPausePreview => PreviewSimulationState == CncPreviewSimulationState.Playing;
     public bool CanStopPreview => PreviewSimulationState is CncPreviewSimulationState.Playing or CncPreviewSimulationState.Paused or CncPreviewSimulationState.Completed;
@@ -1017,15 +1019,15 @@ public class CncControlViewModel : ViewModelBase
                                    && HasLoadedProgram
                                    && TotalMotionCount > 0
                                    && ErrorCount == 0
-                                   && RuntimeStatus.CanRun;
-    public bool CanPauseProgram => RuntimeStatus.CanPause;
-    public bool CanResumeProgram => RuntimeStatus.CanResume;
-    public bool CanStopExecution => EffectiveCapabilities.Motion.Stop && RuntimeStatus.CanStop;
+                                   && GetActionDescriptor(CncRuntimeAction.Run).IsAllowed;
+    public bool CanPauseProgram => GetActionDescriptor(CncRuntimeAction.Pause).IsAllowed;
+    public bool CanResumeProgram => GetActionDescriptor(CncRuntimeAction.Resume).IsAllowed;
+    public bool CanStopExecution => EffectiveCapabilities.Motion.Stop && GetActionDescriptor(CncRuntimeAction.Stop).IsAllowed;
     public bool CanReconnectForRecovery => CanConnectMachine;
-    public bool CanRestartJob => HasLoadedProgram && !RuntimeStatus.IsBusy && !RuntimeStatus.IsAlarmed && RuntimeStatus.HasValidReference;
-    public bool CanAbortJob => HasLoadedProgram && !IsUploadingFirmware;
+    public bool CanRestartJob => HasLoadedProgram && GetActionDescriptor(CncRuntimeAction.Run).IsAllowed;
+    public bool CanAbortJob => HasLoadedProgram && !IsUploadingFirmware && (RuntimeStatus.IsBusy || RecoveryPlan.HasRecovery);
     public bool CanResetState => (EffectiveCapabilities.Protocol.AlarmReset || EffectiveCapabilities.Protocol.SoftReset)
-                                 && _runtimeCoordinator.CanExecute(CncRuntimeAction.ResetAlarm, out _);
+                                 && GetActionDescriptor(CncRuntimeAction.ResetAlarm).IsAllowed;
     public bool CanApplySelectedProfile => SelectedProfile != null && SelectedProfile.ProfileId != _cncProfileService.ActiveProfile.ProfileId;
     public bool IsSelectedProfileBuiltIn => SelectedProfile?.IsBuiltIn == true;
     public bool CanEditSelectedProfile => SelectedProfile?.IsEditable == true;
@@ -1143,23 +1145,25 @@ public class CncControlViewModel : ViewModelBase
         }
     }
 
+    private CncRuntimeActionDescriptor GetActionDescriptor(CncRuntimeAction action)
+    {
+        return RuntimeStatus.GetActionDescriptor(action);
+    }
+
     private void EnsureRuntimeActionAllowed(CncRuntimeAction action)
     {
-        if (_runtimeCoordinator.CanExecute(action, out var reason))
+        var descriptor = GetActionDescriptor(action);
+        if (descriptor.IsAllowed)
             return;
 
-        throw new InvalidOperationException(reason ?? $"'{action}' is not allowed right now.");
+        throw new InvalidOperationException(descriptor.Reason ?? $"'{action}' is not allowed right now.");
     }
 
     private void ConnectMachine()
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Connect);
-            _runtimeCoordinator.SetConnectionInProgress(true);
-            _runtimeCoordinator.SetBooting(true);
-            _cncControllerService.Connect(SelectedPort ?? string.Empty);
-            LastFeedback = "Connection established.";
+            LastFeedback = _cncManagerService.Connect(SelectedPort);
         }
         catch (Exception ex)
         {
@@ -1167,20 +1171,18 @@ public class CncControlViewModel : ViewModelBase
         }
         finally
         {
-            _runtimeCoordinator.SetBooting(false);
-            _runtimeCoordinator.SetConnectionInProgress(false);
             RefreshState();
         }
     }
 
     private void DisconnectMachine()
     {
-        RunRuntimeAction(CncRuntimeAction.Disconnect, () => _cncControllerService.Disconnect(), "Disconnect CNC Machine");
+        RunRuntimeAction(CncRuntimeAction.Disconnect, () => _cncManagerService.Disconnect(), "Disconnect CNC Machine");
     }
 
     private void UnlockMachine()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.Unlock, () => _cncControllerService.EnableMotors(), "Unlock CNC Machine", recovering: HasAlarm || RuntimeStatus.IsLocked);
+        RunRuntimeResponseAction(CncRuntimeAction.Unlock, () => _cncManagerService.Unlock(), "Unlock CNC Machine", recovering: HasAlarm || RuntimeStatus.IsLocked);
     }
 
     private void DisableMotors()
@@ -1190,7 +1192,7 @@ public class CncControlViewModel : ViewModelBase
 
     private void HomeMachine()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.Home, () => _cncControllerService.AutoHome(), "Home CNC Machine", recovering: RuntimeStatus.IsLocked || RuntimeStatus.IsAlarmed);
+        RunRuntimeResponseAction(CncRuntimeAction.Home, () => _cncManagerService.Home(), "Home CNC Machine", recovering: RuntimeStatus.IsLocked || RuntimeStatus.IsAlarmed);
     }
 
     private void MoveToCenter()
@@ -1205,22 +1207,22 @@ public class CncControlViewModel : ViewModelBase
 
     private void SetWorkZeroX()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZeroX(), "Set Work Zero X");
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncManagerService.SetWorkZeroX(), "Set Work Zero X");
     }
 
     private void SetWorkZeroY()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZeroY(), "Set Work Zero Y");
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncManagerService.SetWorkZeroY(), "Set Work Zero Y");
     }
 
     private void SetWorkZeroXY()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncControllerService.SetWorkZeroXY(), "Set Work Zero XY");
+        RunRuntimeResponseAction(CncRuntimeAction.SetWorkZero, () => _cncManagerService.SetWorkZeroXY(), "Set Work Zero XY");
     }
 
     private void ClearWorkZero()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.ClearWorkZero, () => _cncControllerService.ClearWorkOffset(), "Clear Work Zero");
+        RunRuntimeResponseAction(CncRuntimeAction.ClearWorkZero, () => _cncManagerService.ClearWorkZero(), "Clear Work Zero");
     }
 
     private void ResetControllerState()
@@ -1230,15 +1232,14 @@ public class CncControlViewModel : ViewModelBase
 
     private void RefreshControllerStatus()
     {
-        RunRuntimeResponseAction(CncRuntimeAction.RefreshStatus, () => _cncControllerService.RefreshStatus(), "Refresh Controller Status");
+        RunRuntimeResponseAction(CncRuntimeAction.RefreshStatus, () => _cncManagerService.RefreshStatus(), "Refresh Controller Status");
     }
 
     private void Jog(string axis, decimal deltaMm)
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Jog);
-            LastFeedback = _cncControllerService.Jog(axis, deltaMm);
+            LastFeedback = _cncManagerService.Jog(axis, deltaMm);
             RefreshState();
         }
         catch (Exception ex)
@@ -1508,21 +1509,30 @@ public class CncControlViewModel : ViewModelBase
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Run);
-            var preflightFailures = GetExecutionPreflightFailures();
-            if (preflightFailures.Count > 0)
-                throw new InvalidOperationException(preflightFailures[0]);
+            var preflight = GetExecutionPreflight(CncExecutionIntent.Run);
+            if (!preflight.IsAllowed)
+                throw new InvalidOperationException(preflight.Summary ?? "Execution preflight failed.");
 
             RevalidateLoadedProgram();
             if (ErrorCount > 0 || _placedMotions.Any(m => !m.IsValid))
                 throw new InvalidOperationException("Critical validation issues are blocking execution.");
 
-            _executionQueueService.Load(_placedMotions.ToList(), LoadedProgram?.FileName, _placedInterpretedCommands.ToList());
-            _jobSessionService.StartSession(TotalMotionCount);
-            LastFeedback = "Execution started.";
-            AddDiagnostic("Info", "Execution started.");
-            _cncControllerService.RefreshStatus();
-            await _executionQueueService.StartAsync(_cncControllerService);
+            var result = await _cncManagerService.RunAsync(request: new CncExecutionPreflightRequest
+            {
+                Intent = CncExecutionIntent.Run,
+                RuntimeStatus = RuntimeStatus,
+                MachineConfig = _cncControllerService.Config,
+                MachineBounds = _cncControllerService.Bounds,
+                LoadedProgram = LoadedProgram,
+                MotionCommands = _placedMotions.ToList(),
+                InterpretedCommands = _placedInterpretedCommands.ToList(),
+                ParserErrorCount = ErrorCount
+            }, motions: _placedMotions.ToList(), commands: _placedInterpretedCommands.ToList(), activeJobName: LoadedProgram?.FileName, totalMotionCount: TotalMotionCount);
+            if (!result.Success && !string.IsNullOrWhiteSpace(result.Error))
+                throw new InvalidOperationException(result.Error);
+
+            LastFeedback = result.Message;
+            AddDiagnostic("Info", result.Message);
             if (_executionQueueService.ExecutionState == CncExecutionState.Completed)
             {
                 LastFeedback = "Execution completed.";
@@ -1543,7 +1553,7 @@ public class CncControlViewModel : ViewModelBase
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Pause);
+            _cncManagerService.Pause();
         }
         catch (Exception ex)
         {
@@ -1551,8 +1561,6 @@ public class CncControlViewModel : ViewModelBase
             return;
         }
 
-        _executionQueueService.Pause();
-        _jobSessionService.PauseSession("Operator paused the CNC job session.");
         LastFeedback = "Execution paused.";
         AddDiagnostic("Info", "Execution paused.");
         RefreshState();
@@ -1562,14 +1570,11 @@ public class CncControlViewModel : ViewModelBase
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Resume);
-            if (RuntimeStatus.IsAlarmed)
-                throw new InvalidOperationException("Resume blocked until the controller alarm is recovered.");
-
-            _jobSessionService.ResumeSession("Operator resumed the CNC job session.");
-            LastFeedback = "Execution resumed.";
-            AddDiagnostic("Info", "Execution resumed.");
-            await _executionQueueService.ResumeAsync(_cncControllerService);
+            var result = await _cncManagerService.ResumeAsync();
+            if (!result.Success && !string.IsNullOrWhiteSpace(result.Error))
+                throw new InvalidOperationException(result.Error);
+            LastFeedback = result.Message;
+            AddDiagnostic("Info", result.Message);
             if (_executionQueueService.ExecutionState == CncExecutionState.Completed)
             {
                 LastFeedback = "Execution completed.";
@@ -1590,11 +1595,8 @@ public class CncControlViewModel : ViewModelBase
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Stop);
-            _runtimeCoordinator.SetStopRequested(true);
-            await _executionQueueService.StopAsync(_cncControllerService);
-            _jobSessionService.StopSession(CompletedMotionCount, TotalMotionCount, MachineX, MachineY, MachineZ, "Operator stopped the CNC job session.");
-            LastFeedback = "Execution stopped.";
+            var result = await _cncManagerService.StopAsync();
+            LastFeedback = result.Message;
             AddDiagnostic("Warning", "Execution stopped by operator.");
         }
         catch (Exception ex)
@@ -1603,7 +1605,6 @@ public class CncControlViewModel : ViewModelBase
         }
         finally
         {
-            _runtimeCoordinator.SetStopRequested(false);
             RefreshState();
         }
     }
@@ -1622,8 +1623,21 @@ public class CncControlViewModel : ViewModelBase
                 throw new InvalidOperationException(RecoveryPlan.RequiredNextAction);
 
             AddDiagnostic("Warning", "Recovery action selected: restart job from beginning.");
-            _executionQueueService.ResetToLoadedState("Preparing job restart from the beginning.");
-            await StartProgramAsync();
+            var request = new CncExecutionPreflightRequest
+            {
+                Intent = CncExecutionIntent.Run,
+                RuntimeStatus = RuntimeStatus,
+                MachineConfig = _cncControllerService.Config,
+                MachineBounds = _cncControllerService.Bounds,
+                LoadedProgram = LoadedProgram,
+                MotionCommands = _placedMotions.ToList(),
+                InterpretedCommands = _placedInterpretedCommands.ToList(),
+                ParserErrorCount = ErrorCount
+            };
+            var result = await _cncManagerService.RestartAsync(request, _placedMotions.ToList(), _placedInterpretedCommands.ToList(), LoadedProgram?.FileName, TotalMotionCount);
+            if (!result.Success && !string.IsNullOrWhiteSpace(result.Error))
+                throw new InvalidOperationException(result.Error);
+            LastFeedback = result.Message;
         }
         catch (Exception ex)
         {
@@ -1640,21 +1654,8 @@ public class CncControlViewModel : ViewModelBase
         try
         {
             AddDiagnostic("Warning", "Recovery action selected: abort job.");
-
-            if (_executionQueueService.ExecutionState is CncExecutionState.Running or CncExecutionState.Paused or CncExecutionState.Stopping)
-            {
-                _runtimeCoordinator.SetStopRequested(true);
-                await _executionQueueService.StopAsync(_cncControllerService);
-                _runtimeCoordinator.SetStopRequested(false);
-            }
-
-            _executionQueueService.ResetToLoadedState("Job aborted. Loaded program remains available for restart or clear.");
-            if (JobSessionState is not CncJobLifecycleState.Completed and not CncJobLifecycleState.Stopped)
-            {
-                _jobSessionService.StopSession(CompletedMotionCount, TotalMotionCount, MachineX, MachineY, MachineZ, "Operator aborted the CNC job session.");
-            }
-
-            LastFeedback = "Job aborted. Loaded program remains available.";
+            var result = await _cncManagerService.AbortAsync();
+            LastFeedback = result.Message;
         }
         catch (Exception ex)
         {
@@ -1662,7 +1663,6 @@ public class CncControlViewModel : ViewModelBase
         }
         finally
         {
-            _runtimeCoordinator.SetStopRequested(false);
             RefreshState();
         }
     }
@@ -2697,74 +2697,37 @@ public class CncControlViewModel : ViewModelBase
 
     private void UpdateReadinessState()
     {
-        var failures = GetExecutionPreflightFailures();
-        if (failures.Count > 0)
+        var preflight = GetExecutionPreflight(CncExecutionIntent.Run);
+        if (!preflight.IsAllowed)
         {
             var summary = RuntimeStatus.RuntimeState switch
             {
                 CncRuntimeState.Locked => "Machine locked — unlock or home required.",
                 CncRuntimeState.Alarm => "Machine alarm blocks execution.",
                 CncRuntimeState.Disconnected => "Machine is not connected.",
-                _ => failures[0]
+                _ => preflight.Failures[0]
             };
 
-            _jobSessionService.UpdateReadiness(false, summary, failures[0]);
+            _jobSessionService.UpdateReadiness(false, summary, preflight.Failures[0]);
             return;
         }
 
         _jobSessionService.UpdateReadiness(true, "Ready to run. Machine, runtime state, and loaded job passed pre-run checks.", null);
     }
 
-    private List<string> GetExecutionPreflightFailures()
+    private CncExecutionPreflightResult GetExecutionPreflight(CncExecutionIntent intent)
     {
-        var failures = new List<string>();
-
-        if (!HasLoadedProgram)
-            failures.Add("No CNC job is currently loaded.");
-
-        if (SelectedProfile == null)
-            failures.Add("No active machine profile is selected.");
-
-        failures.AddRange(RuntimeStatus.BlockingReasons);
-
-        if (LoadedProgram != null && (ErrorCount > 0 || _placedMotions.Any(m => !m.IsValid)))
-            failures.Add("Resolve parser or bounds errors before starting the job.");
-
-        if (LoadedProgram != null && LoadedProgram.UnsupportedCommandCount > 0)
-            failures.Add("Unsupported G-code commands or planes are blocking execution.");
-
-        if (RuntimeStatus.FirmwareCompatibility.Status == CncFirmwareCompatibilityStatus.Incompatible)
-            failures.Add(RuntimeStatus.FirmwareCompatibility.Errors.FirstOrDefault() ?? "Connected firmware is incompatible with the selected machine profile.");
-
-        if (_placedInterpretedCommands.Any(command => command.IsSpindleChange)
-            && RuntimeStatus.FirmwareIdentity.IsKnown
-            && !RuntimeStatus.FirmwareIdentity.Capabilities.SupportsSpindleOnOff)
+        return _cncManagerService.EvaluatePreflight(new CncExecutionPreflightRequest
         {
-            failures.Add("Loaded job requests spindle commands, but the connected firmware does not support M3/M5.");
-        }
-
-        if (!IsSimulationMode && !RuntimeStatus.HasValidReference)
-            failures.Add(RuntimeStatus.ReferenceWarningText ?? "Machine reference is unknown.");
-
-        if (LoadedProgram != null && _placedMotions.Count > 0)
-        {
-            var invalidBounds = _placedMotions
-                .Select(motion =>
-                {
-                    var result = _coordinateTransformService.WorkToMachine(motion.EndX, motion.EndY, motion.EndZ, _cncControllerService.CoordinateState);
-                    result.BoundsMessage = _cncControllerService.ValidateMachinePosition(result.FinalMachineX, result.FinalMachineY, result.FinalMachineZ);
-                    return result;
-                })
-                .FirstOrDefault(result => !string.IsNullOrWhiteSpace(result.BoundsMessage));
-
-            if (invalidBounds != null)
-                failures.Add(invalidBounds.BoundsMessage ?? "Transformed job bounds exceed the machine workspace.");
-        }
-
-        return failures
-            .Where(message => !string.IsNullOrWhiteSpace(message))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            Intent = intent,
+            RuntimeStatus = RuntimeStatus,
+            MachineConfig = _cncControllerService.Config,
+            MachineBounds = _cncControllerService.Bounds,
+            LoadedProgram = LoadedProgram,
+            MotionCommands = _placedMotions.ToList(),
+            InterpretedCommands = _placedInterpretedCommands.ToList(),
+            ParserErrorCount = ErrorCount
+        });
     }
 
     private void ApplyPlacement()
@@ -2778,16 +2741,13 @@ public class CncControlViewModel : ViewModelBase
             OffsetY = PlacementOffsetY
         };
 
-        var validationMessage = LoadedProgram.Motions
-            .Where(m => m.IsExecutable)
-            .Select(motion =>
-            {
-                var state = _cncControllerService.CoordinateState;
-                state.JobPlacementOffset = new CncJobPlacementOffset { X = proposedPlacement.OffsetX, Y = proposedPlacement.OffsetY, Z = 0m };
-                var result = _coordinateTransformService.WorkToMachine(motion.EndX, motion.EndY, motion.EndZ, state);
-                return _cncControllerService.ValidateMachinePosition(result.FinalMachineX, result.FinalMachineY, result.FinalMachineZ);
-            })
-            .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+        var validationMessage = _jobPlacementService.ValidatePlacement(
+            LoadedProgram.Motions.Where(m => m.IsExecutable).ToList(),
+            proposedPlacement,
+            XMinMm,
+            XLimitMm,
+            YMinMm,
+            YLimitMm);
         if (validationMessage != null)
         {
             HandleUiError(validationMessage, "Apply Job Placement", logAsWarning: true);
@@ -3027,7 +2987,9 @@ public class CncControlViewModel : ViewModelBase
     {
         try
         {
-            EnsureRuntimeActionAllowed(CncRuntimeAction.Frame);
+            var preflight = GetExecutionPreflight(CncExecutionIntent.Frame);
+            if (!preflight.IsAllowed)
+                throw new InvalidOperationException(preflight.Summary ?? "Frame preflight failed.");
             if (!_frameBounds.IsValid)
                 throw new InvalidOperationException("Load a valid G-code job before running frame preview.");
 
@@ -3040,7 +3002,21 @@ public class CncControlViewModel : ViewModelBase
             {
                 LastFeedback = "Frame preview started. Running physical frame on the machine...";
                 AddDiagnostic("Info", "Physical frame started on the connected machine.");
-                await Task.Run(() => RunFrameOnMachine(frameMotions));
+                var result = await _cncManagerService.RunFrameAsync(
+                    new CncExecutionPreflightRequest
+                    {
+                        Intent = CncExecutionIntent.Frame,
+                        RuntimeStatus = RuntimeStatus,
+                        MachineConfig = _cncControllerService.Config,
+                        MachineBounds = _cncControllerService.Bounds,
+                        LoadedProgram = LoadedProgram,
+                        MotionCommands = _placedMotions.ToList(),
+                        InterpretedCommands = _placedInterpretedCommands.ToList(),
+                        ParserErrorCount = ErrorCount
+                    },
+                    frameMotions);
+                if (!result.Success && !string.IsNullOrWhiteSpace(result.Error))
+                    throw new InvalidOperationException(result.Error);
                 LastFeedback = "Frame preview completed and the machine traced the loaded job bounds.";
                 AddDiagnostic("Info", "Physical frame completed on the connected machine.");
             }

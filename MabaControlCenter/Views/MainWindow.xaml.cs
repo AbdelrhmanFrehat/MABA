@@ -34,10 +34,13 @@ public partial class MainWindow : Window
         var cncJobSessionService = new CncJobSessionService();
         var cncPreviewPlaybackService = new CncPreviewPlaybackService();
         var cncFramePathService = new CncFramePathService();
-        var cncJobPlacementService = new CncJobPlacementService();
+        var cncJobPlacementService = new CncJobPlacementService(cncCoordinateTransformService);
         var cncControllerStateMachine = new CncControllerStateMachine();
         var cncRecoveryPlannerService = new CncRecoveryPlannerService();
-        var cncRuntimeCoordinator = new CncRuntimeCoordinator(cncControllerService, cncExecutionQueueService, cncJobSessionService, activeMachineContextService, cncControllerStateMachine, cncRecoveryPlannerService);
+        var cncRuntimeActionPolicy = new CncRuntimeActionPolicyService(cncControllerStateMachine);
+        var cncRuntimeCoordinator = new CncRuntimeCoordinator(cncControllerService, cncExecutionQueueService, cncJobSessionService, activeMachineContextService, cncControllerStateMachine, cncRecoveryPlannerService, cncRuntimeActionPolicy);
+        var cncExecutionPreflightService = new CncExecutionPreflightService(cncCoordinateTransformService);
+        var cncManagerService = new CncManagerService(cncControllerService, cncExecutionQueueService, cncJobSessionService, cncRuntimeCoordinator, cncExecutionPreflightService, cncCoordinateTransformService);
         var localizationService = (ILocalizationService)Application.Current.Resources["LocalizationService"];
 
         // Load saved settings and apply theme + language on startup
@@ -45,7 +48,7 @@ public partial class MainWindow : Window
         themeService.ApplyTheme(settings.Theme);
         localizationService.SetCulture(settings.Language);
 
-        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, cncRuntimeCoordinator, cncCoordinateTransformService, authSessionService);
+        var nav = new NavigationService(deviceService, loggingService, appAnnouncementsService, moduleService, updateService, newsService, themeService, localizationService, settingsService, jobsService, activeProductionJobService, cncProfileService, cncControllerService, gcodeParserService, cncExecutionQueueService, cncJobSessionService, cncPreviewPlaybackService, cncFramePathService, cncJobPlacementService, machineCatalogService, runtimeProfileService, activeMachineContextService, cncRuntimeCoordinator, cncCoordinateTransformService, cncManagerService, authSessionService);
         DataContext = new MainViewModel(nav, authSessionService);
         if (settings.CheckForUpdatesAutomatically)
             _ = updateService.CheckForUpdatesAsync(userInitiated: false);

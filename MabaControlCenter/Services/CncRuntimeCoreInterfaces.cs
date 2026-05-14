@@ -26,6 +26,11 @@ public interface ICncControllerStateMachine
     bool CanTransition(CncRuntimeState from, CncRuntimeState to);
 }
 
+public interface ICncRuntimeActionPolicy
+{
+    CncRuntimeActionPolicy Build(CncRuntimeStatus status);
+}
+
 public interface ICncRuntimeCoordinator
 {
     CncRuntimeStatus Current { get; }
@@ -47,6 +52,35 @@ public interface ICncRuntimeCoordinator
 public interface ICncRecoveryPlannerService
 {
     CncRecoveryPlan BuildPlan(CncRuntimeStatus status, ICncExecutionQueueService executionQueueService, ICncJobSessionService jobSessionService);
+}
+
+public interface ICncExecutionPreflightService
+{
+    CncExecutionPreflightResult Evaluate(CncExecutionPreflightRequest request, ICncControllerService controllerService);
+}
+
+public interface ICncManagerService
+{
+    string Connect(string? portName);
+    void Disconnect();
+    string RefreshStatus();
+    string Unlock();
+    string Home();
+    string Jog(string axis, decimal deltaMm);
+    string SetWorkZeroX();
+    string SetWorkZeroY();
+    string SetWorkZeroXY();
+    string ClearWorkZero();
+    CncExecutionPreflightResult EvaluatePreflight(CncExecutionPreflightRequest request);
+    Task<CncManagerOperationResult> RunAsync(CncExecutionPreflightRequest request, IReadOnlyList<GcodeMotionCommand> motions, IReadOnlyList<GcodeInterpretedCommand> commands, string? activeJobName, int totalMotionCount);
+    Task<CncManagerOperationResult> RunFrameAsync(CncExecutionPreflightRequest request, IReadOnlyList<GcodeMotionCommand> frameMotions);
+    void Pause();
+    Task<CncManagerOperationResult> ResumeAsync();
+    Task<CncManagerOperationResult> StopAsync();
+    Task<CncManagerOperationResult> RestartAsync(CncExecutionPreflightRequest request, IReadOnlyList<GcodeMotionCommand> motions, IReadOnlyList<GcodeInterpretedCommand> commands, string? activeJobName, int totalMotionCount);
+    Task<CncManagerOperationResult> AbortAsync();
+    void BeginRecovery();
+    void EndRecovery();
 }
 
 public interface ICncCoordinateTransformService
@@ -94,4 +128,9 @@ public interface ICncCoordinateTransformService
     CncFrameBounds ComputeFrameBounds(IReadOnlyList<GcodeMotionCommand> motions);
 
     string ExplainTransform(CncCoordinateTransformResult result);
+
+    CncCoordinateTransformResult Validate(
+        CncCoordinateTransformResult result,
+        CncMachineBounds bounds,
+        CncMachineConfig config);
 }

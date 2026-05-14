@@ -93,11 +93,13 @@ public class CncRuntimeStatus
     public bool LimitZTriggered { get; set; }
     public string? FirmwareVersion { get; set; }
     public string? ProtocolVersion { get; set; }
+    public CncControllerStatusConfidence ControllerStatusConfidence { get; set; } = CncControllerStatusConfidence.Unknown;
     public CncFirmwareIdentity FirmwareIdentity { get; set; } = new();
     public CncFirmwareCompatibilityResult FirmwareCompatibility { get; set; } = new();
     public string? BlockingReason { get; set; }
     public IReadOnlyList<string> BlockingReasons { get; set; } = Array.Empty<string>();
     public CncRecoveryPlan RecoveryPlan { get; set; } = new();
+    public CncRuntimeActionPolicy ActionPolicy { get; set; } = new();
 
     public string RuntimeStateDisplay => RuntimeState switch
     {
@@ -114,4 +116,14 @@ public class CncRuntimeStatus
 
     public string ReferenceStatusDisplay => ReferenceState.StatusText;
     public string? ReferenceWarningText => ReferenceState.WarningText;
+    public string? ControllerStatusWarningText => ControllerStatusConfidence switch
+    {
+        CncControllerStatusConfidence.LastKnown => "Controller status is based on the last known response. Refresh status before running.",
+        CncControllerStatusConfidence.Stale => "Controller status is stale. Refresh is required before running or jogging.",
+        CncControllerStatusConfidence.Unknown => "Controller state is not verified yet.",
+        _ => null
+    };
+
+    public CncRuntimeActionDescriptor GetActionDescriptor(CncRuntimeAction action)
+        => ActionPolicy[action];
 }

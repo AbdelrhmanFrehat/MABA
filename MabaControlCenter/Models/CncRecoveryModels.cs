@@ -66,6 +66,13 @@ public class CncRecoveryPlan
     public bool RequiresRehome { get; set; }
     public bool CanTrustWorkOffset { get; set; } = true;
     public bool PreferRestartOverResume { get; set; }
+    public bool IsConnectionVerified { get; set; }
+    public bool IsFirmwareVerified { get; set; }
+    public bool IsStatusFresh { get; set; }
+    public bool IsReferenceTrusted { get; set; }
+    public bool IsPositionTrusted { get; set; }
+    public bool IsCapabilityVerified { get; set; }
+    public bool IsResumeSafe { get; set; }
     public int? FailedSourceLine { get; set; }
     public string? FailedCommandText { get; set; }
     public string? ControllerMessage { get; set; }
