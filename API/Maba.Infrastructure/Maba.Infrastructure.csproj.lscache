@@ -1,0 +1,489 @@
+version=1
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Maba.Infrastructure
+CommandLineArgsForDesignTimeEvaluation=-langversion:12.0 -define:TRACE
+CompilerGeneratedFilesOutputPath=
+MaxSupportedLangVersion=12.0
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Maba.Infrastructure
+RunAnalyzers=
+RunAnalyzersDuringLiveAnalysis=
+SolutionPath=*Undefined*
+TargetFrameworkIdentifier=.NETCoreApp
+TargetPath=<PATH>bin/Debug/net8.0/Maba.Infrastructure.dll
+TargetRefPath=<PATH>obj/Debug/net8.0/ref/Maba.Infrastructure.dll
+TemporaryDependencyNodeTargetIdentifier=net8.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:8
+/define:TRACE;DEBUG;NET;NET8_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj\Debug\net8.0\Maba.Infrastructure.dll
+/refout:obj\Debug\net8.0\refint\Maba.Infrastructure.dll
+/target:library
+/warnaserror-
+/utf8output
+/deterministic+
+/langversion:12.0
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+Data/
+ ApplicationDbContext.cs
+ Configurations/
+  AccountingConfiguration.cs
+  AppAnnouncementItemConfiguration.cs
+  AppRuntimeMetadataConfiguration.cs
+  AssetsConfiguration.cs
+  AuditLogConfiguration.cs
+  BaseEntityConfiguration.cs
+  BrandConfiguration.cs
+  BusinessInventoryConfiguration.cs
+  CatalogCommercialConfiguration.cs
+  CategoryConfiguration.cs
+  CommercialReturnsConfiguration.cs
+  ControlCenter/
+   CcAuditEventConfiguration.cs
+   CcCommandConfiguration.cs
+   CcDeviceConfiguration.cs
+   CcJobConfiguration.cs
+   CcJobTemplateConfiguration.cs
+   CcTelemetryRecordConfiguration.cs
+   ControlCenterInstanceConfiguration.cs
+  CrmConfiguration.cs
+  DesignCadServiceRequestAttachmentConfiguration.cs
+  DesignCadServiceRequestConfiguration.cs
+  DesignServiceRequestAttachmentConfiguration.cs
+  DesignServiceRequestConfiguration.cs
+  EmailTemplateConfiguration.cs
+  FaqItemConfiguration.cs
+  FilamentSpoolConfiguration.cs
+  FinanceCommercialConfiguration.cs
+  HeroTickerItemConfiguration.cs
+  ItemConfiguration.cs
+  ItemStatusConfiguration.cs
+  ItemTagConfiguration.cs
+  LaserServiceRequestConfiguration.cs
+  LookupConfiguration.cs
+  MachineCatalog/
+   MachineCategoryConfiguration.cs
+   MachineDefinitionConfiguration.cs
+   MachineFamilyConfiguration.cs
+  MaterialColorConfiguration.cs
+  NotificationConfiguration.cs
+  NumberingConfiguration.cs
+  OrderConfiguration.cs
+  OrderStatusConfiguration.cs
+  PermissionConfiguration.cs
+  PricingConfiguration.cs
+  Print3dServiceRequestConfiguration.cs
+  PrintJobConfiguration.cs
+  PrintJobStatusConfiguration.cs
+  QuotationConfiguration.cs
+  RoleConfiguration.cs
+  RolePermissionConfiguration.cs
+  SlicingJobConfiguration.cs
+  SlicingJobStatusConfiguration.cs
+  SoftwareConfiguration.cs
+  StorageConfiguration.cs
+  SupportConversationConfiguration.cs
+  SupportMessageConfiguration.cs
+  SystemSettingConfiguration.cs
+  TagConfiguration.cs
+  TaxConfigurationEntityConfiguration.cs
+  UserConfiguration.cs
+  UserRoleConfiguration.cs
+ Seeding/
+  DatabaseSeeder.cs
+  FaqContent.Cnc.cs
+  FaqContent.cs
+  FaqContent.General.cs
+  FaqContent.Laser.cs
+  FaqContent.OrdersShipping.cs
+  FaqContent.Payments.cs
+  FaqContent.Print3d.cs
+  FaqContent.Software.cs
+  FaqContent.Support.cs
+DependencyInjection.cs
+Migrations/
+ 20250304170000_AddEmailVerificationTokenToUser.cs
+ 20251130101657_InitialCreate.cs
+ 20251130101657_InitialCreate.Designer.cs
+ 20251201152815_CompleteBackendImplementation.cs
+ 20251201152815_CompleteBackendImplementation.Designer.cs
+ 20260127134057_AddPrintQualityProfile.cs
+ 20260127134057_AddPrintQualityProfile.Designer.cs
+ 20260128171834_AddCartEntities.cs
+ 20260128171834_AddCartEntities.Designer.cs
+ 20260202120000_AddSupportChat.cs
+ 20260202120000_AddSupportChat.Designer.cs
+ 20260202150000_AddSupportMessageAttachments.cs
+ 20260202150000_AddSupportMessageAttachments.Designer.cs
+ 20260221010049_AddLaserMaterialsTable.cs
+ 20260221010049_AddLaserMaterialsTable.Designer.cs
+ 20260221010914_AddLaserServiceRequests.cs
+ 20260221010914_AddLaserServiceRequests.Designer.cs
+ 20260221014252_AddLaserRequestDimensions.cs
+ 20260221014252_AddLaserRequestDimensions.Designer.cs
+ 20260221024202_AddPrint3dServiceRequest.cs
+ 20260221024202_AddPrint3dServiceRequest.Designer.cs
+ 20260221092636_AddSoftwareModule.cs
+ 20260221092636_AddSoftwareModule.Designer.cs
+ 20260222183927_AddMaterialColors.cs
+ 20260222183927_AddMaterialColors.Designer.cs
+ 20260222224434_AddProjectsModule.cs
+ 20260222224434_AddProjectsModule.Designer.cs
+ 20260222233534_AddCncEntities.cs
+ 20260222233534_AddCncEntities.Designer.cs
+ 20260223001857_UpdateCncServiceRequestFields.cs
+ 20260223001857_UpdateCncServiceRequestFields.Designer.cs
+ 20260223011540_AddCncInputTypeAndDesignNotes.cs
+ 20260223011540_AddCncInputTypeAndDesignNotes.Designer.cs
+ 20260224010458_AddCncMaterialRulesEngine.cs
+ 20260224010458_AddCncMaterialRulesEngine.Designer.cs
+ 20260224173824_AddContactMessages.cs
+ 20260224173824_AddContactMessages.Designer.cs
+ 20260224174234_AddCoupons.cs
+ 20260224174234_AddCoupons.Designer.cs
+ 20260224174635_AddCouponsTable.cs
+ 20260224174635_AddCouponsTable.Designer.cs
+ 20260224194108_AddProjectRequestFields.cs
+ 20260224194108_AddProjectRequestFields.Designer.cs
+ 20260302203249_AddFaqItems.cs
+ 20260302203249_AddFaqItems.Designer.cs
+ 20260304162058_AddHeroTickerItems.cs
+ 20260304162058_AddHeroTickerItems.Designer.cs
+ 20260306002452_AddDesignCadServiceRequests.cs
+ 20260306002452_AddDesignCadServiceRequests.Designer.cs
+ 20260317180951_AddControlCenterCoreEntities.cs
+ 20260317180951_AddControlCenterCoreEntities.Designer.cs
+ 20260402133902_AddReviewIsRejected.cs
+ 20260402133902_AddReviewIsRejected.Designer.cs
+ 20260402140000_AddSupportConversationSubjectAndLinks.cs
+ 20260402153000_AddCncMaterialPcbFields.cs
+ 20260403194946_AddFilamentSpools.cs
+ 20260403194946_AddFilamentSpools.Designer.cs
+ 20260403200309_AddPrint3dRequestUsedSpoolAndEstimatedGrams.cs
+ 20260403200309_AddPrint3dRequestUsedSpoolAndEstimatedGrams.Designer.cs
+ 20260403200809_AddPrint3dRequestIsFilamentDeducted.cs
+ 20260403200809_AddPrint3dRequestIsFilamentDeducted.Designer.cs
+ 20260403201326_AddPrint3dRequestActualFilamentGrams.cs
+ 20260403201326_AddPrint3dRequestActualFilamentGrams.Designer.cs
+ 20260403202128_AddPrint3dEstimatedPrintTimeAndSuggestedPrice.cs
+ 20260403202128_AddPrint3dEstimatedPrintTimeAndSuggestedPrice.Designer.cs
+ 20260405164000_AddCommercialFoundation.cs
+ 20260407170000_UpgradeProjectRequestsForEngineeringWorkflow.cs
+ 20260407180000_DeactivateAutonomousDroneProject.cs
+ 20260407190000_AddEngineeringWorkflowToProjectRequests.cs
+ 20260408193000_EnsureEmailVerificationColumnsExist.cs
+ 20260408210000_AddCommercialReturns.cs
+ 20260409000000_AddCustomerIdToServiceRequests.cs
+ 20260409210000_AddQuotationsAndCommercialLinks.cs
+ 20260410194132_FixDefaultCurrencyToILS.cs
+ 20260410194132_FixDefaultCurrencyToILS.Designer.cs
+ 20260410200148_AddInvoicePostingFields.cs
+ 20260410200148_AddInvoicePostingFields.Designer.cs
+ 20260415162327_AddRejectionReasonToServiceRequests.cs
+ 20260415162327_AddRejectionReasonToServiceRequests.Designer.cs
+ 20260415180247_AddAssetsAndExpensePayment.cs
+ 20260415180247_AddAssetsAndExpensePayment.Designer.cs
+ 20260415193000_AddControlCenterBridgeJobs.cs
+ 20260415211924_AddDownloadableFiles.cs
+ 20260415211924_AddDownloadableFiles.Designer.cs
+ 20260415225421_AddWishlist.cs
+ 20260415225421_AddWishlist.Designer.cs
+ 20260421182926_AddMachineCatalog.cs
+ 20260421182926_AddMachineCatalog.Designer.cs
+ 20260421203127_AddMachineDefinitionImageUrls.cs
+ 20260421203127_AddMachineDefinitionImageUrls.Designer.cs
+ 20260423120000_AddAppAnnouncementItems.cs
+ 20260423130000_AddAnnouncementImageFields.cs
+ 20260428120000_AddStorageParentsAndVariants.cs
+ 20260429100000_ExpandDesignCadTextFields.cs
+ 20260507120000_AddAppRuntimeMetadata.cs
+ ApplicationDbContextModelSnapshot.cs
+obj/Debug/net8.0/
+ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+ Maba.Infrastructure.AssemblyInfo.cs
+ Maba.Infrastructure.GlobalUsings.g.cs
+Services/
+ AccountingPostingService.cs
+ AuditService.cs
+ ControlCenterJobBridgeService.cs
+ CustomerResolverService.cs
+ DocumentNumberService.cs
+ LocalFileStorageService.cs
+ MockAiService.cs
+ MockEmailService.cs
+ NotificationService.cs
+ OpenAiService.cs
+ SmtpEmailService.cs
+ SmtpSettings.cs
+Workers/
+ PrintJobWorker.cs
+ SlicingJobWorker.cs
+
+[metadataReferences]
+../
+ Maba.Application/obj/Debug/net8.0/ref/Maba.Application.dll
+ Maba.Domain/obj/Debug/net8.0/ref/Maba.Domain.dll
+<NUGET>/
+ azure.core/1.38.0/lib/net6.0/Azure.Core.dll
+ azure.identity/1.11.4/lib/netstandard2.0/Azure.Identity.dll
+ bcrypt.net-next/4.0.3/lib/net6.0/BCrypt.Net-Next.dll
+ fluentvalidation.dependencyinjectionextensions/12.1.0/lib/net8.0/FluentValidation.DependencyInjectionExtensions.dll
+ fluentvalidation/12.1.0/lib/net8.0/FluentValidation.dll
+ mediatr.contracts/2.0.1/lib/netstandard2.0/MediatR.Contracts.dll
+ mediatr/13.1.0/lib/net8.0/MediatR.dll
+ microsoft.aspnetcore.http.abstractions/2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll
+ microsoft.aspnetcore.http.features/2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.dll
+ microsoft.bcl.asyncinterfaces/6.0.0/lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll
+ microsoft.data.sqlclient/5.1.6/ref/net6.0/Microsoft.Data.SqlClient.dll
+ microsoft.entityframeworkcore.abstractions/8.0.11/lib/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll
+ microsoft.entityframeworkcore.relational/8.0.11/lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll
+ microsoft.entityframeworkcore.sqlserver/8.0.11/lib/net8.0/Microsoft.EntityFrameworkCore.SqlServer.dll
+ microsoft.entityframeworkcore/8.0.11/lib/net8.0/Microsoft.EntityFrameworkCore.dll
+ microsoft.extensions.caching.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Caching.Abstractions.dll
+ microsoft.extensions.caching.memory/8.0.1/lib/net8.0/Microsoft.Extensions.Caching.Memory.dll
+ microsoft.extensions.configuration.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.configuration.binder/8.0.0/lib/net8.0/Microsoft.Extensions.Configuration.Binder.dll
+ microsoft.extensions.configuration/8.0.0/lib/net8.0/Microsoft.Extensions.Configuration.dll
+ microsoft.extensions.dependencyinjection.abstractions/8.0.2/lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.dependencyinjection/8.0.1/lib/net8.0/Microsoft.Extensions.DependencyInjection.dll
+ microsoft.extensions.diagnostics.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+ microsoft.extensions.diagnostics/8.0.0/lib/net8.0/Microsoft.Extensions.Diagnostics.dll
+ microsoft.extensions.fileproviders.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.hosting.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Hosting.Abstractions.dll
+ microsoft.extensions.http/8.0.0/lib/net8.0/Microsoft.Extensions.Http.dll
+ microsoft.extensions.logging.abstractions/8.0.2/lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.logging/8.0.1/lib/net8.0/Microsoft.Extensions.Logging.dll
+ microsoft.extensions.options.configurationextensions/8.0.0/lib/net8.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll
+ microsoft.extensions.options/8.0.2/lib/net8.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/8.0.0/lib/net8.0/Microsoft.Extensions.Primitives.dll
+ microsoft.identity.client.extensions.msal/4.61.3/lib/net6.0/Microsoft.Identity.Client.Extensions.Msal.dll
+ microsoft.identity.client/4.61.3/lib/net6.0/Microsoft.Identity.Client.dll
+ microsoft.identitymodel.abstractions/8.14.0/lib/net8.0/Microsoft.IdentityModel.Abstractions.dll
+ microsoft.identitymodel.jsonwebtokens/8.14.0/lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll
+ microsoft.identitymodel.logging/8.14.0/lib/net8.0/Microsoft.IdentityModel.Logging.dll
+ microsoft.identitymodel.protocols.openidconnect/6.35.0/lib/net6.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+ microsoft.identitymodel.protocols/6.35.0/lib/net6.0/Microsoft.IdentityModel.Protocols.dll
+ microsoft.identitymodel.tokens/8.14.0/lib/net8.0/Microsoft.IdentityModel.Tokens.dll
+ microsoft.netcore.app.ref/8.0.24/ref/net8.0/
+  Microsoft.CSharp.dll
+  Microsoft.VisualBasic.Core.dll
+  Microsoft.VisualBasic.dll
+  Microsoft.Win32.Primitives.dll
+  Microsoft.Win32.Registry.dll
+  mscorlib.dll
+  netstandard.dll
+  System.AppContext.dll
+  System.Buffers.dll
+  System.Collections.Concurrent.dll
+  System.Collections.dll
+  System.Collections.Immutable.dll
+  System.Collections.NonGeneric.dll
+  System.Collections.Specialized.dll
+  System.ComponentModel.Annotations.dll
+  System.ComponentModel.DataAnnotations.dll
+  System.ComponentModel.dll
+  System.ComponentModel.EventBasedAsync.dll
+  System.ComponentModel.Primitives.dll
+  System.ComponentModel.TypeConverter.dll
+  System.Configuration.dll
+  System.Console.dll
+  System.Core.dll
+  System.Data.Common.dll
+  System.Data.DataSetExtensions.dll
+  System.Data.dll
+  System.Diagnostics.Contracts.dll
+  System.Diagnostics.Debug.dll
+  System.Diagnostics.DiagnosticSource.dll
+  System.Diagnostics.FileVersionInfo.dll
+  System.Diagnostics.Process.dll
+  System.Diagnostics.StackTrace.dll
+  System.Diagnostics.TextWriterTraceListener.dll
+  System.Diagnostics.Tools.dll
+  System.Diagnostics.TraceSource.dll
+  System.Diagnostics.Tracing.dll
+  System.dll
+  System.Drawing.dll
+  System.Drawing.Primitives.dll
+  System.Dynamic.Runtime.dll
+  System.Formats.Asn1.dll
+  System.Formats.Tar.dll
+  System.Globalization.Calendars.dll
+  System.Globalization.dll
+  System.Globalization.Extensions.dll
+  System.IO.Compression.Brotli.dll
+  System.IO.Compression.dll
+  System.IO.Compression.FileSystem.dll
+  System.IO.Compression.ZipFile.dll
+  System.IO.dll
+  System.IO.FileSystem.AccessControl.dll
+  System.IO.FileSystem.dll
+  System.IO.FileSystem.DriveInfo.dll
+  System.IO.FileSystem.Primitives.dll
+  System.IO.FileSystem.Watcher.dll
+  System.IO.IsolatedStorage.dll
+  System.IO.MemoryMappedFiles.dll
+  System.IO.Pipes.AccessControl.dll
+  System.IO.Pipes.dll
+  System.IO.UnmanagedMemoryStream.dll
+  System.Linq.dll
+  System.Linq.Expressions.dll
+  System.Linq.Parallel.dll
+  System.Linq.Queryable.dll
+  System.Memory.dll
+  System.Net.dll
+  System.Net.Http.dll
+  System.Net.Http.Json.dll
+  System.Net.HttpListener.dll
+  System.Net.Mail.dll
+  System.Net.NameResolution.dll
+  System.Net.NetworkInformation.dll
+  System.Net.Ping.dll
+  System.Net.Primitives.dll
+  System.Net.Quic.dll
+  System.Net.Requests.dll
+  System.Net.Security.dll
+  System.Net.ServicePoint.dll
+  System.Net.Sockets.dll
+  System.Net.WebClient.dll
+  System.Net.WebHeaderCollection.dll
+  System.Net.WebProxy.dll
+  System.Net.WebSockets.Client.dll
+  System.Net.WebSockets.dll
+  System.Numerics.dll
+  System.Numerics.Vectors.dll
+  System.ObjectModel.dll
+  System.Reflection.DispatchProxy.dll
+  System.Reflection.dll
+  System.Reflection.Emit.dll
+  System.Reflection.Emit.ILGeneration.dll
+  System.Reflection.Emit.Lightweight.dll
+  System.Reflection.Extensions.dll
+  System.Reflection.Metadata.dll
+  System.Reflection.Primitives.dll
+  System.Reflection.TypeExtensions.dll
+  System.Resources.Reader.dll
+  System.Resources.ResourceManager.dll
+  System.Resources.Writer.dll
+  System.Runtime.CompilerServices.Unsafe.dll
+  System.Runtime.CompilerServices.VisualC.dll
+  System.Runtime.dll
+  System.Runtime.Extensions.dll
+  System.Runtime.Handles.dll
+  System.Runtime.InteropServices.dll
+  System.Runtime.InteropServices.JavaScript.dll
+  System.Runtime.InteropServices.RuntimeInformation.dll
+  System.Runtime.Intrinsics.dll
+  System.Runtime.Loader.dll
+  System.Runtime.Numerics.dll
+  System.Runtime.Serialization.dll
+  System.Runtime.Serialization.Formatters.dll
+  System.Runtime.Serialization.Json.dll
+  System.Runtime.Serialization.Primitives.dll
+  System.Runtime.Serialization.Xml.dll
+  System.Security.AccessControl.dll
+  System.Security.Claims.dll
+  System.Security.Cryptography.Algorithms.dll
+  System.Security.Cryptography.Cng.dll
+  System.Security.Cryptography.Csp.dll
+  System.Security.Cryptography.dll
+  System.Security.Cryptography.Encoding.dll
+  System.Security.Cryptography.OpenSsl.dll
+  System.Security.Cryptography.Primitives.dll
+  System.Security.Cryptography.X509Certificates.dll
+  System.Security.dll
+  System.Security.Principal.dll
+  System.Security.Principal.Windows.dll
+  System.Security.SecureString.dll
+  System.ServiceModel.Web.dll
+  System.ServiceProcess.dll
+  System.Text.Encoding.CodePages.dll
+  System.Text.Encoding.dll
+  System.Text.Encoding.Extensions.dll
+  System.Text.Encodings.Web.dll
+  System.Text.Json.dll
+  System.Text.RegularExpressions.dll
+  System.Threading.Channels.dll
+  System.Threading.dll
+  System.Threading.Overlapped.dll
+  System.Threading.Tasks.Dataflow.dll
+  System.Threading.Tasks.dll
+  System.Threading.Tasks.Extensions.dll
+  System.Threading.Tasks.Parallel.dll
+  System.Threading.Thread.dll
+  System.Threading.ThreadPool.dll
+  System.Threading.Timer.dll
+  System.Transactions.dll
+  System.Transactions.Local.dll
+  System.ValueTuple.dll
+  System.Web.dll
+  System.Web.HttpUtility.dll
+  System.Windows.dll
+  System.Xml.dll
+  System.Xml.Linq.dll
+  System.Xml.ReaderWriter.dll
+  System.Xml.Serialization.dll
+  System.Xml.XDocument.dll
+  System.Xml.XmlDocument.dll
+  System.Xml.XmlSerializer.dll
+  System.Xml.XPath.dll
+  System.Xml.XPath.XDocument.dll
+  WindowsBase.dll
+ microsoft.sqlserver.server/1.0.0/lib/netstandard2.0/Microsoft.SqlServer.Server.dll
+ microsoft.win32.systemevents/8.0.0/lib/net8.0/Microsoft.Win32.SystemEvents.dll
+ system.clientmodel/1.0.0/lib/net6.0/System.ClientModel.dll
+ system.drawing.common/8.0.0/lib/net8.0/System.Drawing.Common.dll
+ system.identitymodel.tokens.jwt/8.2.1/lib/net8.0/System.IdentityModel.Tokens.Jwt.dll
+ system.memory.data/1.0.2/lib/netstandard2.0/System.Memory.Data.dll
+ system.security.cryptography.protecteddata/6.0.0/lib/net6.0/System.Security.Cryptography.ProtectedData.dll
+
+[analyzerReferences]
+<DOTNET>/sdk/10.0.103/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/microsoft.codeanalysis.analyzers/3.3.3/analyzers/dotnet/cs/
+ Microsoft.CodeAnalysis.Analyzers.dll
+ Microsoft.CodeAnalysis.CSharp.Analyzers.dll
+<NUGET>/
+ microsoft.entityframeworkcore.analyzers/8.0.11/analyzers/dotnet/cs/Microsoft.EntityFrameworkCore.Analyzers.dll
+ microsoft.extensions.logging.abstractions/8.0.2/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
+ microsoft.extensions.options/8.0.2/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ microsoft.netcore.app.ref/8.0.24/analyzers/dotnet/cs/
+  Microsoft.Interop.ComInterfaceGenerator.dll
+  Microsoft.Interop.JavaScript.JSImportGenerator.dll
+  Microsoft.Interop.LibraryImportGenerator.dll
+  Microsoft.Interop.SourceGeneration.dll
+  System.Text.Json.SourceGeneration.dll
+  System.Text.RegularExpressions.Generator.dll
+
+[analyzerConfigFiles]
+<DOTNET>/sdk/10.0.103/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
+obj/Debug/net8.0/Maba.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig

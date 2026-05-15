@@ -1,0 +1,1044 @@
+version=1
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Maba.Application
+CommandLineArgsForDesignTimeEvaluation=-langversion:12.0 -define:TRACE
+CompilerGeneratedFilesOutputPath=
+MaxSupportedLangVersion=12.0
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Maba.Application
+RunAnalyzers=
+RunAnalyzersDuringLiveAnalysis=
+SolutionPath=*Undefined*
+TargetFrameworkIdentifier=.NETCoreApp
+TargetPath=<PATH>bin/Debug/net8.0/Maba.Application.dll
+TargetRefPath=<PATH>obj/Debug/net8.0/ref/Maba.Application.dll
+TemporaryDependencyNodeTargetIdentifier=net8.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:8
+/define:TRACE;DEBUG;NET;NET8_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj\Debug\net8.0\Maba.Application.dll
+/refout:obj\Debug\net8.0\refint\Maba.Application.dll
+/target:library
+/warnaserror-
+/utf8output
+/deterministic+
+/langversion:12.0
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+Common/
+ Behaviors/ValidationBehavior.cs
+ ControlCenterJobs/ControlCenterJobBridgeDefinition.cs
+ Emails/
+  ShopOrderEmailHtmlBuilder.cs
+  ShopOrderEmailModels.cs
+ Exceptions/
+  EmailNotVerifiedException.cs
+  ValidationException.cs
+ Interfaces/
+  IAccountingPostingService.cs
+  IAiService.cs
+  IApplicationDbContext.cs
+  IAuditService.cs
+  IControlCenterJobBridgeService.cs
+  ICustomerResolverService.cs
+  IDocumentNumberService.cs
+  IEmailService.cs
+  IFileStorageService.cs
+  INotificationService.cs
+  IPricingService.cs
+  IRepository.cs
+ Models/
+  AdvancedPricingResult.cs
+  PagedResult.cs
+ ServiceRequests/
+  AdminServiceRequestDtos.cs
+  ServiceRequestWorkflowStatus.cs
+DependencyInjection.cs
+Features/Accounting/Commands/
+ PostSalesInvoiceCommand.cs
+ PostSalesInvoiceCommandHandler.cs
+Features/AiChat/DTOs/
+ AiChatDto.cs
+ AiServiceDto.cs
+Features/AiChat/Messages/Commands/
+ CreateAiMessageCommand.cs
+ CreateAiMessageCommandHandler.cs
+Features/AiChat/Messages/Queries/
+ GetAiMessagesBySessionQuery.cs
+ GetAiMessagesBySessionQueryHandler.cs
+ GetAllAiMessagesQuery.cs
+ GetAllAiMessagesQueryHandler.cs
+Features/AiChat/Sessions/Commands/
+ CreateAiSessionCommand.cs
+ CreateAiSessionCommandHandler.cs
+ EndAiSessionCommand.cs
+ EndAiSessionCommandHandler.cs
+ UpdateAiSessionCommand.cs
+ UpdateAiSessionCommandHandler.cs
+Features/AiChat/Sessions/Queries/
+ GetAiSessionDetailQuery.cs
+ GetAiSessionDetailQueryHandler.cs
+ GetAiSessionsByUserQuery.cs
+ GetAiSessionsByUserQueryHandler.cs
+ GetAllAiSessionsQuery.cs
+ GetAllAiSessionsQueryHandler.cs
+Features/Assets/
+ Commands/AssetCommands.cs
+ DTOs/AssetDtos.cs
+ Handlers/
+  AssetCommandHandlers.cs
+  AssetMapping.cs
+  AssetQueryHandlers.cs
+ Queries/AssetQueries.cs
+Features/Auth/Commands/
+ ChangePasswordCommand.cs
+ ChangePasswordCommandHandler.cs
+ ForgotPasswordCommand.cs
+ ForgotPasswordCommandHandler.cs
+ LoginCommand.cs
+ RefreshTokenCommand.cs
+ RefreshTokenCommandHandler.cs
+ RegisterCommand.cs
+ ResendVerificationCommand.cs
+ ResetPasswordCommand.cs
+ ResetPasswordCommandHandler.cs
+ UpdateEmailCommand.cs
+ UpdateEmailCommandHandler.cs
+ VerifyEmailCommand.cs
+Features/Auth/DTOs/
+ AuthResponseDto.cs
+ ChangePasswordDto.cs
+ ForgotPasswordDto.cs
+ LoginDto.cs
+ RefreshTokenDto.cs
+ RegisterDto.cs
+ RegisterResponseDto.cs
+ ResetPasswordDto.cs
+ UpdateEmailDto.cs
+Features/Auth/Handlers/
+ GetCurrentUserQueryHandler.cs
+ LoginCommandHandler.cs
+ RegisterCommandHandler.cs
+ ResendVerificationCommandHandler.cs
+ VerifyEmailCommandHandler.cs
+Features/Auth/
+ Queries/GetCurrentUserQuery.cs
+ Validators/
+  LoginCommandValidator.cs
+  RegisterCommandValidator.cs
+Features/Cart/Commands/
+ AddToCartCommand.cs
+ AddToCartCommandHandler.cs
+ ApplyCouponToCartCommand.cs
+ ApplyCouponToCartCommandHandler.cs
+ CheckoutCartCommand.cs
+ CheckoutCartCommandHandler.cs
+ ClearCartCommand.cs
+ ClearCartCommandHandler.cs
+ MergeGuestCartCommand.cs
+ MergeGuestCartCommandHandler.cs
+ RemoveCartItemCommand.cs
+ RemoveCartItemCommandHandler.cs
+ RemoveCouponFromCartCommand.cs
+ RemoveCouponFromCartCommandHandler.cs
+ UpdateCartItemCommand.cs
+ UpdateCartItemCommandHandler.cs
+Features/Cart/
+ DTOs/CartDto.cs
+ Queries/
+  GetCartQuery.cs
+  GetCartQueryHandler.cs
+ Validators/ApplyCouponToCartCommandValidator.cs
+Features/Catalog/Brands/Commands/
+ CreateBrandCommand.cs
+ CreateBrandCommandHandler.cs
+ DeleteBrandCommand.cs
+ DeleteBrandCommandHandler.cs
+ UpdateBrandCommand.cs
+ UpdateBrandCommandHandler.cs
+Features/Catalog/Brands/
+ DTOs/BrandDto.cs
+ Queries/
+  GetAllBrandsQuery.cs
+  GetAllBrandsQueryHandler.cs
+  GetBrandByIdQuery.cs
+  GetBrandByIdQueryHandler.cs
+  SearchBrandsQuery.cs
+  SearchBrandsQueryHandler.cs
+ Validators/CreateBrandCommandValidator.cs
+Features/Catalog/Categories/Commands/
+ CreateCategoryCommand.cs
+ CreateCategoryCommandHandler.cs
+ DeleteCategoryCommand.cs
+ DeleteCategoryCommandHandler.cs
+ UpdateCategoryCommand.cs
+ UpdateCategoryCommandHandler.cs
+Features/Catalog/Categories/
+ DTOs/CategoryDto.cs
+ Queries/
+  GetAllCategoriesQuery.cs
+  GetAllCategoriesQueryHandler.cs
+  GetCategoriesByParentQuery.cs
+  GetCategoriesByParentQueryHandler.cs
+  GetCategoryByIdQuery.cs
+  GetCategoryByIdQueryHandler.cs
+  GetCategoryTreeQuery.cs
+  GetCategoryTreeQueryHandler.cs
+ Validators/
+  CreateCategoryCommandValidator.cs
+  UpdateCategoryCommandValidator.cs
+Features/Catalog/Inventory/Commands/
+ AdjustInventoryCommand.cs
+ AdjustInventoryCommandHandler.cs
+ ReleaseInventoryCommand.cs
+ ReleaseInventoryCommandHandler.cs
+ ReserveInventoryCommand.cs
+ ReserveInventoryCommandHandler.cs
+ UpdateInventoryCommand.cs
+ UpdateInventoryCommandHandler.cs
+Features/Catalog/Inventory/Queries/
+ GetInventoryByItemIdQuery.cs
+ GetInventoryByItemIdQueryHandler.cs
+ GetInventoryHistoryQuery.cs
+ GetInventoryHistoryQueryHandler.cs
+ GetLowStockItemsQuery.cs
+ GetLowStockItemsQueryHandler.cs
+Features/Catalog/Items/Commands/
+ ApproveCommentCommand.cs
+ ApproveCommentCommandHandler.cs
+ ApproveReviewCommand.cs
+ ApproveReviewCommandHandler.cs
+ CreateCommentCommand.cs
+ CreateCommentCommandHandler.cs
+ CreateItemCommand.cs
+ CreateItemCommandHandler.cs
+ CreateReviewCommand.cs
+ CreateReviewCommandHandler.cs
+ DeleteCommentCommand.cs
+ DeleteCommentCommandHandler.cs
+ DeleteItemCommand.cs
+ DeleteItemCommandHandler.cs
+ DeleteReviewCommand.cs
+ DeleteReviewCommandHandler.cs
+ LinkMediaToItemCommand.cs
+ LinkMediaToItemCommandHandler.cs
+ RejectReviewCommand.cs
+ RejectReviewCommandHandler.cs
+ SetPrimaryMediaCommand.cs
+ SetPrimaryMediaCommandHandler.cs
+ UnlinkMediaFromItemCommand.cs
+ UnlinkMediaFromItemCommandHandler.cs
+ UpdateCommentCommand.cs
+ UpdateCommentCommandHandler.cs
+ UpdateItemCommand.cs
+ UpdateItemCommandHandler.cs
+ UpdateReviewCommand.cs
+ UpdateReviewCommandHandler.cs
+Features/Catalog/Items/DTOs/
+ AdminReviewDtos.cs
+ CommentDto.cs
+ ItemDetailDto.cs
+ ItemDto.cs
+ ItemStatusDto.cs
+ ReviewDto.cs
+Features/Catalog/Items/
+ Handlers/GetAdminReviewsQueryHandler.cs
+ Queries/
+  GetAdminReviewsQuery.cs
+  GetAllItemsQuery.cs
+  GetAllItemsQueryHandler.cs
+  GetAllItemStatusesQuery.cs
+  GetAllItemStatusesQueryHandler.cs
+  GetFeaturedItemsQuery.cs
+  GetFeaturedItemsQueryHandler.cs
+  GetItemByIdQuery.cs
+  GetItemByIdQueryHandler.cs
+  GetItemCommentsQuery.cs
+  GetItemCommentsQueryHandler.cs
+  GetItemDetailQuery.cs
+  GetItemDetailQueryHandler.cs
+  GetItemMediaQuery.cs
+  GetItemMediaQueryHandler.cs
+  GetItemReviewsQuery.cs
+  GetItemReviewsQueryHandler.cs
+  GetNewItemsQuery.cs
+  GetNewItemsQueryHandler.cs
+  GetOnSaleItemsQuery.cs
+  GetOnSaleItemsQueryHandler.cs
+  GetRelatedItemsQuery.cs
+  GetRelatedItemsQueryHandler.cs
+  SearchItemsQuery.cs
+  SearchItemsQueryHandler.cs
+ Validators/CreateItemCommandValidator.cs
+Features/Catalog/Tags/Commands/
+ CreateTagCommand.cs
+ CreateTagCommandHandler.cs
+ DeleteTagCommand.cs
+ DeleteTagCommandHandler.cs
+ UpdateTagCommand.cs
+ UpdateTagCommandHandler.cs
+Features/Catalog/Tags/
+ DTOs/TagDto.cs
+ Queries/
+  GetAllTagsQuery.cs
+  GetAllTagsQueryHandler.cs
+  GetPopularTagsQuery.cs
+  GetPopularTagsQueryHandler.cs
+  GetTagByIdQuery.cs
+  GetTagByIdQueryHandler.cs
+  SearchTagsQuery.cs
+  SearchTagsQueryHandler.cs
+ Validators/CreateTagCommandValidator.cs
+Features/Cms/
+ DTOs/CmsDto.cs
+ Pages/Commands/
+  CreatePageCommand.cs
+  CreatePageCommandHandler.cs
+  DeletePageCommand.cs
+  DeletePageCommandHandler.cs
+  PublishPageCommand.cs
+  PublishPageCommandHandler.cs
+  UnpublishPageCommand.cs
+  UnpublishPageCommandHandler.cs
+  UpdatePageCommand.cs
+  UpdatePageCommandHandler.cs
+ Pages/Queries/
+  GetAllPagesQuery.cs
+  GetAllPagesQueryHandler.cs
+  GetPageByKeyQuery.cs
+  GetPageByKeyQueryHandler.cs
+  GetPageDetailQuery.cs
+  GetPageDetailQueryHandler.cs
+  GetPagePreviewQuery.cs
+  GetPagePreviewQueryHandler.cs
+ PageSections/Commands/
+  CreatePageSectionDraftCommand.cs
+  CreatePageSectionDraftCommandHandler.cs
+  PublishPageSectionCommand.cs
+  PublishPageSectionCommandHandler.cs
+ PageSections/Queries/
+  GetPageSectionsDraftQuery.cs
+  GetPageSectionsDraftQueryHandler.cs
+  GetPageSectionsPublishedQuery.cs
+  GetPageSectionsPublishedQueryHandler.cs
+Features/Cnc/DTOs/
+ CncMaterialDto.cs
+ CncServiceRequestDto.cs
+Features/Cnc/Materials/
+ CncMaterialTypeHelper.cs
+ Commands/
+  CreateCncMaterialCommand.cs
+  CreateCncMaterialCommandHandler.cs
+  DeleteCncMaterialCommand.cs
+  DeleteCncMaterialCommandHandler.cs
+  UpdateCncMaterialCommand.cs
+  UpdateCncMaterialCommandHandler.cs
+ Queries/
+  GetAllCncMaterialsQuery.cs
+  GetAllCncMaterialsQueryHandler.cs
+  GetCncMaterialByIdQuery.cs
+  GetCncMaterialByIdQueryHandler.cs
+Features/Cnc/Requests/Commands/
+ CreateCncServiceRequestCommand.cs
+ CreateCncServiceRequestCommandHandler.cs
+ DeleteCncServiceRequestCommand.cs
+ DeleteCncServiceRequestCommandHandler.cs
+ UpdateCncServiceRequestCommand.cs
+ UpdateCncServiceRequestCommandHandler.cs
+Features/Cnc/Requests/Queries/
+ GetAllCncServiceRequestsQuery.cs
+ GetAllCncServiceRequestsQueryHandler.cs
+ GetCncServiceRequestByIdQuery.cs
+ GetCncServiceRequestByIdQueryHandler.cs
+Features/Common/AuditLogs/
+ DTOs/AuditLogDto.cs
+ Queries/
+  GetAuditLogsQuery.cs
+  GetAuditLogsQueryHandler.cs
+Features/Common/Dashboard/
+ DTOs/DashboardDto.cs
+ Queries/
+  GetDashboardSummaryQuery.cs
+  GetDashboardSummaryQueryHandler.cs
+  GetOrdersByStatusQuery.cs
+  GetOrdersByStatusQueryHandler.cs
+  GetSalesOverTimeQuery.cs
+  GetSalesOverTimeQueryHandler.cs
+Features/Common/EmailTemplates/Commands/
+ CreateEmailTemplateCommand.cs
+ CreateEmailTemplateCommandHandler.cs
+ UpdateEmailTemplateCommand.cs
+ UpdateEmailTemplateCommandHandler.cs
+Features/Common/EmailTemplates/
+ DTOs/EmailTemplateDto.cs
+ Queries/
+  GetEmailTemplateByKeyQuery.cs
+  GetEmailTemplateByKeyQueryHandler.cs
+  GetEmailTemplatesQuery.cs
+  GetEmailTemplatesQueryHandler.cs
+Features/Common/Notifications/Commands/
+ CreateNotificationCommand.cs
+ CreateNotificationCommandHandler.cs
+ MarkAllNotificationsAsReadCommand.cs
+ MarkAllNotificationsAsReadCommandHandler.cs
+ MarkNotificationAsReadCommand.cs
+ MarkNotificationAsReadCommandHandler.cs
+Features/Common/Notifications/
+ DTOs/NotificationDto.cs
+ Queries/
+  GetNotificationsQuery.cs
+  GetNotificationsQueryHandler.cs
+  GetUnreadNotificationsCountQuery.cs
+  GetUnreadNotificationsCountQueryHandler.cs
+Features/Common/Settings/Commands/
+ CreateSystemSettingCommand.cs
+ CreateSystemSettingCommandHandler.cs
+ UpdateSystemSettingCommand.cs
+ UpdateSystemSettingCommandHandler.cs
+Features/Common/Settings/
+ DTOs/SystemSettingDto.cs
+ Queries/
+  GetSystemSettingByKeyQuery.cs
+  GetSystemSettingByKeyQueryHandler.cs
+  GetSystemSettingsQuery.cs
+  GetSystemSettingsQueryHandler.cs
+Features/ControlCenter/Instances/Commands/
+ InstanceHeartbeatCommand.cs
+ RegisterInstanceCommand.cs
+Features/ControlCenter/Instances/
+ DTOs/ControlCenterInstanceDto.cs
+ Handlers/
+  GetInstanceByIdQueryHandler.cs
+  InstanceHeartbeatCommandHandler.cs
+  RegisterInstanceCommandHandler.cs
+ Queries/GetInstanceByIdQuery.cs
+ Validators/RegisterInstanceCommandValidator.cs
+Features/Coupons/Commands/
+ CreateCouponCommand.cs
+ CreateCouponCommandHandler.cs
+ DeleteCouponCommand.cs
+ DeleteCouponCommandHandler.cs
+ UpdateCouponCommand.cs
+ UpdateCouponCommandHandler.cs
+Features/Coupons/
+ DTOs/CouponDto.cs
+ Queries/
+  GetAllCouponsQuery.cs
+  GetAllCouponsQueryHandler.cs
+  ValidateCouponQuery.cs
+  ValidateCouponQueryHandler.cs
+Features/Crm/
+ Commands/CustomerCommands.cs
+ DTOs/CrmDtos.cs
+ Queries/CustomerQueries.cs
+Features/Faq/Commands/
+ CreateFaqItemCommand.cs
+ CreateFaqItemCommandHandler.cs
+ DeleteFaqItemCommand.cs
+ DeleteFaqItemCommandHandler.cs
+ ReorderFaqItemsCommand.cs
+ ReorderFaqItemsCommandHandler.cs
+ ToggleFaqItemActiveCommand.cs
+ ToggleFaqItemActiveCommandHandler.cs
+ UpdateFaqItemCommand.cs
+ UpdateFaqItemCommandHandler.cs
+Features/Faq/
+ DTOs/FaqItemDto.cs
+ Queries/
+  GetFaqAdminQuery.cs
+  GetFaqAdminQueryHandler.cs
+  GetFaqItemByIdQuery.cs
+  GetFaqItemByIdQueryHandler.cs
+  GetFaqQuery.cs
+  GetFaqQueryHandler.cs
+Features/Finance/DTOs/
+ FinanceDto.cs
+ FinanceDtos.cs
+Features/Finance/ExpenseCategories/Queries/
+ GetAllExpenseCategoriesQuery.cs
+ GetAllExpenseCategoriesQueryHandler.cs
+Features/Finance/Expenses/Commands/
+ CreateExpenseCommand.cs
+ CreateExpenseCommandHandler.cs
+Features/Finance/Expenses/Queries/
+ GetAllExpensesQuery.cs
+ GetAllExpensesQueryHandler.cs
+Features/Finance/Handlers/
+ GetFinanceKpisQueryHandler.cs
+ GetFinancePaymentMethodsDistributionQueryHandler.cs
+ GetFinanceRevenueByMonthQueryHandler.cs
+Features/Finance/Income/Commands/
+ CreateIncomeCommand.cs
+ CreateIncomeCommandHandler.cs
+Features/Finance/Income/Queries/
+ GetAllIncomeQuery.cs
+ GetAllIncomeQueryHandler.cs
+Features/Finance/IncomeSources/Queries/
+ GetAllIncomeSourcesQuery.cs
+ GetAllIncomeSourcesQueryHandler.cs
+Features/Finance/Queries/
+ GetFinanceKpisQuery.cs
+ GetFinancePaymentMethodsDistributionQuery.cs
+ GetFinanceRevenueByMonthQuery.cs
+Features/HeroTicker/Commands/
+ CreateHeroTickerItemCommand.cs
+ CreateHeroTickerItemCommandHandler.cs
+ DeleteHeroTickerItemCommand.cs
+ DeleteHeroTickerItemCommandHandler.cs
+ ReorderHeroTickerItemsCommand.cs
+ ReorderHeroTickerItemsCommandHandler.cs
+ UpdateHeroTickerItemCommand.cs
+ UpdateHeroTickerItemCommandHandler.cs
+Features/HeroTicker/DTOs/
+ HeroTickerItemDto.cs
+ HeroTickerPublicDto.cs
+Features/HeroTicker/Queries/
+ GetHeroTickerAdminQuery.cs
+ GetHeroTickerAdminQueryHandler.cs
+ GetHeroTickerQuery.cs
+ GetHeroTickerQueryHandler.cs
+Features/Inventory/
+ Commands/CreateWarehouseCommand.cs
+ DTOs/WarehouseDto.cs
+ Queries/
+  StockOverviewQueries.cs
+  WarehouseQueries.cs
+Features/Laser/DTOs/
+ LaserMaterialDto.cs
+ LaserServiceRequestDto.cs
+Features/Laser/
+ LaserMaterialTypeValidator.cs
+ Materials/Commands/
+  CreateLaserMaterialCommand.cs
+  CreateLaserMaterialCommandHandler.cs
+  DeleteLaserMaterialCommand.cs
+  DeleteLaserMaterialCommandHandler.cs
+  UpdateLaserMaterialCommand.cs
+  UpdateLaserMaterialCommandHandler.cs
+ Materials/Queries/
+  GetAllLaserMaterialsQuery.cs
+  GetAllLaserMaterialsQueryHandler.cs
+  GetLaserMaterialByIdQuery.cs
+  GetLaserMaterialByIdQueryHandler.cs
+ Requests/Commands/
+  CreateLaserServiceRequestCommand.cs
+  CreateLaserServiceRequestCommandHandler.cs
+  UpdateLaserServiceRequestCommand.cs
+  UpdateLaserServiceRequestCommandHandler.cs
+ Requests/Queries/
+  GetAllLaserServiceRequestsQuery.cs
+  GetAllLaserServiceRequestsQueryHandler.cs
+  GetLaserServiceRequestByIdQuery.cs
+  GetLaserServiceRequestByIdQueryHandler.cs
+Features/Lookups/Commands/
+ CreateLookupTypeCommand.cs
+ CreateLookupValueCommand.cs
+Features/Lookups/
+ DTOs/LookupDtos.cs
+ Queries/
+  GetLookupTypesQuery.cs
+  GetLookupValuesByTypeQuery.cs
+Features/MachineCatalog/
+ DTOs/MachineCatalogDtos.cs
+ Handlers/
+  MachineCategoryHandlers.cs
+  MachineDefinitionHandlers.cs
+  MachineFamilyHandlers.cs
+ Validators/MachineCatalogValidators.cs
+Features/Machines/Commands/
+ CreateItemMachineLinkCommand.cs
+ CreateItemMachineLinkCommandHandler.cs
+ CreateMachineCommand.cs
+ CreateMachineCommandHandler.cs
+ CreateMachinePartCommand.cs
+ CreateMachinePartCommandHandler.cs
+ DeleteItemMachineLinkCommand.cs
+ DeleteItemMachineLinkCommandHandler.cs
+ DeleteMachineCommand.cs
+ DeleteMachineCommandHandler.cs
+ DeleteMachinePartCommand.cs
+ DeleteMachinePartCommandHandler.cs
+ UpdateMachineCommand.cs
+ UpdateMachineCommandHandler.cs
+ UpdateMachinePartCommand.cs
+ UpdateMachinePartCommandHandler.cs
+Features/Machines/
+ DTOs/MachineDto.cs
+ Queries/
+  GetAllMachinePartsQuery.cs
+  GetAllMachinePartsQueryHandler.cs
+  GetAllMachinesQuery.cs
+  GetAllMachinesQueryHandler.cs
+  GetItemMachineLinksQuery.cs
+  GetItemMachineLinksQueryHandler.cs
+  GetMachineByIdQuery.cs
+  GetMachineByIdQueryHandler.cs
+  GetMachineDetailQuery.cs
+  GetMachineDetailQueryHandler.cs
+  GetMachinePartByIdQuery.cs
+  GetMachinePartByIdQueryHandler.cs
+  GetMachinePartsQuery.cs
+  GetMachinePartsQueryHandler.cs
+  GetMachinesByItemQuery.cs
+  GetMachinesByItemQueryHandler.cs
+  SearchMachinesQuery.cs
+  SearchMachinesQueryHandler.cs
+ Validators/CreateMachineCommandValidator.cs
+Features/Media/Commands/
+ DeleteMediaCommand.cs
+ DeleteMediaCommandHandler.cs
+ UpdateMediaCommand.cs
+ UpdateMediaCommandHandler.cs
+ UploadMediaCommand.cs
+ UploadMediaCommandHandler.cs
+Features/Media/
+ DTOs/MediaAssetDto.cs
+ Queries/
+  GetAllMediaQuery.cs
+  GetAllMediaQueryHandler.cs
+  GetMediaByIdQuery.cs
+  GetMediaByIdQueryHandler.cs
+ Validators/UploadMediaCommandValidator.cs
+Features/Orders/Commands/
+ AddOrderNoteCommand.cs
+ AddOrderNoteCommandHandler.cs
+ CancelOrderCommand.cs
+ CancelOrderCommandHandler.cs
+ CreateInvoiceCommand.cs
+ CreateInvoiceCommandHandler.cs
+ CreateOrderCommand.cs
+ CreateOrderCommandHandler.cs
+ CreatePaymentCommand.cs
+ CreatePaymentCommandHandler.cs
+ CreatePaymentPlanCommand.cs
+ CreatePaymentPlanCommandHandler.cs
+ UpdateOrderStatusCommand.cs
+ UpdateOrderStatusCommandHandler.cs
+Features/Orders/DTOs/
+ OrderDto.cs
+ OrderStatusDto.cs
+Features/Orders/Queries/
+ GetAllInvoicesQuery.cs
+ GetAllInvoicesQueryHandler.cs
+ GetAllOrdersQuery.cs
+ GetAllOrdersQueryHandler.cs
+ GetAllOrderStatusesQuery.cs
+ GetAllOrderStatusesQueryHandler.cs
+ GetAllPaymentsQuery.cs
+ GetAllPaymentsQueryHandler.cs
+ GetOrderByNumberQuery.cs
+ GetOrderByNumberQueryHandler.cs
+ GetOrderDetailQuery.cs
+ GetOrderDetailQueryHandler.cs
+ GetOrdersByUserQuery.cs
+ GetOrdersByUserQueryHandler.cs
+ GetOrdersPagedQuery.cs
+ GetOrdersPagedQueryHandler.cs
+ SearchOrdersQuery.cs
+ SearchOrdersQueryHandler.cs
+Features/Printing/Designs/Commands/
+ CreateDesignCommand.cs
+ CreateDesignCommandHandler.cs
+Features/Printing/Designs/
+ DesignVisibility.cs
+ Queries/
+  GetAllDesignsQuery.cs
+  GetAllDesignsQueryHandler.cs
+  GetDesignDetailQuery.cs
+  GetDesignDetailQueryHandler.cs
+  GetDesignFilesQuery.cs
+  GetDesignFilesQueryHandler.cs
+  SearchDesignsQuery.cs
+  SearchDesignsQueryHandler.cs
+Features/Printing/
+ DTOs/PrintingDto.cs
+ FilamentSpools/FilamentSpoolDtos.cs
+ Materials/Commands/
+  CreateMaterialCommand.cs
+  CreateMaterialCommandHandler.cs
+  DeleteMaterialCommand.cs
+  DeleteMaterialCommandHandler.cs
+  UpdateMaterialCommand.cs
+  UpdateMaterialCommandHandler.cs
+ Materials/Queries/
+  GetAllMaterialsQuery.cs
+  GetAllMaterialsQueryHandler.cs
+  GetMaterialByIdQuery.cs
+  GetMaterialByIdQueryHandler.cs
+ Printers/Commands/
+  CreatePrinterCommand.cs
+  CreatePrinterCommandHandler.cs
+ Printers/Queries/
+  GetAllPrintersQuery.cs
+  GetAllPrintersQueryHandler.cs
+ PrintJobs/Commands/
+  CancelPrintJobCommand.cs
+  CancelPrintJobCommandHandler.cs
+  CreatePrintJobCommand.cs
+  CreatePrintJobCommandHandler.cs
+  UpdatePrintJobProgressCommand.cs
+  UpdatePrintJobProgressCommandHandler.cs
+  UpdatePrintJobStatusCommand.cs
+  UpdatePrintJobStatusCommandHandler.cs
+ PrintJobs/Queries/
+  GetActivePrintJobsQuery.cs
+  GetActivePrintJobsQueryHandler.cs
+  GetAllPrintJobsQuery.cs
+  GetAllPrintJobsQueryHandler.cs
+  GetPrintJobDetailQuery.cs
+  GetPrintJobDetailQueryHandler.cs
+ PrintQualityProfiles/Commands/
+  CreatePrintQualityProfileCommand.cs
+  CreatePrintQualityProfileCommandHandler.cs
+  DeletePrintQualityProfileCommand.cs
+  DeletePrintQualityProfileCommandHandler.cs
+  UpdatePrintQualityProfileCommand.cs
+  UpdatePrintQualityProfileCommandHandler.cs
+ PrintQualityProfiles/
+  DTOs/PrintQualityProfileDto.cs
+  Queries/
+   GetAllPrintQualityProfilesQuery.cs
+   GetAllPrintQualityProfilesQueryHandler.cs
+   GetPrintQualityProfileByIdQuery.cs
+   GetPrintQualityProfileByIdQueryHandler.cs
+ SlicingJobs/Commands/
+  CancelSlicingJobCommand.cs
+  CancelSlicingJobCommandHandler.cs
+  CreateSlicingJobCommand.cs
+  CreateSlicingJobCommandHandler.cs
+  UpdateSlicingJobStatusCommand.cs
+  UpdateSlicingJobStatusCommandHandler.cs
+ SlicingJobs/Queries/
+  GetAllSlicingJobsQuery.cs
+  GetAllSlicingJobsQueryHandler.cs
+  GetSlicingJobDetailQuery.cs
+  GetSlicingJobDetailQueryHandler.cs
+Features/Projects/Commands/
+ CreateProjectCommand.cs
+ CreateProjectCommandHandler.cs
+ CreateProjectRequestCommand.cs
+ CreateProjectRequestCommandHandler.cs
+ DeleteProjectCommand.cs
+ DeleteProjectCommandHandler.cs
+ UpdateProjectCommand.cs
+ UpdateProjectCommandHandler.cs
+ UpdateProjectRequestCommand.cs
+ UpdateProjectRequestCommandHandler.cs
+Features/Projects/DTOs/
+ ProjectDto.cs
+ ProjectRequestAttachmentDto.cs
+Features/Projects/
+ ProjectRequestSerialization.cs
+ Queries/
+  GetProjectByIdQuery.cs
+  GetProjectByIdQueryHandler.cs
+  GetProjectBySlugQuery.cs
+  GetProjectBySlugQueryHandler.cs
+  GetProjectRequestActivitiesQuery.cs
+  GetProjectRequestActivitiesQueryHandler.cs
+  GetProjectRequestsQuery.cs
+  GetProjectRequestsQueryHandler.cs
+  GetProjectsQuery.cs
+  GetProjectsQueryHandler.cs
+Features/Roles/Commands/
+ AssignPermissionToRoleCommand.cs
+ AssignPermissionToRoleCommandHandler.cs
+ AssignRoleToUserCommand.cs
+ AssignRoleToUserCommandHandler.cs
+ CreateRoleCommand.cs
+ CreateRoleCommandHandler.cs
+ DeleteRoleCommand.cs
+ DeleteRoleCommandHandler.cs
+ RemovePermissionFromRoleCommand.cs
+ RemovePermissionFromRoleCommandHandler.cs
+ RemoveRoleFromUserCommand.cs
+ RemoveRoleFromUserCommandHandler.cs
+ UpdateRoleCommand.cs
+ UpdateRoleCommandHandler.cs
+Features/Roles/DTOs/
+ PermissionDto.cs
+ RoleDto.cs
+Features/Roles/Queries/
+ GetAllPermissionsQuery.cs
+ GetAllPermissionsQueryHandler.cs
+ GetAllRolesQuery.cs
+ GetAllRolesQueryHandler.cs
+ GetRoleByIdQuery.cs
+ GetRoleByIdQueryHandler.cs
+ GetRolePermissionsQuery.cs
+ GetRolePermissionsQueryHandler.cs
+ GetUserRolesQuery.cs
+ GetUserRolesQueryHandler.cs
+Features/Roles/Validators/
+ CreateRoleCommandValidator.cs
+ UpdateRoleCommandValidator.cs
+Features/
+ Sales/Quotations/QuotationDto.cs
+ Users/Commands/
+  CreateUserCommand.cs
+  CreateUserCommandHandler.cs
+  DeleteUserCommand.cs
+  DeleteUserCommandHandler.cs
+  UpdateUserCommand.cs
+  UpdateUserCommandHandler.cs
+ Users/DTOs/
+  CreateUserDto.cs
+  UserAddressDto.cs
+  UserDto.cs
+  UserProfileDto.cs
+ Users/Queries/
+  GetAllUsersQuery.cs
+  GetAllUsersQueryHandler.cs
+  GetUserByIdQuery.cs
+  GetUserByIdQueryHandler.cs
+  GetUsersByRoleQuery.cs
+  GetUsersByRoleQueryHandler.cs
+  SearchUsersQuery.cs
+  SearchUsersQueryHandler.cs
+ Users/Validators/UpdateUserCommandValidator.cs
+obj/Debug/net8.0/
+ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+ Maba.Application.AssemblyInfo.cs
+ Maba.Application.GlobalUsings.g.cs
+Services/PricingService.cs
+
+[metadataReferences]
+../Maba.Domain/obj/Debug/net8.0/ref/Maba.Domain.dll
+<NUGET>/
+ bcrypt.net-next/4.0.3/lib/net6.0/BCrypt.Net-Next.dll
+ fluentvalidation.dependencyinjectionextensions/12.1.0/lib/net8.0/FluentValidation.DependencyInjectionExtensions.dll
+ fluentvalidation/12.1.0/lib/net8.0/FluentValidation.dll
+ mediatr.contracts/2.0.1/lib/netstandard2.0/MediatR.Contracts.dll
+ mediatr/13.1.0/lib/net8.0/MediatR.dll
+ microsoft.aspnetcore.http.abstractions/2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll
+ microsoft.aspnetcore.http.features/2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.dll
+ microsoft.entityframeworkcore.abstractions/8.0.11/lib/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll
+ microsoft.entityframeworkcore/8.0.11/lib/net8.0/Microsoft.EntityFrameworkCore.dll
+ microsoft.extensions.caching.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Caching.Abstractions.dll
+ microsoft.extensions.caching.memory/8.0.1/lib/net8.0/Microsoft.Extensions.Caching.Memory.dll
+ microsoft.extensions.configuration.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.dependencyinjection.abstractions/8.0.2/lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.dependencyinjection/8.0.1/lib/net8.0/Microsoft.Extensions.DependencyInjection.dll
+ microsoft.extensions.logging.abstractions/8.0.2/lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.logging/8.0.1/lib/net8.0/Microsoft.Extensions.Logging.dll
+ microsoft.extensions.options/8.0.2/lib/net8.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/8.0.0/lib/net8.0/Microsoft.Extensions.Primitives.dll
+ microsoft.identitymodel.abstractions/8.14.0/lib/net8.0/Microsoft.IdentityModel.Abstractions.dll
+ microsoft.identitymodel.jsonwebtokens/8.14.0/lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll
+ microsoft.identitymodel.logging/8.14.0/lib/net8.0/Microsoft.IdentityModel.Logging.dll
+ microsoft.identitymodel.tokens/8.14.0/lib/net8.0/Microsoft.IdentityModel.Tokens.dll
+ microsoft.netcore.app.ref/8.0.24/ref/net8.0/
+  Microsoft.CSharp.dll
+  Microsoft.VisualBasic.Core.dll
+  Microsoft.VisualBasic.dll
+  Microsoft.Win32.Primitives.dll
+  Microsoft.Win32.Registry.dll
+  mscorlib.dll
+  netstandard.dll
+  System.AppContext.dll
+  System.Buffers.dll
+  System.Collections.Concurrent.dll
+  System.Collections.dll
+  System.Collections.Immutable.dll
+  System.Collections.NonGeneric.dll
+  System.Collections.Specialized.dll
+  System.ComponentModel.Annotations.dll
+  System.ComponentModel.DataAnnotations.dll
+  System.ComponentModel.dll
+  System.ComponentModel.EventBasedAsync.dll
+  System.ComponentModel.Primitives.dll
+  System.ComponentModel.TypeConverter.dll
+  System.Configuration.dll
+  System.Console.dll
+  System.Core.dll
+  System.Data.Common.dll
+  System.Data.DataSetExtensions.dll
+  System.Data.dll
+  System.Diagnostics.Contracts.dll
+  System.Diagnostics.Debug.dll
+  System.Diagnostics.DiagnosticSource.dll
+  System.Diagnostics.FileVersionInfo.dll
+  System.Diagnostics.Process.dll
+  System.Diagnostics.StackTrace.dll
+  System.Diagnostics.TextWriterTraceListener.dll
+  System.Diagnostics.Tools.dll
+  System.Diagnostics.TraceSource.dll
+  System.Diagnostics.Tracing.dll
+  System.dll
+  System.Drawing.dll
+  System.Drawing.Primitives.dll
+  System.Dynamic.Runtime.dll
+  System.Formats.Asn1.dll
+  System.Formats.Tar.dll
+  System.Globalization.Calendars.dll
+  System.Globalization.dll
+  System.Globalization.Extensions.dll
+  System.IO.Compression.Brotli.dll
+  System.IO.Compression.dll
+  System.IO.Compression.FileSystem.dll
+  System.IO.Compression.ZipFile.dll
+  System.IO.dll
+  System.IO.FileSystem.AccessControl.dll
+  System.IO.FileSystem.dll
+  System.IO.FileSystem.DriveInfo.dll
+  System.IO.FileSystem.Primitives.dll
+  System.IO.FileSystem.Watcher.dll
+  System.IO.IsolatedStorage.dll
+  System.IO.MemoryMappedFiles.dll
+  System.IO.Pipes.AccessControl.dll
+  System.IO.Pipes.dll
+  System.IO.UnmanagedMemoryStream.dll
+  System.Linq.dll
+  System.Linq.Expressions.dll
+  System.Linq.Parallel.dll
+  System.Linq.Queryable.dll
+  System.Memory.dll
+  System.Net.dll
+  System.Net.Http.dll
+  System.Net.Http.Json.dll
+  System.Net.HttpListener.dll
+  System.Net.Mail.dll
+  System.Net.NameResolution.dll
+  System.Net.NetworkInformation.dll
+  System.Net.Ping.dll
+  System.Net.Primitives.dll
+  System.Net.Quic.dll
+  System.Net.Requests.dll
+  System.Net.Security.dll
+  System.Net.ServicePoint.dll
+  System.Net.Sockets.dll
+  System.Net.WebClient.dll
+  System.Net.WebHeaderCollection.dll
+  System.Net.WebProxy.dll
+  System.Net.WebSockets.Client.dll
+  System.Net.WebSockets.dll
+  System.Numerics.dll
+  System.Numerics.Vectors.dll
+  System.ObjectModel.dll
+  System.Reflection.DispatchProxy.dll
+  System.Reflection.dll
+  System.Reflection.Emit.dll
+  System.Reflection.Emit.ILGeneration.dll
+  System.Reflection.Emit.Lightweight.dll
+  System.Reflection.Extensions.dll
+  System.Reflection.Metadata.dll
+  System.Reflection.Primitives.dll
+  System.Reflection.TypeExtensions.dll
+  System.Resources.Reader.dll
+  System.Resources.ResourceManager.dll
+  System.Resources.Writer.dll
+  System.Runtime.CompilerServices.Unsafe.dll
+  System.Runtime.CompilerServices.VisualC.dll
+  System.Runtime.dll
+  System.Runtime.Extensions.dll
+  System.Runtime.Handles.dll
+  System.Runtime.InteropServices.dll
+  System.Runtime.InteropServices.JavaScript.dll
+  System.Runtime.InteropServices.RuntimeInformation.dll
+  System.Runtime.Intrinsics.dll
+  System.Runtime.Loader.dll
+  System.Runtime.Numerics.dll
+  System.Runtime.Serialization.dll
+  System.Runtime.Serialization.Formatters.dll
+  System.Runtime.Serialization.Json.dll
+  System.Runtime.Serialization.Primitives.dll
+  System.Runtime.Serialization.Xml.dll
+  System.Security.AccessControl.dll
+  System.Security.Claims.dll
+  System.Security.Cryptography.Algorithms.dll
+  System.Security.Cryptography.Cng.dll
+  System.Security.Cryptography.Csp.dll
+  System.Security.Cryptography.dll
+  System.Security.Cryptography.Encoding.dll
+  System.Security.Cryptography.OpenSsl.dll
+  System.Security.Cryptography.Primitives.dll
+  System.Security.Cryptography.X509Certificates.dll
+  System.Security.dll
+  System.Security.Principal.dll
+  System.Security.Principal.Windows.dll
+  System.Security.SecureString.dll
+  System.ServiceModel.Web.dll
+  System.ServiceProcess.dll
+  System.Text.Encoding.CodePages.dll
+  System.Text.Encoding.dll
+  System.Text.Encoding.Extensions.dll
+  System.Text.Encodings.Web.dll
+  System.Text.Json.dll
+  System.Text.RegularExpressions.dll
+  System.Threading.Channels.dll
+  System.Threading.dll
+  System.Threading.Overlapped.dll
+  System.Threading.Tasks.Dataflow.dll
+  System.Threading.Tasks.dll
+  System.Threading.Tasks.Extensions.dll
+  System.Threading.Tasks.Parallel.dll
+  System.Threading.Thread.dll
+  System.Threading.ThreadPool.dll
+  System.Threading.Timer.dll
+  System.Transactions.dll
+  System.Transactions.Local.dll
+  System.ValueTuple.dll
+  System.Web.dll
+  System.Web.HttpUtility.dll
+  System.Windows.dll
+  System.Xml.dll
+  System.Xml.Linq.dll
+  System.Xml.ReaderWriter.dll
+  System.Xml.Serialization.dll
+  System.Xml.XDocument.dll
+  System.Xml.XmlDocument.dll
+  System.Xml.XmlSerializer.dll
+  System.Xml.XPath.dll
+  System.Xml.XPath.XDocument.dll
+  WindowsBase.dll
+ microsoft.win32.systemevents/8.0.0/lib/net8.0/Microsoft.Win32.SystemEvents.dll
+ system.drawing.common/8.0.0/lib/net8.0/System.Drawing.Common.dll
+ system.identitymodel.tokens.jwt/8.2.1/lib/net8.0/System.IdentityModel.Tokens.Jwt.dll
+
+[analyzerReferences]
+<DOTNET>/sdk/10.0.103/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/
+ microsoft.entityframeworkcore.analyzers/8.0.11/analyzers/dotnet/cs/Microsoft.EntityFrameworkCore.Analyzers.dll
+ microsoft.extensions.logging.abstractions/8.0.2/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
+ microsoft.extensions.options/8.0.2/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ microsoft.netcore.app.ref/8.0.24/analyzers/dotnet/cs/
+  Microsoft.Interop.ComInterfaceGenerator.dll
+  Microsoft.Interop.JavaScript.JSImportGenerator.dll
+  Microsoft.Interop.LibraryImportGenerator.dll
+  Microsoft.Interop.SourceGeneration.dll
+  System.Text.Json.SourceGeneration.dll
+  System.Text.RegularExpressions.Generator.dll
+
+[analyzerConfigFiles]
+<DOTNET>/sdk/10.0.103/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
+obj/Debug/net8.0/Maba.Application.GeneratedMSBuildEditorConfig.editorconfig
