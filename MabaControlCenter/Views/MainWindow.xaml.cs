@@ -43,8 +43,9 @@ public partial class MainWindow : Window
         var cncManagerService = new CncManagerService(cncControllerService, cncExecutionQueueService, cncJobSessionService, cncRuntimeCoordinator, cncExecutionPreflightService, cncCoordinateTransformService);
         var imagePreprocessorService = new ImagePreprocessorService();
         var imageVectorTraceService = new OutlineVectorTraceService();
+        var imageVectorImportService = new SvgVectorImportService();
         var imageToolpathGeneratorService = new ToolpathFromVectorService();
-        var imageToolpathService = new ImageToolpathService(imagePreprocessorService, imageVectorTraceService, imageToolpathGeneratorService);
+        var imageToolpathService = new ImageToolpathService(imagePreprocessorService, imageVectorTraceService, imageToolpathGeneratorService, imageVectorImportService);
         var localizationService = (ILocalizationService)Application.Current.Resources["LocalizationService"];
 
         // Load saved settings and apply theme + language on startup

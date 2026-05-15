@@ -1297,6 +1297,37 @@
                                                             <ColumnDefinition Width="92"/>
                                                             <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Min segment" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageMinimumSegmentLengthMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Min area" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageMinimumContourAreaMm2, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Close gap" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageCloseGapToleranceMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Mode" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <ComboBox Grid.Column="4"
+                                                                  ItemsSource="{Binding ImageManufacturingModes}"
+                                                                  SelectedItem="{Binding ImageManufacturingMode, UpdateSourceTrigger=PropertyChanged}"
+                                                                  Background="{DynamicResource BackgroundLightBrush}"
+                                                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                  BorderBrush="{DynamicResource BorderBrush}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0" Text="Cut depth" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                         <TextBox Grid.Column="1" Text="{Binding ImageCutDepthMm, UpdateSourceTrigger=PropertyChanged}"/>
                                                         <TextBlock Grid.Column="3" Text="Safe Z" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
@@ -1345,6 +1376,8 @@
                                                     </WrapPanel>
                                                     <TextBlock Text="{Binding ImageToolpathSummary}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
                                                     <TextBlock Text="{Binding ImageToolpathBoundsText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,8" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding ImageToolpathDiagnosticsText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding ImageToolpathWarningsText}" Foreground="{DynamicResource WarningBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                                                     <Grid Visibility="{Binding HasImageToolpathPreview, Converter={StaticResource BoolToVisibilityConverter}}">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
@@ -1365,10 +1398,44 @@
                                                                 <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="180">
                                                                     <Viewbox Stretch="Uniform">
                                                                         <Canvas Width="{Binding ImageTargetWidthMm}" Height="{Binding ImageTargetHeightMm}">
+                                                                            <Path Data="{Binding ImageBoundingBoxGeometryData, Mode=OneWay}"
+                                                                                  Stroke="{DynamicResource TextSecondaryBrush}"
+                                                                                  StrokeThickness="0.8"
+                                                                                  StrokeDashArray="2,2"
+                                                                                  Fill="Transparent"/>
+                                                                            <Path Data="{Binding ImageRapidGeometryData, Mode=OneWay}"
+                                                                                  Stroke="{DynamicResource WarningBrush}"
+                                                                                  StrokeThickness="0.9"
+                                                                                  StrokeDashArray="3,2"
+                                                                                  Fill="Transparent"/>
                                                                             <Path Data="{Binding ImageTraceGeometryData, Mode=OneWay}"
                                                                                   Stroke="{DynamicResource AccentBrush}"
                                                                                   StrokeThickness="1.5"
                                                                                   Fill="Transparent"/>
+                                                                            <ItemsControl ItemsSource="{Binding ImagePreviewMarkers, Mode=OneWay}">
+                                                                                <ItemsControl.ItemsPanel>
+                                                                                    <ItemsPanelTemplate>
+                                                                                        <Canvas/>
+                                                                                    </ItemsPanelTemplate>
+                                                                                </ItemsControl.ItemsPanel>
+                                                                                <ItemsControl.ItemContainerStyle>
+                                                                                    <Style TargetType="ContentPresenter">
+                                                                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                                                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                                                                    </Style>
+                                                                                </ItemsControl.ItemContainerStyle>
+                                                                                <ItemsControl.ItemTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <Grid>
+                                                                                            <Ellipse Width="4" Height="4" Fill="{DynamicResource AccentBrush}"/>
+                                                                                            <TextBlock Text="{Binding Label}"
+                                                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                                                       FontSize="3.5"
+                                                                                                       Margin="4,-1,0,0"/>
+                                                                                        </Grid>
+                                                                                    </DataTemplate>
+                                                                                </ItemsControl.ItemTemplate>
+                                                                            </ItemsControl>
                                                                         </Canvas>
                                                                     </Viewbox>
                                                                 </Border>

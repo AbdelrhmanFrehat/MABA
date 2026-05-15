@@ -83,12 +83,17 @@ public class CncControlViewModel : ViewModelBase
     private string _imageToolpathSourcePath = string.Empty;
     private ImageSource? _imageToolpathPreviewSource;
     private string _imageTraceGeometryData = string.Empty;
+    private string _imageRapidGeometryData = string.Empty;
+    private string _imageBoundingBoxGeometryData = string.Empty;
     private decimal _imageTargetWidthMm = 50m;
     private decimal _imageTargetHeightMm = 50m;
     private bool _imagePreserveAspectRatio = true;
     private int _imageThreshold = 140;
     private bool _imageInvert;
     private bool _imageDespeckle = true;
+    private decimal _imageMinimumSegmentLengthMm = 0.15m;
+    private decimal _imageMinimumContourAreaMm2 = 1.5m;
+    private decimal _imageCloseGapToleranceMm = 0.4m;
     private decimal _imageCutDepthMm = -0.5m;
     private decimal _imageSafeTravelZMm = 5m;
     private decimal _imageCutFeedMmPerMinute = 300m;
@@ -96,6 +101,7 @@ public class CncControlViewModel : ViewModelBase
     private decimal _imageRapidFeedMmPerMinute = 900m;
     private decimal _imageSimplifyToleranceMm = 0.35m;
     private ImageTraceMode _imageTraceMode = ImageTraceMode.Outline;
+    private ImageManufacturingMode _imageManufacturingMode = ImageManufacturingMode.OnLineTrace;
     private MachineWizardStep _wizardStep = MachineWizardStep.Catalog;
     private MachineWizardCard? _wizardSelectedFamilyCard;
     private MachineWizardCard? _wizardSelectedMachineCard;
@@ -303,6 +309,7 @@ public class CncControlViewModel : ViewModelBase
     public IReadOnlyList<CncDriverType> DriverTypes { get; }
     public IReadOnlyList<CncHomeOriginConvention> HomeOriginOptions { get; }
     public IReadOnlyList<ImageTraceMode> ImageTraceModes => Enum.GetValues(typeof(ImageTraceMode)).Cast<ImageTraceMode>().ToList();
+    public IReadOnlyList<ImageManufacturingMode> ImageManufacturingModes => Enum.GetValues(typeof(ImageManufacturingMode)).Cast<ImageManufacturingMode>().ToList();
     public string MachineCatalogSyncStatus => _machineCatalogService.LastSyncStatus;
     public string MachinePlatformStatus
     {
@@ -967,10 +974,22 @@ public class CncControlViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasImageToolpathPreview));
             OnPropertyChanged(nameof(ImageToolpathSummary));
             OnPropertyChanged(nameof(ImageToolpathBoundsText));
+            OnPropertyChanged(nameof(ImagePreviewMarkers));
+            OnPropertyChanged(nameof(ImageToolpathDiagnosticsText));
+            OnPropertyChanged(nameof(ImageToolpathWarningsText));
             OnPropertyChanged(nameof(CanCreateImageToolpathJob));
         }
     }
     public bool HasImageToolpathPreview => ImageToolpathJob != null;
+    public IReadOnlyList<ImagePreviewMarker> ImagePreviewMarkers => ImageToolpathJob == null
+        ? Array.Empty<ImagePreviewMarker>()
+        : ImageToolpathJob.Preview.Markers;
+    public string ImageToolpathDiagnosticsText => ImageToolpathJob == null
+        ? "Diagnostics: n/a"
+        : $"Cut {ImageToolpathJob.Diagnostics.TotalCutDistanceMm:0.###} mm | Rapid {ImageToolpathJob.Diagnostics.TotalRapidDistanceMm:0.###} mm | Est. {ImageToolpathJob.Diagnostics.EstimatedJobTime.TotalSeconds:0.#} s | G-code {ImageToolpathJob.Diagnostics.GcodeLineCount} lines | Arcs {ImageToolpathJob.Diagnostics.ArcFitCount}";
+    public string ImageToolpathWarningsText => ImageToolpathJob == null || ImageToolpathJob.Diagnostics.Warnings.Count == 0
+        ? "Warnings: none"
+        : $"Warnings: {string.Join(" | ", ImageToolpathJob.Diagnostics.Warnings)}";
     public string ImageToolpathSourcePath
     {
         get => _imageToolpathSourcePath;
@@ -985,6 +1004,16 @@ public class CncControlViewModel : ViewModelBase
     {
         get => _imageTraceGeometryData;
         private set { if (_imageTraceGeometryData == value) return; _imageTraceGeometryData = value; OnPropertyChanged(); }
+    }
+    public string ImageRapidGeometryData
+    {
+        get => _imageRapidGeometryData;
+        private set { if (_imageRapidGeometryData == value) return; _imageRapidGeometryData = value; OnPropertyChanged(); }
+    }
+    public string ImageBoundingBoxGeometryData
+    {
+        get => _imageBoundingBoxGeometryData;
+        private set { if (_imageBoundingBoxGeometryData == value) return; _imageBoundingBoxGeometryData = value; OnPropertyChanged(); }
     }
     public string ImageToolpathSummary => ImageToolpathJob == null
         ? "No image toolpath generated yet."
@@ -1022,6 +1051,21 @@ public class CncControlViewModel : ViewModelBase
         get => _imageDespeckle;
         set { if (_imageDespeckle == value) return; _imageDespeckle = value; OnPropertyChanged(); }
     }
+    public decimal ImageMinimumSegmentLengthMm
+    {
+        get => _imageMinimumSegmentLengthMm;
+        set { if (_imageMinimumSegmentLengthMm == value) return; _imageMinimumSegmentLengthMm = value; OnPropertyChanged(); }
+    }
+    public decimal ImageMinimumContourAreaMm2
+    {
+        get => _imageMinimumContourAreaMm2;
+        set { if (_imageMinimumContourAreaMm2 == value) return; _imageMinimumContourAreaMm2 = value; OnPropertyChanged(); }
+    }
+    public decimal ImageCloseGapToleranceMm
+    {
+        get => _imageCloseGapToleranceMm;
+        set { if (_imageCloseGapToleranceMm == value) return; _imageCloseGapToleranceMm = value; OnPropertyChanged(); }
+    }
     public decimal ImageCutDepthMm
     {
         get => _imageCutDepthMm;
@@ -1058,6 +1102,12 @@ public class CncControlViewModel : ViewModelBase
         set { if (_imageTraceMode == value) return; _imageTraceMode = value; OnPropertyChanged(); OnPropertyChanged(nameof(ImageTraceModeText)); }
     }
     public string ImageTraceModeText => ImageTraceMode.ToString();
+    public ImageManufacturingMode ImageManufacturingMode
+    {
+        get => _imageManufacturingMode;
+        set { if (_imageManufacturingMode == value) return; _imageManufacturingMode = value; OnPropertyChanged(); OnPropertyChanged(nameof(ImageManufacturingModeText)); }
+    }
+    public string ImageManufacturingModeText => ImageManufacturingMode.ToString();
     public IEnumerable<GcodeMotionCommand> MotionCommands => _placedMotions;
     public int TotalMotionCount => MotionCommands.Count(m => m.IsExecutable);
     public int CurrentLineNumber => _executionQueueService.CurrentPlannedCommand?.SourceLineNumber ?? _executionQueueService.CurrentMotion?.LineNumber ?? 0;
@@ -1632,7 +1682,7 @@ public class CncControlViewModel : ViewModelBase
 
         var dialog = new OpenFileDialog
         {
-            Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All files (*.*)|*.*",
+            Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp;*.svg)|*.png;*.jpg;*.jpeg;*.bmp;*.svg|All files (*.*)|*.*",
             Title = "Import Image as Toolpath"
         };
 
@@ -1643,6 +1693,8 @@ public class CncControlViewModel : ViewModelBase
         ImageToolpathPreviewSource = CreateBitmapPreview(dialog.FileName);
         ImageToolpathJob = null;
         ImageTraceGeometryData = string.Empty;
+        ImageRapidGeometryData = string.Empty;
+        ImageBoundingBoxGeometryData = string.Empty;
         LastFeedback = $"Loaded image source {Path.GetFileName(dialog.FileName)} for tracing.";
         AddDiagnostic("Info", $"Image toolpath source selected: {dialog.FileName}");
     }
@@ -1657,8 +1709,13 @@ public class CncControlViewModel : ViewModelBase
 
         var job = _imageToolpathService.CreateJob(ImageToolpathSourcePath, BuildImageToolpathSettings());
         ImageToolpathJob = job;
-        ImageTraceGeometryData = BuildTraceGeometryData(job.VectorPaths);
+        ImageTraceGeometryData = job.Preview.CutGeometryData;
+        ImageRapidGeometryData = job.Preview.RapidGeometryData;
+        ImageBoundingBoxGeometryData = job.Preview.BoundingBoxGeometryData;
         LastFeedback = $"Generated image toolpath preview from {Path.GetFileName(ImageToolpathSourcePath)}.";
+        OnPropertyChanged(nameof(ImagePreviewMarkers));
+        OnPropertyChanged(nameof(ImageToolpathDiagnosticsText));
+        OnPropertyChanged(nameof(ImageToolpathWarningsText));
 
         foreach (var message in job.GeneratedGcode.Messages)
             AddDiagnostic(message.Contains("[Error]", StringComparison.OrdinalIgnoreCase) ? "Error" : "Info", message);
@@ -1729,6 +1786,9 @@ public class CncControlViewModel : ViewModelBase
         ImageCutFeedMmPerMinute = config.MaxFeedXyMmPerMinute;
         ImageRapidFeedMmPerMinute = config.MaxRapidXyMmPerMinute;
         ImagePlungeFeedMmPerMinute = config.MaxPlungeZMmPerMinute;
+        ImageMinimumSegmentLengthMm = 0.2m;
+        ImageMinimumContourAreaMm2 = 0.5m;
+        ImageCloseGapToleranceMm = 0.2m;
     }
 
     private ImageToolpathSettings BuildImageToolpathSettings()
@@ -1743,6 +1803,9 @@ public class CncControlViewModel : ViewModelBase
             TargetWidthMm = ImageTargetWidthMm,
             TargetHeightMm = ImageTargetHeightMm,
             SimplifyToleranceMm = ImageSimplifyToleranceMm,
+            MinimumSegmentLengthMm = ImageMinimumSegmentLengthMm,
+            MinimumContourAreaMm2 = ImageMinimumContourAreaMm2,
+            CloseGapToleranceMm = ImageCloseGapToleranceMm,
             CutDepthMm = ImageCutDepthMm,
             SafeTravelZMm = ImageSafeTravelZMm,
             CutFeedMmPerMinute = ImageCutFeedMmPerMinute,
@@ -1750,7 +1813,8 @@ public class CncControlViewModel : ViewModelBase
             RapidFeedMmPerMinute = ImageRapidFeedMmPerMinute,
             SpindleEnabled = true,
             EnableZMoves = _cncControllerService.Config.SupportsZAxis,
-            TraceMode = ImageTraceMode
+            TraceMode = ImageTraceMode,
+            ManufacturingMode = ImageManufacturingMode
         };
     }
 
@@ -1766,22 +1830,6 @@ public class CncControlViewModel : ViewModelBase
         bitmap.EndInit();
         bitmap.Freeze();
         return bitmap;
-    }
-
-    private static string BuildTraceGeometryData(IEnumerable<VectorPath> paths)
-    {
-        var builder = new System.Text.StringBuilder();
-        foreach (var path in paths.Where(path => path.Points.Count > 1))
-        {
-            var first = path.Points[0];
-            builder.Append($"M {first.X:0.###},{first.Y:0.###} ");
-            foreach (var point in path.Points.Skip(1))
-                builder.Append($"L {point.X:0.###},{point.Y:0.###} ");
-            if (path.Closed)
-                builder.Append("Z ");
-        }
-
-        return builder.ToString().Trim();
     }
 
     private async Task StartProgramAsync()
