@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>MabaUpdater</RootNamespace>
     <AssemblyName>MabaUpdater</AssemblyName>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Product>Maba Control Center Updater</Product>
     <Title>Maba Control Center Updater</Title>
     <Description>Native updater helper for Maba Control Center desktop releases.</Description>
