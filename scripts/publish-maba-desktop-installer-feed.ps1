@@ -1,8 +1,8 @@
 param(
     [string]$ApiBaseUrl = "https://api.mabasol.com",
     [string]$Channel = "stable",
-    [string]$Version = "0.1.20",
-    [string]$InstallerPath = "C:\Users\PC\Desktop\maba\artifacts\desktop-installer\stable\MabaControlCenter-0.1.20-Setup.exe",
+    [string]$Version = "0.1.22",
+    [string]$InstallerPath = "C:\Users\PC\Desktop\maba\artifacts\desktop-installer\stable\MabaControlCenter-0.1.22-Setup.exe",
     [string]$Email = "admin@maba.com",
     [string]$Password = "Password123!"
 )
