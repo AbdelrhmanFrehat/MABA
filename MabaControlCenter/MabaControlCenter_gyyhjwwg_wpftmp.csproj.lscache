@@ -13,18 +13,18 @@ primary
 lastDtbSucceeded
 
 [properties]
-AssemblyName=MabaUpdater
+AssemblyName=MabaControlCenter
 CommandLineArgsForDesignTimeEvaluation=-langversion:12.0 -define:TRACE
 CompilerGeneratedFilesOutputPath=
 MaxSupportedLangVersion=12.0
 ProjectAssetsFile=<PATH>obj/project.assets.json
-RootNamespace=MabaUpdater
+RootNamespace=MabaControlCenter
 RunAnalyzers=
 RunAnalyzersDuringLiveAnalysis=
 SolutionPath=*Undefined*
 TargetFrameworkIdentifier=.NETCoreApp
-TargetPath=<PATH>bin/Debug/net8.0-windows/MabaUpdater.dll
-TargetRefPath=<PATH>obj/Debug/net8.0-windows/ref/MabaUpdater.dll
+TargetPath=<PATH>bin/Debug/net8.0-windows/MabaControlCenter.dll
+TargetRefPath=<PATH>obj/Debug/net8.0-windows/ref/MabaControlCenter.dll
 TemporaryDependencyNodeTargetIdentifier=net8.0-windows
 
 [commandLineArguments]
@@ -43,28 +43,208 @@ TemporaryDependencyNodeTargetIdentifier=net8.0-windows
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj\Debug\net8.0-windows\MabaUpdater.dll
-/refout:obj\Debug\net8.0-windows\refint\MabaUpdater.dll
+/out:obj\Debug\net8.0-windows\MabaControlCenter.dll
+/refout:obj\Debug\net8.0-windows\refint\MabaControlCenter.dll
 /target:winexe
 /warnaserror-
 /utf8output
-/win32icon:..\MabaControlCenter\Assets\maba.ico
+/win32icon:Assets\maba.ico
 /deterministic+
 /langversion:12.0
 /warnaserror+:NU1605,SYSLIB0011
 
 [sourceFiles]
 App.xaml.cs
-MainWindow.xaml.cs
+Controls/
+ CncMachineViewportControl.cs
+ CncToolpathPreviewControl.cs
+ CncViewportTransform.cs
+Converters/
+ BoolToLocalizedYesNoConverter.cs
+ BoolToSidebarWidthConverter.cs
+ BoolToVisibilityConverter.cs
+ InverseBoolToVisibilityConverter.cs
+ NullToInverseVisibilityConverter.cs
+ NullToVisibilityConverter.cs
+Localization/LocalizedLabels.cs
+Models/
+ ActiveProductionJobContext.cs
+ AppReleaseManifest.cs
+ AppSettings.cs
+ AppUpdateInfo.cs
+ AuthModels.cs
+ CncCoordinateReferenceModels.cs
+ CncDeviceState.cs
+ CncDeviceStatusSnapshot.cs
+ CncDriverCapabilities.cs
+ CncDriverType.cs
+ CncExecutionState.cs
+ CncFirmwareModels.cs
+ CncFrameBounds.cs
+ CncHomeOriginConvention.cs
+ CncJobLifecycleState.cs
+ CncJobPlacement.cs
+ CncJobSession.cs
+ CncLoadedJobInfo.cs
+ CncMachineBounds.cs
+ CncMachineConfig.cs
+ CncMachineProfile.cs
+ CncMachineState.cs
+ CncOperatorEventEntry.cs
+ CncPlacementPreset.cs
+ CncPreviewSimulationState.cs
+ CncPreviewSummary.cs
+ CncProfileStore.cs
+ CncProtocolCommandSpec.cs
+ CncProtocolMessageType.cs
+ CncProtocolResponse.cs
+ CncRecoveryModels.cs
+ CncRuntimeModels.cs
+ CncStackContractModels.cs
+ CncStreamingModels.cs
+ ControlCenterJobModels.cs
+ DeviceProfile.cs
+ GcodeInterpretationModels.cs
+ GcodeMotionCommand.cs
+ GcodeMotionType.cs
+ GcodeParseResult.cs
+ HomeModels.cs
+ ImageToolpathModels.cs
+ LanguageOption.cs
+ LogEntry.cs
+ MachinePlatformModels.cs
+ ModuleInfo.cs
+ NewsItem.cs
+ Placeholder.cs
 obj/Debug/net8.0-windows/
  .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
  App.g.cs
- MabaUpdater.AssemblyInfo.cs
- MabaUpdater.GlobalUsings.g.cs
- MainWindow.g.cs
-UpdateInstallService.cs
-UpdaterArguments.cs
-UpdaterLog.cs
+ GeneratedInternalTypeHelper.g.cs
+ MabaControlCenter_Content.g.cs
+ MabaControlCenter_gyyhjwwg_wpftmp.AssemblyInfo.cs
+ MabaControlCenter_gyyhjwwg_wpftmp.GlobalUsings.g.cs
+ Views/
+  CncControlView.g.cs
+  CommandsView.g.cs
+  DashboardView.g.cs
+  DevicesView.g.cs
+  DexterCalibrationView.g.cs
+  DiscoverView.g.cs
+  HomeView.g.cs
+  JobsView.g.cs
+  LoginView.g.cs
+  LogsView.g.cs
+  MainWindow.g.cs
+  ModulesView.g.cs
+  ProductionWorkspaceView.g.cs
+  SettingsView.g.cs
+Services/
+ ActiveMachineContextService.cs
+ ActiveProductionJobService.cs
+ AppAnnouncementsService.cs
+ ArduinoFirmwarePackage.cs
+ ArduinoFirmwareUploader.cs
+ ArduinoSerialCncDriver.cs
+ AuthSessionService.cs
+ CncControllerService.cs
+ CncControllerStateMachine.cs
+ CncCoordinateTransformService.cs
+ CncDriverFactory.cs
+ CncExecutionPlannerService.cs
+ CncExecutionPreflightService.cs
+ CncExecutionQueueService.cs
+ CncFramePathService.cs
+ CncJobPlacementService.cs
+ CncJobSessionService.cs
+ CncManagerService.cs
+ CncPreviewPlaybackService.cs
+ CncProfileService.cs
+ CncProtocolCommandFormatter.cs
+ CncProtocolResponseParser.cs
+ CncRecoveryPlannerService.cs
+ CncRuntimeActionPolicy.cs
+ CncRuntimeCoordinator.cs
+ CncRuntimeCoreInterfaces.cs
+ DeviceService.cs
+ EffectiveCapabilitiesResolver.cs
+ GcodeInterpreterService.cs
+ GcodeMotionGeometry.cs
+ GcodeParserService.cs
+ IActiveProductionJobService.cs
+ IAppAnnouncementsService.cs
+ IAuthSessionService.cs
+ ICncControllerService.cs
+ ICncDriver.cs
+ ICncDriverFactory.cs
+ ICncExecutionQueueService.cs
+ ICncFramePathService.cs
+ ICncJobPlacementService.cs
+ ICncJobSessionService.cs
+ ICncPreviewPlaybackService.cs
+ ICncProfileService.cs
+ IDeviceService.cs
+ IGcodeParserService.cs
+ IJobsService.cs
+ ILocalizationService.cs
+ ILoggingService.cs
+ IMachinePlatformServices.cs
+ ImageToolpathServices.cs
+ IModuleService.cs
+ INavigationService.cs
+ INewsService.cs
+ ISettingsService.cs
+ IThemeService.cs
+ IUpdateService.cs
+ JobsService.cs
+ LocalizationService.cs
+ LoggingService.cs
+ MachineCatalogService.cs
+ MachinePlatformJson.cs
+ MacroPadBuiltinProfiles.cs
+ MacroPadProtocol.cs
+ MacroPadSession.cs
+ ModuleService.cs
+ NavigationService.cs
+ NewsService.cs
+ RuntimeProfileService.cs
+ SettingsService.cs
+ SimulatedCncDriver.cs
+ ThemeService.cs
+ UpdateService.cs
+ViewModels/
+ CncControlViewModel.cs
+ CommandsViewModel.cs
+ DashboardViewModel.cs
+ DevicesViewModel.cs
+ DexterCalibrationViewModel.cs
+ DiscoverViewModel.cs
+ HomeViewModel.cs
+ JobsViewModel.cs
+ LoginViewModel.cs
+ LogsViewModel.cs
+ MacroPadKeyEntry.cs
+ MainViewModel.cs
+ ModuleDisplayItem.cs
+ ModulesViewModel.cs
+ ProductionWorkspaceViewModel.cs
+ RelayCommand.cs
+ SettingsViewModel.cs
+ ViewModelBase.cs
+Views/
+ CncControlView.xaml.cs
+ CommandsView.xaml.cs
+ DashboardView.xaml.cs
+ DevicesView.xaml.cs
+ DexterCalibrationView.xaml.cs
+ DiscoverView.xaml.cs
+ HomeView.xaml.cs
+ JobsView.xaml.cs
+ LoginView.xaml.cs
+ LogsView.xaml.cs
+ MainWindow.xaml.cs
+ ModulesView.xaml.cs
+ ProductionWorkspaceView.xaml.cs
+ SettingsView.xaml.cs
 
 [metadataReferences]
 <NUGET>/microsoft.netcore.app.ref/8.0.24/ref/net8.0/
@@ -267,6 +447,7 @@ UpdaterLog.cs
  UIAutomationProvider.dll
  UIAutomationTypes.dll
  WindowsBase.dll
+<NUGET>/system.io.ports/8.0.0/lib/net8.0/System.IO.Ports.dll
 
 [analyzerReferences]
 <DOTNET>/sdk/10.0.103/Sdks/Microsoft.NET.Sdk/analyzers/
@@ -282,4 +463,4 @@ UpdaterLog.cs
 
 [analyzerConfigFiles]
 <DOTNET>/sdk/10.0.103/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
-obj/Debug/net8.0-windows/MabaUpdater.GeneratedMSBuildEditorConfig.editorconfig
+obj/Debug/net8.0-windows/MabaControlCenter_gyyhjwwg_wpftmp.GeneratedMSBuildEditorConfig.editorconfig

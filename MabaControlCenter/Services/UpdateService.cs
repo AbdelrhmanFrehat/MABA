@@ -16,6 +16,10 @@ public class UpdateService : IUpdateService
 {
     private readonly ISettingsService _settingsService;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly string UpdateLogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "MabaControlCenter",
+        "update.log");
     private AppUpdateInfo _info;
     private AppReleaseManifest? _latestManifest;
     private string? _resolvedPackageUri;
@@ -135,6 +139,7 @@ public class UpdateService : IUpdateService
             var zipPath = Path.Combine(updateRoot, "release.zip");
             var extractRoot = Path.Combine(updateRoot, "extract");
             Directory.CreateDirectory(updateRoot);
+            LogUpdate($"Preparing install for version {_latestManifest.Version}. Root={updateRoot}");
 
             await DownloadPackageAsync(_resolvedPackageUri, zipPath, cancellationToken);
             Directory.CreateDirectory(extractRoot);
@@ -146,6 +151,7 @@ public class UpdateService : IUpdateService
             var extractedAppDirectory = FindExtractedAppDirectory(extractRoot, exeName);
             var relaunchPath = Path.Combine(installDirectory, exeName);
             var launch = PrepareUpdaterLaunch(updateRoot, installDirectory, extractedAppDirectory, relaunchPath, _latestManifest.Version);
+            LogUpdate($"Launching updater. Native={launch.UsingNativeUpdater}; Source={extractedAppDirectory}; Target={installDirectory}; Relaunch={relaunchPath}; Helper={launch.StartInfo.FileName}");
 
             UpdateInfo(info => info.StatusMessage = launch.UsingNativeUpdater
                 ? "Launching native updater and restarting..."
@@ -161,6 +167,7 @@ public class UpdateService : IUpdateService
         }
         catch (Exception ex)
         {
+            LogUpdate($"Install failed before handoff: {ex}");
             UpdateInfo(info =>
             {
                 info.IsBusy = false;
@@ -254,6 +261,22 @@ public class UpdateService : IUpdateService
         string relaunchPath,
         string version)
     {
+        var extractedHelper = Path.Combine(extractedAppDirectory, "Updater", "MabaUpdater.exe");
+        if (File.Exists(extractedHelper))
+        {
+            var helperTempDirectory = Path.Combine(updateRoot, "updater");
+            CopyDirectory(Path.GetDirectoryName(extractedHelper)!, helperTempDirectory);
+            var helperExe = Path.Combine(helperTempDirectory, "MabaUpdater.exe");
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = helperExe,
+                Arguments = BuildUpdaterArguments(Environment.ProcessId, extractedAppDirectory, installDirectory, relaunchPath, version),
+                UseShellExecute = true,
+                WorkingDirectory = helperTempDirectory
+            };
+            return new PreparedUpdaterLaunch(startInfo, true);
+        }
+
         var installedHelper = Path.Combine(installDirectory, "Updater", "MabaUpdater.exe");
         if (File.Exists(installedHelper))
         {
@@ -341,6 +364,24 @@ Start-Process -FilePath $relaunchPath -WorkingDirectory (Split-Path -Path $relau
             var targetPath = Path.Combine(targetDirectory, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
             File.Copy(file, targetPath, overwrite: true);
+        }
+    }
+
+    private static void LogUpdate(string message)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(UpdateLogPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            File.AppendAllText(
+                UpdateLogPath,
+                $"[{DateTimeOffset.Now:O}] {message}{Environment.NewLine}");
+        }
+        catch
+        {
+            // Never block the update flow on log I/O.
         }
     }
 

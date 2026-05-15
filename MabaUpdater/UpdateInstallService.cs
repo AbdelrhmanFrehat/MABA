@@ -10,6 +10,7 @@ internal sealed class UpdateInstallService
         Action<string, string, bool, double?> report,
         CancellationToken cancellationToken)
     {
+        UpdaterLog.Write($"RunAsync started. Version={args.Version}; Source={args.SourceDirectory}; Target={args.TargetDirectory}; Relaunch={args.RelaunchPath}");
         report("Preparing", BuildSubtitle(args), true, null);
         await WaitForProcessExitAsync(args.ProcessId, report, cancellationToken);
 
@@ -18,6 +19,7 @@ internal sealed class UpdateInstallService
             throw new DirectoryNotFoundException($"Update source folder not found: {args.SourceDirectory}");
 
         var plan = BuildPlan(args.SourceDirectory, args.TargetDirectory);
+        UpdaterLog.Write($"Install plan built. CreateDirs={plan.CreateDirectories.Count}; CopyFiles={plan.CopyFiles.Count}; DeleteFiles={plan.DeleteFiles.Count}; DeleteDirs={plan.DeleteDirectories.Count}");
         var totalOperations = Math.Max(1, plan.CreateDirectories.Count + plan.CopyFiles.Count + plan.DeleteFiles.Count + plan.DeleteDirectories.Count);
         var completed = 0;
 
@@ -59,6 +61,7 @@ internal sealed class UpdateInstallService
         }
 
         report("Restarting", "Launching the updated app.", true, null);
+        UpdaterLog.Write($"Install plan complete. Relaunching {args.RelaunchPath}");
         StartRelaunch(args.RelaunchPath);
     }
 
@@ -72,16 +75,19 @@ internal sealed class UpdateInstallService
         try
         {
             using var process = Process.GetProcessById(pid);
+            UpdaterLog.Write($"Waiting for process {pid} to exit.");
             while (!process.HasExited)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await Task.Delay(300, cancellationToken);
                 process.Refresh();
             }
+            UpdaterLog.Write($"Process {pid} exited.");
         }
         catch (ArgumentException)
         {
             // Already exited.
+            UpdaterLog.Write($"Process {pid} was already exited before updater wait.");
         }
     }
 
@@ -150,6 +156,7 @@ internal sealed class UpdateInstallService
             UseShellExecute = true,
             WorkingDirectory = Path.GetDirectoryName(relaunchPath) ?? AppContext.BaseDirectory
         };
+        UpdaterLog.Write($"Starting relaunch process: {relaunchPath}");
         Process.Start(startInfo);
     }
 

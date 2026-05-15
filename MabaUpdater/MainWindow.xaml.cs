@@ -51,12 +51,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         try
         {
+            UpdaterLog.Write("Updater window loaded. Beginning install.");
             await _service.RunAsync(_arguments, ReportStatus, CancellationToken.None);
+            UpdaterLog.Write("Updater completed install flow. Closing helper window.");
             await Task.Delay(900);
             Close();
         }
         catch (Exception ex)
         {
+            UpdaterLog.Write($"Updater failed: {ex}");
             StatusTitle = "Update failed";
             StatusSubtitle = ex.Message;
             IsIndeterminate = false;
