@@ -78,6 +78,14 @@
                         <TextBlock Grid.Column="0" Text="{Binding Source={StaticResource Labels}, Path=Label_LatestVersion}" Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <TextBlock Grid.Column="1" Text="{Binding UpdateInfo.LatestVersion}" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Feed version:" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding UpdateInfo.FeedVersion}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    </Grid>
                     <TextBlock Text="{Binding UpdateInfo.StatusMessage}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,12"/>
                     <TextBlock Text="{Binding UpdateInfo.ReleaseNotes}" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding UpdateInfo.UpdateSource, StringFormat=Update source: {0}}" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>

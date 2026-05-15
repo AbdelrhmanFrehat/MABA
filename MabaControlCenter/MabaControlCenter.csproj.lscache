@@ -109,6 +109,7 @@ Models/
  GcodeMotionType.cs
  GcodeParseResult.cs
  HomeModels.cs
+ ImageToolpathModels.cs
  LanguageOption.cs
  LogEntry.cs
  MachinePlatformModels.cs
@@ -187,6 +188,7 @@ Services/
  ILocalizationService.cs
  ILoggingService.cs
  IMachinePlatformServices.cs
+ ImageToolpathServices.cs
  IModuleService.cs
  INavigationService.cs
  INewsService.cs

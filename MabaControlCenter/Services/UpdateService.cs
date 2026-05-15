@@ -27,6 +27,7 @@ public class UpdateService : IUpdateService
         {
             CurrentVersion = GetCurrentVersion(),
             LatestVersion = GetCurrentVersion(),
+            FeedVersion = GetCurrentVersion(),
             StatusMessage = "Update source not configured."
         };
     }
@@ -47,6 +48,7 @@ public class UpdateService : IUpdateService
             {
                 info.CurrentVersion = currentVersion;
                 info.LatestVersion = currentVersion;
+                info.FeedVersion = currentVersion;
                 info.IsUpdateAvailable = false;
                 info.CanInstall = false;
                 info.IsBusy = false;
@@ -73,17 +75,27 @@ public class UpdateService : IUpdateService
             _latestManifest = manifest;
             _resolvedPackageUri = resolvedPackageUri;
 
-            var isUpdateAvailable = IsNewerVersion(manifest.Version, currentVersion);
+            var comparison = CompareVersions(manifest.Version, currentVersion);
+            var isUpdateAvailable = comparison > 0;
+            var effectiveLatestVersion = comparison >= 0 || string.IsNullOrWhiteSpace(currentVersion)
+                ? manifest.Version
+                : currentVersion;
+            var statusMessage = comparison switch
+            {
+                > 0 => "Update available.",
+                < 0 => "Installed version is newer than the update feed.",
+                _ => "You are up to date."
+            };
+
             UpdateInfo(info =>
             {
                 info.CurrentVersion = currentVersion;
-                info.LatestVersion = string.IsNullOrWhiteSpace(manifest.Version) ? currentVersion : manifest.Version;
+                info.LatestVersion = string.IsNullOrWhiteSpace(effectiveLatestVersion) ? currentVersion : effectiveLatestVersion;
+                info.FeedVersion = manifest.Version;
                 info.IsUpdateAvailable = isUpdateAvailable;
                 info.CanInstall = isUpdateAvailable && !string.IsNullOrWhiteSpace(_resolvedPackageUri);
-                info.ReleaseNotes = manifest.Notes ?? string.Empty;
-                info.StatusMessage = isUpdateAvailable
-                    ? "Update available."
-                    : "You are up to date.";
+                info.ReleaseNotes = comparison >= 0 ? (manifest.Notes ?? string.Empty) : string.Empty;
+                info.StatusMessage = statusMessage;
                 info.IsBusy = false;
             });
         }
@@ -93,6 +105,7 @@ public class UpdateService : IUpdateService
             {
                 info.CurrentVersion = currentVersion;
                 info.LatestVersion = currentVersion;
+                info.FeedVersion = currentVersion;
                 info.IsUpdateAvailable = false;
                 info.CanInstall = false;
                 info.IsBusy = false;
@@ -356,13 +369,7 @@ Start-Process -FilePath $relaunchPath -WorkingDirectory (Split-Path -Path $relau
 
     private static bool IsNewerVersion(string candidate, string current)
     {
-        if (Version.TryParse(NormalizeVersion(candidate), out var candidateVersion) &&
-            Version.TryParse(NormalizeVersion(current), out var currentVersion))
-        {
-            return candidateVersion > currentVersion;
-        }
-
-        return !string.Equals(candidate, current, StringComparison.OrdinalIgnoreCase);
+        return CompareVersions(candidate, current) > 0;
     }
 
     private static string NormalizeVersion(string value)
@@ -374,6 +381,17 @@ Start-Process -FilePath $relaunchPath -WorkingDirectory (Split-Path -Path $relau
             1 => sanitized + ".0",
             _ => sanitized
         };
+    }
+
+    private static int CompareVersions(string candidate, string current)
+    {
+        if (Version.TryParse(NormalizeVersion(candidate), out var candidateVersion) &&
+            Version.TryParse(NormalizeVersion(current), out var currentVersion))
+        {
+            return candidateVersion.CompareTo(currentVersion);
+        }
+
+        return string.Compare(candidate, current, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryCreateHttpUri(string value, out Uri? uri)

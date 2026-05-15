@@ -20,12 +20,23 @@ public class GcodeParserService : IGcodeParserService
     public GcodeParseResult ParseFile(string filePath)
     {
         var lines = File.ReadAllLines(filePath);
+        return ParseLines(Path.GetFileName(filePath), lines, filePath);
+    }
+
+    public GcodeParseResult ParseText(string fileName, string contents, string? sourcePath = null)
+    {
+        var lines = contents.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        return ParseLines(fileName, lines, sourcePath ?? fileName);
+    }
+
+    private GcodeParseResult ParseLines(string fileName, IReadOnlyList<string> lines, string filePath)
+    {
         var interpreted = _interpreterService.Interpret(lines);
         var result = new GcodeParseResult
         {
             FilePath = filePath,
-            FileName = Path.GetFileName(filePath),
-            TotalLines = lines.Length,
+            FileName = fileName,
+            TotalLines = lines.Count,
             FinalModalState = interpreted.FinalModalState,
             InterpreterDiagnostics = interpreted.Diagnostics,
             WarningCount = interpreted.Diagnostics.WarningCount,

@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using MabaControlCenter.Models;
 using MabaControlCenter.Services;
 using Microsoft.Win32;
@@ -26,6 +28,7 @@ public class CncControlViewModel : ViewModelBase
     private readonly ICncRuntimeCoordinator _runtimeCoordinator;
     private readonly ICncCoordinateTransformService _coordinateTransformService;
     private readonly ICncManagerService _cncManagerService;
+    private readonly IImageToolpathService _imageToolpathService;
     private string? _lastRecoverySignature;
     private bool _hadRecoveryPlan;
 
@@ -76,6 +79,23 @@ public class CncControlViewModel : ViewModelBase
     private bool _isMachineSwitchOpen;
     private bool _isProfileManagerOpen;
     private bool _isUploadingFirmware;
+    private ImageToolpathJob? _imageToolpathJob;
+    private string _imageToolpathSourcePath = string.Empty;
+    private ImageSource? _imageToolpathPreviewSource;
+    private string _imageTraceGeometryData = string.Empty;
+    private decimal _imageTargetWidthMm = 50m;
+    private decimal _imageTargetHeightMm = 50m;
+    private bool _imagePreserveAspectRatio = true;
+    private int _imageThreshold = 140;
+    private bool _imageInvert;
+    private bool _imageDespeckle = true;
+    private decimal _imageCutDepthMm = -0.5m;
+    private decimal _imageSafeTravelZMm = 5m;
+    private decimal _imageCutFeedMmPerMinute = 300m;
+    private decimal _imagePlungeFeedMmPerMinute = 120m;
+    private decimal _imageRapidFeedMmPerMinute = 900m;
+    private decimal _imageSimplifyToleranceMm = 0.35m;
+    private ImageTraceMode _imageTraceMode = ImageTraceMode.Outline;
     private MachineWizardStep _wizardStep = MachineWizardStep.Catalog;
     private MachineWizardCard? _wizardSelectedFamilyCard;
     private MachineWizardCard? _wizardSelectedMachineCard;
@@ -99,7 +119,8 @@ public class CncControlViewModel : ViewModelBase
         IActiveMachineContextService activeMachineContextService,
         ICncRuntimeCoordinator runtimeCoordinator,
         ICncCoordinateTransformService coordinateTransformService,
-        ICncManagerService cncManagerService)
+        ICncManagerService cncManagerService,
+        IImageToolpathService imageToolpathService)
     {
         _cncControllerService = cncControllerService;
         _cncProfileService = cncProfileService;
@@ -117,6 +138,7 @@ public class CncControlViewModel : ViewModelBase
         _runtimeCoordinator = runtimeCoordinator;
         _coordinateTransformService = coordinateTransformService;
         _cncManagerService = cncManagerService;
+        _imageToolpathService = imageToolpathService;
 
         AvailablePorts = new ObservableCollection<string>();
         JogStepPresets = new ObservableCollection<decimal>();
@@ -184,6 +206,9 @@ public class CncControlViewModel : ViewModelBase
         JogZPositiveCommand = new RelayCommand(_ => Jog("Z", SelectedJogStep), _ => CanJog);
         JogZNegativeCommand = new RelayCommand(_ => Jog("Z", -SelectedJogStep), _ => CanJog);
         LoadGcodeCommand = new RelayCommand(_ => LoadGcodeFile(), _ => CanLoadGcode);
+        ImportImageToolpathCommand = new RelayCommand(_ => ImportImageToolpath(), _ => CanImportImageToolpath);
+        GenerateImageToolpathPreviewCommand = new RelayCommand(_ => GenerateImageToolpathPreview(), _ => CanGenerateImageToolpathPreview);
+        CreateImageToolpathJobCommand = new RelayCommand(_ => CreateImageToolpathJob(), _ => CanCreateImageToolpathJob);
         ClearLoadedProgramCommand = new RelayCommand(_ => ClearLoadedProgram(), _ => CanClearLoadedProgram);
         ApplyPlacementCommand = new RelayCommand(_ => ApplyPlacement(), _ => CanApplyPlacement);
         ResetPlacementCommand = new RelayCommand(_ => ResetPlacement(), _ => CanApplyPlacement);
@@ -244,6 +269,7 @@ public class CncControlViewModel : ViewModelBase
 
         _runtimeProfileService.EnsureSystemProfilesForDefinitions(_machineCatalogService.CachedDefinitions.ToList());
         LoadProfileFields(_cncProfileService.ActiveProfile);
+        SyncImageToolpathDefaultsFromConfig();
         RefreshActiveMachineContext();
         RefreshPorts();
         RefreshActiveJob();
@@ -276,6 +302,7 @@ public class CncControlViewModel : ViewModelBase
     public ObservableCollection<ExistingMachineCard> ExistingMachineCards { get; }
     public IReadOnlyList<CncDriverType> DriverTypes { get; }
     public IReadOnlyList<CncHomeOriginConvention> HomeOriginOptions { get; }
+    public IReadOnlyList<ImageTraceMode> ImageTraceModes => Enum.GetValues(typeof(ImageTraceMode)).Cast<ImageTraceMode>().ToList();
     public string MachineCatalogSyncStatus => _machineCatalogService.LastSyncStatus;
     public string MachinePlatformStatus
     {
@@ -493,6 +520,9 @@ public class CncControlViewModel : ViewModelBase
     public ICommand JogZPositiveCommand { get; }
     public ICommand JogZNegativeCommand { get; }
     public ICommand LoadGcodeCommand { get; }
+    public ICommand ImportImageToolpathCommand { get; }
+    public ICommand GenerateImageToolpathPreviewCommand { get; }
+    public ICommand CreateImageToolpathJobCommand { get; }
     public ICommand ClearLoadedProgramCommand { get; }
     public ICommand ApplyPlacementCommand { get; }
     public ICommand ResetPlacementCommand { get; }
@@ -923,6 +953,111 @@ public class CncControlViewModel : ViewModelBase
     public string LoadedFileSummary => LoadedProgram == null
         ? "Load a .gcode, .nc, or .txt file to build the execution queue."
         : $"{LoadedProgram.Motions.Count} motion line(s) from {LoadedProgram.TotalLines} file line(s)";
+    public bool CanImportImageToolpath => CanLoadGcode;
+    public bool CanGenerateImageToolpathPreview => !string.IsNullOrWhiteSpace(ImageToolpathSourcePath);
+    public bool CanCreateImageToolpathJob => ImageToolpathJob != null && ImageToolpathJob.VectorPaths.Count > 0;
+    public ImageToolpathJob? ImageToolpathJob
+    {
+        get => _imageToolpathJob;
+        private set
+        {
+            if (_imageToolpathJob == value) return;
+            _imageToolpathJob = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasImageToolpathPreview));
+            OnPropertyChanged(nameof(ImageToolpathSummary));
+            OnPropertyChanged(nameof(ImageToolpathBoundsText));
+            OnPropertyChanged(nameof(CanCreateImageToolpathJob));
+        }
+    }
+    public bool HasImageToolpathPreview => ImageToolpathJob != null;
+    public string ImageToolpathSourcePath
+    {
+        get => _imageToolpathSourcePath;
+        set { if (_imageToolpathSourcePath == value) return; _imageToolpathSourcePath = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanGenerateImageToolpathPreview)); }
+    }
+    public ImageSource? ImageToolpathPreviewSource
+    {
+        get => _imageToolpathPreviewSource;
+        private set { if (_imageToolpathPreviewSource == value) return; _imageToolpathPreviewSource = value; OnPropertyChanged(); }
+    }
+    public string ImageTraceGeometryData
+    {
+        get => _imageTraceGeometryData;
+        private set { if (_imageTraceGeometryData == value) return; _imageTraceGeometryData = value; OnPropertyChanged(); }
+    }
+    public string ImageToolpathSummary => ImageToolpathJob == null
+        ? "No image toolpath generated yet."
+        : $"{ImageToolpathJob.VectorPaths.Count} traced path(s) • {ImageToolpathJob.GeneratedGcode.Messages.Count} message(s)";
+    public string ImageToolpathBoundsText => ImageToolpathJob == null
+        ? "Bounding box: n/a"
+        : $"Bounding box: {ImageToolpathJob.GeneratedGcode.WidthMm:0.###} × {ImageToolpathJob.GeneratedGcode.HeightMm:0.###} mm";
+    public decimal ImageTargetWidthMm
+    {
+        get => _imageTargetWidthMm;
+        set { if (_imageTargetWidthMm == value) return; _imageTargetWidthMm = value; OnPropertyChanged(); }
+    }
+    public decimal ImageTargetHeightMm
+    {
+        get => _imageTargetHeightMm;
+        set { if (_imageTargetHeightMm == value) return; _imageTargetHeightMm = value; OnPropertyChanged(); }
+    }
+    public bool ImagePreserveAspectRatio
+    {
+        get => _imagePreserveAspectRatio;
+        set { if (_imagePreserveAspectRatio == value) return; _imagePreserveAspectRatio = value; OnPropertyChanged(); }
+    }
+    public int ImageThreshold
+    {
+        get => _imageThreshold;
+        set { if (_imageThreshold == value) return; _imageThreshold = value; OnPropertyChanged(); }
+    }
+    public bool ImageInvert
+    {
+        get => _imageInvert;
+        set { if (_imageInvert == value) return; _imageInvert = value; OnPropertyChanged(); }
+    }
+    public bool ImageDespeckle
+    {
+        get => _imageDespeckle;
+        set { if (_imageDespeckle == value) return; _imageDespeckle = value; OnPropertyChanged(); }
+    }
+    public decimal ImageCutDepthMm
+    {
+        get => _imageCutDepthMm;
+        set { if (_imageCutDepthMm == value) return; _imageCutDepthMm = value; OnPropertyChanged(); }
+    }
+    public decimal ImageSafeTravelZMm
+    {
+        get => _imageSafeTravelZMm;
+        set { if (_imageSafeTravelZMm == value) return; _imageSafeTravelZMm = value; OnPropertyChanged(); }
+    }
+    public decimal ImageCutFeedMmPerMinute
+    {
+        get => _imageCutFeedMmPerMinute;
+        set { if (_imageCutFeedMmPerMinute == value) return; _imageCutFeedMmPerMinute = value; OnPropertyChanged(); }
+    }
+    public decimal ImagePlungeFeedMmPerMinute
+    {
+        get => _imagePlungeFeedMmPerMinute;
+        set { if (_imagePlungeFeedMmPerMinute == value) return; _imagePlungeFeedMmPerMinute = value; OnPropertyChanged(); }
+    }
+    public decimal ImageRapidFeedMmPerMinute
+    {
+        get => _imageRapidFeedMmPerMinute;
+        set { if (_imageRapidFeedMmPerMinute == value) return; _imageRapidFeedMmPerMinute = value; OnPropertyChanged(); }
+    }
+    public decimal ImageSimplifyToleranceMm
+    {
+        get => _imageSimplifyToleranceMm;
+        set { if (_imageSimplifyToleranceMm == value) return; _imageSimplifyToleranceMm = value; OnPropertyChanged(); }
+    }
+    public ImageTraceMode ImageTraceMode
+    {
+        get => _imageTraceMode;
+        set { if (_imageTraceMode == value) return; _imageTraceMode = value; OnPropertyChanged(); OnPropertyChanged(nameof(ImageTraceModeText)); }
+    }
+    public string ImageTraceModeText => ImageTraceMode.ToString();
     public IEnumerable<GcodeMotionCommand> MotionCommands => _placedMotions;
     public int TotalMotionCount => MotionCommands.Count(m => m.IsExecutable);
     public int CurrentLineNumber => _executionQueueService.CurrentPlannedCommand?.SourceLineNumber ?? _executionQueueService.CurrentMotion?.LineNumber ?? 0;
@@ -1474,17 +1609,7 @@ public class CncControlViewModel : ViewModelBase
             LastFeedback = "Parsing G-code file...";
             AddDiagnostic("Info", $"Loading file: {dialog.FileName}");
             var parsed = _gcodeParserService.ParseFile(dialog.FileName);
-            LoadedProgram = parsed;
-            _jobPlacement = new CncJobPlacement();
-            PlacementOffsetX = 0m;
-            PlacementOffsetY = 0m;
-            _runtimeCoordinator.SetJobPlacementOffset(new CncJobPlacementOffset());
-            _jobSessionService.LoadJob(parsed, ActiveProfileName, RuntimeModeText, ActiveJob?.Title, ActiveJob?.JobReference);
-            _runtimeCoordinator.SetJobLoaded(parsed.FileName, true);
-            RevalidateLoadedProgram();
-            LastFeedback = $"Loaded {LoadedProgram.FileName}.";
-            AddDiagnostic("Info", $"Parse completed with {LoadedProgram.Motions.Count} motion line(s) and {LoadedProgram.InterpretedCommands.Count} interpreted line(s).");
-            AddDiagnostics(LoadedProgram.Messages, defaultSeverity: "Warning");
+            LoadParsedProgram(parsed, $"Loaded {parsed.FileName}.");
         }
         catch (Exception ex)
         {
@@ -1495,6 +1620,79 @@ public class CncControlViewModel : ViewModelBase
             _runtimeCoordinator.SetLoadingJob(false);
             RefreshState();
         }
+    }
+
+    private void ImportImageToolpath()
+    {
+        if (!_runtimeCoordinator.CanExecute(CncRuntimeAction.LoadJob, out var blockingReason))
+        {
+            HandleUiError(blockingReason ?? "Importing an image toolpath is not allowed right now.", "Import Image as Toolpath", logAsWarning: true);
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All files (*.*)|*.*",
+            Title = "Import Image as Toolpath"
+        };
+
+        if (dialog.ShowDialog(Application.Current.MainWindow) != true)
+            return;
+
+        ImageToolpathSourcePath = dialog.FileName;
+        ImageToolpathPreviewSource = CreateBitmapPreview(dialog.FileName);
+        ImageToolpathJob = null;
+        ImageTraceGeometryData = string.Empty;
+        LastFeedback = $"Loaded image source {Path.GetFileName(dialog.FileName)} for tracing.";
+        AddDiagnostic("Info", $"Image toolpath source selected: {dialog.FileName}");
+    }
+
+    private void GenerateImageToolpathPreview()
+    {
+        if (string.IsNullOrWhiteSpace(ImageToolpathSourcePath))
+        {
+            HandleUiError("Select an image first.", "Generate Image Toolpath", logAsWarning: true);
+            return;
+        }
+
+        var job = _imageToolpathService.CreateJob(ImageToolpathSourcePath, BuildImageToolpathSettings());
+        ImageToolpathJob = job;
+        ImageTraceGeometryData = BuildTraceGeometryData(job.VectorPaths);
+        LastFeedback = $"Generated image toolpath preview from {Path.GetFileName(ImageToolpathSourcePath)}.";
+
+        foreach (var message in job.GeneratedGcode.Messages)
+            AddDiagnostic(message.Contains("[Error]", StringComparison.OrdinalIgnoreCase) ? "Error" : "Info", message);
+    }
+
+    private void CreateImageToolpathJob()
+    {
+        if (ImageToolpathJob == null)
+        {
+            HandleUiError("Generate the image toolpath preview first.", "Create Image Toolpath Job", logAsWarning: true);
+            return;
+        }
+
+        var parsed = _gcodeParserService.ParseText(
+            ImageToolpathJob.GeneratedGcode.FileName,
+            ImageToolpathJob.GeneratedGcode.GcodeText,
+            $"image-toolpath://{ImageToolpathJob.GeneratedGcode.FileName}");
+
+        LoadParsedProgram(parsed, $"Created CNC job from {Path.GetFileName(ImageToolpathSourcePath)}.");
+    }
+
+    private void LoadParsedProgram(GcodeParseResult parsed, string successMessage)
+    {
+        LoadedProgram = parsed;
+        _jobPlacement = new CncJobPlacement();
+        PlacementOffsetX = 0m;
+        PlacementOffsetY = 0m;
+        _runtimeCoordinator.SetJobPlacementOffset(new CncJobPlacementOffset());
+        _jobSessionService.LoadJob(parsed, ActiveProfileName, RuntimeModeText, ActiveJob?.Title, ActiveJob?.JobReference);
+        _runtimeCoordinator.SetJobLoaded(parsed.FileName, true);
+        RevalidateLoadedProgram();
+        LastFeedback = successMessage;
+        AddDiagnostic("Info", $"Parse completed with {parsed.Motions.Count} motion line(s) and {parsed.InterpretedCommands.Count} interpreted line(s).");
+        AddDiagnostics(parsed.Messages, defaultSeverity: "Warning");
     }
 
     private void ClearLoadedProgram()
@@ -1522,6 +1720,68 @@ public class CncControlViewModel : ViewModelBase
         LastFeedback = "Loaded G-code cleared.";
         AddDiagnostic("Info", "Loaded G-code cleared.");
         RefreshWorkflowState();
+    }
+
+    private void SyncImageToolpathDefaultsFromConfig()
+    {
+        var config = _cncControllerService.Config;
+        ImageSafeTravelZMm = config.SafeTravelZMm;
+        ImageCutFeedMmPerMinute = config.MaxFeedXyMmPerMinute;
+        ImageRapidFeedMmPerMinute = config.MaxRapidXyMmPerMinute;
+        ImagePlungeFeedMmPerMinute = config.MaxPlungeZMmPerMinute;
+    }
+
+    private ImageToolpathSettings BuildImageToolpathSettings()
+    {
+        return new ImageToolpathSettings
+        {
+            Threshold = ImageThreshold,
+            Invert = ImageInvert,
+            Grayscale = true,
+            Despeckle = ImageDespeckle,
+            PreserveAspectRatio = ImagePreserveAspectRatio,
+            TargetWidthMm = ImageTargetWidthMm,
+            TargetHeightMm = ImageTargetHeightMm,
+            SimplifyToleranceMm = ImageSimplifyToleranceMm,
+            CutDepthMm = ImageCutDepthMm,
+            SafeTravelZMm = ImageSafeTravelZMm,
+            CutFeedMmPerMinute = ImageCutFeedMmPerMinute,
+            PlungeFeedMmPerMinute = ImagePlungeFeedMmPerMinute,
+            RapidFeedMmPerMinute = ImageRapidFeedMmPerMinute,
+            SpindleEnabled = true,
+            EnableZMoves = _cncControllerService.Config.SupportsZAxis,
+            TraceMode = ImageTraceMode
+        };
+    }
+
+    private static ImageSource? CreateBitmapPreview(string filePath)
+    {
+        if (!File.Exists(filePath))
+            return null;
+
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    private static string BuildTraceGeometryData(IEnumerable<VectorPath> paths)
+    {
+        var builder = new System.Text.StringBuilder();
+        foreach (var path in paths.Where(path => path.Points.Count > 1))
+        {
+            var first = path.Points[0];
+            builder.Append($"M {first.X:0.###},{first.Y:0.###} ");
+            foreach (var point in path.Points.Skip(1))
+                builder.Append($"L {point.X:0.###},{point.Y:0.###} ");
+            if (path.Closed)
+                builder.Append("Z ");
+        }
+
+        return builder.ToString().Trim();
     }
 
     private async Task StartProgramAsync()

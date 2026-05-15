@@ -929,6 +929,7 @@
                                         <TextBlock Text="Run Controls" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                         <WrapPanel Margin="0,0,0,14">
                                             <Button Content="Load G-code" Command="{Binding LoadGcodeCommand}" Style="{StaticResource CncPrimaryButtonStyle}" Margin="0,0,8,8"/>
+                                            <Button Content="Import Image" Command="{Binding ImportImageToolpathCommand}" Style="{StaticResource CncPrimaryButtonStyle}" Margin="0,0,8,8"/>
                                             <Button Content="Clear Job" Command="{Binding ClearLoadedProgramCommand}" Style="{StaticResource CncPrimaryButtonStyle}" Margin="0,0,8,8"/>
                                             <Button Content="Frame" Command="{Binding FramePreviewCommand}" Style="{StaticResource CncPrimaryButtonStyle}" Margin="0,0,8,8"/>
                                             <Button Content="Start" Command="{Binding StartProgramCommand}" Style="{StaticResource CncPrimaryButtonStyle}" Margin="0,0,8,8"/>
@@ -981,8 +982,8 @@
 
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="94"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
 
                                                 <Grid Grid.Column="0">
@@ -1259,6 +1260,121 @@
                                                     </TextBlock>
                                                     <TextBlock Text="{Binding PlacementStatus, Mode=OneWay}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,6,0,0" TextWrapping="Wrap"/>
                                                     <TextBlock Text="{Binding JobBlockingReason}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,0" TextWrapping="Wrap" Visibility="{Binding HasBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                                    <Separator Margin="0,14,0,14"/>
+                                                    <TextBlock Text="Image Toolpath" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Width mm" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageTargetWidthMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Height mm" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageTargetHeightMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Threshold" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageThreshold, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Simplify" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageSimplifyToleranceMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Cut depth" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageCutDepthMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Safe Z" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageSafeTravelZMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Cut feed" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageCutFeedMmPerMinute, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Plunge" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImagePlungeFeedMmPerMinute, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Rapid" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageRapidFeedMmPerMinute, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Trace mode" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <ComboBox Grid.Column="4"
+                                                                  ItemsSource="{Binding ImageTraceModes}"
+                                                                  SelectedItem="{Binding ImageTraceMode, UpdateSourceTrigger=PropertyChanged}"
+                                                                  Background="{DynamicResource BackgroundLightBrush}"
+                                                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                  BorderBrush="{DynamicResource BorderBrush}"/>
+                                                    </Grid>
+                                                    <WrapPanel Margin="0,0,0,10">
+                                                        <CheckBox Content="Preserve Aspect Ratio" IsChecked="{Binding ImagePreserveAspectRatio}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
+                                                        <CheckBox Content="Invert" IsChecked="{Binding ImageInvert}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
+                                                        <CheckBox Content="Despeckle" IsChecked="{Binding ImageDespeckle}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
+                                                    </WrapPanel>
+                                                    <WrapPanel Margin="0,0,0,10">
+                                                        <Button Content="Import Image as Toolpath" Command="{Binding ImportImageToolpathCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
+                                                        <Button Content="Generate Preview" Command="{Binding GenerateImageToolpathPreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
+                                                        <Button Content="Create G-code Job" Command="{Binding CreateImageToolpathJobCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,8"/>
+                                                    </WrapPanel>
+                                                    <TextBlock Text="{Binding ImageToolpathSummary}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding ImageToolpathBoundsText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,8" TextWrapping="Wrap"/>
+                                                    <Grid Visibility="{Binding HasImageToolpathPreview, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Background="{DynamicResource BackgroundMediumBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8">
+                                                            <StackPanel>
+                                                                <TextBlock Text="Original Image" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                                                <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="180">
+                                                                    <Image Source="{Binding ImageToolpathPreviewSource, Mode=OneWay}" Stretch="Uniform"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <Border Grid.Column="2" Background="{DynamicResource BackgroundMediumBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8">
+                                                            <StackPanel>
+                                                                <TextBlock Text="Traced Vector Preview" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                                                <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="180">
+                                                                    <Viewbox Stretch="Uniform">
+                                                                        <Canvas Width="{Binding ImageTargetWidthMm}" Height="{Binding ImageTargetHeightMm}">
+                                                                            <Path Data="{Binding ImageTraceGeometryData, Mode=OneWay}"
+                                                                                  Stroke="{DynamicResource AccentBrush}"
+                                                                                  StrokeThickness="1.5"
+                                                                                  Fill="Transparent"/>
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
                                                 </StackPanel>
                                             </ScrollViewer>
                                         </TabItem>
