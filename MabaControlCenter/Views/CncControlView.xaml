@@ -1297,10 +1297,36 @@
                                                             <ColumnDefinition Width="92"/>
                                                             <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Smoothing" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageSmoothingAmount, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Min feature" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageMinimumFeatureSizeMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0" Text="Min segment" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                         <TextBox Grid.Column="1" Text="{Binding ImageMinimumSegmentLengthMm, UpdateSourceTrigger=PropertyChanged}"/>
                                                         <TextBlock Grid.Column="3" Text="Min area" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                         <TextBox Grid.Column="4" Text="{Binding ImageMinimumContourAreaMm2, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Min perimeter" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageMinimumContourPerimeterMm, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Min island" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageMinimumIslandSizeMm2, UpdateSourceTrigger=PropertyChanged}"/>
                                                     </Grid>
                                                     <Grid Margin="0,0,0,10">
                                                         <Grid.ColumnDefinitions>
@@ -1319,6 +1345,32 @@
                                                                   Background="{DynamicResource BackgroundLightBrush}"
                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                   BorderBrush="{DynamicResource BorderBrush}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Open morph" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageMorphologyOpenIterations, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Close morph" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageMorphologyCloseIterations, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Dilate" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ImageDilationIterations, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBlock Grid.Column="3" Text="Erode" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                        <TextBox Grid.Column="4" Text="{Binding ImageErosionIterations, UpdateSourceTrigger=PropertyChanged}"/>
                                                     </Grid>
                                                     <Grid Margin="0,0,0,10">
                                                         <Grid.ColumnDefinitions>
@@ -1368,6 +1420,7 @@
                                                         <CheckBox Content="Preserve Aspect Ratio" IsChecked="{Binding ImagePreserveAspectRatio}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
                                                         <CheckBox Content="Invert" IsChecked="{Binding ImageInvert}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
                                                         <CheckBox Content="Despeckle" IsChecked="{Binding ImageDespeckle}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
+                                                        <CheckBox Content="Adaptive Threshold" IsChecked="{Binding ImageUseAdaptiveThreshold}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,14,8"/>
                                                     </WrapPanel>
                                                     <WrapPanel Margin="0,0,0,10">
                                                         <Button Content="Import Image as Toolpath" Command="{Binding ImportImageToolpathCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
@@ -1378,70 +1431,86 @@
                                                     <TextBlock Text="{Binding ImageToolpathBoundsText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,8" TextWrapping="Wrap"/>
                                                     <TextBlock Text="{Binding ImageToolpathDiagnosticsText}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4" TextWrapping="Wrap"/>
                                                     <TextBlock Text="{Binding ImageToolpathWarningsText}" Foreground="{DynamicResource WarningBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
-                                                    <Grid Visibility="{Binding HasImageToolpathPreview, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="12"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Grid.Column="0" Background="{DynamicResource BackgroundMediumBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8">
-                                                            <StackPanel>
-                                                                <TextBlock Text="Original Image" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
-                                                                <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="180">
-                                                                    <Image Source="{Binding ImageToolpathPreviewSource, Mode=OneWay}" Stretch="Uniform"/>
-                                                                </Border>
-                                                            </StackPanel>
-                                                        </Border>
-                                                        <Border Grid.Column="2" Background="{DynamicResource BackgroundMediumBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8">
-                                                            <StackPanel>
-                                                                <TextBlock Text="Traced Vector Preview" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
-                                                                <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="180">
-                                                                    <Viewbox Stretch="Uniform">
-                                                                        <Canvas Width="{Binding ImageTargetWidthMm}" Height="{Binding ImageTargetHeightMm}">
-                                                                            <Path Data="{Binding ImageBoundingBoxGeometryData, Mode=OneWay}"
-                                                                                  Stroke="{DynamicResource TextSecondaryBrush}"
-                                                                                  StrokeThickness="0.8"
-                                                                                  StrokeDashArray="2,2"
-                                                                                  Fill="Transparent"/>
-                                                                            <Path Data="{Binding ImageRapidGeometryData, Mode=OneWay}"
-                                                                                  Stroke="{DynamicResource WarningBrush}"
-                                                                                  StrokeThickness="0.9"
-                                                                                  StrokeDashArray="3,2"
-                                                                                  Fill="Transparent"/>
-                                                                            <Path Data="{Binding ImageTraceGeometryData, Mode=OneWay}"
-                                                                                  Stroke="{DynamicResource AccentBrush}"
-                                                                                  StrokeThickness="1.5"
-                                                                                  Fill="Transparent"/>
-                                                                            <ItemsControl ItemsSource="{Binding ImagePreviewMarkers, Mode=OneWay}">
-                                                                                <ItemsControl.ItemsPanel>
-                                                                                    <ItemsPanelTemplate>
-                                                                                        <Canvas/>
-                                                                                    </ItemsPanelTemplate>
-                                                                                </ItemsControl.ItemsPanel>
-                                                                                <ItemsControl.ItemContainerStyle>
-                                                                                    <Style TargetType="ContentPresenter">
-                                                                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                                                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                                                                                    </Style>
-                                                                                </ItemsControl.ItemContainerStyle>
-                                                                                <ItemsControl.ItemTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <Grid>
-                                                                                            <Ellipse Width="4" Height="4" Fill="{DynamicResource AccentBrush}"/>
-                                                                                            <TextBlock Text="{Binding Label}"
-                                                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                                                                                       FontSize="3.5"
-                                                                                                       Margin="4,-1,0,0"/>
-                                                                                        </Grid>
-                                                                                    </DataTemplate>
-                                                                                </ItemsControl.ItemTemplate>
-                                                                            </ItemsControl>
-                                                                        </Canvas>
-                                                                    </Viewbox>
-                                                                </Border>
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </Grid>
+                                                    <TabControl Visibility="{Binding HasImageToolpathPreview, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                        <TabItem Header="Original">
+                                                            <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="220" Margin="0,8,0,0">
+                                                                <Image Source="{Binding ImageToolpathPreviewSource, Mode=OneWay}" Stretch="Uniform"/>
+                                                            </Border>
+                                                        </TabItem>
+                                                        <TabItem Header="Thresholded">
+                                                            <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="220" Margin="0,8,0,0">
+                                                                <Image Source="{Binding ImageThresholdPreviewSource, Mode=OneWay}" Stretch="Uniform"/>
+                                                            </Border>
+                                                        </TabItem>
+                                                        <TabItem Header="Cleaned">
+                                                            <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="220" Margin="0,8,0,0">
+                                                                <Image Source="{Binding ImageCleanedPreviewSource, Mode=OneWay}" Stretch="Uniform"/>
+                                                            </Border>
+                                                        </TabItem>
+                                                        <TabItem Header="Traced Vectors">
+                                                            <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="220" Margin="0,8,0,0">
+                                                                <Viewbox Stretch="Uniform">
+                                                                    <Canvas Width="{Binding ImageTargetWidthMm}" Height="{Binding ImageTargetHeightMm}">
+                                                                        <Path Data="{Binding ImageBoundingBoxGeometryData, Mode=OneWay}"
+                                                                              Stroke="{DynamicResource TextSecondaryBrush}"
+                                                                              StrokeThickness="0.8"
+                                                                              StrokeDashArray="2,2"
+                                                                              Fill="Transparent"/>
+                                                                        <Path Data="{Binding ImageTraceGeometryData, Mode=OneWay}"
+                                                                              Stroke="{DynamicResource AccentBrush}"
+                                                                              StrokeThickness="1.5"
+                                                                              Fill="Transparent"/>
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                            </Border>
+                                                        </TabItem>
+                                                        <TabItem Header="Final Toolpath">
+                                                            <Border Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Height="220" Margin="0,8,0,0">
+                                                                <Viewbox Stretch="Uniform">
+                                                                    <Canvas Width="{Binding ImageTargetWidthMm}" Height="{Binding ImageTargetHeightMm}">
+                                                                        <Path Data="{Binding ImageBoundingBoxGeometryData, Mode=OneWay}"
+                                                                              Stroke="{DynamicResource TextSecondaryBrush}"
+                                                                              StrokeThickness="0.8"
+                                                                              StrokeDashArray="2,2"
+                                                                              Fill="Transparent"/>
+                                                                        <Path Data="{Binding ImageRapidGeometryData, Mode=OneWay}"
+                                                                              Stroke="{DynamicResource WarningBrush}"
+                                                                              StrokeThickness="0.9"
+                                                                              StrokeDashArray="3,2"
+                                                                              Fill="Transparent"/>
+                                                                        <Path Data="{Binding ImageCutGeometryData, Mode=OneWay}"
+                                                                              Stroke="{DynamicResource AccentBrush}"
+                                                                              StrokeThickness="1.5"
+                                                                              Fill="Transparent"/>
+                                                                        <ItemsControl ItemsSource="{Binding ImagePreviewMarkers, Mode=OneWay}">
+                                                                            <ItemsControl.ItemsPanel>
+                                                                                <ItemsPanelTemplate>
+                                                                                    <Canvas/>
+                                                                                </ItemsPanelTemplate>
+                                                                            </ItemsControl.ItemsPanel>
+                                                                            <ItemsControl.ItemContainerStyle>
+                                                                                <Style TargetType="ContentPresenter">
+                                                                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                                                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                                                                </Style>
+                                                                            </ItemsControl.ItemContainerStyle>
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <Grid>
+                                                                                        <Ellipse Width="4" Height="4" Fill="{DynamicResource AccentBrush}"/>
+                                                                                        <TextBlock Text="{Binding Label}"
+                                                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                                                   FontSize="3.5"
+                                                                                                   Margin="4,-1,0,0"/>
+                                                                                    </Grid>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                            </Border>
+                                                        </TabItem>
+                                                    </TabControl>
                                                 </StackPanel>
                                             </ScrollViewer>
                                         </TabItem>

@@ -82,18 +82,30 @@ public class CncControlViewModel : ViewModelBase
     private ImageToolpathJob? _imageToolpathJob;
     private string _imageToolpathSourcePath = string.Empty;
     private ImageSource? _imageToolpathPreviewSource;
+    private ImageSource? _imageThresholdPreviewSource;
+    private ImageSource? _imageCleanedPreviewSource;
     private string _imageTraceGeometryData = string.Empty;
+    private string _imageCutGeometryData = string.Empty;
     private string _imageRapidGeometryData = string.Empty;
     private string _imageBoundingBoxGeometryData = string.Empty;
     private decimal _imageTargetWidthMm = 50m;
     private decimal _imageTargetHeightMm = 50m;
     private bool _imagePreserveAspectRatio = true;
     private int _imageThreshold = 140;
+    private bool _imageUseAdaptiveThreshold;
     private bool _imageInvert;
     private bool _imageDespeckle = true;
+    private decimal _imageSmoothingAmount = 0.2m;
     private decimal _imageMinimumSegmentLengthMm = 0.15m;
     private decimal _imageMinimumContourAreaMm2 = 1.5m;
+    private decimal _imageMinimumContourPerimeterMm = 1.5m;
+    private decimal _imageMinimumIslandSizeMm2 = 1.5m;
+    private decimal _imageMinimumFeatureSizeMm = 0.5m;
     private decimal _imageCloseGapToleranceMm = 0.4m;
+    private int _imageMorphologyOpenIterations;
+    private int _imageMorphologyCloseIterations = 1;
+    private int _imageDilationIterations;
+    private int _imageErosionIterations;
     private decimal _imageCutDepthMm = -0.5m;
     private decimal _imageSafeTravelZMm = 5m;
     private decimal _imageCutFeedMmPerMinute = 300m;
@@ -986,7 +998,7 @@ public class CncControlViewModel : ViewModelBase
         : ImageToolpathJob.Preview.Markers;
     public string ImageToolpathDiagnosticsText => ImageToolpathJob == null
         ? "Diagnostics: n/a"
-        : $"Cut {ImageToolpathJob.Diagnostics.TotalCutDistanceMm:0.###} mm | Rapid {ImageToolpathJob.Diagnostics.TotalRapidDistanceMm:0.###} mm | Est. {ImageToolpathJob.Diagnostics.EstimatedJobTime.TotalSeconds:0.#} s | G-code {ImageToolpathJob.Diagnostics.GcodeLineCount} lines | Arcs {ImageToolpathJob.Diagnostics.ArcFitCount}";
+        : $"Engine {ImageToolpathJob.Diagnostics.TraceEngine} | Cut {ImageToolpathJob.Diagnostics.TotalCutDistanceMm:0.###} mm | Rapid {ImageToolpathJob.Diagnostics.TotalRapidDistanceMm:0.###} mm | Est. {ImageToolpathJob.Diagnostics.EstimatedJobTime.TotalSeconds:0.#} s | G-code {ImageToolpathJob.Diagnostics.GcodeLineCount} lines | Removed {ImageToolpathJob.Diagnostics.RemovedArtifactCount} | Joined {ImageToolpathJob.Diagnostics.JoinedPathCount} | Merged {ImageToolpathJob.Diagnostics.MergedSegmentCount} | Simplified {ImageToolpathJob.Diagnostics.SimplifiedPointCount} | Rejected {ImageToolpathJob.Diagnostics.RejectedTinyContourCount} | Lines {ImageToolpathJob.Diagnostics.LineFitCount} | Arcs {ImageToolpathJob.Diagnostics.ArcFitCount}/{ImageToolpathJob.Diagnostics.CircleFitCount}";
     public string ImageToolpathWarningsText => ImageToolpathJob == null || ImageToolpathJob.Diagnostics.Warnings.Count == 0
         ? "Warnings: none"
         : $"Warnings: {string.Join(" | ", ImageToolpathJob.Diagnostics.Warnings)}";
@@ -1000,10 +1012,25 @@ public class CncControlViewModel : ViewModelBase
         get => _imageToolpathPreviewSource;
         private set { if (_imageToolpathPreviewSource == value) return; _imageToolpathPreviewSource = value; OnPropertyChanged(); }
     }
+    public ImageSource? ImageThresholdPreviewSource
+    {
+        get => _imageThresholdPreviewSource;
+        private set { if (_imageThresholdPreviewSource == value) return; _imageThresholdPreviewSource = value; OnPropertyChanged(); }
+    }
+    public ImageSource? ImageCleanedPreviewSource
+    {
+        get => _imageCleanedPreviewSource;
+        private set { if (_imageCleanedPreviewSource == value) return; _imageCleanedPreviewSource = value; OnPropertyChanged(); }
+    }
     public string ImageTraceGeometryData
     {
         get => _imageTraceGeometryData;
         private set { if (_imageTraceGeometryData == value) return; _imageTraceGeometryData = value; OnPropertyChanged(); }
+    }
+    public string ImageCutGeometryData
+    {
+        get => _imageCutGeometryData;
+        private set { if (_imageCutGeometryData == value) return; _imageCutGeometryData = value; OnPropertyChanged(); }
     }
     public string ImageRapidGeometryData
     {
@@ -1017,10 +1044,10 @@ public class CncControlViewModel : ViewModelBase
     }
     public string ImageToolpathSummary => ImageToolpathJob == null
         ? "No image toolpath generated yet."
-        : $"{ImageToolpathJob.VectorPaths.Count} traced path(s) • {ImageToolpathJob.GeneratedGcode.Messages.Count} message(s)";
+        : $"{ImageToolpathJob.Diagnostics.TracedPathCount} traced path(s) | {ImageToolpathJob.Diagnostics.RemovedPathCount} removed | {ImageToolpathJob.Diagnostics.ClosedContourCount} closed | {ImageToolpathJob.Diagnostics.OpenStrokeCount} open";
     public string ImageToolpathBoundsText => ImageToolpathJob == null
         ? "Bounding box: n/a"
-        : $"Bounding box: {ImageToolpathJob.GeneratedGcode.WidthMm:0.###} × {ImageToolpathJob.GeneratedGcode.HeightMm:0.###} mm";
+        : $"Bounding box: {ImageToolpathJob.GeneratedGcode.WidthMm:0.###} x {ImageToolpathJob.GeneratedGcode.HeightMm:0.###} mm";
     public decimal ImageTargetWidthMm
     {
         get => _imageTargetWidthMm;
@@ -1041,6 +1068,11 @@ public class CncControlViewModel : ViewModelBase
         get => _imageThreshold;
         set { if (_imageThreshold == value) return; _imageThreshold = value; OnPropertyChanged(); }
     }
+    public bool ImageUseAdaptiveThreshold
+    {
+        get => _imageUseAdaptiveThreshold;
+        set { if (_imageUseAdaptiveThreshold == value) return; _imageUseAdaptiveThreshold = value; OnPropertyChanged(); }
+    }
     public bool ImageInvert
     {
         get => _imageInvert;
@@ -1050,6 +1082,11 @@ public class CncControlViewModel : ViewModelBase
     {
         get => _imageDespeckle;
         set { if (_imageDespeckle == value) return; _imageDespeckle = value; OnPropertyChanged(); }
+    }
+    public decimal ImageSmoothingAmount
+    {
+        get => _imageSmoothingAmount;
+        set { if (_imageSmoothingAmount == value) return; _imageSmoothingAmount = value; OnPropertyChanged(); }
     }
     public decimal ImageMinimumSegmentLengthMm
     {
@@ -1061,10 +1098,45 @@ public class CncControlViewModel : ViewModelBase
         get => _imageMinimumContourAreaMm2;
         set { if (_imageMinimumContourAreaMm2 == value) return; _imageMinimumContourAreaMm2 = value; OnPropertyChanged(); }
     }
+    public decimal ImageMinimumContourPerimeterMm
+    {
+        get => _imageMinimumContourPerimeterMm;
+        set { if (_imageMinimumContourPerimeterMm == value) return; _imageMinimumContourPerimeterMm = value; OnPropertyChanged(); }
+    }
+    public decimal ImageMinimumIslandSizeMm2
+    {
+        get => _imageMinimumIslandSizeMm2;
+        set { if (_imageMinimumIslandSizeMm2 == value) return; _imageMinimumIslandSizeMm2 = value; OnPropertyChanged(); }
+    }
+    public decimal ImageMinimumFeatureSizeMm
+    {
+        get => _imageMinimumFeatureSizeMm;
+        set { if (_imageMinimumFeatureSizeMm == value) return; _imageMinimumFeatureSizeMm = value; OnPropertyChanged(); }
+    }
     public decimal ImageCloseGapToleranceMm
     {
         get => _imageCloseGapToleranceMm;
         set { if (_imageCloseGapToleranceMm == value) return; _imageCloseGapToleranceMm = value; OnPropertyChanged(); }
+    }
+    public int ImageMorphologyOpenIterations
+    {
+        get => _imageMorphologyOpenIterations;
+        set { if (_imageMorphologyOpenIterations == value) return; _imageMorphologyOpenIterations = value; OnPropertyChanged(); }
+    }
+    public int ImageMorphologyCloseIterations
+    {
+        get => _imageMorphologyCloseIterations;
+        set { if (_imageMorphologyCloseIterations == value) return; _imageMorphologyCloseIterations = value; OnPropertyChanged(); }
+    }
+    public int ImageDilationIterations
+    {
+        get => _imageDilationIterations;
+        set { if (_imageDilationIterations == value) return; _imageDilationIterations = value; OnPropertyChanged(); }
+    }
+    public int ImageErosionIterations
+    {
+        get => _imageErosionIterations;
+        set { if (_imageErosionIterations == value) return; _imageErosionIterations = value; OnPropertyChanged(); }
     }
     public decimal ImageCutDepthMm
     {
@@ -1691,8 +1763,11 @@ public class CncControlViewModel : ViewModelBase
 
         ImageToolpathSourcePath = dialog.FileName;
         ImageToolpathPreviewSource = CreateBitmapPreview(dialog.FileName);
+        ImageThresholdPreviewSource = null;
+        ImageCleanedPreviewSource = null;
         ImageToolpathJob = null;
         ImageTraceGeometryData = string.Empty;
+        ImageCutGeometryData = string.Empty;
         ImageRapidGeometryData = string.Empty;
         ImageBoundingBoxGeometryData = string.Empty;
         LastFeedback = $"Loaded image source {Path.GetFileName(dialog.FileName)} for tracing.";
@@ -1709,7 +1784,10 @@ public class CncControlViewModel : ViewModelBase
 
         var job = _imageToolpathService.CreateJob(ImageToolpathSourcePath, BuildImageToolpathSettings());
         ImageToolpathJob = job;
-        ImageTraceGeometryData = job.Preview.CutGeometryData;
+        ImageThresholdPreviewSource = CreateMaskPreview(job.PreprocessedImage?.ThresholdMask);
+        ImageCleanedPreviewSource = CreateMaskPreview(job.PreprocessedImage?.CleanedMask);
+        ImageTraceGeometryData = job.Preview.TracedGeometryData;
+        ImageCutGeometryData = job.Preview.CutGeometryData;
         ImageRapidGeometryData = job.Preview.RapidGeometryData;
         ImageBoundingBoxGeometryData = job.Preview.BoundingBoxGeometryData;
         LastFeedback = $"Generated image toolpath preview from {Path.GetFileName(ImageToolpathSourcePath)}.";
@@ -1786,9 +1864,17 @@ public class CncControlViewModel : ViewModelBase
         ImageCutFeedMmPerMinute = config.MaxFeedXyMmPerMinute;
         ImageRapidFeedMmPerMinute = config.MaxRapidXyMmPerMinute;
         ImagePlungeFeedMmPerMinute = config.MaxPlungeZMmPerMinute;
+        ImageSmoothingAmount = 0.2m;
         ImageMinimumSegmentLengthMm = 0.2m;
         ImageMinimumContourAreaMm2 = 0.5m;
+        ImageMinimumContourPerimeterMm = 1.5m;
+        ImageMinimumIslandSizeMm2 = 1.5m;
+        ImageMinimumFeatureSizeMm = 0.5m;
         ImageCloseGapToleranceMm = 0.2m;
+        ImageMorphologyOpenIterations = 0;
+        ImageMorphologyCloseIterations = 1;
+        ImageDilationIterations = 0;
+        ImageErosionIterations = 0;
     }
 
     private ImageToolpathSettings BuildImageToolpathSettings()
@@ -1796,16 +1882,25 @@ public class CncControlViewModel : ViewModelBase
         return new ImageToolpathSettings
         {
             Threshold = ImageThreshold,
+            UseAdaptiveThreshold = ImageUseAdaptiveThreshold,
             Invert = ImageInvert,
             Grayscale = true,
             Despeckle = ImageDespeckle,
+            SmoothingAmount = ImageSmoothingAmount,
             PreserveAspectRatio = ImagePreserveAspectRatio,
             TargetWidthMm = ImageTargetWidthMm,
             TargetHeightMm = ImageTargetHeightMm,
             SimplifyToleranceMm = ImageSimplifyToleranceMm,
             MinimumSegmentLengthMm = ImageMinimumSegmentLengthMm,
             MinimumContourAreaMm2 = ImageMinimumContourAreaMm2,
+            MinimumContourPerimeterMm = ImageMinimumContourPerimeterMm,
+            MinimumIslandSizeMm2 = ImageMinimumIslandSizeMm2,
+            MinimumFeatureSizeMm = ImageMinimumFeatureSizeMm,
             CloseGapToleranceMm = ImageCloseGapToleranceMm,
+            MorphologyOpenIterations = ImageMorphologyOpenIterations,
+            MorphologyCloseIterations = ImageMorphologyCloseIterations,
+            DilationIterations = ImageDilationIterations,
+            ErosionIterations = ImageErosionIterations,
             CutDepthMm = ImageCutDepthMm,
             SafeTravelZMm = ImageSafeTravelZMm,
             CutFeedMmPerMinute = ImageCutFeedMmPerMinute,
@@ -1828,6 +1923,34 @@ public class CncControlViewModel : ViewModelBase
         bitmap.CacheOption = BitmapCacheOption.OnLoad;
         bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
         bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    private static ImageSource? CreateMaskPreview(bool[,]? mask)
+    {
+        if (mask == null || mask.Length == 0)
+            return null;
+
+        var height = mask.GetLength(0);
+        var width = mask.GetLength(1);
+        var stride = width * 4;
+        var pixels = new byte[height * stride];
+
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var index = (y * stride) + (x * 4);
+                var value = mask[y, x] ? (byte)32 : (byte)245;
+                pixels[index] = value;
+                pixels[index + 1] = value;
+                pixels[index + 2] = value;
+                pixels[index + 3] = 255;
+            }
+        }
+
+        var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
         bitmap.Freeze();
         return bitmap;
     }
@@ -2884,6 +3007,8 @@ public class CncControlViewModel : ViewModelBase
                 motion.EndZ,
                 _cncControllerService.CoordinateState);
             var boundsMessage = _cncControllerService.ValidateMachinePosition(transform.FinalMachineX, transform.FinalMachineY, transform.FinalMachineZ);
+            if (ShouldDeferNegativeZBoundsDuringPreview(motion, boundsMessage))
+                boundsMessage = null;
             if (boundsMessage != null)
             {
                 motion.IsValid = false;
@@ -2906,6 +3031,23 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(AppliedPlacementOffsetY));
         UpdateReadinessState();
         RefreshPreviewState();
+    }
+
+    private bool ShouldDeferNegativeZBoundsDuringPreview(GcodeMotionCommand motion, string? boundsMessage)
+    {
+        if (string.IsNullOrWhiteSpace(boundsMessage))
+            return false;
+
+        if (!boundsMessage.StartsWith("Bounds violation: Z", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!_cncControllerService.Config.SupportsZAxis || !_cncControllerService.Config.RequireManualZZeroForCutting)
+            return false;
+
+        if (_cncControllerService.ReferenceState.ZReferenceValid)
+            return false;
+
+        return motion.EndZ < 0m || motion.StartZ < 0m;
     }
 
     private void ClearDiagnostics()

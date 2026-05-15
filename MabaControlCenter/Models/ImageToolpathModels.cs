@@ -5,7 +5,8 @@ namespace MabaControlCenter.Models;
 public enum ImageTraceMode
 {
     Outline,
-    Centerline
+    Centerline,
+    TechnicalDrawing
 }
 
 public enum VectorSegmentType
@@ -39,12 +40,30 @@ public enum ImagePreviewMarkerKind
     Order
 }
 
+public enum ImagePreviewMode
+{
+    Original,
+    Thresholded,
+    CleanedBinary,
+    TracedVectors,
+    FinalToolpath
+}
+
 public sealed class ImageToolpathSettings
 {
     public int Threshold { get; set; } = 140;
+    public bool UseAdaptiveThreshold { get; set; }
     public bool Invert { get; set; }
     public bool Grayscale { get; set; } = true;
     public bool Despeckle { get; set; } = true;
+    public decimal SmoothingAmount { get; set; } = 0.2m;
+    public decimal MinimumContourPerimeterMm { get; set; } = 1.5m;
+    public decimal MinimumIslandSizeMm2 { get; set; } = 1.5m;
+    public decimal MinimumFeatureSizeMm { get; set; } = 0.5m;
+    public int MorphologyOpenIterations { get; set; }
+    public int MorphologyCloseIterations { get; set; } = 1;
+    public int DilationIterations { get; set; }
+    public int ErosionIterations { get; set; }
     public bool PreserveAspectRatio { get; set; } = true;
     public decimal TargetWidthMm { get; set; } = 50m;
     public decimal TargetHeightMm { get; set; } = 50m;
@@ -66,6 +85,8 @@ public sealed class ImageToolpathSettings
 public sealed class RasterTraceImage
 {
     public bool[,] Mask { get; init; } = new bool[0, 0];
+    public bool[,] ThresholdMask { get; init; } = new bool[0, 0];
+    public bool[,] CleanedMask { get; init; } = new bool[0, 0];
     public int WidthPixels { get; init; }
     public int HeightPixels { get; init; }
 }
@@ -130,14 +151,21 @@ public sealed class GeneratedGcodeResult
 
 public sealed class ImageToolpathDiagnostics
 {
+    public string TraceEngine { get; set; } = "Unknown";
     public int TracedPathCount { get; set; }
     public int RemovedPathCount { get; set; }
+    public int JoinedPathCount { get; set; }
     public int ClosedContourCount { get; set; }
     public int OpenStrokeCount { get; set; }
     public int HoleCount { get; set; }
+    public int LineFitCount { get; set; }
     public int ArcFitCount { get; set; }
     public int CircleFitCount { get; set; }
     public int SegmentReductionCount { get; set; }
+    public int RemovedArtifactCount { get; set; }
+    public int MergedSegmentCount { get; set; }
+    public int SimplifiedPointCount { get; set; }
+    public int RejectedTinyContourCount { get; set; }
     public decimal TotalCutDistanceMm { get; set; }
     public decimal TotalRapidDistanceMm { get; set; }
     public TimeSpan EstimatedJobTime { get; set; }
@@ -155,6 +183,7 @@ public sealed class ImagePreviewMarker
 
 public sealed class ImageToolpathPreview
 {
+    public string TracedGeometryData { get; set; } = string.Empty;
     public string CutGeometryData { get; set; } = string.Empty;
     public string RapidGeometryData { get; set; } = string.Empty;
     public string BoundingBoxGeometryData { get; set; } = string.Empty;
@@ -163,11 +192,18 @@ public sealed class ImageToolpathPreview
 
 public sealed class VectorTraceResult
 {
+    public string TraceEngine { get; set; } = "Unknown";
     public IReadOnlyList<VectorPath> Paths { get; init; } = Array.Empty<VectorPath>();
     public int RemovedPathCount { get; init; }
+    public int JoinedPathCount { get; init; }
+    public int LineFitCount { get; init; }
     public int ArcFitCount { get; init; }
     public int CircleFitCount { get; init; }
     public int SegmentReductionCount { get; init; }
+    public int RemovedArtifactCount { get; init; }
+    public int MergedSegmentCount { get; init; }
+    public int SimplifiedPointCount { get; init; }
+    public int RejectedTinyContourCount { get; init; }
     public ObservableCollection<string> Warnings { get; } = new();
 }
 

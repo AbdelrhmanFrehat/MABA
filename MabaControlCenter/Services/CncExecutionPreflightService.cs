@@ -76,6 +76,8 @@ public class CncExecutionPreflightService : ICncExecutionPreflightService
 
             var transformed = _coordinateTransformService.FlattenForFirmware(command.EndX, command.EndY, command.EndZ, state);
             transformed = _coordinateTransformService.Validate(transformed, request.MachineBounds, request.MachineConfig);
+            if (CanDeferNegativeZBounds(request, command, transformed.BoundsMessage))
+                transformed.BoundsMessage = null;
             if (!string.IsNullOrWhiteSpace(transformed.BoundsMessage))
             {
                 result.Failures.Add(transformed.BoundsMessage);
@@ -98,5 +100,22 @@ public class CncExecutionPreflightService : ICncExecutionPreflightService
         return commands.Any(command =>
             command.HasMotion
             && (command.StartZ != command.EndZ || command.StartZ != 0m || command.EndZ != 0m));
+    }
+
+    private static bool CanDeferNegativeZBounds(CncExecutionPreflightRequest request, GcodeInterpretedCommand command, string? boundsMessage)
+    {
+        if (string.IsNullOrWhiteSpace(boundsMessage))
+            return false;
+
+        if (!boundsMessage.StartsWith("Bounds violation: Z", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!request.MachineConfig.SupportsZAxis || !request.MachineConfig.RequireManualZZeroForCutting)
+            return false;
+
+        if (request.RuntimeStatus.ReferenceState.ZReferenceValid)
+            return false;
+
+        return command.EndZ < 0m || command.StartZ < 0m;
     }
 }

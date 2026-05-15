@@ -42,8 +42,8 @@ public partial class MainWindow : Window
         var cncExecutionPreflightService = new CncExecutionPreflightService(cncCoordinateTransformService);
         var cncManagerService = new CncManagerService(cncControllerService, cncExecutionQueueService, cncJobSessionService, cncRuntimeCoordinator, cncExecutionPreflightService, cncCoordinateTransformService);
         var imagePreprocessorService = new ImagePreprocessorService();
-        var imageVectorTraceService = new OutlineVectorTraceService();
         var imageVectorImportService = new SvgVectorImportService();
+        var imageVectorTraceService = new PotraceVectorTraceService(new OutlineVectorTraceService(), imageVectorImportService);
         var imageToolpathGeneratorService = new ToolpathFromVectorService();
         var imageToolpathService = new ImageToolpathService(imagePreprocessorService, imageVectorTraceService, imageToolpathGeneratorService, imageVectorImportService);
         var localizationService = (ILocalizationService)Application.Current.Resources["LocalizationService"];

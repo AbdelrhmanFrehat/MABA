@@ -8,6 +8,11 @@
     <Content Include="Firmware\MabaArduinoCncFirmware.ino">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\tools\potrace\1.16\potrace-1.16.win64\**\*">
+      <Link>Tracing\Potrace\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <PropertyGroup>
@@ -24,10 +29,10 @@
     <Description>MABA desktop control center for CNC operation, machine setup, and updater-managed releases.</Description>
     <Company>MABA</Company>
     <Authors>MABA</Authors>
-    <AssemblyVersion>0.1.23.0</AssemblyVersion>
-    <FileVersion>0.1.23.0</FileVersion>
-    <InformationalVersion>0.1.23</InformationalVersion>
-    <Version>0.1.23</Version>
+    <AssemblyVersion>0.1.26.0</AssemblyVersion>
+    <FileVersion>0.1.26.0</FileVersion>
+    <InformationalVersion>0.1.26</InformationalVersion>
+    <Version>0.1.26</Version>
   </PropertyGroup>
 
   <Target Name="PublishMabaUpdaterForBuild" AfterTargets="Build">

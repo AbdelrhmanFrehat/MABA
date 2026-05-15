@@ -27,8 +27,23 @@ public partial class App : Application
             return;
         }
 
-        var window = new MainWindow(args);
-        MainWindow = window;
-        window.Show();
+        try
+        {
+            UpdaterLog.Write("Creating updater window.");
+            var window = new MainWindow(args);
+            MainWindow = window;
+            UpdaterLog.Write("Showing updater window.");
+            window.Show();
+        }
+        catch (Exception ex)
+        {
+            UpdaterLog.Write($"Updater window startup failed: {ex}");
+            MessageBox.Show(
+                ex.Message,
+                "MABA Updater",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown(-1);
+        }
     }
 }

@@ -28,23 +28,23 @@
 
             <TextBlock Grid.Row="1"
                        Margin="0,8,0,0"
-                       Text="{Binding StatusTitle}"
+                       Text="{Binding StatusTitle, Mode=OneWay}"
                        FontSize="18"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource SuccessBrush}"/>
 
             <TextBlock Grid.Row="2"
                        Margin="0,8,0,0"
-                       Text="{Binding StatusSubtitle}"
+                       Text="{Binding StatusSubtitle, Mode=OneWay}"
                        Foreground="{StaticResource TextSecondaryBrush}"
                        TextWrapping="Wrap"/>
 
             <ProgressBar Grid.Row="3"
                          Margin="0,20,0,0"
                          Height="14"
-                         IsIndeterminate="{Binding IsIndeterminate}"
+                         IsIndeterminate="{Binding IsIndeterminate, Mode=OneWay}"
                          Maximum="1"
-                         Value="{Binding ProgressValue}"/>
+                         Value="{Binding ProgressValue, Mode=OneWay}"/>
 
             <TextBlock Grid.Row="4"
                        Margin="0,18,0,0"
