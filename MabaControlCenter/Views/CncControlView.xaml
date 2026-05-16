@@ -796,16 +796,23 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-    <ScrollViewer Grid.Row="0"
-                  VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled"
-                  Background="{DynamicResource BackgroundDarkBrush}">
-        <StackPanel Margin="24" VerticalAlignment="Top">
-            <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-            <TextBlock Text="{Binding Subtitle}" FontSize="13"
-                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,20"/>
-            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16"
+        <Grid Grid.Row="0" Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                <TextBlock Text="{Binding Subtitle}" FontSize="13"
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Style="{StaticResource CardBorderStyle}"
+                    Margin="0,0,0,16"
                     Visibility="{Binding HasActiveJob, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel>
                     <TextBlock Text="Active Production Job" FontSize="16" FontWeight="SemiBold"
@@ -819,7 +826,8 @@
                 </StackPanel>
             </Border>
 
-            <TabControl FlowDirection="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FlowDirection}"
+            <TabControl Grid.Row="2"
+                        FlowDirection="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FlowDirection}"
                         Style="{StaticResource CncWorkspaceTabControlStyle}"
                         ItemContainerStyle="{StaticResource CncWorkspaceTabItemStyle}">
                                 <TabItem Header="{Binding Source={StaticResource Labels}, Path=Cnc_Tab_Operate}">
@@ -937,6 +945,24 @@
                                             <Button Content="Resume" Command="{Binding ResumeProgramCommand}" Style="{StaticResource CncPrimaryButtonStyle}" Margin="0,0,8,8"/>
                                             <Button Content="Software Stop" Command="{Binding StopCommand}" Style="{StaticResource CncDangerButtonStyle}" Margin="0,0,8,8"/>
                                         </WrapPanel>
+                                        <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="10"
+                                                Padding="10"
+                                                Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding JobReadinessSummary}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding JobBlockingReason}"
+                                                           Foreground="{DynamicResource WarningBrush}"
+                                                           Margin="0,6,0,0"
+                                                           TextWrapping="Wrap"
+                                                           Visibility="{Binding HasBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            </StackPanel>
+                                        </Border>
 
                                         <TextBlock Text="Connection" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                         <ComboBox ItemsSource="{Binding AvailablePorts}"
@@ -1262,7 +1288,26 @@
                                                     <TextBlock Text="{Binding JobBlockingReason}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,0" TextWrapping="Wrap" Visibility="{Binding HasBlockingReason, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                                     <Separator Margin="0,14,0,14"/>
-                                                    <TextBlock Text="Image Toolpath" Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                                    <Border Background="{DynamicResource BackgroundMediumBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="10">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Image Trace Workspace" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="Use the Image Trace dock tab to import bitmaps, tune tracing, preview vectors, and create a normal CNC job without leaving the main workspace." Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                                            <Button Content="Import Image as Toolpath"
+                                                                    Command="{Binding ImportImageToolpathCommand}"
+                                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                                    HorizontalAlignment="Left"
+                                                                    Margin="0,10,0,0"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </ScrollViewer>
+                                        </TabItem>
+
+                                        <TabItem Header="Image Trace">
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                <StackPanel>
+                                                    <TextBlock Text="Image-to-Toolpath" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="Prepare image tracing here, then create a normal CNC job for preview, framing, and run preflight." Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,4,0,12"/>
                                                     <Grid Margin="0,0,0,10">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="92"/>
@@ -2421,8 +2466,7 @@
                     </StackPanel>
                 </TabItem>
             </TabControl>
-        </StackPanel>
-    </ScrollViewer>
+        </Grid>
         <Border Grid.Row="1"
                 Visibility="Collapsed"
                 Background="{DynamicResource BackgroundMediumBrush}"

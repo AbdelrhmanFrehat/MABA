@@ -275,6 +275,9 @@ public class GcodeInterpreterService
                 break;
             case 80:
                 break;
+            case 4:
+                // Dwell is recognized even though the runtime does not currently emit a timed hold command.
+                break;
             case 81:
             case 82:
             case 83:
@@ -287,8 +290,7 @@ public class GcodeInterpreterService
                 unsupportedMessages.Add($"G{gCode} canned cycles are not supported yet.");
                 break;
             default:
-                if (gCode != 4)
-                    unsupportedMessages.Add($"G{gCode} is not supported by the current interpreter.");
+                unsupportedMessages.Add($"G{gCode} is not supported by the current interpreter.");
                 break;
         }
     }
@@ -297,6 +299,10 @@ public class GcodeInterpreterService
     {
         switch (mCode)
         {
+            case 2:
+            case 30:
+                // Program end / rewind markers are valid and should not block execution planning.
+                break;
             case 3:
                 state.SpindleState = GcodeSpindleState.Clockwise;
                 interpreted.IsSpindleChange = true;
