@@ -79,6 +79,9 @@ public class CncControlViewModel : ViewModelBase
     private bool _isMachineSwitchOpen;
     private bool _isProfileManagerOpen;
     private bool _isUploadingFirmware;
+    private string _firmwareUploadStatusText = "Ready to upload bundled firmware to the selected hardware COM port.";
+    private string _firmwareUploadDetailsText = "The app will compile the bundled firmware with Arduino CLI, upload it to the selected port, then reconnect the controller.";
+    private bool _hasStickyFirmwareUploadStatus;
     private ImageToolpathJob? _imageToolpathJob;
     private CncExecutionPreflightResult _runPreflight = new();
     private CncExecutionPreflightResult _framePreflight = new();
@@ -290,6 +293,7 @@ public class CncControlViewModel : ViewModelBase
         _runtimeProfileService.EnsureSystemProfilesForDefinitions(_machineCatalogService.CachedDefinitions.ToList());
         LoadProfileFields(_cncProfileService.ActiveProfile);
         SyncImageToolpathDefaultsFromConfig();
+        RefreshFirmwareUploadState();
         RefreshActiveMachineContext();
         RefreshPorts();
         RefreshActiveJob();
@@ -700,7 +704,11 @@ public class CncControlViewModel : ViewModelBase
         {
             if (_selectedPort == value) return;
             _selectedPort = value;
+            ClearFirmwareUploadStatusOverride();
             OnPropertyChanged();
+            RefreshFirmwareUploadState();
+            OnPropertyChanged(nameof(FirmwareUploadStatusText));
+            OnPropertyChanged(nameof(FirmwareUploadDetailsText));
             OnPropertyChanged(nameof(CanUploadArduinoFirmware));
             CommandManager.InvalidateRequerySuggested();
         }
@@ -1312,6 +1320,8 @@ public class CncControlViewModel : ViewModelBase
     public string BundledFirmwareVersion => ArduinoFirmwarePackage.FirmwareVersion;
     public string BundledFirmwareTargetBoard => ArduinoFirmwarePackage.TargetBoardDisplay;
     public string ArduinoFirmwareToolingStatus => ArduinoFirmwareUploader.ToolingStatus;
+    public string FirmwareUploadStatusText => _firmwareUploadStatusText;
+    public string FirmwareUploadDetailsText => _firmwareUploadDetailsText;
     public bool CanUploadArduinoFirmware => HasBundledArduinoFirmware
                                             && ArduinoFirmwareUploader.CanUpload
                                             && !IsSimulationMode
@@ -1330,6 +1340,7 @@ public class CncControlViewModel : ViewModelBase
         {
             AvailablePorts.Add("SIMULATION");
             SelectedPort = "SIMULATION";
+            RefreshFirmwareUploadState();
             return;
         }
 
@@ -1337,9 +1348,13 @@ public class CncControlViewModel : ViewModelBase
             AvailablePorts.Add(port);
 
         if (!string.IsNullOrWhiteSpace(SelectedPort) && AvailablePorts.Contains(SelectedPort))
+        {
+            RefreshFirmwareUploadState();
             return;
+        }
 
         SelectedPort = AvailablePorts.FirstOrDefault();
+        RefreshFirmwareUploadState();
     }
 
     private void RunAction(Action action)
@@ -3083,8 +3098,10 @@ public class CncControlViewModel : ViewModelBase
             var port = SelectedPort!;
             var wasConnected = IsConnected;
 
+            ClearFirmwareUploadStatusOverride();
             _isUploadingFirmware = true;
             _runtimeCoordinator.SetRecovering(true);
+            UpdateFirmwareUploadState("Preparing firmware upload...", ArduinoFirmwareUploader.ToolingStatus);
             OnPropertyChanged(nameof(IsUploadingFirmware));
             OnPropertyChanged(nameof(CanUploadArduinoFirmware));
             CommandManager.InvalidateRequerySuggested();
@@ -3093,26 +3110,72 @@ public class CncControlViewModel : ViewModelBase
             {
                 _cncControllerService.Disconnect();
                 LastFeedback = "Machine disconnected temporarily for firmware upload.";
+                UpdateFirmwareUploadState("Machine disconnected. Preparing firmware upload...", $"Selected port: {port}");
             }
 
             LastFeedback = $"Uploading Arduino firmware v{BundledFirmwareVersion} to {port}...";
             AddDiagnostic("Info", $"Firmware upload started on {port}.");
-            var result = await ArduinoFirmwareUploader.UploadBundledFirmwareAsync(port);
+            var progress = new Progress<string>(message => UpdateFirmwareUploadState(message, $"Selected port: {port}"));
+            var result = await ArduinoFirmwareUploader.UploadBundledFirmwareAsync(port, progress);
             if (!result.Success)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.Output) ? result.Message : $"{result.Message}\n\n{result.Output}");
 
             LastFeedback = $"Firmware v{result.FirmwareVersion} uploaded successfully to {result.TargetBoard}.";
             AddDiagnostic("Info", $"Firmware upload completed on {port}.");
+            UpdateFirmwareUploadState(
+                $"Firmware v{result.FirmwareVersion} uploaded successfully.",
+                string.IsNullOrWhiteSpace(result.Output) ? $"Target board: {result.TargetBoard}" : result.Output,
+                sticky: true);
 
             if (wasConnected)
             {
+                UpdateFirmwareUploadState(
+                    $"Firmware uploaded. Reconnecting machine on {port}...",
+                    "Wait a moment while the controller restarts and reconnects.");
                 await Task.Delay(2200);
                 _cncControllerService.Connect(port);
-                LastFeedback = $"Firmware v{result.FirmwareVersion} uploaded and machine reconnected on {port}.";
+                await Task.Delay(1500);
+                RefreshActiveMachineContext();
+                RefreshState();
+                var reportedVersion = RuntimeStatus.FirmwareIdentity.FirmwareVersion;
+                if (string.IsNullOrWhiteSpace(reportedVersion) || string.Equals(reportedVersion, "Unknown", StringComparison.OrdinalIgnoreCase))
+                {
+                    LastFeedback = $"Firmware upload completed, but the controller version could not be verified after reconnect on {port}.";
+                    UpdateFirmwareUploadState(
+                        "Firmware uploaded, but controller version could not be verified after reconnect.",
+                        $"Bundled firmware: v{result.FirmwareVersion}. Reconnected on {port}, but the board still reports an unknown firmware version. Refresh status or reconnect once more, then check the top firmware version.",
+                        sticky: true);
+                }
+                else if (!string.Equals(reportedVersion.Trim(), result.FirmwareVersion.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    LastFeedback = $"Firmware upload finished, but the controller still reports v{reportedVersion} on {port}.";
+                    UpdateFirmwareUploadState(
+                        $"Firmware upload finished, but controller still reports v{reportedVersion}.",
+                        $"Bundled firmware v{result.FirmwareVersion} did not appear on the board after reconnect. The upload likely failed or the board restarted back into the older firmware. Try Upload Firmware again and watch the details output below.",
+                        sticky: true);
+                }
+                else
+                {
+                    LastFeedback = $"Firmware v{result.FirmwareVersion} uploaded and machine reconnected on {port}.";
+                    UpdateFirmwareUploadState(
+                        $"Firmware v{result.FirmwareVersion} uploaded and verified after reconnect.",
+                        $"Board on {port} now reports firmware v{reportedVersion}.",
+                        sticky: true);
+                }
+            }
+            else
+            {
+                LastFeedback = $"Firmware v{result.FirmwareVersion} uploaded. Reconnect the machine on {port} to verify the board version.";
+                UpdateFirmwareUploadState(
+                    $"Firmware v{result.FirmwareVersion} uploaded. Reconnect to verify.",
+                    $"Upload finished on {port}. Connect to the controller again and confirm that the top firmware version shows v{result.FirmwareVersion}.",
+                    sticky: true);
             }
         }
         catch (Exception ex)
         {
+            UpdateFirmwareUploadState("Firmware upload failed.", ex.Message, sticky: true);
+            AddDiagnostic("Error", $"Firmware upload failed. {ex.Message}");
             HandleUiError(ex.Message, "Upload Arduino Firmware", logAsWarning: false);
         }
         finally
@@ -3124,6 +3187,65 @@ public class CncControlViewModel : ViewModelBase
             OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));
             CommandManager.InvalidateRequerySuggested();
         }
+    }
+
+    private void UpdateFirmwareUploadState(string status, string details, bool sticky = false)
+    {
+        _firmwareUploadStatusText = status;
+        _firmwareUploadDetailsText = details;
+        _hasStickyFirmwareUploadStatus = sticky;
+        OnPropertyChanged(nameof(FirmwareUploadStatusText));
+        OnPropertyChanged(nameof(FirmwareUploadDetailsText));
+    }
+
+    private void ClearFirmwareUploadStatusOverride()
+    {
+        if (!_hasStickyFirmwareUploadStatus)
+            return;
+
+        _hasStickyFirmwareUploadStatus = false;
+    }
+
+    private void RefreshFirmwareUploadState()
+    {
+        if (_isUploadingFirmware || _hasStickyFirmwareUploadStatus)
+            return;
+
+        if (!HasBundledArduinoFirmware)
+        {
+            UpdateFirmwareUploadState(
+                "Bundled firmware package is missing.",
+                "This app build does not contain the Arduino firmware package.");
+            return;
+        }
+
+        if (!ArduinoFirmwareUploader.CanUpload)
+        {
+            UpdateFirmwareUploadState(
+                "Firmware upload is unavailable on this PC.",
+                ArduinoFirmwareUploader.ToolingStatus);
+            return;
+        }
+
+        if (IsSimulationMode)
+        {
+            UpdateFirmwareUploadState(
+                "Switch to the real hardware machine profile before uploading firmware.",
+                ArduinoFirmwareUploader.ToolingStatus);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedPort))
+        {
+            UpdateFirmwareUploadState(
+                "Select the Arduino COM port before uploading firmware.",
+                ArduinoFirmwareUploader.ToolingStatus);
+            return;
+        }
+
+        UpdateFirmwareUploadState(
+            $"Ready to upload bundled firmware v{BundledFirmwareVersion} to {SelectedPort}.",
+            ArduinoFirmwareUploader.ToolingStatus);
     }
 
     private void AddDiagnostics(IEnumerable<string> messages, string defaultSeverity)
@@ -3384,7 +3506,7 @@ public class CncControlViewModel : ViewModelBase
                     .Where(x => x.Item1)
                     .Select(x => x.Item2)
                     .ToList(),
-                AxisDirections = new Dictionary<string, Direction> { ["X"] = Direction.Normal, ["Y"] = Direction.Normal, ["Z"] = Direction.Inverted },
+                AxisDirections = new Dictionary<string, Direction> { ["X"] = Direction.Normal, ["Y"] = Direction.Normal, ["Z"] = Direction.Normal },
                 HomingSupport = new Dictionary<string, bool> { ["X"] = profile.HomeXEnabled, ["Y"] = profile.HomeYEnabled, ["Z"] = profile.HomeZEnabled },
                 HomeOriginConvention = MachineHomeOriginConvention.FrontLeft,
                 WorkCoordinateSupport = true,
@@ -3725,6 +3847,7 @@ public class CncControlViewModel : ViewModelBase
         _runtimeCoordinator.Refresh();
         RefreshRuntimeStatus();
         UpdateReadinessState();
+        RefreshFirmwareUploadState();
         OnPropertyChanged(nameof(IsConnected));
         OnPropertyChanged(nameof(MotorsEnabled));
         OnPropertyChanged(nameof(IsHomed));
@@ -3746,6 +3869,8 @@ public class CncControlViewModel : ViewModelBase
         OnPropertyChanged(nameof(BundledFirmwareVersion));
         OnPropertyChanged(nameof(BundledFirmwareTargetBoard));
         OnPropertyChanged(nameof(ArduinoFirmwareToolingStatus));
+        OnPropertyChanged(nameof(FirmwareUploadStatusText));
+        OnPropertyChanged(nameof(FirmwareUploadDetailsText));
         OnPropertyChanged(nameof(CanUploadArduinoFirmware));
         OnPropertyChanged(nameof(IsUploadingFirmware));
         OnPropertyChanged(nameof(ActiveProfileName));

@@ -2197,10 +2197,26 @@
                                                     Command="{Binding UploadArduinoFirmwareCommand}"
                                                     Style="{StaticResource PrimaryButtonStyle}"
                                                     Margin="0,0,0,8"/>
+                                            <TextBlock Text="{Binding FirmwareUploadStatusText}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Width="220"
+                                                       Margin="0,0,0,6"/>
                                             <TextBlock Text="Uploading firmware..."
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                                        Margin="0,0,0,6"
                                                        Visibility="{Binding IsUploadingFirmware, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <Border Background="{DynamicResource BackgroundMediumBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="8"
+                                                    Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding FirmwareUploadDetailsText}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           TextWrapping="Wrap"
+                                                           Width="220"/>
+                                            </Border>
                                             <TextBlock Text="Uses the selected hardware COM port."
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                                        TextWrapping="Wrap"

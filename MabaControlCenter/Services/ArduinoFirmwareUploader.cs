@@ -21,7 +21,10 @@ public static class ArduinoFirmwareUploader
 
     public static bool CanUpload => TryFindArduinoCli() != null && ArduinoFirmwarePackage.Exists();
 
-    public static async Task<ArduinoFirmwareUploadResult> UploadBundledFirmwareAsync(string portName, CancellationToken cancellationToken = default)
+    public static async Task<ArduinoFirmwareUploadResult> UploadBundledFirmwareAsync(
+        string portName,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(portName))
             return ArduinoFirmwareUploadResult.CreateFailure("Select a hardware COM port before uploading firmware.");
@@ -36,16 +39,19 @@ public static class ArduinoFirmwareUploader
         var tempRoot = Path.Combine(Path.GetTempPath(), "MabaControlCenter", "arduino-fw", Guid.NewGuid().ToString("N"));
         var sketchDir = Path.Combine(tempRoot, "MabaArduinoCncFirmware");
         var sketchPath = Path.Combine(sketchDir, ArduinoFirmwarePackage.BundledFileName);
+        progress?.Report("Preparing bundled firmware package...");
         Directory.CreateDirectory(sketchDir);
         File.Copy(ArduinoFirmwarePackage.BundledFirmwarePath, sketchPath, overwrite: true);
 
         try
         {
+            progress?.Report("Compiling Arduino firmware...");
             var compileArgs = $"compile --fqbn {BoardFqbn} \"{sketchDir}\"";
             var compile = await RunProcessAsync(cliPath, compileArgs, tempRoot, cancellationToken).ConfigureAwait(false);
             if (compile.ExitCode != 0)
                 return ArduinoFirmwareUploadResult.CreateFailure("Firmware compile failed.", compile.Output);
 
+            progress?.Report($"Uploading firmware to {portName}...");
             var uploadArgs = $"upload -p {portName} --fqbn {BoardFqbn} \"{sketchDir}\"";
             var upload = await RunProcessAsync(cliPath, uploadArgs, tempRoot, cancellationToken).ConfigureAwait(false);
             if (upload.ExitCode != 0)

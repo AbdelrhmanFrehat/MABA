@@ -4,7 +4,7 @@ namespace MabaControlCenter.Services;
 
 public class CncExecutionPreflightService : ICncExecutionPreflightService
 {
-    private static readonly Version MinimumManualZSafeFirmwareVersion = new(2, 1, 1);
+    private static readonly Version MinimumManualZSafeFirmwareVersion = new(2, 1, 2);
     private readonly ICncCoordinateTransformService _coordinateTransformService;
 
     public CncExecutionPreflightService(ICncCoordinateTransformService coordinateTransformService)

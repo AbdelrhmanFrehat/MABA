@@ -1443,6 +1443,18 @@ public class ArduinoSerialCncDriver : ICncDriver
         if (!definition.AxisConfig.AxisDirections.TryGetValue(axis, out var direction))
             return Direction.Normal;
 
+        // Compatibility migration: older built-in MABA machine snapshots persisted an inverted
+        // Z axis even though the physical machine uses positive Z for safe travel and negative Z
+        // for cutting depth. Normalize those saved profiles here so existing installs behave
+        // correctly without forcing the operator to recreate the machine/profile.
+        if (string.Equals(axis, "Z", StringComparison.OrdinalIgnoreCase)
+            && direction == Direction.Inverted
+            && string.Equals(definition.Manufacturer, "MABA", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(definition.Code, "MABA-ARDUINO-CNC", StringComparison.OrdinalIgnoreCase))
+        {
+            return Direction.Normal;
+        }
+
         return direction;
     }
 
