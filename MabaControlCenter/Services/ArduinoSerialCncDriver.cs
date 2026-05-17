@@ -105,7 +105,7 @@ public class ArduinoSerialCncDriver : ICncDriver
                 DeviceStatus.LastStatusText = string.IsNullOrWhiteSpace(startupBanner)
                     ? "MABA CNC FIRMWARE READY"
                     : startupBanner;
-                DeviceStatus.FirmwareVersion = "2.0.0";
+                DeviceStatus.FirmwareVersion = "Unknown";
                 DeviceStatus.ProtocolVersion = "MabaProtocol";
                 MarkVerifiedStatus();
                 AddProtocolLog("MABA motion firmware connected.", "Info");
@@ -407,14 +407,13 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     private string SendMabaLinearMove(decimal deltaXmm, decimal deltaYmm, decimal deltaZmm)
     {
-        var firmwareDeltaX = ApplyAxisDirection("X", deltaXmm);
-        var firmwareDeltaY = ApplyAxisDirection("Y", deltaYmm);
-        var firmwareDeltaZ = ApplyAxisDirection("Z", deltaZmm);
-
-        var targetX = _estimatedX + firmwareDeltaX;
-        var targetY = _estimatedY + firmwareDeltaY;
-        var targetZ = _estimatedZ + firmwareDeltaZ;
-        var command = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"G1 X{targetX:0.###} Y{targetY:0.###} Z{targetZ:0.###} F300");
+        var targetX = _estimatedX + deltaXmm;
+        var targetY = _estimatedY + deltaYmm;
+        var targetZ = _estimatedZ + deltaZmm;
+        var firmwareTargetX = ApplyAxisDirection("X", targetX);
+        var firmwareTargetY = ApplyAxisDirection("Y", targetY);
+        var firmwareTargetZ = ApplyAxisDirection("Z", targetZ);
+        var command = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"G1 X{firmwareTargetX:0.###} Y{firmwareTargetY:0.###} Z{firmwareTargetZ:0.###} F300");
         var response = SendMabaCommandAwaiting("Linear Move", command, new[] { "OK" }, 30000);
         UpdateEstimatedPosition(deltaXmm, deltaYmm, deltaZmm);
         return response;
@@ -422,7 +421,7 @@ public class ArduinoSerialCncDriver : ICncDriver
 
     private string SendMabaPlannerCommand(CncPlannedCommand command)
     {
-        var commandText = command.CommandText;
+        var commandText = TransformMabaPlannerCommandText(command.CommandText);
         var requiresAck = command.RequiresAck;
         if (!requiresAck)
         {
@@ -454,6 +453,50 @@ public class ArduinoSerialCncDriver : ICncDriver
         DeviceStatus.LastMotionTimeoutMs = timeoutMs;
         AddProtocolLog(BuildMotionTimingDiagnostic(command, timeoutMs), "Info");
         return SendMabaCommandAwaiting("Stream", commandText, expected, timeoutMs);
+    }
+
+    private string TransformMabaPlannerCommandText(string commandText)
+    {
+        if (string.IsNullOrWhiteSpace(commandText))
+            return commandText;
+
+        if (!(commandText.StartsWith("G0", StringComparison.OrdinalIgnoreCase)
+              || commandText.StartsWith("G1", StringComparison.OrdinalIgnoreCase)
+              || commandText.StartsWith("G2", StringComparison.OrdinalIgnoreCase)
+              || commandText.StartsWith("G3", StringComparison.OrdinalIgnoreCase)))
+        {
+            return commandText;
+        }
+
+        var parts = commandText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (parts[i].Length < 2)
+                continue;
+
+            var prefix = char.ToUpperInvariant(parts[i][0]);
+            var valueText = parts[i][1..];
+            if (!decimal.TryParse(valueText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
+                continue;
+
+            var transformed = prefix switch
+            {
+                'X' => ApplyAxisDirection("X", value),
+                'Y' => ApplyAxisDirection("Y", value),
+                'Z' => ApplyAxisDirection("Z", value),
+                'I' => ApplyAxisDirection("X", value),
+                'J' => ApplyAxisDirection("Y", value),
+                'K' => ApplyAxisDirection("Z", value),
+                _ => (decimal?)null
+            };
+
+            if (!transformed.HasValue)
+                continue;
+
+            parts[i] = $"{parts[i][0]}{transformed.Value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)}";
+        }
+
+        return string.Join(' ', parts);
     }
 
     private void RecordPlannedCommandDiagnostics(CncPlannedCommand command)
@@ -1487,7 +1530,7 @@ public class ArduinoSerialCncDriver : ICncDriver
         var identity = new CncFirmwareIdentity
         {
             FirmwareName = "MABA CNC Motion Firmware",
-            FirmwareVersion = "2.0.0",
+            FirmwareVersion = "Unknown",
             ProtocolName = "MABA",
             ProtocolVersion = new CncProtocolVersion
             {

@@ -80,6 +80,8 @@ public class CncControlViewModel : ViewModelBase
     private bool _isProfileManagerOpen;
     private bool _isUploadingFirmware;
     private ImageToolpathJob? _imageToolpathJob;
+    private CncExecutionPreflightResult _runPreflight = new();
+    private CncExecutionPreflightResult _framePreflight = new();
     private string _imageToolpathSourcePath = string.Empty;
     private ImageSource? _imageToolpathPreviewSource;
     private ImageSource? _imageThresholdPreviewSource;
@@ -605,6 +607,14 @@ public class CncControlViewModel : ViewModelBase
     public bool CanRecoveryResetWorkOffset => RecoveryPlan.Allows(CncRecoveryAction.ResetWorkOffset) && CanClearWorkZero;
     public bool HasRuntimeBlockingReason => !string.IsNullOrWhiteSpace(RuntimeStatus.BlockingReason);
     public string RuntimeBlockingReasonText => RuntimeStatus.BlockingReason ?? "No blocking issues.";
+    public string NextRequiredStepText => _runPreflight.NextRequiredStepText;
+    public string StartBlockedReasonText => _runPreflight.IsAllowed ? "Ready: Preflight passed. You can start the job." : (_runPreflight.Summary ?? "Start is blocked.");
+    public string FrameBlockedReasonText => _framePreflight.IsAllowed ? "Ready: Frame preflight passed." : (_framePreflight.Summary ?? "Frame is blocked.");
+    public bool HasStartBlockedReason => !_runPreflight.IsAllowed;
+    public bool HasFrameBlockedReason => !_framePreflight.IsAllowed;
+    public string WorkflowChecksSummaryText =>
+        $"Connected: {PassFail(_runPreflight.TrustState.Connected)} | Firmware: {PassFail(_runPreflight.TrustState.FirmwareReady)} | XY ref: {PassFail(_runPreflight.TrustState.XYReferenced)} | Z zero: {PassFail(!_runPreflight.TrustState.HasZCuttingMotion || _runPreflight.TrustState.ZWorkZeroTrusted)} | Job loaded: {PassFail(_runPreflight.TrustState.JobLoaded)} | Parsed: {PassFail(_runPreflight.TrustState.JobParsed)} | Planned: {PassFail(_runPreflight.TrustState.JobPlanned)} | Placement: {PassFail(_runPreflight.TrustState.PlacementValid)} | Bounds: {PassFail(_runPreflight.TrustState.BoundsValid)}";
+    public string TrustStatusSummaryText => $"XY trust: {ReferenceStatusText} | Z trust: {ZReferenceStatusText}";
     public string RuntimeFirmwareVersionText => RuntimeStatus.FirmwareVersion ?? "Unknown";
     public string RuntimeProtocolVersionText => RuntimeStatus.ProtocolVersion ?? "Unknown";
     public string RuntimeFirmwareNameText => RuntimeStatus.FirmwareIdentity.FirmwareName;
@@ -990,6 +1000,7 @@ public class CncControlViewModel : ViewModelBase
             OnPropertyChanged(nameof(ImageToolpathDiagnosticsText));
             OnPropertyChanged(nameof(ImageToolpathWarningsText));
             OnPropertyChanged(nameof(CanCreateImageToolpathJob));
+            UpdateReadinessState();
         }
     }
     public bool HasImageToolpathPreview => ImageToolpathJob != null;
@@ -1243,7 +1254,7 @@ public class CncControlViewModel : ViewModelBase
     public bool HasMachineVisualizationCapability => EffectiveCapabilities.Visualization.MachineVisualization;
     public bool HasProgressTrackingCapability => EffectiveCapabilities.Execution.ProgressTracking;
     public bool HasLiveReportedPositionCapability => EffectiveCapabilities.Protocol.PositionQuery || EffectiveCapabilities.Execution.LiveReportedPosition;
-    public bool CanFramePreview => HasLoadedProgram && HasFrameBounds && EffectiveCapabilities.Execution.Frame && GetActionDescriptor(CncRuntimeAction.Frame).IsAllowed;
+    public bool CanFramePreview => _framePreflight.IsAllowed;
     public decimal PlacementOffsetX
     {
         get => _placementOffsetX;
@@ -1281,11 +1292,7 @@ public class CncControlViewModel : ViewModelBase
     public bool CanPlayPreview => HasLoadedProgram && MotionCommands.Any() && EffectiveCapabilities.Execution.ToolpathPreview && EffectiveCapabilities.Execution.PreviewPlayback && PreviewSimulationState is CncPreviewSimulationState.Ready or CncPreviewSimulationState.Paused or CncPreviewSimulationState.Completed;
     public bool CanPausePreview => PreviewSimulationState == CncPreviewSimulationState.Playing;
     public bool CanStopPreview => PreviewSimulationState is CncPreviewSimulationState.Playing or CncPreviewSimulationState.Paused or CncPreviewSimulationState.Completed;
-    public bool CanStartProgram => EffectiveCapabilities.Execution.FileRun
-                                   && HasLoadedProgram
-                                   && TotalMotionCount > 0
-                                   && ErrorCount == 0
-                                   && GetActionDescriptor(CncRuntimeAction.Run).IsAllowed;
+    public bool CanStartProgram => _runPreflight.IsAllowed;
     public bool CanPauseProgram => GetActionDescriptor(CncRuntimeAction.Pause).IsAllowed;
     public bool CanResumeProgram => GetActionDescriptor(CncRuntimeAction.Resume).IsAllowed;
     public bool CanStopExecution => EffectiveCapabilities.Motion.Stop && GetActionDescriptor(CncRuntimeAction.Stop).IsAllowed;
@@ -3166,22 +3173,25 @@ public class CncControlViewModel : ViewModelBase
 
     private void UpdateReadinessState()
     {
-        var preflight = GetExecutionPreflight(CncExecutionIntent.Run);
-        if (!preflight.IsAllowed)
+        _runPreflight = GetExecutionPreflight(CncExecutionIntent.Run);
+        _framePreflight = GetExecutionPreflight(CncExecutionIntent.Frame);
+        if (!_runPreflight.IsAllowed)
         {
             var summary = RuntimeStatus.RuntimeState switch
             {
                 CncRuntimeState.Locked => "Machine locked — unlock or home required.",
                 CncRuntimeState.Alarm => "Machine alarm blocks execution.",
                 CncRuntimeState.Disconnected => "Machine is not connected.",
-                _ => preflight.Failures[0]
+                _ => _runPreflight.Failures[0]
             };
 
-            _jobSessionService.UpdateReadiness(false, summary, preflight.Failures[0]);
+            _jobSessionService.UpdateReadiness(false, summary, _runPreflight.Failures[0]);
+            RaiseWorkflowStateChanged();
             return;
         }
 
         _jobSessionService.UpdateReadiness(true, "Ready to run. Machine, runtime state, and loaded job passed pre-run checks.", null);
+        RaiseWorkflowStateChanged();
     }
 
     private CncExecutionPreflightResult GetExecutionPreflight(CncExecutionIntent intent)
@@ -3195,9 +3205,40 @@ public class CncControlViewModel : ViewModelBase
             LoadedProgram = LoadedProgram,
             MotionCommands = _placedMotions.ToList(),
             InterpretedCommands = _placedInterpretedCommands.ToList(),
-            ParserErrorCount = ErrorCount
+            ParserErrorCount = ErrorCount,
+            PlacementValid = IsPlacementCurrentlyValid(),
+            HasPendingImageToolpathPreview = HasImageToolpathPreview && LoadedProgram == null
         });
     }
+
+    private bool IsPlacementCurrentlyValid()
+    {
+        if (LoadedProgram == null)
+            return true;
+
+        return _jobPlacementService.ValidatePlacement(
+                   LoadedProgram.Motions.Where(motion => motion.IsExecutable).ToList(),
+                   _jobPlacement,
+                   XMinMm,
+                   XLimitMm,
+                   YMinMm,
+                   YLimitMm) == null;
+    }
+
+    private void RaiseWorkflowStateChanged()
+    {
+        OnPropertyChanged(nameof(CanStartProgram));
+        OnPropertyChanged(nameof(CanFramePreview));
+        OnPropertyChanged(nameof(NextRequiredStepText));
+        OnPropertyChanged(nameof(StartBlockedReasonText));
+        OnPropertyChanged(nameof(FrameBlockedReasonText));
+        OnPropertyChanged(nameof(HasStartBlockedReason));
+        OnPropertyChanged(nameof(HasFrameBlockedReason));
+        OnPropertyChanged(nameof(WorkflowChecksSummaryText));
+        OnPropertyChanged(nameof(TrustStatusSummaryText));
+    }
+
+    private static string PassFail(bool value) => value ? "Passed" : "Blocked";
 
     private void ApplyPlacement()
     {

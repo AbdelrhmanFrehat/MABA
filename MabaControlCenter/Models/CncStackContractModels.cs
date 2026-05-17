@@ -60,6 +60,38 @@ public enum CncExecutionIntent
     Frame
 }
 
+public enum CncWorkflowNextStep
+{
+    ImportImageOrLoadGcode,
+    CreateGcodeJob,
+    ConnectMachine,
+    HomeXY,
+    SetZZero,
+    ResolvePlacement,
+    RunPreflight,
+    ReadyToStart,
+    Running,
+    Complete,
+    RecoveryRequired
+}
+
+public class CncWorkflowTrustState
+{
+    public bool Connected { get; set; }
+    public bool FirmwareReady { get; set; }
+    public bool AlarmActive { get; set; }
+    public bool XYReferenced { get; set; }
+    public bool ZWorkZeroTrusted { get; set; }
+    public bool JobLoaded { get; set; }
+    public bool JobParsed { get; set; }
+    public bool JobPlanned { get; set; }
+    public bool PlacementValid { get; set; }
+    public bool BoundsValid { get; set; }
+    public bool HasZCuttingMotion { get; set; }
+    public bool IsRunning { get; set; }
+    public bool IsPaused { get; set; }
+}
+
 public class CncExecutionPreflightRequest
 {
     public CncExecutionIntent Intent { get; set; }
@@ -70,6 +102,8 @@ public class CncExecutionPreflightRequest
     public IReadOnlyList<GcodeMotionCommand> MotionCommands { get; set; } = Array.Empty<GcodeMotionCommand>();
     public IReadOnlyList<GcodeInterpretedCommand> InterpretedCommands { get; set; } = Array.Empty<GcodeInterpretedCommand>();
     public int ParserErrorCount { get; set; }
+    public bool PlacementValid { get; set; } = true;
+    public bool HasPendingImageToolpathPreview { get; set; }
 }
 
 public class CncExecutionPreflightResult
@@ -78,6 +112,9 @@ public class CncExecutionPreflightResult
     public List<string> Warnings { get; } = new();
     public bool IsAllowed => Failures.Count == 0;
     public string? Summary => Failures.FirstOrDefault() ?? Warnings.FirstOrDefault();
+    public CncWorkflowTrustState TrustState { get; set; } = new();
+    public CncWorkflowNextStep NextRequiredStep { get; set; } = CncWorkflowNextStep.ImportImageOrLoadGcode;
+    public string NextRequiredStepText { get; set; } = "Next step: Import an image or load G-code.";
 }
 
 public class CncManagerOperationResult

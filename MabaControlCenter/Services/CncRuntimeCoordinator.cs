@@ -128,6 +128,26 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
 
         status.RecoveryPlan = _recoveryPlannerService.BuildPlan(status, _executionQueueService, _jobSessionService);
         status.ActionPolicy = _actionPolicy.Build(status);
+        status.WorkflowTrust = new CncWorkflowTrustState
+        {
+            Connected = status.IsConnected,
+            FirmwareReady = controllerMode == CncControllerMode.Simulation
+                            || (status.FirmwareCompatibility.Status != CncFirmwareCompatibilityStatus.Incompatible
+                                && status.ControllerStatusConfidence is not (CncControllerStatusConfidence.Unknown or CncControllerStatusConfidence.Stale)),
+            AlarmActive = status.IsAlarmed,
+            XYReferenced = status.ReferenceState.XyReferenceValid,
+            ZWorkZeroTrusted = status.ReferenceState.ZReferenceValid || !_controllerService.Config.RequireManualZZeroForCutting || !_controllerService.Config.SupportsZAxis,
+            JobLoaded = _jobSessionService.LoadedJob != null || _executionQueueService.LoadedMotions.Count > 0,
+            JobParsed = _jobSessionService.LoadedJob != null,
+            JobPlanned = _executionQueueService.LoadedMotions.Count > 0,
+            PlacementValid = true,
+            BoundsValid = true,
+            HasZCuttingMotion = false,
+            IsRunning = runtimeState == CncRuntimeState.Running,
+            IsPaused = runtimeState is CncRuntimeState.Paused or CncRuntimeState.FeedHold
+        };
+        status.NextRequiredStep = ResolveRuntimeNextRequiredStep(status);
+        status.NextRequiredStepText = BuildRuntimeNextRequiredStepText(status);
 
         status.CanJog = status.GetActionDescriptor(CncRuntimeAction.Jog).IsAllowed;
         status.CanHome = status.GetActionDescriptor(CncRuntimeAction.Home).IsAllowed;
@@ -298,5 +318,42 @@ public class CncRuntimeCoordinator : ICncRuntimeCoordinator
         }
 
         return reasons.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static CncWorkflowNextStep ResolveRuntimeNextRequiredStep(CncRuntimeStatus status)
+    {
+        if (status.WorkflowTrust.IsRunning)
+            return CncWorkflowNextStep.Running;
+        if (status.RuntimeState == CncRuntimeState.ProgramComplete)
+            return CncWorkflowNextStep.Complete;
+        if (status.IsAlarmed || status.ReferenceState.ReferenceLostReason is CncReferenceLostReason.Alarm or CncReferenceLostReason.Disconnect or CncReferenceLostReason.FaultRecoveryRequired)
+            return CncWorkflowNextStep.RecoveryRequired;
+        if (!status.WorkflowTrust.JobLoaded)
+            return CncWorkflowNextStep.ImportImageOrLoadGcode;
+        if (!status.WorkflowTrust.Connected)
+            return CncWorkflowNextStep.ConnectMachine;
+        if (!status.WorkflowTrust.XYReferenced)
+            return CncWorkflowNextStep.HomeXY;
+        if (status.WorkflowTrust.HasZCuttingMotion && !status.WorkflowTrust.ZWorkZeroTrusted)
+            return CncWorkflowNextStep.SetZZero;
+        if (status.BlockingReasons.Count > 0)
+            return CncWorkflowNextStep.RunPreflight;
+        return CncWorkflowNextStep.ReadyToStart;
+    }
+
+    private static string BuildRuntimeNextRequiredStepText(CncRuntimeStatus status)
+    {
+        return status.NextRequiredStep switch
+        {
+            CncWorkflowNextStep.Running => "Running: G-code is streaming to the machine.",
+            CncWorkflowNextStep.Complete => "Complete: Job finished successfully.",
+            CncWorkflowNextStep.RecoveryRequired => $"Recovery required: {status.ReferenceWarningText ?? status.LastAlarmMessage}",
+            CncWorkflowNextStep.ImportImageOrLoadGcode => "Next step: Import an image or load G-code.",
+            CncWorkflowNextStep.ConnectMachine => "Next step: Connect machine.",
+            CncWorkflowNextStep.HomeXY => "Next step: Home X/Y.",
+            CncWorkflowNextStep.SetZZero => "Next step: Jog Z to material surface and press Set Z Zero.",
+            CncWorkflowNextStep.RunPreflight => $"Start blocked: {status.BlockingReason ?? "Resolve runtime blockers before starting."}",
+            _ => "Ready: Runtime checks passed. Complete setup and start the job."
+        };
     }
 }

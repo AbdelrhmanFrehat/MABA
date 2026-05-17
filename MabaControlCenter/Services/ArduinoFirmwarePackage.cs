@@ -14,7 +14,7 @@ public static class ArduinoFirmwarePackage
 
     public static bool Exists() => File.Exists(BundledFirmwarePath);
 
-    public static string FirmwareVersion => ReadMetadata(VersionRegex, "1.1.0");
+    public static string FirmwareVersion => ReadMetadata(VersionRegex, "2.1.1");
 
     public static string TargetBoardDisplay => ReadMetadata(BoardRegex, "Arduino Uno (arduino:avr:uno)");
 

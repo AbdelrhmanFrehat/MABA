@@ -1,4 +1,4 @@
-// MABA_FIRMWARE_VERSION: 2.0.0
+// MABA_FIRMWARE_VERSION: 2.1.1
 // TARGET_BOARD: Arduino Uno (arduino:avr:uno)
 
 const int X_STEP = 2;
@@ -26,6 +26,7 @@ float posZ = 0;
 
 float maxX = 400;
 float maxY = 330;
+float minZ = -50;
 float maxZ = 50;
 
 int stepDelay = 200;
@@ -136,7 +137,7 @@ void moveLinearMM(float targetX, float targetY, float targetZ, float feed, bool 
     return;
   }
 
-  if (targetX < 0 || targetX > maxX || targetY < 0 || targetY > maxY || targetZ < 0 || targetZ > maxZ) {
+  if (targetX < 0 || targetX > maxX || targetY < 0 || targetY > maxY || targetZ < minZ || targetZ > maxZ) {
     Serial.println("ERR:SOFT_LIMIT");
     return;
   }
@@ -348,6 +349,21 @@ void parseCommand(String s) {
     return;
   }
 
+  if (s == "$I") {
+    Serial.println("$I:NAME=MABA CNC Motion Firmware;MACHINE=MABA-UNO;BUILD=2026-05-16");
+    return;
+  }
+
+  if (s == "$VER") {
+    Serial.println("$VER:2.1.1");
+    return;
+  }
+
+  if (s == "$CAPS") {
+    Serial.println("$CAPS:STATUS,UNLOCK,HOME,JOG,G0G1,G2G3,SPINDLE,STOP,LIMITS,POSITION");
+    return;
+  }
+
   if (s == "$H" || s == "H") {
     homeMachine();
     return;
@@ -444,6 +460,8 @@ void setup() {
   Serial.begin(115200);
 
   Serial.println("MABA CNC FIRMWARE READY");
+  Serial.println("$VER:2.1.1");
+  Serial.println("$CAPS:STATUS,UNLOCK,HOME,JOG,G0G1,G2G3,SPINDLE,STOP,LIMITS,POSITION");
   Serial.println("LOCKED: SEND $H TO HOME OR $X TO UNLOCK");
 }
 

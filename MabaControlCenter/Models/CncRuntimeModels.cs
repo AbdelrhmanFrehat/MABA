@@ -101,6 +101,9 @@ public class CncRuntimeStatus
     public IReadOnlyList<string> BlockingReasons { get; set; } = Array.Empty<string>();
     public CncRecoveryPlan RecoveryPlan { get; set; } = new();
     public CncRuntimeActionPolicy ActionPolicy { get; set; } = new();
+    public CncWorkflowTrustState WorkflowTrust { get; set; } = new();
+    public CncWorkflowNextStep NextRequiredStep { get; set; } = CncWorkflowNextStep.ImportImageOrLoadGcode;
+    public string NextRequiredStepText { get; set; } = "Next step: Import an image or load G-code.";
 
     public string RuntimeStateDisplay => RuntimeState switch
     {

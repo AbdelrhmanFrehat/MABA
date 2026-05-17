@@ -98,7 +98,7 @@ public class CncCoordinateTransformService : ICncCoordinateTransformService
                 return $"Bounds violation: X {machineX:0.###} mm is outside [{bounds.XMin:0.###}, {bounds.XMax:0.###}] mm.";
             if (machineY < bounds.YMin || machineY > bounds.YMax)
                 return $"Bounds violation: Y {machineY:0.###} mm is outside [{bounds.YMin:0.###}, {bounds.YMax:0.###}] mm.";
-            if (machineZ < bounds.ZMin || machineZ > bounds.ZMax)
+            if (ShouldEnforceAbsoluteZBounds(config) && (machineZ < bounds.ZMin || machineZ > bounds.ZMax))
                 return $"Bounds violation: Z {machineZ:0.###} mm is outside [{bounds.ZMin:0.###}, {bounds.ZMax:0.###}] mm.";
         }
 
@@ -110,6 +110,14 @@ public class CncCoordinateTransformService : ICncCoordinateTransformService
             return "The active machine profile does not support Z axis motion.";
 
         return null;
+    }
+
+    private static bool ShouldEnforceAbsoluteZBounds(CncMachineConfig config)
+    {
+        // If the machine does not home Z, absolute machine Z is not trustworthy after power loss
+        // or manual repositioning. In that setup we rely on manual Z zero + job preflight instead
+        // of pretending a fixed [ZMin, ZMax] machine-space range is authoritative.
+        return config.SupportsZAxis && config.HomeZEnabled;
     }
 
     public CncFrameBounds ComputeFrameBounds(IReadOnlyList<GcodeMotionCommand> motions)

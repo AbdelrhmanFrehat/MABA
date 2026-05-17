@@ -46,7 +46,7 @@ public class CncRuntimeActionPolicyService : ICncRuntimeActionPolicy
 
         if (status.ControllerMode == CncControllerMode.RealHardware)
         {
-            if (IsDangerousControllerAction(action)
+            if (RequiresFreshVerifiedControllerState(action)
                 && status.ControllerStatusConfidence is CncControllerStatusConfidence.Unknown or CncControllerStatusConfidence.Stale)
             {
                 descriptor.IsAllowed = false;
@@ -100,12 +100,9 @@ public class CncRuntimeActionPolicyService : ICncRuntimeActionPolicy
         return descriptor;
     }
 
-    private static bool IsDangerousControllerAction(CncRuntimeAction action)
+    private static bool RequiresFreshVerifiedControllerState(CncRuntimeAction action)
     {
-        return action is CncRuntimeAction.Unlock
-            or CncRuntimeAction.Home
-            or CncRuntimeAction.Jog
-            or CncRuntimeAction.SetWorkZero
+        return action is CncRuntimeAction.SetWorkZero
             or CncRuntimeAction.GoToCenter
             or CncRuntimeAction.Frame
             or CncRuntimeAction.Run
